@@ -16,6 +16,7 @@ const BUILTIN_PACKS: &[(&str, &str)] = &[
         "plain-style",
         include_str!("../../../packs/plain-style.toml"),
     ),
+    ("substance", include_str!("../../../packs/substance.toml")),
 ];
 
 const USAGE: &str = "\
@@ -28,7 +29,7 @@ USAGE:
     en packs                       list built-in rule packs and rules
 
 OPTIONS:
-    --pack NAME|FILE       rule pack to use (repeatable; default: core, ai-tells, plain-style)
+    --pack NAME|FILE       rule pack to use (repeatable; default: core, ai-tells, plain-style, substance)
     --disable RULE         skip a rule id, or a prefix ending in '*' (repeatable)
     --input plain|markdown input format (default: from the file extension; stdin is plain)
     --format plain|markdown  output format (default: plain)

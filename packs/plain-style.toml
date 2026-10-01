@@ -12,6 +12,15 @@ rules = ["v_pas*_odlr"]
 # "fast-paced" or "the written report".
 preceded_by = ["am", "is", "are", "was", "were", "be", "been", "being", "'re", "’re", "get", "gets", "got", "gotten", "getting"]
 window = 3
+# Participles converted to adjectives ("the most underrated tool"), and
+# participles mostly used as adjectives after "be".
+not_parent = ["v_j-*"]
+except = [
+  "mixed", "interested", "tired", "excited", "worried", "pleased", "thrilled",
+  "concerned", "involved", "based", "located", "married", "related", "satisfied",
+  "surprised", "confused", "disappointed", "bored", "scared", "convinced",
+  "done", "gone", "finished", "supposed", "used",
+]
 
 [[rule]]
 id = "plain-style.sentence-length"

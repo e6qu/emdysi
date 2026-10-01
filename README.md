@@ -41,7 +41,10 @@ TOML files; see [`docs/rules.md`](docs/rules.md). The built-in packs are:
   in machine-written prose (contrast frames, trailing participial clauses,
   three-part lists, em-dash density, chat-assistant residue);
 - `plain-style`: passive voice, long sentences, intensifiers, wordy phrases,
-  expletive *there*, repeated words.
+  expletive *there*, repeated words;
+- `substance`: hedged, vague and unsupported claims (*seems to*, *may
+  potentially*, *studies show* without a citation, *a number of*,
+  *clearly*).
 
 The first run compiles the grammar (about five seconds) and caches the
 result in `$EMDYSI_CACHE_DIR`, `$XDG_CACHE_HOME/emdysi` or `~/.cache/emdysi`

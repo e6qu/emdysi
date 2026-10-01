@@ -82,8 +82,13 @@ pub enum Kind {
         on: MatchOn,
         replace: HashMap<String, String>,
     },
-    /// A regular expression over the sentence text.
-    Regex { re: Regex, replace: Option<String> },
+    /// A regular expression over the sentence text. Sentences that match
+    /// `unless` (e.g. a citation) are skipped.
+    Regex {
+        re: Regex,
+        replace: Option<String>,
+        unless: Option<Regex>,
+    },
     /// Derivation nodes whose rule, lexical entry or lexical type matches.
     Construction {
         rules: Vec<Glob>,
@@ -93,6 +98,12 @@ pub enum Kind {
         /// before the match (e.g. a form of *be* for passives).
         preceded_by: Vec<String>,
         window: usize,
+        /// Matches whose parent node is one of these rules (or reaches one
+        /// through lexical rules) are skipped, e.g. a passive participle
+        /// converted to an adjective.
+        not_parent: Vec<Glob>,
+        /// Matched text (case-insensitive) to skip.
+        except: Vec<String>,
     },
     /// Coordinations with exactly / at least this many conjuncts.
     Coordination { min: usize, max: usize },
@@ -209,9 +220,13 @@ impl Rule {
             "regex" => {
                 let pat = get_str(t, "pattern").ok_or_else(|| err("regex rule needs `pattern`"))?;
                 let re = Regex::new(&pat).map_err(|e| err(&format!("bad pattern: {e}")))?;
+                let unless = get_str(t, "unless")
+                    .map(|u| Regex::new(&u).map_err(|e| err(&format!("bad `unless` pattern: {e}"))))
+                    .transpose()?;
                 Kind::Regex {
                     re,
                     replace: get_str(t, "replace"),
+                    unless,
                 }
             }
             "construction" => {
@@ -224,6 +239,11 @@ impl Rule {
                         .map(|w| w.to_lowercase())
                         .collect(),
                     window: num("window").unwrap_or(3.0) as usize,
+                    not_parent: globs(t, "not_parent"),
+                    except: get_list(t, "except")
+                        .iter()
+                        .map(|w| w.to_lowercase())
+                        .collect(),
                 };
                 if let Kind::Construction {
                     rules,
@@ -313,8 +333,18 @@ impl Rule {
     pub fn run(&self, erg: &Erg, a: &Analysis, out: &mut Vec<Diagnostic>) {
         match &self.kind {
             Kind::Words { items, on, replace } => self.run_words(a, items, *on, replace, out),
-            Kind::Regex { re, replace } => {
+            Kind::Regex {
+                re,
+                replace,
+                unless,
+            } => {
                 for (si, s) in a.sentences.iter().enumerate() {
+                    if unless
+                        .as_ref()
+                        .is_some_and(|u| u.is_match(&s.original).unwrap_or(false))
+                    {
+                        continue;
+                    }
                     for m in re.captures_iter(s.original.as_str()).flatten() {
                         let m0 = m.get(0).unwrap();
                         let from = s.original[..m0.start()].chars().count();
@@ -335,10 +365,30 @@ impl Rule {
                 types,
                 preceded_by,
                 window,
+                not_parent,
+                except,
             } => {
                 for (si, s) in a.sentences.iter().enumerate() {
                     let Some(r) = s.best() else { continue };
                     for n in &r.nodes {
+                        // The parent, or an ancestor through a chain of
+                        // lexical rules (e.g. "under-" then conversion).
+                        let mut p = n.parent;
+                        let mut skip = false;
+                        while let Some(pi) = p {
+                            let name = &r.nodes[pi].name;
+                            if not_parent.iter().any(|g| g.matches(name)) {
+                                skip = true;
+                                break;
+                            }
+                            if !name.ends_with("lr") {
+                                break;
+                            }
+                            p = r.nodes[pi].parent;
+                        }
+                        if skip {
+                            continue;
+                        }
                         let hit = if n.leaf {
                             entries.iter().any(|g| g.matches(&n.name))
                                 || (!types.is_empty()
@@ -366,6 +416,9 @@ impl Rule {
                                 .skip(n.from)
                                 .take(n.to - n.from)
                                 .collect();
+                            if except.contains(&text.to_lowercase()) {
+                                continue;
+                            }
                             out.push(self.diag(a, si, n.from, n.to, &text));
                         }
                     }
@@ -574,28 +627,45 @@ impl Rule {
                     .map(|t| (t.form.to_lowercase(), t.from, t.to))
                     .collect(),
             };
+            // Overlapping matches of one rule: the longest wins ("a myriad
+            // of" over "myriad").
+            let mut found: Vec<(usize, usize, &Vec<String>)> = Vec::new();
             for item in items {
                 if item.is_empty() || item.len() > units.len() {
                     continue;
                 }
                 for start in 0..=units.len() - item.len() {
                     if (0..item.len()).all(|k| units[start + k].0 == item[k]) {
-                        let from = units[start].1;
-                        let to = units[start + item.len() - 1].2;
-                        let text: String = s
-                            .original
-                            .chars()
-                            .skip(from)
-                            .take(to.saturating_sub(from))
-                            .collect();
-                        let mut d = self.diag(a, si, from, to, &text);
-                        if let Some(rep) = replace.get(&item.join(" ")) {
-                            d.replacement = Some(match_case(&text, rep));
-                            d.message = d.message.replace("{replacement}", rep);
-                        }
-                        out.push(d);
+                        found.push((start, item.len(), item));
                     }
                 }
+            }
+            found.sort_by_key(|&(start, len, _)| (std::cmp::Reverse(len), start));
+            let mut used = vec![false; units.len()];
+            let mut kept = Vec::new();
+            for (start, len, item) in found {
+                if used[start..start + len].iter().any(|&u| u) {
+                    continue;
+                }
+                used[start..start + len].iter_mut().for_each(|u| *u = true);
+                kept.push((start, len, item));
+            }
+            kept.sort_by_key(|&(start, ..)| start);
+            for (start, len, item) in kept {
+                let from = units[start].1;
+                let to = units[start + len - 1].2;
+                let text: String = s
+                    .original
+                    .chars()
+                    .skip(from)
+                    .take(to.saturating_sub(from))
+                    .collect();
+                let mut d = self.diag(a, si, from, to, &text);
+                if let Some(rep) = replace.get(&item.join(" ")) {
+                    d.replacement = Some(match_case(&text, rep));
+                    d.message = d.message.replace("{replacement}", rep);
+                }
+                out.push(d);
             }
         }
     }
