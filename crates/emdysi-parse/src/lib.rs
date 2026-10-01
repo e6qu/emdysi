@@ -17,6 +17,7 @@ use emdysi_hpsg::parser::{
 use emdysi_hpsg::{Dag, Grammar, Unifier};
 use emdysi_repp::Repp;
 
+pub mod rank;
 pub mod tagger;
 
 #[derive(Debug)]
@@ -49,7 +50,13 @@ pub struct Erg {
     pub qc: QuickCheck,
     pub config: ParserConfig,
     pub labeler: Labeler,
+    pub model: rank::Model,
+    /// How many of the best readings get a labelled tree.
+    pub trees_for: usize,
 }
+
+/// The parse-ranking model trained on the vendored gold profiles.
+pub const DEFAULT_MODEL: &str = include_str!("../data/rank.tsv");
 
 /// Read a `key := value value ... .` setting from an ACE configuration file.
 fn ace_setting(src: &str, key: &str) -> Vec<String> {
@@ -89,8 +96,11 @@ fn ace_setting(src: &str, key: &str) -> Vec<String> {
 pub struct Reading {
     pub root: String,
     pub derivation: String,
-    /// Labelled phrase-structure tree.
-    pub tree: Tree,
+    /// Labelled phrase-structure tree (for the best readings only).
+    pub tree: Option<Tree>,
+    /// Ranking features and model score.
+    pub features: Vec<String>,
+    pub score: f64,
 }
 
 #[derive(Debug, Clone)]
@@ -213,10 +223,16 @@ impl Erg {
             timeout: Duration::from_secs(60),
             packing_restrictor,
             max_readings: 1000,
+            packing_top_type: ace_setting(&config_src, "generalize-edge-top-types")
+                .first()
+                .filter(|v| v.as_str() == "enabled")
+                .and_then(|_| grammar.ts.hier.id("sign")),
         };
         let lexicon = Lexicon::new(&grammar, morph, lex_paths);
         let labeler = Labeler::new(&grammar, &mut u).ok_or_else(|| err("no parse-node labels"))?;
         Ok(Erg {
+            model: rank::Model::parse(DEFAULT_MODEL),
+            trees_for: 3,
             labeler,
             grammar,
             repp,
@@ -282,16 +298,29 @@ impl Erg {
             let to = span(*tokens.last()?, &to_path)?;
             Some(chars.get(from..to)?.iter().collect())
         };
-        let readings = result
+        let mut scored: Vec<(f64, Vec<String>, &emdysi_hpsg::parser::Reading)> = result
             .readings
             .iter()
-            .map(|r| Reading {
+            .map(|r| {
+                let features = rank::features(&self.grammar, &self.rules, &r.deriv, &r.root);
+                (self.model.score(&features), features, r)
+            })
+            .collect();
+        scored.sort_by(|a, b| b.0.total_cmp(&a.0));
+        let readings = scored
+            .into_iter()
+            .enumerate()
+            .map(|(i, (score, features, r))| Reading {
                 root: r.root.clone(),
                 derivation: derivation(&self.grammar, &self.rules, &r.deriv, &forms),
-                tree: self
-                    .labeler
-                    .tree(&self.grammar, &mut u, &r.deriv, &surface)
-                    .collapse(),
+                // Labelling costs unifications; only the best readings get trees.
+                tree: (i < self.trees_for).then(|| {
+                    self.labeler
+                        .tree(&self.grammar, &mut u, &r.deriv, &surface)
+                        .collapse()
+                }),
+                score,
+                features,
             })
             .collect();
         Ok(Parse {

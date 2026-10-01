@@ -7,7 +7,10 @@
 //! a meet semi-lattice.
 
 use std::collections::{HashMap, HashSet};
+use std::hash::BuildHasherDefault;
 use std::sync::RwLock;
+
+use crate::unify::FxHasher;
 
 use crate::bitset::BitSet;
 
@@ -46,7 +49,7 @@ pub struct Hierarchy {
     ancestors: Vec<BitSet>,
     parents: Vec<Vec<TypeId>>,
     children: Vec<Vec<TypeId>>,
-    glb_cache: RwLock<HashMap<(TypeId, TypeId), Option<TypeId>>>,
+    glb_cache: RwLock<HashMap<(TypeId, TypeId), Option<TypeId>, BuildHasherDefault<FxHasher>>>,
 }
 
 impl Hierarchy {
@@ -121,7 +124,7 @@ impl Hierarchy {
             ancestors: Vec::new(),
             parents: Vec::new(),
             children: Vec::new(),
-            glb_cache: RwLock::new(HashMap::new()),
+            glb_cache: RwLock::new(HashMap::default()),
         };
         // Each declared type's code contains the type itself, so codes of
         // declared types are distinct.

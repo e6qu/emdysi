@@ -125,12 +125,18 @@ impl Unifier {
         }
     }
 
+    #[inline]
     fn fresh(&self, h: u32) -> bool {
         self.stamp[h as usize] == self.generation
     }
 
+    #[inline]
     fn src(&self, h: u32) -> (usize, u32) {
-        let s = self.srcs.partition_point(|(_, base)| *base <= h) - 1;
+        // Few sources: a linear scan from the end beats a binary search.
+        let mut s = self.srcs.len() - 1;
+        while self.srcs[s].1 > h {
+            s -= 1;
+        }
         (s, h - self.srcs[s].1)
     }
 
@@ -139,6 +145,7 @@ impl Unifier {
         (s, self.srcs[s].0.nodes[local as usize])
     }
 
+    #[inline]
     pub fn find(&self, mut h: u32) -> u32 {
         while self.fresh(h) && self.fwd[h as usize] != NONE {
             h = self.fwd[h as usize];
@@ -146,9 +153,14 @@ impl Unifier {
         h
     }
 
-    /// Current type of a (representative) node.
+    /// Current type of a node.
     pub fn node_type(&self, h: u32) -> TypeId {
-        let h = self.find(h);
+        self.rep_type(self.find(h))
+    }
+
+    /// Current type of a representative node.
+    #[inline]
+    fn rep_type(&self, h: u32) -> TypeId {
         if self.fresh(h) && self.ty[h as usize] != NONE {
             return self.ty[h as usize];
         }
@@ -162,9 +174,14 @@ impl Unifier {
         self.ty[h as usize] = t;
     }
 
-    /// Value of feature `f` at representative node `h`.
+    /// Value of feature `f` at node `h`.
     pub fn arc(&self, h: u32, f: FeatId) -> Option<u32> {
-        let h = self.find(h);
+        self.rep_arc(self.find(h), f)
+    }
+
+    /// Value of feature `f` at representative node `h`.
+    #[inline]
+    fn rep_arc(&self, h: u32, f: FeatId) -> Option<u32> {
         let (s, node) = self.src_node(h);
         let dag = &self.srcs[s].0;
         let base = self.srcs[s].1;
@@ -235,8 +252,8 @@ impl Unifier {
         if a == b {
             return true;
         }
-        let ta = self.node_type(a);
-        let tb = self.node_type(b);
+        let ta = self.rep_type(a);
+        let tb = self.rep_type(b);
         let Some(t) = self.glb(ts, ta, tb) else {
             self.failure = Some(Failure::Clash);
             return false;
@@ -311,7 +328,7 @@ impl Unifier {
         cons: &ConstraintFn,
     ) -> bool {
         let a = self.find(a);
-        match self.arc(a, f) {
+        match self.rep_arc(a, f) {
             Some(va) => self.unify(va, vb, ts, cons),
             None => {
                 self.push_comp(a, f, vb);

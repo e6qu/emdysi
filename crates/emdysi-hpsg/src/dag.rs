@@ -162,65 +162,106 @@ impl Dag {
 /// Two-way subsumption: `(a subsumes b, b subsumes a)`, where "subsumes"
 /// means "is equally or more general".
 pub fn subsumes_both(ts: &TypeSystem, a: &Dag, b: &Dag) -> (bool, bool) {
-    let mut fwd = true;
-    let mut bwd = true;
-    let mut amap = vec![u32::MAX; a.nodes.len()];
-    let mut bmap = vec![u32::MAX; b.nodes.len()];
-    let mut stack = vec![(0u32, 0u32)];
-    while let Some((x, y)) = stack.pop() {
-        // A pair already visited in both directions needs no second look.
-        if amap[x as usize] == y && bmap[y as usize] == x {
-            continue;
+    Subsumer::default().check(ts, a, b)
+}
+
+/// Reusable scratch space for subsumption checks.
+#[derive(Default)]
+pub struct Subsumer {
+    amap: Vec<u32>,
+    astamp: Vec<u32>,
+    bmap: Vec<u32>,
+    bstamp: Vec<u32>,
+    generation: u32,
+    stack: Vec<(u32, u32)>,
+}
+
+impl Subsumer {
+    fn prepare(&mut self, na: usize, nb: usize) {
+        if self.amap.len() < na {
+            self.amap.resize(na, 0);
+            self.astamp.resize(na, 0);
         }
-        // A reentrancy present on one side only makes that side more specific.
-        match amap[x as usize] {
-            u32::MAX => amap[x as usize] = y,
-            m if m != y => fwd = false,
-            _ => {}
+        if self.bmap.len() < nb {
+            self.bmap.resize(nb, 0);
+            self.bstamp.resize(nb, 0);
         }
-        match bmap[y as usize] {
-            u32::MAX => bmap[y as usize] = x,
-            m if m != x => bwd = false,
-            _ => {}
+        self.generation = self.generation.wrapping_add(1);
+        if self.generation == 0 {
+            self.astamp.iter_mut().for_each(|x| *x = 0);
+            self.bstamp.iter_mut().for_each(|x| *x = 0);
+            self.generation = 1;
         }
-        let (tx, ty) = (a.ty(x), b.ty(y));
-        if tx != ty {
-            if !ts.subsumed_by(ty, tx) {
+        self.stack.clear();
+    }
+
+    /// `(a subsumes b, b subsumes a)`.
+    pub fn check(&mut self, ts: &TypeSystem, a: &Dag, b: &Dag) -> (bool, bool) {
+        self.prepare(a.nodes.len(), b.nodes.len());
+        let g = self.generation;
+        let mut fwd = true;
+        let mut bwd = true;
+        self.stack.push((0, 0));
+        while let Some((x, y)) = self.stack.pop() {
+            let (xi, yi) = (x as usize, y as usize);
+            let a_seen = self.astamp[xi] == g;
+            let b_seen = self.bstamp[yi] == g;
+            // A pair already visited in both directions needs no second look.
+            if a_seen && b_seen && self.amap[xi] == y && self.bmap[yi] == x {
+                continue;
+            }
+            // A reentrancy present on one side only makes that side more specific.
+            if !a_seen {
+                self.astamp[xi] = g;
+                self.amap[xi] = y;
+            } else if self.amap[xi] != y {
                 fwd = false;
             }
-            if !ts.subsumed_by(tx, ty) {
+            if !b_seen {
+                self.bstamp[yi] = g;
+                self.bmap[yi] = x;
+            } else if self.bmap[yi] != x {
                 bwd = false;
             }
-        }
-        if !fwd && !bwd {
-            return (false, false);
-        }
-        let (ax, by) = (a.arcs(x), b.arcs(y));
-        let (mut i, mut j) = (0, 0);
-        while i < ax.len() || j < by.len() {
-            match (ax.get(i), by.get(j)) {
-                (Some(&(f, v)), Some(&(g, w))) if f == g => {
-                    stack.push((v, w));
-                    i += 1;
-                    j += 1;
-                }
-                (Some(&(f, _)), Some(&(g, _))) if f < g => {
+            let (tx, ty) = (a.ty(x), b.ty(y));
+            if tx != ty {
+                if !ts.subsumed_by(ty, tx) {
                     fwd = false;
-                    i += 1;
                 }
-                (Some(_), None) => {
-                    fwd = false;
-                    i += 1;
-                }
-                _ => {
+                if !ts.subsumed_by(tx, ty) {
                     bwd = false;
-                    j += 1;
                 }
             }
+            if !fwd && !bwd {
+                return (false, false);
+            }
+            let (ax, by) = (a.arcs(x), b.arcs(y));
+            let (mut i, mut j) = (0, 0);
+            while i < ax.len() || j < by.len() {
+                match (ax.get(i), by.get(j)) {
+                    (Some(&(f, v)), Some(&(h, w))) if f == h => {
+                        self.stack.push((v, w));
+                        i += 1;
+                        j += 1;
+                    }
+                    (Some(&(f, _)), Some(&(h, _))) if f < h => {
+                        fwd = false;
+                        i += 1;
+                    }
+                    (Some(_), None) => {
+                        fwd = false;
+                        i += 1;
+                    }
+                    _ => {
+                        bwd = false;
+                        j += 1;
+                    }
+                }
+            }
+            if !fwd && !bwd {
+                return (false, false);
+            }
         }
-        if !fwd && !bwd {
-            return (false, false);
-        }
+        (fwd, bwd)
     }
-    (fwd, bwd)
 }

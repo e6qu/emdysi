@@ -19,7 +19,7 @@ fn main() {
             println!(
                 "  [{}] {}\n      {}",
                 r.root,
-                r.tree.bracketed(),
+                r.tree.as_ref().map(|t| t.bracketed()).unwrap_or_default(),
                 r.derivation
             );
         }
