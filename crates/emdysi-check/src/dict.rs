@@ -1,10 +1,11 @@
-//! The bundled American English word list (ESDB/SCOWL size 60), used with
+//! The bundled English word list (ESDB/SCOWL size 60; American and British
+//! spellings, both -ise and -ize), used with
 //! the grammar's lexicon for spelling.
 
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
-const WORDS: &str = include_str!("../../../data/scowl/en_US-60.tsv");
+const WORDS: &str = include_str!("../../../data/scowl/en-60.tsv");
 
 /// Word -> commonness tier (35 most common .. 60).
 pub fn words() -> &'static HashMap<String, u8> {

@@ -63,6 +63,6 @@ notices in `THIRD_PARTY_NOTICES` once added.
 | `crates/emdysi-parse` | Pipeline: tokenizing, tagging, token mapping, lexical lookup, parsing with the ERG |
 | `grammar/erg/` | Vendored English Resource Grammar (MIT), see `VENDORED.md` |
 | `packs/` | Built-in rule packs |
-| `data/scowl/` | American English word list (ESDB/SCOWL size 60) |
+| `data/scowl/` | English word list, American and British spellings (ESDB/SCOWL size 60) |
 | `corpora/` | Test-only corpora, each with its own license |
 | `docs/` | Prior art, decisions, plan, dependency policy |

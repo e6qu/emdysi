@@ -81,7 +81,8 @@ reported. `{count}`, `{per}` and `{max}` are available in messages.
 
 ### `spelling`
 
-Lower-case words that neither the bundled word list (ESDB/SCOWL, size 60)
+Lower-case words that neither the bundled word list (ESDB/SCOWL, size 60,
+American and British spellings, both *-ise* and *-ize*)
 nor the grammar's lexicon and inflection rules know. Names, acronyms, numbers
 and inline code are skipped. Options are `min_length` (default 3) and
 `ignore` (a list of words). `{suggestion}` is available in messages. A

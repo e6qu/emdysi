@@ -9,6 +9,8 @@ Recorded 2026-10-01 after the [prior-art survey](prior-art.md).
 | D3 | POS tagging | Rule-based tagger for v1 (lexicon candidates + hand-written disambiguation). No statistical models trained on LDC or NC data. |
 | D4 | Grammar | **Full port of the English Resource Grammar.** We implement a DELPH-IN-compatible processor in Rust (TDL reader, typed feature structures, unification, morphology, REPP, chart mapping, chart parser) and run the vendored ERG unchanged. Phrase-structure trees come from the ERG's own node labels (`parse-nodes.tdl`). |
 | D5 | Input/output formats | Input: plain text and Markdown. Output: plain text and Markdown. |
+| D7 | Command name | The command-line tool is `en` (no common command uses that name). The package stays `emdysi` because the crates.io name `en` is taken. |
+| D8 | Spelling variants | Both American and British spellings are accepted (British *-ise* and *-ize* forms). |
 | D6 | Test corpora | May be vendored under `corpora/`, one directory per corpus with its license and provenance, only if redistribution is permitted (see [corpora/README.md](../corpora/README.md)). |
 
 ## Consequences
