@@ -127,6 +127,13 @@ pub struct Edge {
     pub pending: Vec<String>,
     pub lexical: bool,
     qc: Vec<TypeId>,
+    /// For daughter positions 0 and 1, the rules whose daughter this edge
+    /// passes the quick check for (bit per rule; syntactic phase only).
+    fits: [Vec<u64>; 2],
+}
+
+fn bit(set: &[u64], i: usize) -> bool {
+    set.get(i / 64).is_some_and(|w| w & (1 << (i % 64)) != 0)
 }
 
 pub struct ParserConfig {
@@ -136,7 +143,19 @@ pub struct ParserConfig {
     pub timeout: Duration,
 }
 
+/// Counters describing the work a parse did.
+#[derive(Debug, Clone, Default)]
+pub struct Stats {
+    pub attempts: usize,
+    pub qc_filtered: usize,
+    pub unify_failed: usize,
+    pub cyclic: usize,
+    pub unify_time: Duration,
+    pub copy_time: Duration,
+}
+
 pub struct ParseResult {
+    pub stats: Stats,
     pub chart: Vec<Edge>,
     /// Edges spanning the input that satisfy a root condition, with the root.
     pub readings: Vec<(usize, String)>,
@@ -157,6 +176,7 @@ pub struct Parser<'g> {
     by_end: Vec<Vec<usize>>,
     n: usize,
     deadline: Instant,
+    stats: Stats,
 }
 
 impl<'g> Parser<'g> {
@@ -179,6 +199,7 @@ impl<'g> Parser<'g> {
             by_end: Vec::new(),
             n: 0,
             deadline: Instant::now(),
+            stats: Stats::default(),
         }
     }
 
@@ -214,6 +235,7 @@ impl<'g> Parser<'g> {
                     pending: it.pending,
                     lexical: true,
                     qc,
+                    fits: Default::default(),
                 }
             })
             .collect();
@@ -250,6 +272,7 @@ impl<'g> Parser<'g> {
                         daughters: vec![id],
                         pending,
                         lexical: true,
+                        fits: Default::default(),
                     });
                 }
             }
@@ -298,6 +321,7 @@ impl<'g> Parser<'g> {
                 break;
             }
             let (start, end) = (self.chart[id].start, self.chart[id].end);
+            self.compute_fits(id);
             self.by_start[start].push(id);
             self.by_end[end].push(id);
             for ri in 0..self.rules.len() {
@@ -306,15 +330,29 @@ impl<'g> Parser<'g> {
                     continue;
                 }
                 match rule.dtrs.len() {
-                    1 => self.try_rule(ri, &[id], &mut agenda),
-                    2 => {
-                        let right: Vec<usize> = self.by_start[end].clone();
-                        for r in right {
-                            self.try_rule(ri, &[id, r], &mut agenda);
+                    1 => {
+                        if bit(&self.chart[id].fits[0], ri) {
+                            self.try_rule(ri, &[id], &mut agenda);
                         }
-                        let left: Vec<usize> = self.by_end[start].clone();
-                        for l in left {
-                            if l != id {
+                    }
+                    2 => {
+                        if bit(&self.chart[id].fits[0], ri) {
+                            let right: Vec<usize> = self.by_start[end]
+                                .iter()
+                                .copied()
+                                .filter(|&r| bit(&self.chart[r].fits[1], ri))
+                                .collect();
+                            for r in right {
+                                self.try_rule(ri, &[id, r], &mut agenda);
+                            }
+                        }
+                        if bit(&self.chart[id].fits[1], ri) {
+                            let left: Vec<usize> = self.by_end[start]
+                                .iter()
+                                .copied()
+                                .filter(|&l| l != id && bit(&self.chart[l].fits[0], ri))
+                                .collect();
+                            for l in left {
                                 self.try_rule(ri, &[l, id], &mut agenda);
                             }
                         }
@@ -344,12 +382,31 @@ impl<'g> Parser<'g> {
             }
         }
         ParseResult {
+            stats: self.stats,
             chart: self.chart,
             readings,
             positions: self.n,
             exhausted,
             filtered_lexical: filtered,
         }
+    }
+
+    /// Record which syntactic rule daughters an edge passes the quick check for.
+    fn compute_fits(&mut self, id: usize) {
+        let words = self.rules.len().div_ceil(64);
+        let mut fits = [vec![0u64; words], vec![0u64; words]];
+        let qc = &self.chart[id].qc;
+        for (ri, rule) in self.rules.iter().enumerate() {
+            if rule.lexical {
+                continue;
+            }
+            for (pos, dqc) in rule.dtr_qc.iter().enumerate().take(2) {
+                if QuickCheck::compatible(self.g, dqc, qc) {
+                    fits[pos][ri / 64] |= 1 << (ri % 64);
+                }
+            }
+        }
+        self.chart[id].fits = fits;
     }
 
     fn unifies(&mut self, a: &Arc<Dag>, b: &Arc<Dag>) -> bool {
@@ -382,6 +439,7 @@ impl<'g> Parser<'g> {
                 daughters: dtrs.to_vec(),
                 pending: Vec::new(),
                 lexical: false,
+                fits: Default::default(),
             });
             agenda.push(id);
         }
@@ -390,21 +448,33 @@ impl<'g> Parser<'g> {
     /// Unify a rule with its daughters and copy out the mother.
     fn apply(&mut self, ri: usize, dtrs: &[&Arc<Dag>], qcs: &[&Vec<TypeId>]) -> Option<Dag> {
         let rule = &self.rules[ri];
+        self.stats.attempts += 1;
         for (i, qc) in qcs.iter().enumerate() {
             if !QuickCheck::compatible(self.g, &rule.dtr_qc[i], qc) {
+                self.stats.qc_filtered += 1;
                 return None;
             }
         }
+        let t = Instant::now();
         let cons = self.g.constraint_fn();
         self.u.begin();
         let r = self.u.add(rule.dag.clone());
         for (i, d) in dtrs.iter().enumerate() {
             let h = self.u.add((*d).clone());
             if !self.u.unify(r + rule.dtrs[i], h, &self.g.ts, &cons) {
+                self.stats.unify_failed += 1;
+                self.stats.unify_time += t.elapsed();
                 return None;
             }
         }
-        self.u.copy(r, &self.config.deleted_daughters)
+        self.stats.unify_time += t.elapsed();
+        let t = Instant::now();
+        let out = self.u.copy(r, &self.config.deleted_daughters);
+        self.stats.copy_time += t.elapsed();
+        if out.is_none() {
+            self.stats.cyclic += 1;
+        }
+        out
     }
 }
 
