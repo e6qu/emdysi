@@ -51,7 +51,7 @@ fn main() {
                 }
             }
             let mut v: Vec<_> = counts.into_iter().collect();
-            v.sort_by(|a, b| b.1.cmp(&a.1));
+            v.sort_by_key(|x| std::cmp::Reverse(x.1));
             let states = r.chart.iter().fold([0usize; 4], |mut acc, e| {
                 acc[match e.state {
                     EdgeState::Active if e.lexical => 3,
