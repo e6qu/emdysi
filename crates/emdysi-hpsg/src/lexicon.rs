@@ -120,6 +120,11 @@ impl Lexicon {
         Some(d)
     }
 
+    /// Whether some entry's orthography starts with this word.
+    pub fn has_first_word(&self, w: &str) -> bool {
+        self.by_first.contains_key(w)
+    }
+
     pub fn is_stem(&self, s: &str) -> bool {
         self.stems.contains(s)
     }

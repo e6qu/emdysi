@@ -1,7 +1,7 @@
 //! The parsing pipeline: REPP tokenization, POS tagging, token mapping,
 //! lexical lookup and chart parsing with the English Resource Grammar.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -51,6 +51,8 @@ pub struct Erg {
     pub config: ParserConfig,
     pub labeler: Labeler,
     pub model: rank::Model,
+    /// Orthography of each lexical entry, by instance index.
+    pub orth: HashMap<usize, String>,
     /// How many of the best readings get a labelled tree.
     pub trees_for: usize,
 }
@@ -101,6 +103,46 @@ pub struct Reading {
     /// Ranking features and model score.
     pub features: Vec<String>,
     pub score: f64,
+    /// The derivation, flattened: node 0 is the top.
+    pub nodes: Vec<Node>,
+    /// The lexical items, in order.
+    pub words: Vec<Word>,
+}
+
+/// Character span of a sequence of lattice tokens.
+type TokenSpan<'a> = dyn Fn(&[usize]) -> Option<(usize, usize)> + 'a;
+
+/// A node of a derivation tree.
+#[derive(Debug, Clone)]
+pub struct Node {
+    /// Rule name, or lexical entry name for leaves.
+    pub name: String,
+    pub leaf: bool,
+    /// Character span in the sentence.
+    pub from: usize,
+    pub to: usize,
+    pub parent: Option<usize>,
+    pub children: Vec<usize>,
+}
+
+/// A word of a reading: a lexical entry with the lexical rules applied to it.
+#[derive(Debug, Clone)]
+pub struct Word {
+    pub surface: String,
+    /// Lexical entry name, e.g. `dog_n1`.
+    pub entry: String,
+    /// Dictionary form, e.g. `dog` for *dogs*.
+    pub lemma: String,
+    /// Lexical type, e.g. `n_-_c_le`.
+    pub le_type: String,
+    /// A generic entry for a word the grammar does not know.
+    pub generic: bool,
+    /// Lexical rules applied, innermost first (e.g. `n_pl_olr`).
+    pub rules: Vec<String>,
+    pub from: usize,
+    pub to: usize,
+    /// Index of the leaf in [`Reading::nodes`].
+    pub node: usize,
 }
 
 #[derive(Debug, Clone)]
@@ -230,7 +272,13 @@ impl Erg {
         };
         let lexicon = Lexicon::new(&grammar, morph, lex_paths);
         let labeler = Labeler::new(&grammar, &mut u).ok_or_else(|| err("no parse-node labels"))?;
+        let orth = lexicon
+            .entries
+            .iter()
+            .map(|e| (e.inst, e.orth.join(" ")))
+            .collect();
         Ok(Erg {
+            orth,
             model: rank::Model::parse(DEFAULT_MODEL),
             trees_for: 3,
             labeler,
@@ -262,6 +310,17 @@ impl Erg {
 
     /// Parse one sentence.
     pub fn parse(&self, text: &str) -> Result<Parse, Error> {
+        self.parse_with(text, &self.config)
+    }
+
+    /// Parse one sentence with a different time limit.
+    pub fn parse_with_timeout(&self, text: &str, timeout: Duration) -> Result<Parse, Error> {
+        let mut config = self.config.clone();
+        config.timeout = timeout;
+        self.parse_with(text, &config)
+    }
+
+    fn parse_with(&self, text: &str, config: &ParserConfig) -> Result<Parse, Error> {
         let t0 = std::time::Instant::now();
         let tokens = self.tokens(text);
         let (lat, _) = self.map_tokens(&tokens, false)?;
@@ -272,7 +331,7 @@ impl Erg {
             &self.grammar,
             &self.rules,
             &self.qc,
-            &self.config,
+            config,
             &self.lexical_filtering,
         );
         let result: ParseResult = parser.parse(&lat, items);
@@ -285,17 +344,22 @@ impl Erg {
         };
         let chars: Vec<char> = text.chars().collect();
         let (from_path, to_path) = (self.grammar.path("+FROM"), self.grammar.path("+TO"));
-        let surface = |d: &Deriv| -> Option<String> {
-            let EdgeKind::Lex { tokens, .. } = &d.kind else {
-                return None;
-            };
+        let token_span = |tokens: &[usize]| -> Option<(usize, usize)> {
             let span = |t: usize, p: &Option<Vec<emdysi_hpsg::FeatId>>| {
                 string_at(&self.grammar.ts, &lat.entries[t].dag, p.as_ref()?)?
                     .parse::<usize>()
                     .ok()
             };
-            let from = span(*tokens.first()?, &from_path)?;
-            let to = span(*tokens.last()?, &to_path)?;
+            Some((
+                span(*tokens.first()?, &from_path)?,
+                span(*tokens.last()?, &to_path)?,
+            ))
+        };
+        let surface = |d: &Deriv| -> Option<String> {
+            let EdgeKind::Lex { tokens, .. } = &d.kind else {
+                return None;
+            };
+            let (from, to) = token_span(tokens)?;
             Some(chars.get(from..to)?.iter().collect())
         };
         let mut scored: Vec<(f64, Vec<String>, &emdysi_hpsg::parser::Reading)> = result
@@ -310,17 +374,22 @@ impl Erg {
         let readings = scored
             .into_iter()
             .enumerate()
-            .map(|(i, (score, features, r))| Reading {
-                root: r.root.clone(),
-                derivation: derivation(&self.grammar, &self.rules, &r.deriv, &forms),
-                // Labelling costs unifications; only the best readings get trees.
-                tree: (i < self.trees_for).then(|| {
-                    self.labeler
-                        .tree(&self.grammar, &mut u, &r.deriv, &surface)
-                        .collapse()
-                }),
-                score,
-                features,
+            .map(|(i, (score, features, r))| {
+                let (nodes, words) = self.flatten(&r.deriv, &token_span, &chars);
+                Reading {
+                    nodes,
+                    words,
+                    root: r.root.clone(),
+                    derivation: derivation(&self.grammar, &self.rules, &r.deriv, &forms),
+                    // Labelling costs unifications; only the best readings get trees.
+                    tree: (i < self.trees_for).then(|| {
+                        self.labeler
+                            .tree(&self.grammar, &mut u, &r.deriv, &surface)
+                            .collapse()
+                    }),
+                    score,
+                    features,
+                }
             })
             .collect();
         Ok(Parse {
@@ -331,6 +400,161 @@ impl Erg {
             exhausted: result.exhausted,
             elapsed: t0.elapsed(),
         })
+    }
+
+    /// Whether the grammar knows a word form, directly or through its
+    /// orthographic rules (e.g. *dogs*, *stopped*).
+    pub fn known_word(&self, word: &str) -> bool {
+        let w = word.to_lowercase();
+        if self.lexicon.has_first_word(&w) {
+            return true;
+        }
+        // Derivational prefixes (re-, co-, un-, ...) chain freely in the
+        // morphology and are filtered by unification when parsing; for
+        // spelling, allow at most one, on a stem of four letters or more.
+        self.lexicon
+            .morph
+            .analyze(&w, &|s| self.lexicon.is_stem(s), 3)
+            .iter()
+            .any(|a| {
+                let derivational = a.rules.iter().filter(|r| r.ends_with("_dlr")).count();
+                derivational == 0 || derivational == 1 && a.stem.chars().count() >= 4
+            })
+    }
+
+    /// Spelling suggestions for an unknown word: known words within edit
+    /// distance 1, or 2 if there are none, best first.
+    pub fn spelling_suggestions(&self, word: &str, max: usize) -> Vec<String> {
+        let lower = word.to_lowercase();
+        let mut found: Vec<(usize, String)> = Vec::new();
+        let mut seen = HashSet::new();
+        for e in edits(&lower) {
+            if seen.insert(e.clone()) && self.known_word(&e) {
+                found.push((1, e));
+            }
+        }
+        if found.is_empty() && lower.chars().count() <= 12 {
+            let first: Vec<String> = seen.iter().cloned().collect();
+            for e1 in first {
+                for e2 in edits(&e1) {
+                    if seen.insert(e2.clone()) && self.known_word(&e2) {
+                        found.push((2, e2));
+                    }
+                }
+            }
+        }
+        // Prefer suggestions that keep the first letter, then by length
+        // difference, then alphabetically for determinism.
+        let first = lower.chars().next();
+        let len = lower.chars().count() as i64;
+        found.sort_by_key(|(d, w)| {
+            (
+                *d,
+                w.chars().next() != first,
+                (w.chars().count() as i64 - len).abs(),
+                w.clone(),
+            )
+        });
+        let restore_case = |w: &str| -> String {
+            if word.chars().next().is_some_and(char::is_uppercase) {
+                let mut c = w.chars();
+                c.next()
+                    .map(|f| f.to_uppercase().chain(c).collect())
+                    .unwrap_or_default()
+            } else {
+                w.to_string()
+            }
+        };
+        found
+            .into_iter()
+            .take(max)
+            .map(|(_, w)| restore_case(&w))
+            .collect()
+    }
+
+    /// Flatten a derivation into nodes and words with character spans.
+    fn flatten(&self, d: &Deriv, token_span: &TokenSpan, chars: &[char]) -> (Vec<Node>, Vec<Word>) {
+        let mut nodes = Vec::new();
+        let mut words = Vec::new();
+        self.flatten_into(d, None, token_span, chars, &mut nodes, &mut words);
+        (nodes, words)
+    }
+
+    fn flatten_into(
+        &self,
+        d: &Deriv,
+        parent: Option<usize>,
+        token_span: &TokenSpan,
+        chars: &[char],
+        nodes: &mut Vec<Node>,
+        words: &mut Vec<Word>,
+    ) -> usize {
+        let id = nodes.len();
+        let (name, leaf) = match &d.kind {
+            EdgeKind::Lex { inst, .. } => (self.grammar.instances[*inst].name.clone(), true),
+            EdgeKind::Rule(ri) => (self.rules[*ri].name.clone(), false),
+        };
+        nodes.push(Node {
+            name,
+            leaf,
+            from: 0,
+            to: 0,
+            parent,
+            children: Vec::new(),
+        });
+        if let EdgeKind::Lex { inst, tokens } = &d.kind {
+            let (from, to) = token_span(tokens).unwrap_or((0, 0));
+            nodes[id].from = from;
+            nodes[id].to = to;
+            let surface: String = chars
+                .get(from..to)
+                .map(|c| c.iter().collect())
+                .unwrap_or_default();
+            let generic =
+                self.grammar.instances[*inst].status.as_deref() == Some("generic-lex-entry");
+            // Lexical rules applied above this leaf, innermost first.
+            let mut rules = Vec::new();
+            let mut p = parent;
+            while let Some(pi) = p {
+                let rule = &nodes[pi].name;
+                if !self.rules.iter().any(|r| r.lexical && r.name == *rule) {
+                    break;
+                }
+                rules.push(rule.clone());
+                p = nodes[pi].parent;
+            }
+            rules.reverse();
+            words.push(Word {
+                lemma: if generic {
+                    surface.to_lowercase()
+                } else {
+                    self.orth
+                        .get(inst)
+                        .cloned()
+                        .unwrap_or_else(|| surface.to_lowercase())
+                },
+                surface,
+                entry: self.grammar.instances[*inst].name.clone(),
+                le_type: rank::lexical_type(&self.grammar, *inst),
+                generic,
+                rules,
+                from,
+                to,
+                node: id,
+            });
+            return id;
+        }
+        let mut span: Option<(usize, usize)> = None;
+        for k in &d.daughters {
+            let c = self.flatten_into(k, Some(id), token_span, chars, nodes, words);
+            nodes[id].children.push(c);
+            let (f, t) = (nodes[c].from, nodes[c].to);
+            span = Some(span.map_or((f, t), |(a, b)| (a.min(f), b.max(t))));
+        }
+        let (f, t) = span.unwrap_or((0, 0));
+        nodes[id].from = f;
+        nodes[id].to = t;
+        id
     }
 
     /// The feature structure of an input token, as the token-mapping rules
@@ -380,4 +604,38 @@ impl Erg {
         mapper.apply(&mut lat);
         Ok((lat, mapper.trace.unwrap_or_default()))
     }
+}
+
+/// All strings within one edit (deletion, transposition, substitution,
+/// insertion) of `w`, over lower-case letters, hyphen and apostrophe.
+pub fn edits(w: &str) -> Vec<String> {
+    const ALPHABET: &str = "abcdefghijklmnopqrstuvwxyz-'";
+    let c: Vec<char> = w.chars().collect();
+    let mut out = Vec::new();
+    let s = |v: &[char]| v.iter().collect::<String>();
+    for i in 0..c.len() {
+        let mut d = c.clone();
+        d.remove(i);
+        out.push(s(&d));
+        if i + 1 < c.len() {
+            let mut t = c.clone();
+            t.swap(i, i + 1);
+            out.push(s(&t));
+        }
+        for a in ALPHABET.chars() {
+            if a != c[i] {
+                let mut r = c.clone();
+                r[i] = a;
+                out.push(s(&r));
+            }
+        }
+    }
+    for i in 0..=c.len() {
+        for a in ALPHABET.chars() {
+            let mut n = c.clone();
+            n.insert(i, a);
+            out.push(s(&n));
+        }
+    }
+    out
 }

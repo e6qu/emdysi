@@ -16,6 +16,17 @@ fn main() {
         let items = erg.lexicon.instantiate(&erg.grammar, &lat, &mut u);
         let t3 = t.elapsed();
         let n = items.len();
+        if std::env::var("LEX").is_ok() {
+            for it in &items {
+                println!(
+                    "  lex {}-{} {} {:?}",
+                    lat.key(it.start),
+                    lat.key(it.end),
+                    erg.grammar.instances[it.inst].name,
+                    it.pending
+                );
+            }
+        }
         let r = Parser::new(
             &erg.grammar,
             &erg.rules,

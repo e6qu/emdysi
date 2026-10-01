@@ -7,8 +7,41 @@ An MIT-licensed English text analyzer written in Rust. It aims to:
 - run semi-deterministic style and substance checks, especially on
   AI-generated prose, and enforce configurable style guides.
 
-Status: early. The engine that runs the English Resource Grammar is being built (see [`docs/plan.md`](docs/plan.md)). See [`docs/prior-art.md`](docs/prior-art.md) for the survey
-of existing tools and data, their licenses, and the proposed architecture.
+It runs the [English Resource Grammar](https://github.com/delph-in/erg) (ERG),
+a broad-coverage HPSG grammar, with its own Rust implementation of the
+DELPH-IN processing stack: TDL reader, typed feature structures and
+unification, REPP tokenizer, chart mapping, morphology and a packing chart
+parser. On the ERG's own test suites it parses 98% of the grammatical items
+and finds the gold analysis among its readings for 98.5% of them.
+
+Status: working prototype. See [`docs/plan.md`](docs/plan.md) for progress,
+[`docs/prior-art.md`](docs/prior-art.md) for the survey of existing tools and
+data, and [`docs/decisions.md`](docs/decisions.md) for the choices made.
+
+## Usage
+
+```sh
+cargo build --release
+target/release/emdysi check README.md             # report problems
+target/release/emdysi check --format markdown notes.txt
+target/release/emdysi fix draft.md > fixed.md     # apply safe fixes
+target/release/emdysi parse --derivations essay.md
+target/release/emdysi packs                       # list rules
+```
+
+Input is plain text or Markdown (chosen from the file extension, or with
+`--input`); output is plain text or Markdown (`--format`). Rule packs are
+TOML files; see [`docs/rules.md`](docs/rules.md). The built-in packs are:
+
+- `core`: spelling (with safe automatic fixes) and grammaticality;
+- `ai-tells`: vocabulary, stock phrases and constructions over-represented
+  in machine-written prose (contrast frames, trailing participial clauses,
+  three-part lists, em-dash density, chat-assistant residue);
+- `plain-style`: passive voice, long sentences, intensifiers, wordy phrases,
+  expletive *there*, repeated words.
+
+Loading the grammar takes about ten seconds; parsing takes from tens of
+milliseconds to a few seconds per sentence.
 
 ## License
 
@@ -23,7 +56,11 @@ notices in `THIRD_PARTY_NOTICES` once added.
 | `crates/emdysi-hpsg` | Type hierarchy, typed feature structures, unification, grammar compilation |
 | `crates/emdysi-repp` | REPP tokenizer with character offsets |
 | `crates/emdysi-text` | Markdown and plain-text prose blocks with source offsets; sentence segmentation |
+| `crates/emdysi-check` | Document analysis, rule packs, diagnostics, fixes, reports |
+| `crates/emdysi` | Command-line tool |
 | `crates/emdysi-parse` | Pipeline: tokenizing, tagging, token mapping, lexical lookup, parsing with the ERG |
 | `grammar/erg/` | Vendored English Resource Grammar (MIT), see `VENDORED.md` |
+| `packs/` | Built-in rule packs |
+| `data/scowl/` | American English word list (ESDB/SCOWL size 60) |
 | `corpora/` | Test-only corpora, each with its own license |
 | `docs/` | Prior art, decisions, plan, dependency policy |

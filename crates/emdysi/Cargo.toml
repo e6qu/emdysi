@@ -1,0 +1,15 @@
+[package]
+name = "emdysi"
+description = "Command-line checker for English prose: grammar, spelling, style and AI-writing tells"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+emdysi-check = { path = "../emdysi-check" }
+emdysi-parse = { path = "../emdysi-parse" }
+
+[lints]
+workspace = true

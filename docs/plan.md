@@ -17,9 +17,9 @@ with the ERG port (decision D4) as the parsing core.
 | M9 | Output: derivation trees, labelled phrase-structure trees, sentence type; plain-text and Markdown rendering | derivations and labelled trees done |
 | M10 | Parse selection (heuristic first) and robust fallback for fragments | |
 | M11 | Sentence segmentation and Markdown input with span mapping | done (46/47 Golden Rules) |
-| M12 | Spelling: SCOWL-based lexicon, suggestions, confident auto-fix | |
-| M13 | Rules engine and DSL; AI-prose and style-guide packs | |
-| M14 | CLI | |
+| M12 | Spelling: SCOWL-based lexicon, suggestions, confident auto-fix | done |
+| M13 | Rules engine and DSL; AI-prose and style-guide packs | first version: 8 rule kinds, 3 packs |
+| M14 | CLI | `check`, `fix`, `parse`, `packs` |
 
 Validation: the gold derivations in `corpora/erg-gold/` (ERG `mrs` and `csli`
 test suites) are the reference for M3–M9. The engine should reproduce the

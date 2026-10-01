@@ -56,7 +56,7 @@ pub fn tag(form: &str, initial: bool) -> Vec<Tag> {
     } else if lower.ends_with("ed") {
         vec![("VBD", 0.4), ("VBN", 0.4), ("JJ", 0.2)]
     } else if lower.ends_with("ss") || lower.ends_with("us") || lower.ends_with("is") {
-        vec![("NN", 0.7), ("JJ", 0.3)]
+        vec![("NN", 0.8), ("JJ", 0.2)]
     } else if lower.ends_with('s') {
         vec![("NNS", 0.6), ("VBZ", 0.4)]
     } else if [
@@ -65,7 +65,8 @@ pub fn tag(form: &str, initial: bool) -> Vec<Tag> {
     .iter()
     .any(|s| lower.ends_with(s))
     {
-        vec![("JJ", 0.7), ("NN", 0.3)]
+        // The ERG drops a JJ hypothesis when NN has 0.3 or more.
+        vec![("JJ", 0.8), ("NN", 0.2)]
     } else if ["ize", "ise", "ify", "ate"]
         .iter()
         .any(|s| lower.ends_with(s))

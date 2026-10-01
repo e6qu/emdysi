@@ -177,6 +177,7 @@ fn bit(set: &[u64], i: usize) -> bool {
     set.get(i / 64).is_some_and(|w| w & (1 << (i % 64)) != 0)
 }
 
+#[derive(Clone)]
 pub struct ParserConfig {
     pub deleted_daughters: Vec<FeatId>,
     pub roots: Vec<(String, Arc<Dag>)>,
