@@ -24,11 +24,11 @@ data, and [`docs/decisions.md`](docs/decisions.md) for the choices made.
 
 ```sh
 cargo build --release
-target/release/emdysi check README.md             # report problems
-target/release/emdysi check --format markdown notes.txt
-target/release/emdysi fix draft.md > fixed.md     # apply safe fixes
-target/release/emdysi parse --derivations essay.md
-target/release/emdysi packs                       # list rules
+target/release/en check README.md             # report problems
+target/release/en check --format markdown notes.txt
+target/release/en fix draft.md > fixed.md     # apply safe fixes
+target/release/en parse --derivations essay.md
+target/release/en packs                       # list rules
 ```
 
 Input is plain text or Markdown (chosen from the file extension, or with
@@ -59,7 +59,7 @@ notices in `THIRD_PARTY_NOTICES` once added.
 | `crates/emdysi-repp` | REPP tokenizer with character offsets |
 | `crates/emdysi-text` | Markdown and plain-text prose blocks with source offsets; sentence segmentation |
 | `crates/emdysi-check` | Document analysis, rule packs, diagnostics, fixes, reports |
-| `crates/emdysi` | Command-line tool |
+| `crates/emdysi` | Command-line tool, installed as `en` |
 | `crates/emdysi-parse` | Pipeline: tokenizing, tagging, token mapping, lexical lookup, parsing with the ERG |
 | `grammar/erg/` | Vendored English Resource Grammar (MIT), see `VENDORED.md` |
 | `packs/` | Built-in rule packs |

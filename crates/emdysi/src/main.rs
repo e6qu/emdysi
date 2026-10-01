@@ -1,4 +1,4 @@
-//! `emdysi`: check English prose in plain text or Markdown.
+//! `en`: check English prose in plain text or Markdown.
 
 use std::io::Read;
 use std::path::PathBuf;
@@ -19,13 +19,13 @@ const BUILTIN_PACKS: &[(&str, &str)] = &[
 ];
 
 const USAGE: &str = "\
-emdysi: grammar, spelling, style and AI-writing checks for English prose
+en: grammar, spelling, style and AI-writing checks for English prose
 
 USAGE:
-    emdysi check [OPTIONS] [FILE...]   report problems (stdin if no file)
-    emdysi fix   [OPTIONS] [FILE...]   print the text with automatic fixes applied
-    emdysi parse [OPTIONS] [FILE...]   show sentence analyses
-    emdysi packs                       list built-in rule packs and rules
+    en check [OPTIONS] [FILE...]   report problems (stdin if no file)
+    en fix   [OPTIONS] [FILE...]   print the text with automatic fixes applied
+    en parse [OPTIONS] [FILE...]   show sentence analyses
+    en packs                       list built-in rule packs and rules
 
 OPTIONS:
     --pack NAME|FILE       rule pack to use (repeatable; default: core, ai-tells, plain-style)

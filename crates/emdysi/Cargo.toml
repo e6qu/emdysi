@@ -13,3 +13,9 @@ emdysi-parse = { path = "../emdysi-parse" }
 
 [lints]
 workspace = true
+
+# The command is `en`; the crates.io name `en` belongs to another project,
+# so the package keeps the `emdysi` name.
+[[bin]]
+name = "en"
+path = "src/main.rs"

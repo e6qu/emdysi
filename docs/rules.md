@@ -61,7 +61,7 @@ its constructions, so many syntactic checks are exact:
 - `preceded_by` and `window` (default 3): require one of these words within
   `window` tokens before the match, e.g. a form of *be* for passives.
 
-To find the names to use, run `emdysi parse --derivations` on an example.
+To find the names to use, run `en parse --derivations` on an example.
 
 ### `coordination`
 
