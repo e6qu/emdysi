@@ -38,6 +38,8 @@ impl std::fmt::Display for HierarchyError {
 
 impl std::error::Error for HierarchyError {}
 
+type GlbCache = HashMap<(TypeId, TypeId), Option<TypeId>, BuildHasherDefault<FxHasher>>;
+
 pub struct Hierarchy {
     names: Vec<String>,
     index: HashMap<String, TypeId>,
@@ -49,7 +51,7 @@ pub struct Hierarchy {
     ancestors: Vec<BitSet>,
     parents: Vec<Vec<TypeId>>,
     children: Vec<Vec<TypeId>>,
-    glb_cache: RwLock<HashMap<(TypeId, TypeId), Option<TypeId>, BuildHasherDefault<FxHasher>>>,
+    glb_cache: RwLock<GlbCache>,
 }
 
 impl Hierarchy {

@@ -221,6 +221,9 @@ pub struct ParseResult {
     pub filtered_lexical: usize,
 }
 
+/// A daughter quick-check vector and the (rule, daughter) slots using it.
+type QcGroup = (Vec<TypeId>, Vec<(usize, usize)>);
+
 pub struct Parser<'g> {
     pub g: &'g Grammar,
     pub rules: &'g [Rule],
@@ -229,7 +232,7 @@ pub struct Parser<'g> {
     pub lexical_filter: &'g [MapRule],
     /// Distinct daughter quick-check vectors of syntactic rules, with the
     /// (rule, daughter position) slots that use each.
-    qc_groups: Vec<(Vec<TypeId>, Vec<(usize, usize)>)>,
+    qc_groups: Vec<QcGroup>,
     /// Quick-check slots that pass through features ignored by packing.
     qc_restricted: Vec<bool>,
     subsumer: Subsumer,
