@@ -9,7 +9,7 @@ use std::time::Duration;
 
 use emdysi_hpsg::chartmap::{ChartMapper, Lattice, MapRule, compile_rules, string_at};
 use emdysi_hpsg::labels::{Labeler, Tree};
-use emdysi_hpsg::lexicon::{LexPaths, Lexicon};
+use emdysi_hpsg::lexicon::{LexItem, LexPaths, Lexicon};
 use emdysi_hpsg::morph::Morphology;
 use emdysi_hpsg::parser::{
     Deriv, EdgeKind, ParseResult, Parser, ParserConfig, QuickCheck, Rule, derivation,
@@ -57,6 +57,8 @@ pub struct Erg {
     pub trees_for: usize,
     /// Lexical type of each instance, by instance index.
     pub le_types: Vec<String>,
+    /// Chart-pruning beam for a first, faster pass (see `parse`).
+    pub first_beam: Option<usize>,
 }
 
 /// Edges kept per chart cell when pruning (see [`ParserConfig::cell_beam`]).
@@ -64,6 +66,35 @@ pub const DEFAULT_CELL_BEAM: usize = 40;
 
 /// The parse-ranking model trained on the vendored gold profiles.
 pub const DEFAULT_MODEL: &str = include_str!("../data/rank.tsv");
+
+/// Whether a root condition name is the ERG's strict one (formal edited
+/// text), in American or British spelling.
+pub fn is_strict(root: &str) -> bool {
+    root == "root_strict" || root == "root_strict_br"
+}
+
+/// Replace `DIALECT us` in the top-level feature structure of a root
+/// condition with `DIALECT <to>`. Returns whether there was one.
+fn set_dialect(body: &mut emdysi_tdl::Conj, to: &str) -> bool {
+    let mut found = false;
+    for t in &mut body.0 {
+        if let emdysi_tdl::Term::Avm(fvs) = t {
+            for fv in fvs {
+                if fv.path.len() == 1 && fv.path[0].eq_ignore_ascii_case("DIALECT") {
+                    for v in &mut fv.value.0 {
+                        if let emdysi_tdl::Term::Type(n) = v {
+                            if n.eq_ignore_ascii_case("us") {
+                                *n = to.to_string();
+                                found = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    found
+}
 
 /// Read a `key := value value ... .` setting from an ACE configuration file.
 fn ace_setting(src: &str, key: &str) -> Vec<String> {
@@ -259,8 +290,17 @@ impl Erg {
                 .instance(&name)
                 .ok_or_else(|| err(format!("no root {name}")))?;
             let dag = grammar.expand(&inst.body, &mut u).map_err(Error)?;
-            roots.push((name, Arc::new(dag)));
+            // British spelling is as acceptable as American: a root that
+            // requires `DIALECT us` gets a `_br` twin requiring `br`.
+            let mut br = inst.body.clone();
+            let twin = set_dialect(&mut br, "br");
+            roots.push((name.clone(), Arc::new(dag)));
+            if twin {
+                let dag = grammar.expand(&br, &mut u).map_err(Error)?;
+                roots.push((format!("{name}_br"), Arc::new(dag)));
+            }
         }
+        let preferred_roots = roots.iter().take_while(|(n, _)| is_strict(n)).count();
         let deleted_daughters = ace_setting(&config_src, "deleted-daughters")
             .iter()
             .filter_map(|f| grammar.feat(f))
@@ -285,6 +325,7 @@ impl Erg {
                 .and_then(|_| grammar.ts.hier.id("sign")),
             cell_beam: Some(DEFAULT_CELL_BEAM),
             cell_beam_from: 20,
+            preferred_roots,
             unpack_beam: 100,
             fragments: true,
         };
@@ -299,6 +340,7 @@ impl Erg {
             .map(|i| rank::lexical_type(&grammar, i))
             .collect();
         Ok(Erg {
+            first_beam: Some(20),
             le_types,
             orth,
             model: rank::Model::parse(DEFAULT_MODEL),
@@ -342,6 +384,20 @@ impl Erg {
         self.parse_with(text, &config)
     }
 
+    /// Parse one sentence with a time limit and at most `max_readings`
+    /// readings (the best-scoring ones are unpacked first).
+    pub fn parse_limited(
+        &self,
+        text: &str,
+        timeout: Duration,
+        max_readings: usize,
+    ) -> Result<Parse, Error> {
+        let mut config = self.config.clone();
+        config.timeout = timeout;
+        config.max_readings = max_readings;
+        self.parse_with(text, &config)
+    }
+
     fn parse_with(&self, text: &str, config: &ParserConfig) -> Result<Parse, Error> {
         let t0 = std::time::Instant::now();
         let tokens = self.tokens(text);
@@ -355,15 +411,49 @@ impl Erg {
             model: &self.model,
             le_types: &self.le_types,
         };
-        let parser = Parser::new(
-            &self.grammar,
-            &self.rules,
-            &self.qc,
-            config,
-            &self.lexical_filtering,
-        )
-        .with_scorer(&scorer);
-        let result: ParseResult = parser.parse(&lat, items);
+        let run = |config: &ParserConfig, items: Vec<LexItem>| -> ParseResult {
+            Parser::new(
+                &self.grammar,
+                &self.rules,
+                &self.qc,
+                config,
+                &self.lexical_filtering,
+            )
+            .with_scorer(&scorer)
+            .parse(&lat, items)
+        };
+        let strict = |r: &ParseResult| r.readings.iter().any(|r| is_strict(&r.root));
+        let complete = |r: &ParseResult| r.readings.iter().any(|r| r.root != "fragment");
+        // With chart pruning, a narrow beam first; the configured one only
+        // when that finds no strict analysis and time remains.
+        let result = match (self.first_beam, config.cell_beam) {
+            (Some(first), Some(beam)) if first < beam => {
+                let narrow = ParserConfig {
+                    cell_beam: Some(first),
+                    ..config.clone()
+                };
+                let r = run(&narrow, items.clone());
+                let left = config.timeout.saturating_sub(t0.elapsed());
+                if strict(&r)
+                    || left < Duration::from_secs(1)
+                    || r.positions <= config.cell_beam_from
+                {
+                    r
+                } else {
+                    let wide = ParserConfig {
+                        timeout: left,
+                        ..config.clone()
+                    };
+                    let r2 = run(&wide, items);
+                    if strict(&r2) || (complete(&r2) && !complete(&r)) {
+                        r2
+                    } else {
+                        r
+                    }
+                }
+            }
+            _ => run(config, items),
+        };
         let form_path = self.lexicon.paths.token_form.clone();
         let forms = |toks: &[usize]| -> String {
             toks.iter()

@@ -36,6 +36,8 @@ fn node_name(g: &Grammar, rules: &[Rule], d: &Deriv) -> String {
 
 /// Feature strings of a derivation rooted with root condition `root`.
 pub fn features(g: &Grammar, rules: &[Rule], d: &Deriv, root: &str) -> Vec<String> {
+    // British-spelling twins of root conditions share their weights.
+    let root = root.strip_suffix("_br").unwrap_or(root);
     let mut out = vec![
         format!("root:{root}"),
         format!("top:{root}>{}", node_name(g, rules, d)),
