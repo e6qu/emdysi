@@ -7,8 +7,8 @@ with the ERG port (decision D4) as the parsing core.
 |---|---|---|
 | M0 | Workspace, decisions, license policy, vendored ERG, test corpora | done |
 | M1 | `emdysi-tdl`: TDL reader that loads the whole ERG | done |
-| M2 | Type hierarchy: multiple inheritance, addenda, GLB closure, feature appropriateness | |
-| M3 | Typed feature structures: unification, copying, subsumption; well-typed expansion of every ERG type, rule and lexical entry | |
+| M2 | Type hierarchy: multiple inheritance, addenda, GLB closure, feature appropriateness | done |
+| M3 | Typed feature structures: unification, copying, subsumption; well-typed expansion of every ERG type, rule and lexical entry | unification, copying and expansion done; subsumption pending |
 | M4 | REPP tokenizer (`rpp/`) and token lattice with character spans | |
 | M5 | Chart mapping: token-mapping rules (`tmr/`) and lexical filtering (`lfr.tdl`) | |
 | M6 | Orthographic morphology (`%suffix`/`%prefix`, letter sets, `irregs.tab`) and lexical lookup, including generic entries for unknown words | |

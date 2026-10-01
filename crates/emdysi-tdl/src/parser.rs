@@ -183,7 +183,8 @@ impl Parser<'_> {
                             Tok::Comma => continue,
                             Tok::RBrack => break,
                             t => {
-                                return self.err(format!("expected ',' or ']' in AVM, found {t:?}"));
+                                return self
+                                    .err(format!("expected ',' or ']' in AVM, found {t:?}"));
                             }
                         }
                     }
@@ -202,8 +203,9 @@ impl Parser<'_> {
                             Tok::Comma => continue,
                             Tok::RDiff => break,
                             t => {
-                                return self
-                                    .err(format!("expected ',' or '!>' in diff-list, found {t:?}"));
+                                return self.err(format!(
+                                    "expected ',' or '!>' in diff-list, found {t:?}"
+                                ));
                             }
                         }
                     }

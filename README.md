@@ -20,6 +20,7 @@ notices in `THIRD_PARTY_NOTICES` once added.
 | Path | Contents |
 |---|---|
 | `crates/emdysi-tdl` | Reader for TDL, the grammar-definition language of the ERG |
+| `crates/emdysi-hpsg` | Type hierarchy, typed feature structures, unification, grammar compilation |
 | `grammar/erg/` | Vendored English Resource Grammar (MIT), see `VENDORED.md` |
 | `corpora/` | Test-only corpora, each with its own license |
 | `docs/` | Prior art, decisions, plan, dependency policy |

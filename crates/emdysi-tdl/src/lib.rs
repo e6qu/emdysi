@@ -55,6 +55,14 @@ pub fn load(path: &Path, env: Env) -> Result<Loaded> {
     Ok(out)
 }
 
+/// Load TDL from a string. `:include` directives are not allowed.
+pub fn load_str(src: &str, name: &str, env: Env) -> Result<Loaded> {
+    let mut out = Loaded::default();
+    let mut stack = vec![env];
+    apply_statements(parse_str(src, name)?, name, None, &mut stack, &mut out)?;
+    Ok(out)
+}
+
 /// Resolve an `:include` name relative to the including file: names without
 /// an extension get `.tdl` appended.
 pub fn resolve_include(from: &Path, name: &str) -> PathBuf {
@@ -73,7 +81,17 @@ fn load_into(path: &Path, stack: &mut Vec<Env>, out: &mut Loaded) -> Result<()> 
     })?;
     let name = path.display().to_string();
     out.files.push(path.to_path_buf());
-    for st in parse_str(&src, &name)? {
+    apply_statements(parse_str(&src, &name)?, &name, Some(path), stack, out)
+}
+
+fn apply_statements(
+    statements: Vec<Statement>,
+    name: &str,
+    path: Option<&Path>,
+    stack: &mut Vec<Env>,
+    out: &mut Loaded,
+) -> Result<()> {
+    for st in statements {
         match st {
             Statement::Def(def) => {
                 let env = stack.last().cloned().unwrap_or(Env::Type);
@@ -88,7 +106,7 @@ fn load_into(path: &Path, stack: &mut Vec<Env>, out: &mut Loaded) -> Result<()> 
                     "instance" => Env::Instance(status),
                     _ => {
                         return Err(Error::syntax(
-                            &name,
+                            name,
                             0,
                             format!("unknown environment :{kind}"),
                         ));
@@ -98,11 +116,16 @@ fn load_into(path: &Path, stack: &mut Vec<Env>, out: &mut Loaded) -> Result<()> 
             }
             Statement::End { .. } => {
                 if stack.len() <= 1 {
-                    return Err(Error::syntax(&name, 0, "unbalanced :end"));
+                    return Err(Error::syntax(name, 0, "unbalanced :end"));
                 }
                 stack.pop();
             }
-            Statement::Include(inc) => load_into(&resolve_include(path, &inc), stack, out)?,
+            Statement::Include(inc) => match path {
+                Some(path) => load_into(&resolve_include(path, &inc), stack, out)?,
+                None => {
+                    return Err(Error::syntax(name, 0, ":include is not allowed here"));
+                }
+            },
         }
     }
     Ok(())

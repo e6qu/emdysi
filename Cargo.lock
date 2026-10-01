@@ -3,5 +3,12 @@
 version = 4
 
 [[package]]
+name = "emdysi-hpsg"
+version = "0.1.0"
+dependencies = [
+ "emdysi-tdl",
+]
+
+[[package]]
 name = "emdysi-tdl"
 version = "0.1.0"
