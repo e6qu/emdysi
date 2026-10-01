@@ -12,7 +12,9 @@ a broad-coverage HPSG grammar, with its own Rust implementation of the
 DELPH-IN processing stack: TDL reader, typed feature structures and
 unification, REPP tokenizer, chart mapping, morphology and a packing chart
 parser. On the ERG's own test suites it parses 98% of the grammatical items
-and finds the gold analysis among its readings for 98.5% of them.
+and finds the gold analysis among its readings for 98.5% of them. A parse
+ranker trained on license-clean gold trees picks the gold analysis first for
+90.5% of held-out sentences.
 
 Status: working prototype. See [`docs/plan.md`](docs/plan.md) for progress,
 [`docs/prior-art.md`](docs/prior-art.md) for the survey of existing tools and

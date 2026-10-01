@@ -15,7 +15,7 @@ with the ERG port (decision D4) as the parsing core.
 | M7 | Rule-based POS tagger feeding `+TNT` tags (decision D3) | first heuristic version |
 | M8 | Chart parser: agenda, rule filter, quick-check, ambiguity packing, unpacking, root conditions | agenda, quick-check (incl. two-step for binary rules), packing, unpacking, root conditions done |
 | M9 | Output: derivation trees, labelled phrase-structure trees, sentence type; plain-text and Markdown rendering | derivations and labelled trees done |
-| M10 | Parse selection (heuristic first) and robust fallback for fragments | |
+| M10 | Parse selection and robust fallback for fragments | averaged-perceptron ranker on clean gold: 90.5% exact match held out; the ERG's fragment/informal roots act as fallback |
 | M11 | Sentence segmentation and Markdown input with span mapping | done (46/47 Golden Rules) |
 | M12 | Spelling: SCOWL-based lexicon, suggestions, confident auto-fix | done |
 | M13 | Rules engine and DSL; AI-prose and style-guide packs | first version: 8 rule kinds, 3 packs |

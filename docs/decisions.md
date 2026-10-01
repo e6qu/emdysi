@@ -19,7 +19,9 @@ Recorded 2026-10-01 after the [prior-art survey](prior-art.md).
   tagger (D3) feeds the ERG's token-mapping rules (`+TNT` tags), and ranking
   starts heuristic. Whether `redwoods.mem` may be used (it is distributed in
   the MIT-licensed ERG repository, but trained on WSJ-derived treebanks) is an
-  open question to revisit before ranking work.
+  open question. Instead, `crates/emdysi-parse/data/rank.tsv` is our own
+  model, trained only on the vendored gold profiles (ERG-authored test
+  suites and a public-domain story); see `examples/train.rs`.
 - The ERG is large (about 7.5k types, 44k lexical entries, 290 syntactic
   rules), so engine performance (quick-check, rule filter, packing) is part of
   the port, not an afterthought.
