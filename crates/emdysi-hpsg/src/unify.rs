@@ -6,6 +6,8 @@
 //! quasi-destructive unification. Sources are never modified, so they can be
 //! shared between threads; a successful result is copied out into a new DAG.
 
+use std::collections::HashMap;
+use std::hash::{BuildHasherDefault, Hasher};
 use std::sync::Arc;
 
 use crate::dag::{Dag, Node};
@@ -42,6 +44,39 @@ pub struct Unifier {
     /// Added arcs: (feature, target handle, next arc in the node's list).
     comp_arcs: Vec<(FeatId, u32, u32)>,
     pub failure: Option<Failure>,
+    /// GLBs of incomparable types already computed by this unifier, so the
+    /// hot path avoids the type system's shared cache.
+    glb_cache: HashMap<(TypeId, TypeId), Option<TypeId>, BuildHasherDefault<FxHasher>>,
+}
+
+/// A small, fast hasher for integer keys (after rustc's FxHasher).
+#[derive(Default, Clone, Copy)]
+pub struct FxHasher {
+    hash: u64,
+}
+
+impl Hasher for FxHasher {
+    fn finish(&self) -> u64 {
+        self.hash
+    }
+
+    fn write(&mut self, bytes: &[u8]) {
+        for &b in bytes {
+            self.write_u64(b as u64);
+        }
+    }
+
+    fn write_u32(&mut self, i: u32) {
+        self.write_u64(i as u64);
+    }
+
+    fn write_u64(&mut self, i: u64) {
+        self.hash = (self.hash.rotate_left(5) ^ i).wrapping_mul(0x51_7c_c1_b7_27_22_0a_95);
+    }
+
+    fn write_usize(&mut self, i: usize) {
+        self.write_u64(i as u64);
+    }
 }
 
 impl Unifier {
@@ -202,7 +237,7 @@ impl Unifier {
         }
         let ta = self.node_type(a);
         let tb = self.node_type(b);
-        let Some(t) = ts.glb(ta, tb) else {
+        let Some(t) = self.glb(ts, ta, tb) else {
             self.failure = Some(Failure::Clash);
             return false;
         };
@@ -243,6 +278,28 @@ impl Unifier {
             c = next;
         }
         true
+    }
+
+    fn glb(&mut self, ts: &TypeSystem, a: TypeId, b: TypeId) -> Option<TypeId> {
+        if a == b {
+            return Some(a);
+        }
+        if TypeSystem::is_literal(a) || TypeSystem::is_literal(b) {
+            return ts.glb(a, b);
+        }
+        if ts.hier.subsumed_by(a, b) {
+            return Some(a);
+        }
+        if ts.hier.subsumed_by(b, a) {
+            return Some(b);
+        }
+        let key = if a < b { (a, b) } else { (b, a) };
+        if let Some(&r) = self.glb_cache.get(&key) {
+            return r;
+        }
+        let r = ts.glb(a, b);
+        self.glb_cache.insert(key, r);
+        r
     }
 
     fn merge_arc(

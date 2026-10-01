@@ -16,7 +16,12 @@ fn main() {
             p.elapsed
         );
         for r in p.readings.iter().take(3) {
-            println!("  [{}] {}", r.root, r.derivation);
+            println!(
+                "  [{}] {}\n      {}",
+                r.root,
+                r.tree.bracketed(),
+                r.derivation
+            );
         }
     }
 }

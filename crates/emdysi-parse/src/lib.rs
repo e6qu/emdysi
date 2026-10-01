@@ -8,9 +8,12 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use emdysi_hpsg::chartmap::{ChartMapper, Lattice, MapRule, compile_rules, string_at};
+use emdysi_hpsg::labels::{Labeler, Tree};
 use emdysi_hpsg::lexicon::{LexPaths, Lexicon};
 use emdysi_hpsg::morph::Morphology;
-use emdysi_hpsg::parser::{ParseResult, Parser, ParserConfig, QuickCheck, Rule, derivation};
+use emdysi_hpsg::parser::{
+    Deriv, EdgeKind, ParseResult, Parser, ParserConfig, QuickCheck, Rule, derivation,
+};
 use emdysi_hpsg::{Dag, Grammar, Unifier};
 use emdysi_repp::Repp;
 
@@ -45,6 +48,7 @@ pub struct Erg {
     pub rules: Vec<Rule>,
     pub qc: QuickCheck,
     pub config: ParserConfig,
+    pub labeler: Labeler,
 }
 
 /// Read a `key := value value ... .` setting from an ACE configuration file.
@@ -85,6 +89,8 @@ fn ace_setting(src: &str, key: &str) -> Vec<String> {
 pub struct Reading {
     pub root: String,
     pub derivation: String,
+    /// Labelled phrase-structure tree.
+    pub tree: Tree,
 }
 
 #[derive(Debug, Clone)]
@@ -194,14 +200,24 @@ impl Erg {
             .iter()
             .filter_map(|f| grammar.feat(f))
             .collect();
+        let packing_restrictor = Some(
+            ace_setting(&config_src, "parsing-packing-restrictor")
+                .iter()
+                .filter_map(|f| grammar.feat(f))
+                .collect(),
+        );
         let config = ParserConfig {
             deleted_daughters,
             roots,
             max_edges: 200_000,
             timeout: Duration::from_secs(60),
+            packing_restrictor,
+            max_readings: 1000,
         };
         let lexicon = Lexicon::new(&grammar, morph, lex_paths);
+        let labeler = Labeler::new(&grammar, &mut u).ok_or_else(|| err("no parse-node labels"))?;
         Ok(Erg {
+            labeler,
             grammar,
             repp,
             token_mapping,
@@ -251,12 +267,31 @@ impl Erg {
                 .collect::<Vec<_>>()
                 .join(" ")
         };
+        let chars: Vec<char> = text.chars().collect();
+        let (from_path, to_path) = (self.grammar.path("+FROM"), self.grammar.path("+TO"));
+        let surface = |d: &Deriv| -> Option<String> {
+            let EdgeKind::Lex { tokens, .. } = &d.kind else {
+                return None;
+            };
+            let span = |t: usize, p: &Option<Vec<emdysi_hpsg::FeatId>>| {
+                string_at(&self.grammar.ts, &lat.entries[t].dag, p.as_ref()?)?
+                    .parse::<usize>()
+                    .ok()
+            };
+            let from = span(*tokens.first()?, &from_path)?;
+            let to = span(*tokens.last()?, &to_path)?;
+            Some(chars.get(from..to)?.iter().collect())
+        };
         let readings = result
             .readings
             .iter()
-            .map(|(id, root)| Reading {
-                root: root.clone(),
-                derivation: derivation(&self.grammar, &self.rules, &result.chart, *id, &forms),
+            .map(|r| Reading {
+                root: r.root.clone(),
+                derivation: derivation(&self.grammar, &self.rules, &r.deriv, &forms),
+                tree: self
+                    .labeler
+                    .tree(&self.grammar, &mut u, &r.deriv, &surface)
+                    .collapse(),
             })
             .collect();
         Ok(Parse {

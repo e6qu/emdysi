@@ -122,3 +122,105 @@ impl Dag {
         out.push_str(" ]");
     }
 }
+
+impl Dag {
+    /// A copy without the arcs labelled with any of `drop`, at any depth,
+    /// keeping only the nodes still reachable.
+    pub fn restrict(&self, drop: &[FeatId]) -> Dag {
+        let mut map = vec![u32::MAX; self.nodes.len()];
+        let mut order = vec![0u32];
+        map[0] = 0;
+        let mut out = Dag {
+            nodes: Vec::with_capacity(self.nodes.len()),
+            arcs: Vec::with_capacity(self.arcs.len()),
+        };
+        let mut i = 0;
+        while i < order.len() {
+            let n = order[i];
+            let start = out.arcs.len() as u32;
+            for &(f, v) in self.arcs(n) {
+                if drop.contains(&f) {
+                    continue;
+                }
+                if map[v as usize] == u32::MAX {
+                    map[v as usize] = order.len() as u32;
+                    order.push(v);
+                }
+                out.arcs.push((f, map[v as usize]));
+            }
+            out.nodes.push(Node {
+                ty: self.ty(n),
+                arc_start: start,
+                arc_len: out.arcs.len() as u32 - start,
+            });
+            i += 1;
+        }
+        out
+    }
+}
+
+/// Two-way subsumption: `(a subsumes b, b subsumes a)`, where "subsumes"
+/// means "is equally or more general".
+pub fn subsumes_both(ts: &TypeSystem, a: &Dag, b: &Dag) -> (bool, bool) {
+    let mut fwd = true;
+    let mut bwd = true;
+    let mut amap = vec![u32::MAX; a.nodes.len()];
+    let mut bmap = vec![u32::MAX; b.nodes.len()];
+    let mut stack = vec![(0u32, 0u32)];
+    while let Some((x, y)) = stack.pop() {
+        // A pair already visited in both directions needs no second look.
+        if amap[x as usize] == y && bmap[y as usize] == x {
+            continue;
+        }
+        // A reentrancy present on one side only makes that side more specific.
+        match amap[x as usize] {
+            u32::MAX => amap[x as usize] = y,
+            m if m != y => fwd = false,
+            _ => {}
+        }
+        match bmap[y as usize] {
+            u32::MAX => bmap[y as usize] = x,
+            m if m != x => bwd = false,
+            _ => {}
+        }
+        let (tx, ty) = (a.ty(x), b.ty(y));
+        if tx != ty {
+            if !ts.subsumed_by(ty, tx) {
+                fwd = false;
+            }
+            if !ts.subsumed_by(tx, ty) {
+                bwd = false;
+            }
+        }
+        if !fwd && !bwd {
+            return (false, false);
+        }
+        let (ax, by) = (a.arcs(x), b.arcs(y));
+        let (mut i, mut j) = (0, 0);
+        while i < ax.len() || j < by.len() {
+            match (ax.get(i), by.get(j)) {
+                (Some(&(f, v)), Some(&(g, w))) if f == g => {
+                    stack.push((v, w));
+                    i += 1;
+                    j += 1;
+                }
+                (Some(&(f, _)), Some(&(g, _))) if f < g => {
+                    fwd = false;
+                    i += 1;
+                }
+                (Some(_), None) => {
+                    fwd = false;
+                    i += 1;
+                }
+                _ => {
+                    bwd = false;
+                    j += 1;
+                }
+            }
+        }
+        if !fwd && !bwd {
+            return (false, false);
+        }
+    }
+    (fwd, bwd)
+}

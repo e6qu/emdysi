@@ -11,7 +11,7 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use crate::chartmap::{ChartMapper, Lattice, MapRule};
-use crate::dag::Dag;
+use crate::dag::{Dag, subsumes_both};
 use crate::grammar::Grammar;
 use crate::lexicon::LexItem;
 use crate::types::{TOP, TypeId};
@@ -130,6 +130,47 @@ pub struct Edge {
     /// For daughter positions 0 and 1, the rules whose daughter this edge
     /// passes the quick check for (bit per rule; syntactic phase only).
     fits: [Vec<u64>; 2],
+    pub state: EdgeState,
+    /// Edges packed into this one: equivalent or more specific analyses
+    /// of the same span, recovered when unpacking.
+    pub packed: Vec<usize>,
+    /// Edges built with this edge as a daughter.
+    parents: Vec<usize>,
+    restricted: Option<Arc<Dag>>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EdgeState {
+    Active,
+    /// Packed into a more general edge.
+    Packed(usize),
+    /// Invalidated by retroactive packing.
+    Frozen,
+}
+
+/// A node of a derivation tree.
+#[derive(Debug, Clone)]
+pub struct Deriv {
+    pub kind: EdgeKind,
+    pub start: usize,
+    pub end: usize,
+    pub daughters: Vec<Arc<Deriv>>,
+    /// The feature structure of this node.
+    pub dag: Arc<Dag>,
+}
+
+/// A complete analysis of the input.
+#[derive(Debug, Clone)]
+pub struct Reading {
+    pub root: String,
+    pub deriv: Arc<Deriv>,
+    pub dag: Arc<Dag>,
+}
+
+#[derive(Clone)]
+struct Inst {
+    dag: Arc<Dag>,
+    deriv: Arc<Deriv>,
 }
 
 fn bit(set: &[u64], i: usize) -> bool {
@@ -141,6 +182,11 @@ pub struct ParserConfig {
     pub roots: Vec<(String, Arc<Dag>)>,
     pub max_edges: usize,
     pub timeout: Duration,
+    /// Features ignored when comparing edges for ambiguity packing; `None`
+    /// disables packing.
+    pub packing_restrictor: Option<Vec<FeatId>>,
+    /// Upper bound on readings recovered by unpacking.
+    pub max_readings: usize,
 }
 
 /// Counters describing the work a parse did.
@@ -152,13 +198,15 @@ pub struct Stats {
     pub cyclic: usize,
     pub unify_time: Duration,
     pub copy_time: Duration,
+    pub packed_proactive: usize,
+    pub packed_retroactive: usize,
+    pub frozen: usize,
 }
 
 pub struct ParseResult {
     pub stats: Stats,
     pub chart: Vec<Edge>,
-    /// Edges spanning the input that satisfy a root condition, with the root.
-    pub readings: Vec<(usize, String)>,
+    pub readings: Vec<Reading>,
     pub positions: usize,
     pub exhausted: bool,
     pub filtered_lexical: usize,
@@ -236,6 +284,10 @@ impl<'g> Parser<'g> {
                     lexical: true,
                     qc,
                     fits: Default::default(),
+                    state: EdgeState::Active,
+                    packed: Vec::new(),
+                    parents: Vec::new(),
+                    restricted: None,
                 }
             })
             .collect();
@@ -273,6 +325,10 @@ impl<'g> Parser<'g> {
                         pending,
                         lexical: true,
                         fits: Default::default(),
+                        state: EdgeState::Active,
+                        packed: Vec::new(),
+                        parents: Vec::new(),
+                        restricted: None,
                     });
                 }
             }
@@ -315,15 +371,24 @@ impl<'g> Parser<'g> {
         // Phase 3: syntactic rules.
         let mut agenda: Vec<usize> = complete.into_iter().filter(|i| keep.contains(i)).collect();
         agenda.sort_unstable_by(|a, b| b.cmp(a));
+        let mut by_span: HashMap<(usize, usize), Vec<usize>> = HashMap::new();
         while let Some(id) = agenda.pop() {
             if self.chart.len() > self.config.max_edges || Instant::now() > self.deadline {
                 exhausted = true;
                 break;
             }
+            if self.chart[id].state != EdgeState::Active {
+                continue;
+            }
             let (start, end) = (self.chart[id].start, self.chart[id].end);
+            if self.config.packing_restrictor.is_some() && self.pack(id, &by_span, &mut agenda) {
+                continue;
+            }
+            by_span.entry((start, end)).or_default().push(id);
             self.compute_fits(id);
             self.by_start[start].push(id);
             self.by_end[end].push(id);
+            let active = |p: &Parser, e: usize| p.chart[e].state == EdgeState::Active;
             for ri in 0..self.rules.len() {
                 let rule = &self.rules[ri];
                 if rule.lexical {
@@ -340,9 +405,12 @@ impl<'g> Parser<'g> {
                             let right: Vec<usize> = self.by_start[end]
                                 .iter()
                                 .copied()
-                                .filter(|&r| bit(&self.chart[r].fits[1], ri))
+                                .filter(|&r| active(&self, r) && bit(&self.chart[r].fits[1], ri))
                                 .collect();
                             for r in right {
+                                if self.chart[id].state != EdgeState::Active {
+                                    break;
+                                }
                                 self.try_rule(ri, &[id, r], &mut agenda);
                             }
                         }
@@ -350,9 +418,14 @@ impl<'g> Parser<'g> {
                             let left: Vec<usize> = self.by_end[start]
                                 .iter()
                                 .copied()
-                                .filter(|&l| l != id && bit(&self.chart[l].fits[0], ri))
+                                .filter(|&l| {
+                                    l != id && active(&self, l) && bit(&self.chart[l].fits[0], ri)
+                                })
                                 .collect();
                             for l in left {
+                                if self.chart[id].state != EdgeState::Active {
+                                    break;
+                                }
                                 self.try_rule(ri, &[l, id], &mut agenda);
                             }
                         }
@@ -362,22 +435,35 @@ impl<'g> Parser<'g> {
             }
         }
 
-        let mut readings = Vec::new();
+        // Recover readings from spanning edges.
         let spanning: Vec<usize> = self
             .by_start
             .first()
             .map(|v| {
                 v.iter()
                     .copied()
-                    .filter(|&i| self.chart[i].end == self.n)
+                    .filter(|&i| {
+                        self.chart[i].end == self.n && self.chart[i].state == EdgeState::Active
+                    })
                     .collect()
             })
             .unwrap_or_default();
-        for id in spanning {
-            for (name, root) in &self.config.roots {
-                if self.unifies(root, &self.chart[id].dag.clone()) {
-                    readings.push((id, name.clone()));
-                    break;
+        let mut readings = Vec::new();
+        let mut memo: HashMap<usize, Vec<Inst>> = HashMap::new();
+        'outer: for id in spanning {
+            for inst in self.unpack(id, &mut memo) {
+                if readings.len() >= self.config.max_readings || Instant::now() > self.deadline {
+                    break 'outer;
+                }
+                for (name, root) in &self.config.roots {
+                    if self.unifies(root, &inst.dag) {
+                        readings.push(Reading {
+                            root: name.clone(),
+                            deriv: inst.deriv.clone(),
+                            dag: inst.dag.clone(),
+                        });
+                        break;
+                    }
                 }
             }
         }
@@ -388,6 +474,165 @@ impl<'g> Parser<'g> {
             positions: self.n,
             exhausted,
             filtered_lexical: filtered,
+        }
+    }
+
+    /// Ambiguity packing (Oepen & Carroll 2000). Returns true if the edge
+    /// was packed into an existing, more general edge.
+    fn pack(
+        &mut self,
+        id: usize,
+        by_span: &HashMap<(usize, usize), Vec<usize>>,
+        agenda: &mut Vec<usize>,
+    ) -> bool {
+        let restrictor = self.config.packing_restrictor.as_deref().unwrap_or(&[]);
+        let r = Arc::new(self.chart[id].dag.restrict(restrictor));
+        self.chart[id].restricted = Some(r.clone());
+        let key = (self.chart[id].start, self.chart[id].end);
+        let Some(others) = by_span.get(&key) else {
+            return false;
+        };
+        for &o in others {
+            if self.chart[o].state != EdgeState::Active {
+                continue;
+            }
+            let Some(or) = self.chart[o].restricted.clone() else {
+                continue;
+            };
+            let (o_subsumes, id_subsumes) = subsumes_both(&self.g.ts, &or, &r);
+            if o_subsumes {
+                self.chart[id].state = EdgeState::Packed(o);
+                self.chart[o].packed.push(id);
+                self.stats.packed_proactive += 1;
+                return true;
+            }
+            if id_subsumes {
+                self.chart[o].state = EdgeState::Packed(id);
+                self.chart[id].packed.push(o);
+                self.stats.packed_retroactive += 1;
+                self.freeze_parents(o, agenda);
+            }
+        }
+        false
+    }
+
+    /// Invalidate everything built from an edge that was packed
+    /// retroactively; edges packed into invalidated ones get a second chance.
+    fn freeze_parents(&mut self, id: usize, agenda: &mut Vec<usize>) {
+        let mut stack: Vec<usize> = self.chart[id].parents.clone();
+        while let Some(p) = stack.pop() {
+            match self.chart[p].state {
+                EdgeState::Frozen => continue,
+                EdgeState::Packed(host) => self.chart[host].packed.retain(|&x| x != p),
+                EdgeState::Active => {}
+            }
+            self.chart[p].state = EdgeState::Frozen;
+            self.stats.frozen += 1;
+            stack.extend(self.chart[p].parents.iter().copied());
+            for q in std::mem::take(&mut self.chart[p].packed) {
+                self.chart[q].state = EdgeState::Active;
+                agenda.push(q);
+            }
+        }
+    }
+
+    /// All instantiations of an edge and the edges packed into it.
+    fn unpack(&mut self, id: usize, memo: &mut HashMap<usize, Vec<Inst>>) -> Vec<Inst> {
+        const MAX_PER_EDGE: usize = 1000;
+        if let Some(v) = memo.get(&id) {
+            return v.clone();
+        }
+        let mut alts = vec![id];
+        let mut i = 0;
+        while i < alts.len() {
+            for &p in &self.chart[alts[i]].packed {
+                if !alts.contains(&p) {
+                    alts.push(p);
+                }
+            }
+            i += 1;
+        }
+        let mut out = Vec::new();
+        for a in alts {
+            if out.len() >= MAX_PER_EDGE || Instant::now() > self.deadline {
+                break;
+            }
+            let e = &self.chart[a];
+            if e.lexical {
+                out.push(Inst {
+                    dag: e.dag.clone(),
+                    deriv: Arc::new(self.chart_deriv(a)),
+                });
+                continue;
+            }
+            let EdgeKind::Rule(ri) = e.kind.clone() else {
+                continue;
+            };
+            let (start, end) = (e.start, e.end);
+            let daughters = e.daughters.clone();
+            let kid_insts: Vec<Vec<Inst>> =
+                daughters.iter().map(|&d| self.unpack(d, memo)).collect();
+            // Cartesian product of daughter instantiations.
+            let mut combos: Vec<Vec<usize>> = vec![Vec::new()];
+            for k in &kid_insts {
+                let mut next = Vec::new();
+                for c in &combos {
+                    for j in 0..k.len() {
+                        let mut c2 = c.clone();
+                        c2.push(j);
+                        next.push(c2);
+                    }
+                }
+                combos = next;
+                if combos.len() > MAX_PER_EDGE {
+                    combos.truncate(MAX_PER_EDGE);
+                }
+            }
+            for c in combos {
+                let dags: Vec<&Arc<Dag>> = c
+                    .iter()
+                    .enumerate()
+                    .map(|(k, &j)| &kid_insts[k][j].dag)
+                    .collect();
+                let dags: Vec<Arc<Dag>> = dags.into_iter().cloned().collect();
+                let dag_refs: Vec<&Arc<Dag>> = dags.iter().collect();
+                let qcs: Vec<Vec<TypeId>> = dags.iter().map(|d| self.qc.vector(d, 0)).collect();
+                let qc_refs: Vec<&Vec<TypeId>> = qcs.iter().collect();
+                if let Some(m) = self.apply(ri, &dag_refs, &qc_refs) {
+                    let m = Arc::new(m);
+                    out.push(Inst {
+                        dag: m.clone(),
+                        deriv: Arc::new(Deriv {
+                            kind: EdgeKind::Rule(ri),
+                            start,
+                            end,
+                            daughters: c
+                                .iter()
+                                .enumerate()
+                                .map(|(k, &j)| kid_insts[k][j].deriv.clone())
+                                .collect(),
+                            dag: m,
+                        }),
+                    });
+                }
+            }
+        }
+        memo.insert(id, out.clone());
+        out
+    }
+
+    fn chart_deriv(&self, id: usize) -> Deriv {
+        let e = &self.chart[id];
+        Deriv {
+            kind: e.kind.clone(),
+            start: e.start,
+            end: e.end,
+            daughters: e
+                .daughters
+                .iter()
+                .map(|&d| Arc::new(self.chart_deriv(d)))
+                .collect(),
+            dag: e.dag.clone(),
         }
     }
 
@@ -440,7 +685,14 @@ impl<'g> Parser<'g> {
                 pending: Vec::new(),
                 lexical: false,
                 fits: Default::default(),
+                state: EdgeState::Active,
+                packed: Vec::new(),
+                parents: Vec::new(),
+                restricted: None,
             });
+            for &d in dtrs {
+                self.chart[d].parents.push(id);
+            }
             agenda.push(id);
         }
     }
@@ -482,30 +734,28 @@ impl<'g> Parser<'g> {
 pub fn derivation(
     g: &Grammar,
     rules: &[Rule],
-    chart: &[Edge],
-    id: usize,
+    d: &Deriv,
     forms: &dyn Fn(&[usize]) -> String,
 ) -> String {
-    let e = &chart[id];
-    match &e.kind {
+    match &d.kind {
         EdgeKind::Lex { inst, tokens } => format!(
             "({} {} {} (\"{}\"))",
             g.instances[*inst].name,
-            e.start,
-            e.end,
+            d.start,
+            d.end,
             forms(tokens)
         ),
         EdgeKind::Rule(ri) => {
-            let kids: Vec<String> = e
+            let kids: Vec<String> = d
                 .daughters
                 .iter()
-                .map(|&d| derivation(g, rules, chart, d, forms))
+                .map(|k| derivation(g, rules, k, forms))
                 .collect();
             format!(
                 "({} {} {} {})",
                 rules[*ri].name,
-                e.start,
-                e.end,
+                d.start,
+                d.end,
                 kids.join(" ")
             )
         }

@@ -6,6 +6,7 @@ pub mod chartmap;
 pub mod dag;
 pub mod desc;
 pub mod grammar;
+pub mod labels;
 pub mod lexicon;
 pub mod morph;
 pub mod parser;

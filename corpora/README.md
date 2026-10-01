@@ -17,4 +17,4 @@ Rules for adding a corpus:
 
 | Corpus | License | Contents |
 |---|---|---|
-| [`erg-gold/`](erg-gold/SOURCE.md) | MIT (ERG) | ERG `mrs` and `csli` test suites with gold derivations |
+| [`erg-gold/`](erg-gold/SOURCE.md) | MIT (ERG annotations); text by the ERG authors or public domain | ERG test suites `mrs`, `csli`, `esd`, `control`, `ccs` and the public-domain `sh-spec` (Sherlock Holmes) with gold derivations |
