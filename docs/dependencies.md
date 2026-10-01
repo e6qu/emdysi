@@ -16,7 +16,13 @@ LGPL and GPL) requires a new decision.
 
 | Crate | Version | License | Verified from | Date |
 |---|---|---|---|---|
-| (none yet: the workspace has no external dependencies) | | | | |
+| fancy-regex | 0.19.2 | MIT | crate `Cargo.toml` + `LICENSE` (Copyright 2015 The Fancy Regex Authors) | 2026-10-01 |
+| regex-automata | 0.4.18 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-MIT`, `LICENSE-APACHE` | 2026-10-01 |
+| regex-syntax | 0.8.11 | MIT OR Apache-2.0; bundled Unicode tables under the Unicode License (`src/unicode_tables/LICENSE-UNICODE`) | crate `Cargo.toml` + license files | 2026-10-01 |
+| bit-set | 0.8.0 | Apache-2.0 OR MIT | crate `Cargo.toml` + `LICENSE-MIT`, `LICENSE-APACHE` | 2026-10-01 |
+| bit-vec | 0.8.0 | Apache-2.0 OR MIT | crate `Cargo.toml` + `LICENSE-MIT`, `LICENSE-APACHE` | 2026-10-01 |
+| aho-corasick | 1.1.5 | Unlicense OR MIT | crate `Cargo.toml` + `LICENSE-MIT`, `UNLICENSE` | 2026-10-01 |
+| memchr | 2.8.3 | Unlicense OR MIT | crate `Cargo.toml` + `LICENSE-MIT`, `UNLICENSE` | 2026-10-01 |
 
 ## Data
 
