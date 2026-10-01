@@ -2,7 +2,25 @@ use emdysi_parse::*;
 
 fn main() {
     let t = std::time::Instant::now();
-    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let mut erg = Erg::load(&default_grammar_dir()).unwrap();
+    if let Some(b) = std::env::var("CELL_BEAM")
+        .ok()
+        .and_then(|b| b.parse::<usize>().ok())
+    {
+        erg.config.cell_beam = (b > 0).then_some(b);
+    }
+    if let Some(n) = std::env::var("BEAM_FROM")
+        .ok()
+        .and_then(|b| b.parse::<usize>().ok())
+    {
+        erg.config.cell_beam_from = n;
+    }
+    if let Some(t) = std::env::var("TIMEOUT")
+        .ok()
+        .and_then(|b| b.parse::<u64>().ok())
+    {
+        erg.config.timeout = std::time::Duration::from_secs(t);
+    }
     eprintln!("loaded in {:?}", t.elapsed());
     for line in std::io::stdin().lines() {
         let line = line.unwrap();

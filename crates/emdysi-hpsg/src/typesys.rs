@@ -17,17 +17,17 @@ pub enum LiteralKind {
 }
 
 #[derive(Default)]
-struct Literals {
-    values: Vec<(LiteralKind, Arc<str>)>,
-    index: HashMap<(LiteralKind, Arc<str>), u32>,
+pub(crate) struct Literals {
+    pub(crate) values: Vec<(LiteralKind, Arc<str>)>,
+    pub(crate) index: HashMap<(LiteralKind, Arc<str>), u32>,
 }
 
 pub type FeatId = u32;
 
 #[derive(Default, Clone)]
 pub struct Features {
-    names: Vec<String>,
-    index: HashMap<String, FeatId>,
+    pub(crate) names: Vec<String>,
+    pub(crate) index: HashMap<String, FeatId>,
 }
 
 impl Features {
@@ -66,7 +66,7 @@ pub struct TypeSystem {
     pub hier: Hierarchy,
     /// The type every string literal belongs to.
     pub string: TypeId,
-    literals: RwLock<Literals>,
+    pub(crate) literals: RwLock<Literals>,
     regexes: RwLock<HashMap<TypeId, Option<Arc<fancy_regex::Regex>>>>,
 }
 

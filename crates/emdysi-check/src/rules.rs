@@ -14,6 +14,7 @@
 //! message = "'{match}' is a common tell of machine-written prose."
 //! ```
 
+use crate::dict::{Variety, variants};
 use std::collections::HashMap;
 
 use emdysi_parse::Erg;
@@ -112,6 +113,13 @@ pub enum Kind {
     },
     /// Sentences without a strict (fully grammatical) analysis.
     Grammar,
+    /// American and British spellings (and British -ise and -ize) mixed in
+    /// one document. The variety used most (or `prefer`) wins; the others
+    /// are fixed to it.
+    Consistency {
+        prefer: Option<Variety>,
+        prefer_suffix: Option<Variety>,
+    },
 }
 
 fn get_str(t: &Table, k: &str) -> Option<String> {
@@ -257,6 +265,22 @@ impl Rule {
                     .collect(),
             },
             "grammar" => Kind::Grammar,
+            "consistency" => {
+                let variety = |k: &str, allowed: [&str; 2]| -> Result<Option<Variety>, PackError> {
+                    match get_str(t, k) {
+                        None => Ok(None),
+                        Some(v) if allowed.contains(&v.as_str()) => Ok(Variety::parse(&v)),
+                        Some(v) => Err(err(&format!(
+                            "`{k}` must be {:?} or {:?}, not {v:?}",
+                            allowed[0], allowed[1]
+                        ))),
+                    }
+                };
+                Kind::Consistency {
+                    prefer: variety("prefer", ["us", "gb"])?,
+                    prefer_suffix: variety("prefer_suffix", ["ise", "ize"])?,
+                }
+            }
             k => return Err(err(&format!("unknown kind {k:?}"))),
         };
         let severity = match get_str(t, "severity") {
@@ -482,6 +506,10 @@ impl Rule {
                     }
                 }
             }
+            Kind::Consistency {
+                prefer,
+                prefer_suffix,
+            } => self.run_consistency(a, *prefer, *prefer_suffix, out),
             Kind::Grammar => {
                 for (si, s) in a.sentences.iter().enumerate() {
                     let Some(p) = &s.parse else { continue };
@@ -496,7 +524,8 @@ impl Rule {
                     if p.readings.is_empty() || !s.strict() {
                         let len = s.original.chars().count();
                         let mut d = self.diag(a, si, 0, len, &s.original);
-                        let why = if p.readings.is_empty() {
+                        let none = p.readings.iter().all(|r| r.root == "fragment");
+                        let why = if none {
                             if p.exhausted {
                                 "too complex to analyse in time"
                             } else {
@@ -567,6 +596,93 @@ impl Rule {
                         out.push(d);
                     }
                 }
+            }
+        }
+    }
+}
+
+impl Rule {
+    fn run_consistency(
+        &self,
+        a: &Analysis,
+        prefer: Option<Variety>,
+        prefer_suffix: Option<Variety>,
+        out: &mut Vec<Diagnostic>,
+    ) {
+        // Words specific to one variety: (sentence, token, variety, other).
+        let mut found: Vec<(usize, usize, Variety, &str)> = Vec::new();
+        let table = variants();
+        for (si, s) in a.sentences.iter().enumerate() {
+            for (ti, t) in s.tokens.iter().enumerate() {
+                let w = &t.form;
+                // Skip acronyms and inline code.
+                let upper = w.chars().filter(|c| c.is_uppercase()).count();
+                if upper > 1
+                    || s.text
+                        .chars()
+                        .skip(t.from)
+                        .take(t.to - t.from)
+                        .all(|c| c == 'x')
+                {
+                    continue;
+                }
+                for (v, other) in table.get(&w.to_lowercase()).into_iter().flatten() {
+                    found.push((si, ti, *v, other));
+                }
+            }
+        }
+        // The variety used most; ties go to the one used first.
+        let dominant = |x: Variety, y: Variety| -> Option<Variety> {
+            let count = |v| found.iter().filter(|f| f.2 == v).count();
+            let (nx, ny) = (count(x), count(y));
+            if nx == 0 || ny == 0 {
+                return None;
+            }
+            Some(match nx.cmp(&ny) {
+                std::cmp::Ordering::Greater => x,
+                std::cmp::Ordering::Less => y,
+                std::cmp::Ordering::Equal => found.iter().find(|f| f.2 == x || f.2 == y)?.2,
+            })
+        };
+        let opposite = |v| match v {
+            Variety::Us => Variety::Gb,
+            Variety::Gb => Variety::Us,
+            Variety::Ise => Variety::Ize,
+            Variety::Ize => Variety::Ise,
+        };
+        let us_count = found.iter().filter(|f| f.2 == Variety::Us).count();
+        let gb_count = found.iter().filter(|f| f.2 == Variety::Gb).count();
+        let dialect = prefer
+            .filter(|&p| found.iter().any(|f| f.2 == opposite(p)))
+            .or_else(|| dominant(Variety::Us, Variety::Gb));
+        // -ise against -ize matters only in British spelling.
+        let british = match prefer {
+            Some(p) => p == Variety::Gb,
+            None => gb_count > 0 && gb_count >= us_count,
+        };
+        let suffix = if british {
+            prefer_suffix
+                .filter(|&p| found.iter().any(|f| f.2 == opposite(p)))
+                .or_else(|| dominant(Variety::Ise, Variety::Ize))
+        } else {
+            None
+        };
+        let mut flagged = std::collections::HashSet::new();
+        for want in [dialect, suffix].into_iter().flatten() {
+            for &(si, ti, v, other) in &found {
+                if v != opposite(want) || !flagged.insert((si, ti)) {
+                    continue;
+                }
+                let t = &a.sentences[si].tokens[ti];
+                let rep = match_case(&t.form, other);
+                let mut d = self.diag(a, si, t.from, t.to, &t.form);
+                d.message = d
+                    .message
+                    .replace("{replacement}", &rep)
+                    .replace("{variety}", v.name())
+                    .replace("{dominant}", want.name());
+                d.replacement = Some(rep);
+                out.push(d);
             }
         }
     }

@@ -69,6 +69,10 @@ fn main() {
         erg.config.max_readings = 500;
         erg.config.max_nodes = 30_000_000;
         erg.trees_for = 0;
+        let max_words: usize = std::env::var("MAX_WORDS")
+            .ok()
+            .and_then(|n| n.parse().ok())
+            .unwrap_or(usize::MAX);
         let done: std::collections::HashSet<String> =
             cached.iter().map(|c| c.key.clone()).collect();
         let mut work: Vec<(String, Item)> = Vec::new();
@@ -80,11 +84,12 @@ fn main() {
                 .to_string();
             for it in items(d) {
                 let key = format!("{name}:{}", it.id);
-                // Long items are slow and memory-hungry, and add little.
+                // MAX_WORDS skips long items, which are slow and
+                // memory-hungry (long inputs are parsed with chart pruning).
                 if it.wf
                     && it.gold.is_some()
                     && !done.contains(&key)
-                    && it.text.split_whitespace().count() <= 30
+                    && it.text.split_whitespace().count() <= max_words
                 {
                     work.push((key, it));
                 }
@@ -101,7 +106,11 @@ fn main() {
         let out = Mutex::new(Vec::new());
         let next = Mutex::new(0usize);
         std::thread::scope(|s| {
-            for _ in 0..std::thread::available_parallelism().map_or(2, |n| n.get()) {
+            let threads = std::env::var("THREADS")
+                .ok()
+                .and_then(|n| n.parse().ok())
+                .unwrap_or_else(|| std::thread::available_parallelism().map_or(2, |n| n.get()));
+            for _ in 0..threads {
                 s.spawn(|| {
                     loop {
                         let i = {

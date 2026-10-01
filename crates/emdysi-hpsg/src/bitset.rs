@@ -2,7 +2,7 @@
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct BitSet {
-    words: Box<[u64]>,
+    pub(crate) words: Box<[u64]>,
 }
 
 impl BitSet {

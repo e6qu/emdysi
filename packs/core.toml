@@ -16,3 +16,10 @@ kind = "grammar"
 severity = "suggestion"
 message = "Possibly ungrammatical: {reason}."
 description = "Sentences for which the grammar finds no analysis, or only a fragment or informal one. Long sentences may also time out."
+
+[[rule]]
+id = "core.consistency"
+kind = "consistency"
+severity = "warning"
+message = "'{match}' is {variety} spelling, but the text mostly uses {dominant} spelling: '{replacement}'."
+description = "American and British spellings (or British -ise and -ize) mixed in one document. Either variety is fine on its own; the one used most wins. Set `prefer` (\"us\" or \"gb\") and `prefer_suffix` (\"ise\" or \"ize\") in your own pack to fix the choice."
