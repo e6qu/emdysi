@@ -496,7 +496,8 @@ impl Rule {
                     if p.readings.is_empty() || !s.strict() {
                         let len = s.original.chars().count();
                         let mut d = self.diag(a, si, 0, len, &s.original);
-                        let why = if p.readings.is_empty() {
+                        let none = p.readings.iter().all(|r| r.root == "fragment");
+                        let why = if none {
                             if p.exhausted {
                                 "too complex to analyse in time"
                             } else {

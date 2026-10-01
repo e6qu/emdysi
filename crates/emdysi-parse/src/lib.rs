@@ -55,7 +55,12 @@ pub struct Erg {
     pub orth: HashMap<usize, String>,
     /// How many of the best readings get a labelled tree.
     pub trees_for: usize,
+    /// Lexical type of each instance, by instance index.
+    pub le_types: Vec<String>,
 }
+
+/// Edges kept per chart cell when pruning (see [`ParserConfig::cell_beam`]).
+pub const DEFAULT_CELL_BEAM: usize = 40;
 
 /// The parse-ranking model trained on the vendored gold profiles.
 pub const DEFAULT_MODEL: &str = include_str!("../data/rank.tsv");
@@ -278,6 +283,10 @@ impl Erg {
                 .first()
                 .filter(|v| v.as_str() == "enabled")
                 .and_then(|_| grammar.ts.hier.id("sign")),
+            cell_beam: Some(DEFAULT_CELL_BEAM),
+            cell_beam_from: 20,
+            unpack_beam: 100,
+            fragments: true,
         };
         let lexicon = Lexicon::new(&grammar, morph, lex_paths);
         let labeler = Labeler::new(&grammar, &mut u).ok_or_else(|| err("no parse-node labels"))?;
@@ -286,7 +295,11 @@ impl Erg {
             .iter()
             .map(|e| (e.inst, e.orth.join(" ")))
             .collect();
+        let le_types = (0..grammar.instances.len())
+            .map(|i| rank::lexical_type(&grammar, i))
+            .collect();
         Ok(Erg {
+            le_types,
             orth,
             model: rank::Model::parse(DEFAULT_MODEL),
             trees_for: 3,
@@ -336,13 +349,20 @@ impl Erg {
         let mut u = Unifier::new();
         let items = self.lexicon.instantiate(&self.grammar, &lat, &mut u);
         let n_items = items.len();
+        let scorer = rank::ChartScorer {
+            grammar: &self.grammar,
+            rules: &self.rules,
+            model: &self.model,
+            le_types: &self.le_types,
+        };
         let parser = Parser::new(
             &self.grammar,
             &self.rules,
             &self.qc,
             config,
             &self.lexical_filtering,
-        );
+        )
+        .with_scorer(&scorer);
         let result: ParseResult = parser.parse(&lat, items);
         let form_path = self.lexicon.paths.token_form.clone();
         let forms = |toks: &[usize]| -> String {
@@ -502,6 +522,7 @@ impl Erg {
         let (name, leaf) = match &d.kind {
             EdgeKind::Lex { inst, .. } => (self.grammar.instances[*inst].name.clone(), true),
             EdgeKind::Rule(ri) => (self.rules[*ri].name.clone(), false),
+            EdgeKind::Cover => ("fragment".to_string(), false),
         };
         nodes.push(Node {
             name,

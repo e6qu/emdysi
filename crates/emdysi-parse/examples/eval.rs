@@ -24,6 +24,19 @@ fn main() {
     let mut erg = Erg::load(&default_grammar_dir()).unwrap();
     erg.config.timeout = Duration::from_secs(20);
     erg.config.max_edges = 60_000;
+    // CELL_BEAM=0 disables chart pruning, for comparison.
+    if let Some(b) = std::env::var("CELL_BEAM")
+        .ok()
+        .and_then(|b| b.parse::<usize>().ok())
+    {
+        erg.config.cell_beam = (b > 0).then_some(b);
+    }
+    if let Some(n) = std::env::var("BEAM_FROM")
+        .ok()
+        .and_then(|b| b.parse::<usize>().ok())
+    {
+        erg.config.cell_beam_from = n;
+    }
 
     let items: Vec<(String, String, bool)> = read_relation(dir, "item")
         .into_iter()
@@ -59,7 +72,9 @@ fn main() {
                     let Some((id, text, wf)) = items.get(i) else {
                         break;
                     };
-                    let p = erg.parse(text).unwrap();
+                    let mut p = erg.parse(text).unwrap();
+                    // A fragment cover is not an analysis.
+                    p.readings.retain(|r| r.root != "fragment");
                     let ours: Vec<String> = p
                         .readings
                         .iter()
@@ -93,7 +108,8 @@ fn main() {
         mut with_gold,
         mut gold_hit,
         mut exhausted,
-    ) = (0, 0, 0, 0, 0, 0, 0);
+        mut top1,
+    ) = (0, 0, 0, 0, 0, 0, 0, 0);
     let mut total = Duration::ZERO;
     for (id, text, w, n, hit, has_gold, exh, el, first, g) in &results {
         total += *el;
@@ -116,6 +132,9 @@ fn main() {
             if *hit {
                 gold_hit += 1;
             }
+            if first.is_some() && first == g {
+                top1 += 1;
+            }
         }
         let mark = match (w, n, hit, has_gold) {
             (true, 0, _, _) => "MISS",
@@ -135,6 +154,6 @@ fn main() {
         }
     }
     println!(
-        "{dir}: grammatical {wf_parsed}/{wf} parsed; ungrammatical {nwf_parsed}/{nwf} parsed; gold tree found {gold_hit}/{with_gold}; {exhausted} hit limits; total {total:?}"
+        "{dir}: grammatical {wf_parsed}/{wf} parsed; ungrammatical {nwf_parsed}/{nwf} parsed; gold tree found {gold_hit}/{with_gold}, ranked first {top1}; {exhausted} hit limits; total {total:?}"
     );
 }

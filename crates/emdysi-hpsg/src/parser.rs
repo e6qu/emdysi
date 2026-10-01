@@ -112,8 +112,30 @@ impl Rule {
 
 #[derive(Debug, Clone)]
 pub enum EdgeKind {
-    Lex { inst: usize, tokens: Vec<usize> },
+    Lex {
+        inst: usize,
+        tokens: Vec<usize>,
+    },
     Rule(usize),
+    /// A sequence of partial analyses covering the input, used when no
+    /// complete analysis was found.
+    Cover,
+}
+
+/// A daughter of a rule application, for scoring.
+#[derive(Debug, Clone, Copy)]
+pub enum Dtr {
+    Lex(usize),
+    Rule(usize),
+}
+
+/// Local scores for chart pruning and best-first unpacking: higher is
+/// better. A derivation scores the sum of its local scores.
+pub trait Scorer: Sync {
+    /// Score of a lexical entry (an instance index).
+    fn lexical(&self, inst: usize) -> f64;
+    /// Score of applying rule `rule` to daughters `dtrs`.
+    fn rule(&self, rule: usize, dtrs: &[Dtr]) -> f64;
 }
 
 #[derive(Debug, Clone)]
@@ -137,6 +159,8 @@ pub struct Edge {
     /// Edges built with this edge as a daughter.
     parents: Vec<usize>,
     restricted: Option<Arc<Dag>>,
+    /// Model score of the best derivation found for this edge.
+    pub score: f64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -171,6 +195,7 @@ pub struct Reading {
 struct Inst {
     dag: Arc<Dag>,
     deriv: Arc<Deriv>,
+    score: f64,
 }
 
 fn bit(set: &[u64], i: usize) -> bool {
@@ -194,6 +219,18 @@ pub struct ParserConfig {
     /// When packing, compare edges as if their top type were this one
     /// (ACE's `generalize-edge-top-types`, e.g. `sign` for the ERG).
     pub packing_top_type: Option<TypeId>,
+    /// Chart pruning: at most this many edges are processed per chart cell
+    /// (span), the best-scoring first. Needs a scorer.
+    pub cell_beam: Option<usize>,
+    /// Chart pruning applies only to inputs longer than this many
+    /// positions; shorter ones are parsed exhaustively.
+    pub cell_beam_from: usize,
+    /// At most this many instantiations are kept per edge when unpacking,
+    /// the best-scoring first (with a scorer).
+    pub unpack_beam: usize,
+    /// When no complete analysis is found, return a cover of the input by
+    /// the largest partial analyses.
+    pub fragments: bool,
 }
 
 /// Counters describing the work a parse did.
@@ -211,6 +248,7 @@ pub struct Stats {
     pub lexical_time: Duration,
     pub subsumption_checks: usize,
     pub restrict_time: Duration,
+    pub pruned: usize,
     pub packed_proactive: usize,
     pub packed_retroactive: usize,
     pub frozen: usize,
@@ -223,6 +261,32 @@ pub struct ParseResult {
     pub positions: usize,
     pub exhausted: bool,
     pub filtered_lexical: usize,
+}
+
+/// Syntactic agenda: shorter spans first, then left to right, so that an
+/// edge is usually compared for packing with the edges it may subsume
+/// before anything is built on top of it.
+#[derive(Default)]
+struct Agenda(std::collections::BinaryHeap<std::cmp::Reverse<(usize, usize, usize)>>);
+
+impl Agenda {
+    fn push(&mut self, id: usize, start: usize, end: usize) {
+        self.0.push(std::cmp::Reverse((end - start, start, id)));
+    }
+
+    /// All queued edges of the next chart cell (same span).
+    fn pop_cell(&mut self) -> Option<Vec<usize>> {
+        let std::cmp::Reverse((len, start, id)) = self.0.pop()?;
+        let mut out = vec![id];
+        while let Some(&std::cmp::Reverse((l, s, i))) = self.0.peek() {
+            if (l, s) != (len, start) {
+                break;
+            }
+            self.0.pop();
+            out.push(i);
+        }
+        Some(out)
+    }
 }
 
 /// A daughter quick-check vector and the (rule, daughter) slots using it.
@@ -248,9 +312,31 @@ pub struct Parser<'g> {
     deadline: Instant,
     stats: Stats,
     nodes: usize,
+    scorer: Option<&'g dyn Scorer>,
 }
 
 impl<'g> Parser<'g> {
+    /// Use a scorer for chart pruning and best-first unpacking.
+    pub fn with_scorer(mut self, scorer: &'g dyn Scorer) -> Self {
+        self.scorer = Some(scorer);
+        self
+    }
+
+    fn dtr(&self, id: usize) -> Dtr {
+        match self.chart[id].kind {
+            EdgeKind::Lex { inst, .. } => Dtr::Lex(inst),
+            EdgeKind::Rule(ri) => Dtr::Rule(ri),
+            EdgeKind::Cover => Dtr::Rule(usize::MAX),
+        }
+    }
+
+    /// Score of a new rule edge over the given daughters.
+    fn rule_score(&self, ri: usize, dtrs: &[usize]) -> f64 {
+        let Some(sc) = self.scorer else { return 0.0 };
+        let ds: Vec<Dtr> = dtrs.iter().map(|&d| self.dtr(d)).collect();
+        dtrs.iter().map(|&d| self.chart[d].score).sum::<f64>() + sc.rule(ri, &ds)
+    }
+
     pub fn new(
         g: &'g Grammar,
         rules: &'g [Rule],
@@ -290,6 +376,7 @@ impl<'g> Parser<'g> {
             deadline: Instant::now(),
             stats: Stats::default(),
             nodes: 0,
+            scorer: None,
         }
     }
 
@@ -313,6 +400,7 @@ impl<'g> Parser<'g> {
             .into_iter()
             .map(|it| {
                 let qc = self.qc.vector(&it.dag, 0);
+                let score = self.scorer.map_or(0.0, |s| s.lexical(it.inst));
                 Edge {
                     start: pos[&it.start],
                     end: pos[&it.end],
@@ -330,6 +418,7 @@ impl<'g> Parser<'g> {
                     packed: Vec::new(),
                     parents: Vec::new(),
                     restricted: None,
+                    score,
                 }
             })
             .collect();
@@ -343,6 +432,11 @@ impl<'g> Parser<'g> {
             let id = lex_edges.len();
             lex_edges.push(e);
             let e = &lex_edges[id];
+            let e_dtr = match e.kind {
+                EdgeKind::Lex { inst, .. } => Dtr::Lex(inst),
+                EdgeKind::Rule(r) => Dtr::Rule(r),
+                EdgeKind::Cover => Dtr::Rule(usize::MAX),
+            };
             let mut new = Vec::new();
             for (ri, rule) in self.rules.iter().enumerate() {
                 if !rule.lexical || rule.dtrs.len() != 1 {
@@ -371,6 +465,7 @@ impl<'g> Parser<'g> {
                         packed: Vec::new(),
                         parents: Vec::new(),
                         restricted: None,
+                        score: e.score + self.scorer.map_or(0.0, |s| s.rule(ri, &[e_dtr])),
                     });
                 }
             }
@@ -412,10 +507,44 @@ impl<'g> Parser<'g> {
 
         self.stats.lexical_time = Instant::now() - (self.deadline - self.config.timeout);
         // Phase 3: syntactic rules.
-        let mut agenda: Vec<usize> = complete.into_iter().filter(|i| keep.contains(i)).collect();
-        agenda.sort_unstable_by(|a, b| b.cmp(a));
+        let mut agenda = Agenda::default();
+        for i in complete.into_iter().filter(|i| keep.contains(i)) {
+            agenda.push(i, self.chart[i].start, self.chart[i].end);
+        }
         let mut by_span: HashMap<(usize, usize), Vec<usize>> = HashMap::new();
-        while let Some(id) = agenda.pop() {
+        let mut cell_count: HashMap<(usize, usize), usize> = HashMap::new();
+        let cell_beam = self
+            .config
+            .cell_beam
+            .filter(|_| self.scorer.is_some() && self.n > self.config.cell_beam_from);
+        let mut batch: Vec<usize> = Vec::new();
+        loop {
+            if batch.is_empty() {
+                let Some(mut cell) = agenda.pop_cell() else {
+                    break;
+                };
+                // Best-scoring edges first; with a cell beam, the rest of
+                // the cell is pruned.
+                cell.sort_by(|&a, &b| {
+                    self.chart[b]
+                        .score
+                        .total_cmp(&self.chart[a].score)
+                        .then(a.cmp(&b))
+                });
+                cell.reverse();
+                batch = cell;
+            }
+            let id = batch.pop().unwrap();
+            if let Some(beam) = cell_beam {
+                let key = (self.chart[id].start, self.chart[id].end);
+                if self.chart[id].state == EdgeState::Active
+                    && cell_count.get(&key).copied().unwrap_or(0) >= beam
+                {
+                    self.chart[id].state = EdgeState::Frozen;
+                    self.stats.pruned += 1;
+                    continue;
+                }
+            }
             if self.chart.len() > self.config.max_edges
                 || self.nodes > self.config.max_nodes
                 || Instant::now() > self.deadline
@@ -435,6 +564,7 @@ impl<'g> Parser<'g> {
                 continue;
             }
             by_span.entry((start, end)).or_default().push(id);
+            *cell_count.entry((start, end)).or_default() += 1;
             let t = Instant::now();
             self.compute_fits(id);
             self.stats.fits_time += t.elapsed();
@@ -498,6 +628,10 @@ impl<'g> Parser<'g> {
             }
         }
 
+        // Unpacking (and the fragment fallback) gets a short grace period
+        // when the search used up the time limit.
+        let grace = (self.config.timeout / 5).min(Duration::from_secs(2));
+        self.deadline = self.deadline.max(Instant::now() + grace);
         // Recover readings from spanning edges.
         let spanning: Vec<usize> = self
             .by_start
@@ -531,6 +665,11 @@ impl<'g> Parser<'g> {
                 }
             }
         }
+        if readings.is_empty() && self.config.fragments {
+            if let Some(r) = self.fragment_cover(&mut memo) {
+                readings.push(r);
+            }
+        }
         self.stats.unpack_time = unpack_start.elapsed();
         ParseResult {
             stats: self.stats,
@@ -542,13 +681,75 @@ impl<'g> Parser<'g> {
         }
     }
 
+    /// The fewest complete edges that together span the input (the
+    /// best-scoring when tied), each with its best instantiation, as a
+    /// `fragment` reading.
+    fn fragment_cover(&mut self, memo: &mut HashMap<usize, Vec<Inst>>) -> Option<Reading> {
+        let n = self.n;
+        // best[j]: (pieces, score, last edge) of the best cover of 0..j.
+        let mut best: Vec<Option<(usize, f64, usize)>> = vec![None; n + 1];
+        best[0] = Some((0, 0.0, usize::MAX));
+        let mut ending: Vec<Vec<usize>> = vec![Vec::new(); n + 1];
+        for (id, e) in self.chart.iter().enumerate() {
+            if e.state == EdgeState::Active && e.pending.is_empty() && e.end > e.start {
+                ending[e.end].push(id);
+            }
+        }
+        for j in 1..=n {
+            for &id in &ending[j] {
+                let e = &self.chart[id];
+                let Some((k, sc, _)) = best[e.start] else {
+                    continue;
+                };
+                let cand = (k + 1, sc + e.score, id);
+                let better = match best[j] {
+                    None => true,
+                    Some((bk, bs, _)) => cand.0 < bk || (cand.0 == bk && cand.1 > bs),
+                };
+                if better {
+                    best[j] = Some(cand);
+                }
+            }
+        }
+        let mut pieces = Vec::new();
+        let mut j = n;
+        while j > 0 {
+            let (_, _, id) = best[j]?;
+            pieces.push(id);
+            j = self.chart[id].start;
+        }
+        pieces.reverse();
+        let mut kids = Vec::new();
+        let mut dag: Option<(usize, Arc<Dag>)> = None;
+        for id in pieces {
+            let inst = self.unpack(id, memo).into_iter().next()?;
+            let width = self.chart[id].end - self.chart[id].start;
+            if dag.as_ref().is_none_or(|(w, _)| width > *w) {
+                dag = Some((width, inst.dag.clone()));
+            }
+            kids.push(inst.deriv);
+        }
+        let dag = dag?.1;
+        Some(Reading {
+            root: "fragment".to_string(),
+            deriv: Arc::new(Deriv {
+                kind: EdgeKind::Cover,
+                start: 0,
+                end: n,
+                daughters: kids,
+                dag: dag.clone(),
+            }),
+            dag,
+        })
+    }
+
     /// Ambiguity packing (Oepen & Carroll 2000). Returns true if the edge
     /// was packed into an existing, more general edge.
     fn pack(
         &mut self,
         id: usize,
         by_span: &HashMap<(usize, usize), Vec<usize>>,
-        agenda: &mut Vec<usize>,
+        agenda: &mut Agenda,
     ) -> bool {
         let restrictor = self.config.packing_restrictor.as_deref().unwrap_or(&[]);
         let t = Instant::now();
@@ -594,7 +795,7 @@ impl<'g> Parser<'g> {
 
     /// Invalidate everything built from an edge that was packed
     /// retroactively; edges packed into invalidated ones get a second chance.
-    fn freeze_parents(&mut self, id: usize, agenda: &mut Vec<usize>) {
+    fn freeze_parents(&mut self, id: usize, agenda: &mut Agenda) {
         let mut stack: Vec<usize> = self.chart[id].parents.clone();
         while let Some(p) = stack.pop() {
             match self.chart[p].state {
@@ -607,14 +808,19 @@ impl<'g> Parser<'g> {
             stack.extend(self.chart[p].parents.iter().copied());
             for q in std::mem::take(&mut self.chart[p].packed) {
                 self.chart[q].state = EdgeState::Active;
-                agenda.push(q);
+                agenda.push(q, self.chart[q].start, self.chart[q].end);
             }
         }
     }
 
-    /// All instantiations of an edge and the edges packed into it.
+    /// Instantiations of an edge and the edges packed into it, best first
+    /// when there is a scorer (at most `unpack_beam` of them).
     fn unpack(&mut self, id: usize, memo: &mut HashMap<usize, Vec<Inst>>) -> Vec<Inst> {
-        const MAX_PER_EDGE: usize = 1000;
+        let beam = if self.scorer.is_some() {
+            self.config.unpack_beam.max(1)
+        } else {
+            1000
+        };
         if let Some(v) = memo.get(&id) {
             return v.clone();
         }
@@ -628,9 +834,9 @@ impl<'g> Parser<'g> {
             }
             i += 1;
         }
-        let mut out = Vec::new();
+        let mut out: Vec<Inst> = Vec::new();
         for a in alts {
-            if out.len() >= MAX_PER_EDGE || Instant::now() > self.deadline {
+            if Instant::now() > self.deadline {
                 break;
             }
             let e = &self.chart[a];
@@ -638,6 +844,7 @@ impl<'g> Parser<'g> {
                 out.push(Inst {
                     dag: e.dag.clone(),
                     deriv: Arc::new(self.chart_deriv(a)),
+                    score: e.score,
                 });
                 continue;
             }
@@ -648,33 +855,49 @@ impl<'g> Parser<'g> {
             let daughters = e.daughters.clone();
             let kid_insts: Vec<Vec<Inst>> =
                 daughters.iter().map(|&d| self.unpack(d, memo)).collect();
-            // Cartesian product of daughter instantiations.
-            let mut combos: Vec<Vec<usize>> = vec![Vec::new()];
+            // Combinations of daughter instantiations, best first.
+            let mut combos: Vec<(f64, Vec<usize>)> = vec![(0.0, Vec::new())];
             for k in &kid_insts {
                 let mut next = Vec::new();
-                for c in &combos {
-                    for j in 0..k.len() {
+                for (sc, c) in &combos {
+                    for (j, inst) in k.iter().enumerate() {
                         let mut c2 = c.clone();
                         c2.push(j);
-                        next.push(c2);
+                        next.push((sc + inst.score, c2));
                     }
                 }
                 combos = next;
-                if combos.len() > MAX_PER_EDGE {
-                    combos.truncate(MAX_PER_EDGE);
-                }
             }
-            for c in combos {
-                let dags: Vec<&Arc<Dag>> = c
+            if let Some(sc) = self.scorer {
+                for (score, c) in combos.iter_mut() {
+                    let ds: Vec<Dtr> = c
+                        .iter()
+                        .enumerate()
+                        .map(|(k, &j)| match kid_insts[k][j].deriv.kind {
+                            EdgeKind::Lex { inst, .. } => Dtr::Lex(inst),
+                            EdgeKind::Rule(r) => Dtr::Rule(r),
+                            EdgeKind::Cover => Dtr::Rule(usize::MAX),
+                        })
+                        .collect();
+                    *score += sc.rule(ri, &ds);
+                }
+                combos.sort_by(|a, b| b.0.total_cmp(&a.0));
+            }
+            let mut found = 0;
+            for (score, c) in combos {
+                if found >= beam || Instant::now() > self.deadline {
+                    break;
+                }
+                let dags: Vec<Arc<Dag>> = c
                     .iter()
                     .enumerate()
-                    .map(|(k, &j)| &kid_insts[k][j].dag)
+                    .map(|(k, &j)| kid_insts[k][j].dag.clone())
                     .collect();
-                let dags: Vec<Arc<Dag>> = dags.into_iter().cloned().collect();
                 let dag_refs: Vec<&Arc<Dag>> = dags.iter().collect();
                 let qcs: Vec<Vec<TypeId>> = dags.iter().map(|d| self.qc.vector(d, 0)).collect();
                 let qc_refs: Vec<&Vec<TypeId>> = qcs.iter().collect();
                 if let Some(m) = self.apply(ri, &dag_refs, &qc_refs) {
+                    found += 1;
                     let m = Arc::new(m);
                     out.push(Inst {
                         dag: m.clone(),
@@ -689,10 +912,13 @@ impl<'g> Parser<'g> {
                                 .collect(),
                             dag: m,
                         }),
+                        score,
                     });
                 }
             }
         }
+        out.sort_by(|a, b| b.score.total_cmp(&a.score));
+        out.truncate(beam);
         memo.insert(id, out.clone());
         out
     }
@@ -782,7 +1008,7 @@ impl<'g> Parser<'g> {
         self.u.unify(x, y, &self.g.ts, &cons)
     }
 
-    fn try_rule(&mut self, ri: usize, dtrs: &[usize], agenda: &mut Vec<usize>) {
+    fn try_rule(&mut self, ri: usize, dtrs: &[usize], agenda: &mut Agenda) {
         let rule = &self.rules[ri];
         let start = self.chart[dtrs[0]].start;
         let end = self.chart[*dtrs.last().unwrap()].end;
@@ -794,6 +1020,7 @@ impl<'g> Parser<'g> {
         let dags: Vec<Arc<Dag>> = dtrs.iter().map(|&d| self.chart[d].dag.clone()).collect();
         if let Some(dag) = self.unify_rule(ri, &dags) {
             self.nodes += dag.nodes.len();
+            let score = self.rule_score(ri, dtrs);
             let id = self.chart.len();
             self.chart.push(Edge {
                 start,
@@ -809,11 +1036,12 @@ impl<'g> Parser<'g> {
                 packed: Vec::new(),
                 parents: Vec::new(),
                 restricted: None,
+                score,
             });
             for &d in dtrs {
                 self.chart[d].parents.push(id);
             }
-            agenda.push(id);
+            agenda.push(id, start, end);
         }
     }
 
@@ -873,6 +1101,14 @@ pub fn derivation(
             d.end,
             forms(tokens)
         ),
+        EdgeKind::Cover => {
+            let kids: Vec<String> = d
+                .daughters
+                .iter()
+                .map(|k| derivation(g, rules, k, forms))
+                .collect();
+            format!("(fragments {} {} {})", d.start, d.end, kids.join(" "))
+        }
         EdgeKind::Rule(ri) => {
             let kids: Vec<String> = d
                 .daughters

@@ -128,7 +128,7 @@ impl Default for Options {
         Options {
             parse: true,
             threads: std::thread::available_parallelism().map_or(2, |n| n.get()),
-            max_tokens: 40,
+            max_tokens: 100,
             timeout: Duration::from_secs(10),
         }
     }

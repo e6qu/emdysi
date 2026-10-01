@@ -178,7 +178,11 @@ impl Labeler {
         d: &Deriv,
         form: &dyn Fn(&Deriv) -> Option<String>,
     ) -> Tree {
-        let label = self.label(g, u, &d.dag);
+        let label = if matches!(d.kind, crate::parser::EdgeKind::Cover) {
+            "FRAG".to_string()
+        } else {
+            self.label(g, u, &d.dag)
+        };
         let kids = match form(d) {
             Some(f) if d.daughters.is_empty() => vec![Tree::Leaf {
                 form: f,

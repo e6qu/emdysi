@@ -33,7 +33,7 @@ OPTIONS:
     --input plain|markdown input format (default: from the file extension; stdin is plain)
     --format plain|markdown  output format (default: plain)
     --no-parse             tokenize only; skip grammar-based checks
-    --max-tokens N         do not parse sentences longer than N tokens (default 40)
+    --max-tokens N         do not parse sentences longer than N tokens (default 100)
     --timeout SECS         time limit per sentence (default 10)
     --derivations          with `parse`, also print derivation trees
     --grammar DIR          grammar directory (default: the bundled ERG)

@@ -10,7 +10,7 @@
 use std::collections::HashMap;
 
 use emdysi_hpsg::Grammar;
-use emdysi_hpsg::parser::{Deriv, EdgeKind, Rule};
+use emdysi_hpsg::parser::{Deriv, Dtr, EdgeKind, Rule, Scorer};
 use emdysi_tdl::Term;
 
 /// The lexical type of an instance: the first type in its definition.
@@ -30,6 +30,7 @@ fn node_name(g: &Grammar, rules: &[Rule], d: &Deriv) -> String {
     match &d.kind {
         EdgeKind::Lex { inst, .. } => lexical_type(g, *inst),
         EdgeKind::Rule(ri) => rules[*ri].name.clone(),
+        EdgeKind::Cover => "fragment".to_string(),
     }
 }
 
@@ -59,6 +60,11 @@ fn collect(g: &Grammar, rules: &[Rule], d: &Deriv, parent: &str, out: &mut Vec<S
             out.push(format!("prd:{parent}^{name}>{kids}"));
             for k in &d.daughters {
                 collect(g, rules, k, &name, out);
+            }
+        }
+        EdgeKind::Cover => {
+            for k in &d.daughters {
+                collect(g, rules, k, "^", out);
             }
         }
     }
@@ -94,6 +100,47 @@ impl Model {
 
     pub fn score(&self, feats: &[String]) -> f64 {
         feats.iter().filter_map(|f| self.weights.get(f)).sum()
+    }
+}
+
+/// The model's local features as a chart-pruning scorer: lexical entries
+/// and types for words, rules with their daughters' categories for phrases.
+/// Features that depend on the parent node are left to the final ranking.
+pub struct ChartScorer<'a> {
+    pub grammar: &'a Grammar,
+    pub rules: &'a [Rule],
+    pub model: &'a Model,
+    /// Lexical type of each instance (see [`lexical_type`]).
+    pub le_types: &'a [String],
+}
+
+impl ChartScorer<'_> {
+    fn weight(&self, f: &str) -> f64 {
+        self.model.weights.get(f).copied().unwrap_or(0.0)
+    }
+
+    fn category(&self, d: &Dtr) -> String {
+        match *d {
+            Dtr::Lex(inst) => self.le_types[inst].clone(),
+            Dtr::Rule(ri) => self
+                .rules
+                .get(ri)
+                .map_or_else(|| "fragment".to_string(), |r| r.name.clone()),
+        }
+    }
+}
+
+impl Scorer for ChartScorer<'_> {
+    fn lexical(&self, inst: usize) -> f64 {
+        let le = &self.le_types[inst];
+        self.weight(&format!("lex:{}", self.grammar.instances[inst].name))
+            + self.weight(&format!("le:{le}"))
+    }
+
+    fn rule(&self, rule: usize, dtrs: &[Dtr]) -> f64 {
+        let name = &self.rules[rule].name;
+        let kids: Vec<String> = dtrs.iter().map(|d| self.category(d)).collect();
+        self.weight(&format!("r:{name}")) + self.weight(&format!("rd:{name}>{}", kids.join(",")))
     }
 }
 
