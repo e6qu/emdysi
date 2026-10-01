@@ -1,0 +1,16 @@
+[package]
+name = "emdysi-parse"
+description = "English parsing pipeline running the English Resource Grammar"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+emdysi-tdl = { path = "../emdysi-tdl", version = "0.1.0" }
+emdysi-hpsg = { path = "../emdysi-hpsg", version = "0.1.0" }
+emdysi-repp = { path = "../emdysi-repp", version = "0.1.0" }
+
+[lints]
+workspace = true

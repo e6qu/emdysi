@@ -1,0 +1,932 @@
+;;; Hey, emacs(1), this is -*- Mode: tdl; Coding: utf-8; -*- got it?
+
+;;;
+;;; Copyright (c) 2005 -- 2018 Dan Flickinger (danf@stanford.edu);
+;;; copyright (c) 2005 -- 2018 Stephan Oepen (oe@ifi.uio.no);
+;;; see `LICENSE' for conditions.
+;;;
+
+;;;
+;;; first shot of minimal type hierarchy for paraphrasing transfer rules.
+;;;
+
+;;;
+;;; minimal hierarchy of variable types, using the new (R)MRS naming scheme.
+;;;
+
+u := *top* & [ SCRATCH scratch ].
+i := u.
+p := u.
+h := p.
+e := i.
+x := i & p.
+
+;;;
+;;; to check for `arity' in MTRs, maybe we need an `anti-'variable type
+;;;
+a := u.
+
+;;;
+;;; the scratch slot in variables: used during transfer to control application
+;;; of rules, e.g. the rules that introduce selected preposition EPs in the ERG
+;;; accomodation phase which would otherwise be cyclic, i.e. the rule would
+;;; fire on its own output (since it does not consume anything).
+;;;
+scratch := *top*.
+test := scratch.
+complete := scratch.
+
+flags := *top* &
+[ OPTIONAL luk,
+  EQUAL *list*,
+  SUBSUME *list*,
+  TRIGGER string,
+  TRIGGER-CONSTRAINT *avm* ].
+
+mrs_transfer_rule := *top* &
+[ FILTER mrs,
+  CONTEXT mrs,
+  INPUT mrs,
+  OUTPUT mrs,
+  FLAGS flags ].
+
+generator_rule := mrs_transfer_rule &
+[ INPUT.RELS <! !> ].
+
+monotonic_mtr := mrs_transfer_rule &
+[ CONTEXT.HOOK.LTOP #h,
+  INPUT.HOOK.LTOP #h,
+  OUTPUT.HOOK.LTOP #h ].
+  
+monotonic_omtr := monotonic_mtr & optional_mtr.
+
+optional_mtr := mrs_transfer_rule &
+[ FLAGS.OPTIONAL + ].
+
+basic_word_mtr := monotonic_omtr &
+[ INPUT [ HOOK.INDEX #ind,
+	  RELS.LIST < [ LBL #h1, 
+                        ARG0 #i2, ARG1 #x3, ARG2 #x4, ARG3 #x5 ], ... > ],
+  OUTPUT [ HOOK.INDEX #ind,
+	   RELS.LIST 
+               < [ LBL #h1, 
+                   ARG0 #i2, ARG1 #x3, ARG2 #x4, ARG3 #x5 ], ... > ] ].
+
+word_mtr := basic_word_mtr &
+[ INPUT.RELS <! relation !> ].
+
+verb_mtr := word_mtr.
+
+word_hcons_mtr := word_mtr &
+[ OUTPUT.HCONS <! qeq !> ].
+
+verb_prtcl_cp_mtr := monotonic_mtr &
+[ INPUT [ RELS <! [ LBL #h1, ARG0 #e2, ARG2 #h3 ], [ LBL #h5 ] !>,
+	  HCONS <! qeq & [ HARG #h3, LARG #h5 ] !> ],
+  OUTPUT [ RELS <! [ LBL #h1, ARG0 #e2, ARG1 #h3 ], relation !>,
+	  HCONS <! qeq & [ HARG #h3, LARG #h5 ] !> ] ].
+
+verb_np_prtcl_np_mtr := monotonic_mtr &
+[ INPUT.RELS <! [ LBL #h1, ARG0 #e2, ARG1 #x3, ARG2 #x4, ARG3 #x5 ] !>,
+  OUTPUT.RELS <! [ LBL #h1, ARG0 #e2, ARG1 #x3, ARG2 #x5, ARG3 #x4 ] !> ]. 
+                 
+verb_prtcl_pp_ger_mtr := monotonic_mtr &
+[ INPUT [ RELS <! [ LBL #h1, ARG0 #e2, ARG1 #x3, ARG2 #x4 ],
+                  [ PRED quant_rel, ARG0 #x4 ],
+                  [ PRED nom_rel, ARG0 #x4, ARG1 #h9 ],
+                  [ LBL #h9, ARG2 #arg2, ARG3 #arg3, ARG4 #arg4 ] !> ],
+  OUTPUT.RELS <! [ LBL #h1, ARG0 #e2,
+                   ARG1 #x3, ARG2 #arg2, ARG3 #arg3, ARG4 #arg4 ],
+                 [ LBL #h1, ARG1 #e2 ] !> ].
+
+detlesspp_mtr := monotonic_mtr &
+[ INPUT [ RELS <! [ LBL #h1,
+                    ARG0 #e2, ARG1 #x3, ARG2 #x4 ],
+                  [ LBL #h7, ARG0 #x4 ],
+                  [ PRED idiom_q_i_rel, ARG0 #x4, RSTR #h6 ] !>,
+          HCONS <! qeq & [ HARG #h6, LARG #h7 ] !> ],
+  OUTPUT.RELS.LIST < [ LBL #h1,
+                       ARG0 #e2, ARG1 #x3 ], ... > ].
+
+detlesspp+adj_mtr := monotonic_mtr &
+[ INPUT [ RELS <! [ LBL #h1,
+                    ARG0 #e2, ARG1 #x3, ARG2 #x4 ],
+                  [ LBL #h7, ARG1 #x4 ],
+                  [ LBL #h7, ARG0 #x4 ],
+                  [ PRED udef_q_rel, ARG0 #x4, RSTR #h6 ] !>,
+          HCONS <! qeq & [ HARG #h6, LARG #h7 ] !> ],
+  OUTPUT.RELS.LIST < [ LBL #h1,
+                       ARG0 #e2, ARG1 #x3 ], ... > ].
+
+light_verb_mtr := monotonic_mtr &
+[ INPUT [ RELS.LIST < [ LBL #h1, ARG0 #e2, ARG1 #x3, ARG2 #x4 ],
+                  [ LBL #h6, ARG0 #x4 ],
+                  [ ARG0 #x4, RSTR #h5 ], ... >,
+          HCONS <! qeq & [ HARG #h5, LARG #h6 ] !> ],
+  OUTPUT.RELS.LIST < [ LBL #h1, ARG0 #e2, ARG1 #x3 ], ... > ].
+
+np_deletion_omtr := monotonic_omtr &
+[ INPUT [ HOOK.INDEX #index,
+	  RELS.LIST < [ LBL #h1, ARG0 #x1 & ref-ind ],
+		      [ PRED quant_rel, ARG0 #x1, RSTR #h2 ], ... >,
+	  HCONS <! qeq & [ HARG #h2, LARG #h1 ] !> ],
+  OUTPUT [ HOOK.INDEX #index,
+	   HCONS <! !> ] ].
+
+compound_head_deletion_omtr := np_deletion_omtr &
+[ INPUT.RELS <! [ PRED #pred, ARG0 #x2 & ref-ind & [ PNG.GEN #gen ] ], [ ],
+		[ LBL #h1, ARG0 #x1 & ref-ind ],
+	        [ LBL #h1, PRED compound_rel, ARG1 #x1, ARG2 #x2 ] !>,
+  OUTPUT.RELS <! [ PRED #pred, LBL #h1, ARG0 #x1 & [ PNG.GEN #gen ] ] !>,
+  FLAGS.SUBSUME < #x1, #x2, #h1 > ].
+
+appos_deletion_omtr := np_deletion_omtr &
+[ INPUT.RELS.LIST < [ ARG0 #x2 ], [ ], 
+		    [ PRED appos_rel, ARG2 #x2 ], ... >,
+  FLAGS.SUBSUME < #x2 > ].
+
+;; Delete the head of the appos
+appos_1_deletion_omtr := appos_deletion_omtr &
+[ INPUT.RELS <! [ PRED #npred, ARG0.PNG #png ], [ PRED #qpred ], [ ARG1 #x1 ], 
+	        [ LBL #h1, ARG0 #x1 ], 
+	        [ PRED quant_rel, ARG0 #x1, RSTR #h3 ] !>,
+  OUTPUT.RELS <! [ PRED #npred, LBL #h1, ARG0 #x1 & [ PNG #png ] ],
+	         [ PRED #qpred, LBL handle, ARG0 #x1, RSTR #h3 ]!> ].
+
+;; Wednesday night => Wednesday
+day_part_deletion_omtr := np_deletion_omtr &
+[ INPUT.RELS <! [ ARG0 #x1 & ref-ind ],
+		[ PRED quant_rel, ARG0 #x1 ], 
+		[ PRED of_p_rel, ARG0 #e0 & event, ARG1 #x1, ARG2 #x2 ],
+		[ PRED quant_rel, LBL #h5, ARG0 #x2, RSTR #h6, BODY #h7 ],
+		[ PRED dofw_rel, LBL #h8, ARG0 #x2 & ref-ind, CARG #carg ] !>,
+  OUTPUT.RELS <! [ PRED proper_q_rel, LBL #h5, ARG0 #x1, RSTR #h6, BODY #h7 ],
+	         [ PRED dofw_rel, LBL #h8, ARG0 #x1, CARG #carg ] !>,
+  FLAGS.EQUAL < #x1, #x2, #e0, #h5 > ].
+
+quantifier_substitution_omtr := monotonic_omtr &
+[ CONTEXT.RELS <! [ LBL #lbl,
+  	       	    ARG0 #x1 & ref-ind ] !>,
+  INPUT.RELS <! [ LBL #h2, ARG0 #x1 & [ PNG.PN 3 ], RSTR #h3 & handle,
+		  BODY #h4 & handle ] !>,
+  OUTPUT.RELS <! [ LBL #h2 & handle, ARG0 #x1, RSTR #h3, BODY #h4 ] !>,
+  FLAGS [ EQUAL < #lbl, #h2 >,
+	  SUBSUME < #x1 > ] ].
+
+;; DPF 2015-04-01 - Deleted the following, to get |he cooks for them|
+;; CONTEXT.RELS <! [ PRED "~._n_", LBL #h5 ] !>,
+;; (also FLAGS.EQUAL < ..., #h5 >)
+;;
+pronoun_substitution_omtr := norm_monotonic_omtr &
+[ FILTER.RELS <! [ PRED compound_or_prep_rel, LBL #h1 ] !>,
+  INPUT.RELS <! [ LBL #h1, 
+		  ARG0 #x1 & ref-ind & [ PNG [ PN 3 ], PT std ], 
+		  ARG1 unbound-ind ],
+                [ PRED quant_rel, LBL #h2 & handle, ARG0 #x1,
+		  RSTR #h3 & handle, BODY #h4 & handle ] !>,
+  OUTPUT.RELS <! [ PRED pron_rel, LBL #h1, ARG0 #x1 & [ PT std ] ],
+                 [ PRED pronoun_q_rel, LBL #h2, ARG0 #x1, RSTR #h3, 
+		   BODY #h4 ] !>,
+  FLAGS.EQUAL < #h1 > ].
+
+;; |Chicago's skyscrapers| => |the skyscrapers of Chicago|
+possessive_ppof_omtr := monotonic_omtr &
+[ FILTER.RELS <! [ PRED pron_rel, ARG0 #x2 ] !>,
+  CONTEXT.RELS <! [ PRED "~._n_", ARG0 #x1 & ref-ind ],
+		  [ PRED quant_rel, ARG0 #x2 ] !>,
+  INPUT [ RELS <! [ PRED def_explicit_q_rel, LBL #h2, ARG0 #x1,
+                    RSTR #h3 & handle, BODY #h4 & handle ],
+		  [ PRED poss_rel, LBL #h5, ARG0 #x0, ARG1 #x1, ARG2 #x2 ] !>,
+	  HCONS <! !> ],
+  OUTPUT [ RELS <! [ PRED _the_q_rel, LBL #h2, ARG0 #x1, RSTR #h3, BODY #h4 ],
+		   [ PRED _of_p_rel, LBL #h5, ARG0 #x0, ARG1 #x1, ARG2 #x2 ] !>,
+           HCONS <! !> ],
+  FLAGS.SUBSUME < #x1, #x2 > ].
+
+;; causative/inchoative
+;;
+causative-inchoative_omtr := norm_monotonic_omtr &
+[ INPUT [ RELS <! [ LBL #h1, ARG0 #e2, ARG1 #x3, ARG2 #x4 ],
+		  [ LBL #h5, ARG0 #x3 & ref-ind ],
+	  	  [ PRED quant_rel, ARG0 #x3, RSTR #h6 ] !>,
+          HCONS <! qeq & [ HARG #h6, LARG #h5 ] !> ],
+  OUTPUT.RELS <! [ LBL #h1 & handle, ARG0 #e2 & event, ARG1 #x4 & ref-ind ] !>,
+  FLAGS.EQUAL < #x3, #x4, #h1 > ].
+
+;; agentless passive
+;;
+agentless_passive_omtr := norm_monotonic_omtr &
+[ FILTER.RELS <! [ LBl #h5, ARG1 #x3 ] !>,
+  INPUT [ RELS <! [ PRED #pred & "~._v_", LBL #h1 & handle, ARG0 #e2 & event, 
+		    ARG1 #x3 & ref-ind, ARG2 #x4 & ref-ind ],
+		  [ LBL #h5, ARG0 #x3 ],
+	  	  [ PRED quant_rel, ARG0 #x3, RSTR #h6 ] !>,
+          HCONS <! qeq & [ HARG #h6, LARG #h5 ] !> ],
+  OUTPUT [ RELS <! [ PRED #pred, LBL #h1, ARG0 #e2, 
+		     ARG1 individual, ARG2 #x4 ] !>,
+	   HCONS <! !> ],
+  FLAGS [ EQUAL < #h1 >,
+          SUBSUME < #x3, #x4 > ] ].
+
+dative_object_deletion_omtr := norm_monotonic_omtr &
+[ INPUT [ HOOK.INDEX #index,
+	  RELS <! [ PRED #pred & "~._v_", LBL #h1 & handle, ARG0 #e2 & event, 
+		    ARG1 #x3 & ref-ind, ARG2 #x4 & ref-ind, ARG3 #x5 ],
+		  [ LBL #h5, ARG0 #x10 & ref-ind ],
+	  	  [ PRED quant_rel, ARG0 #x10, RSTR #h6 ] !>,
+          HCONS <! qeq & [ HARG #h6, LARG #h5 ] !> ],
+  OUTPUT [ HOOK.INDEX #index,
+	   RELS <! [ PRED #pred, LBL #h1, ARG0 #e2, 
+		     ARG1 #x3 ] !>,
+	   HCONS <! !> ],
+  FLAGS.SUBSUME < #x3, #x4, #x5, #h1, #x10 > ].
+
+;;;
+;;; a few `special-purpose' types, transfer operators in a sense
+;;;
++upcase+ := string.
++downcase+ := string.
+
+;;;
+;;; common types for generator trigger rules
+;;;
+
+arg0e_gtr := generator_rule &
+[ CONTEXT [ RELS.LIST < [ ARG0 #e & event ], ... > ],
+  FLAGS.EQUAL < #e, ... > ].
+
+arg0e+1x_gtr := arg0e_gtr &
+[ CONTEXT [ RELS.LIST < [ ARG1 #x & basic_non_expl-ind ], ... > ],
+  FLAGS [ EQUAL < semarg >,
+	  SUBSUME < #x > ] ].
+
+arg0e+2x_gtr := arg0e_gtr &
+[ CONTEXT [ RELS.LIST < [ ARG2 #x & basic_non_expl-ind ], ... > ],
+  FLAGS [ EQUAL < semarg >,
+	  SUBSUME < #x > ] ].
+
+arg0e+3x_gtr := arg0e_gtr &
+[ CONTEXT [ RELS.LIST < [ ARG3 #x & basic_non_expl-ind ], ... > ],
+  FLAGS [ EQUAL < semarg >,
+	  SUBSUME < #x > ] ].
+
+arg0e+1h_gtr := arg0e_gtr &
+[ CONTEXT [ RELS.LIST < [ ARG1 #h & handle ], ... > ],
+  FLAGS.EQUAL < semarg, #h > ].
+
+arg0e+2h_gtr := arg0e_gtr &
+[ CONTEXT [ RELS.LIST < [ ARG2 #h & handle ], ... > ],
+  FLAGS.EQUAL < semarg, #h > ].
+
+arg0e+3h_gtr := arg0e_gtr &
+[ CONTEXT [ RELS.LIST < [ ARG3 #h & handle ], ... > ],
+  FLAGS.EQUAL < semarg, #h > ].
+
+;; DPF 2013-08-26 - Constrain #x to overt_non_expl-ind
+arg0e+x_gtr := arg0e_gtr &
+[ CONTEXT [ RELS.LIST < relation & [ ARG0.E.TENSE real_tense ],
+                        [ LBL #h, ARG0 #x & overt_non_expl-ind ], ... > ],
+  FLAGS [ EQUAL < semarg, #h >,
+	  SUBSUME < #x > ] ].
+
+arg0e+xh_gtr := arg0e_gtr &
+[ CONTEXT [ RELS.LIST < relation & [ ARG0.E.TENSE real_tense,
+				     ARG2 handle & #h2 ],
+                        [ LBL #h, ARG0 #x & basic_non_expl-ind ], ... > ],
+  FLAGS [ EQUAL < semarg, #h, #h2 >,
+	  SUBSUME < #x > ] ] .
+
+arg0e+1x_be_gtr := arg0e+1x_gtr &
+[ CONTEXT [ RELS <! [ ARG0.E #tam,
+		      ARG1 #x ] !> ],
+  FLAGS [ TRIGGER-CONSTRAINT.SYNSEM.LOCAL [ CONT.HOOK [ INDEX.E #tam,
+							XARG #x & [ PNG #png ]],
+					    AGR.PNG #png ] ] ].
+
+complementizer_gtr := generator_rule &
+[ CONTEXT [ RELS <! [ PRED "~_[vnapj](?:_|$)",
+                      ARG0 non_expl ], 
+                    [ ARG0 #e & event ] !> ],
+  FLAGS.EQUAL < #e, ... > ].
+
+compl_prop_gtr := complementizer_gtr &
+[ CONTEXT [ RELS <! relation, [ ARG0 [ E.TENSE real_tense,
+                                       SF prop ] ] !> ] ].
+
+compl_prop_gtr1 := compl_prop_gtr &
+[ CONTEXT.RELS <! [ ARG1 #h & handle ], relation !>,
+  FLAGS.EQUAL < semarg, #h > ].
+
+compl_prop_gtr2 := compl_prop_gtr &
+[ CONTEXT.RELS <! [ ARG2 #h & handle ], relation !>,
+  FLAGS.EQUAL < semarg, #h > ].
+
+compl_prop_gtr3 := compl_prop_gtr &
+[ CONTEXT.RELS <! [ ARG3 #h & handle ], relation !>,
+  FLAGS.EQUAL < semarg, #h > ].
+
+compl_prop_gtr4 := compl_prop_gtr &
+[ CONTEXT.RELS <! [ ARG4 #h & handle ], relation !>,
+  FLAGS.EQUAL < semarg, #h > ].
+
+compl_ques_gtr := complementizer_gtr &
+[ CONTEXT [ RELS <! relation, [ ARG0 [ E.TENSE real_tense,
+                                       SF ques ] ] !> ] ].
+
+compl_ques_gtr1 := compl_ques_gtr &
+[ CONTEXT.RELS <! [ ARG1 #h & handle ], relation !>,
+  FLAGS.EQUAL < semarg, #h > ].
+
+compl_ques_gtr2 := compl_ques_gtr &
+[ CONTEXT.RELS <! [ ARG2 #h & handle ], relation !>,
+  FLAGS.EQUAL < semarg, #h > ].
+
+compl_ques_gtr3 := compl_ques_gtr &
+[ CONTEXT.RELS <! [ ARG3 #h & handle ], relation !>,
+  FLAGS.EQUAL < semarg, #h > ].
+
+compl_ques_gtr4 := compl_ques_gtr &
+[ CONTEXT.RELS <! [ ARG4 #h & handle ], relation !>,
+  FLAGS.EQUAL < semarg, #h > ].
+
+compl_notense_gtr := complementizer_gtr &
+[ CONTEXT.RELS <! relation, [ ARG0 [ E.TENSE no_tense,
+                                     SF prop-or-ques ] ] !> ].
+
+compl_notense_gtr1 := compl_notense_gtr &
+[ CONTEXT.RELS <! [ ARG1 #h & handle ], relation !>,
+  FLAGS.EQUAL < semarg, #h > ].
+
+compl_notense_gtr2 := compl_notense_gtr &
+[ CONTEXT.RELS <! [ ARG2 #h & handle ], relation !>,
+  FLAGS.EQUAL < semarg, #h > ].
+
+compl_notense_gtr3 := compl_notense_gtr &
+[ CONTEXT.RELS <! [ ARG3 #h & handle ], relation !>,
+  FLAGS.EQUAL < semarg, #h > ].
+
+compl_ques_notense_gtr := complementizer_gtr &
+[ CONTEXT.RELS <! relation, [ ARG0 [ E.TENSE no_tense,
+                                     SF ques ] ] !> ].
+
+compl_ques_notense_gtr1 := compl_ques_notense_gtr &
+[ CONTEXT.RELS <! [ ARG1 #h & handle ], relation !>,
+  FLAGS.EQUAL < semarg, #h > ].
+
+compl_ques_notense_gtr2 := compl_ques_notense_gtr &
+[ CONTEXT.RELS <! [ ARG2 #h & handle ], relation !>,
+  FLAGS.EQUAL < semarg, #h > ].
+
+compl_ques_notense_gtr3 := compl_ques_notense_gtr &
+[ CONTEXT.RELS <! [ ARG3 #h & handle ], relation !>,
+  FLAGS.EQUAL < semarg, #h > ].
+
+;;; Idiom rules
+
+v_nbar_idiom_mtr := monotonic_mtr &
+  [ INPUT.RELS <! [ LBL handle,
+                    ARG0 event,
+                    ARG1 ref-ind,
+                    ARG2 ref-ind & #arg2 ],
+                [ LBL handle,
+                  ARG0 #arg2 ],
+                [ PRED idiom_q_i_rel,
+                  ARG0 #arg2 ] !>,
+    OUTPUT.RELS <! !> ].
+
+v_nbar_plus_pp_idiom_mtr := monotonic_mtr &
+  [ INPUT.RELS <! [ LBL handle,
+                    ARG0 event,
+                    ARG1 basic_non_expl-ind,
+                    ARG2 ref-ind,
+                    ARG3 ref-ind ],
+                [ LBL handle,
+                  ARG0 #arg2 ],
+                [ ARG0 #arg2 ] !>,
+    OUTPUT.RELS <! !> ].
+
+basic_v_nbar_pp_idiom_mtr := v_nbar_plus_pp_idiom_mtr &
+  [ INPUT.RELS <! [ ARG2 ref-ind & #arg ],
+		  [ ARG0 #arg ], relation !> ].
+
+; For |take X into account|
+v_np_detlesspp_idiom_mtr := v_nbar_plus_pp_idiom_mtr &
+  [ INPUT.RELS <! [ ARG3 ref-ind & #arg ],
+		  [ ARG0 #arg ], relation !> ].
+
+;; DPF 2018-07-25 - For some reason, constraining third relation's PRED to
+;; quant_rel fails, as for |we fell victim to Kim|.  FIX?
+#|
+v_nbar_pp_idiom_mtr := basic_v_nbar_pp_idiom_mtr &
+  [ INPUT.RELS <! relation, relation, [ PRED quant_rel ] !> ].
+|#
+v_nbar_pp_idiom_mtr := basic_v_nbar_pp_idiom_mtr.
+
+v_nbar-pl_pp_idiom_mtr := basic_v_nbar_pp_idiom_mtr &
+  [ INPUT.RELS <! relation, relation, [ PRED udef_q_rel ] !> ].
+
+v_np_idiom_mtr := monotonic_mtr &
+  [ INPUT.RELS <! [ LBL handle,
+                    ARG0 event,
+                    ARG1 ref-ind,
+                    ARG2 ref-ind & #arg2 ],
+                [ LBL handle,
+                  ARG0 #arg2 ] !>,
+    OUTPUT.RELS <! !>,
+    FLAGS.EQUAL < #arg2 > ].
+
+v_light_adj_idiom_mtr := monotonic_mtr &
+  [ INPUT [ RELS <! [ ARG1 ref-ind,
+                      ARG2 #arg ],
+                    [ LBL #lbl ] !>,
+	    HCONS <! qeq & [ HARG #arg, LARG #lbl ] !> ],
+    OUTPUT.RELS <! !> ].
+
+;; see fit to leave
+v_adj_idiom_mtr := monotonic_mtr &
+  [ INPUT [ RELS <! [ ARG1 #arg1,
+		      ARG2 #argh],
+		    [ LBL #lbl,
+		      ARG1 #arg1,
+                      ARG2 handle ] !>,
+	    HCONS <! qeq & [ HARG #argh, LARG #lbl ] !> ],
+    OUTPUT.RELS <! !> ].
+
+basic_v_np_xp_idiom_mtr := monotonic_mtr &
+  [ INPUT.RELS <! [ LBL handle,
+                    ARG0 event,
+                    ARG1 ref-ind,
+                    ARG2 ref-ind ],
+                  [ LBL handle,
+		    ARG0 #arg0 ],
+		  [ ARG0 #arg0 ] !>,
+    OUTPUT.RELS <! !> ].
+
+v_np_xp_idiom_mtr := basic_v_np_xp_idiom_mtr &
+  [ INPUT.RELS <! [ ARG2 #arg2, ARG3 ref-ind ],
+		  [ ARG0 #arg2 ], [] !>,
+    FLAGS.EQUAL < #arg2 > ].
+
+v_np2_xp_idiom_mtr := basic_v_np_xp_idiom_mtr &
+  [ INPUT.RELS <! [ ARG3 #arg3 & ref-ind ],
+		  [ ARG0 #arg3 ], [] !>,
+    FLAGS.EQUAL < #arg3 > ].
+
+
+detless_pp_idiom_mtr := monotonic_mtr &
+  [ INPUT.RELS <! [ LBL handle,
+                    ARG0 event,
+                    ARG2 ref-ind & #arg2 ],
+                  [ LBL handle,
+                    ARG0 #arg2 ],
+                  [ ARG0 #arg2 ] !>,
+    OUTPUT.RELS <! !> ].
+
+pp_idiom_mtr := monotonic_mtr &
+  [ INPUT.RELS <! [ LBL handle,
+                    ARG0 event,
+                    ARG2 ref-ind & #arg2 ],
+                  [ LBL handle,
+                    ARG0 #arg2 ],
+                  [ ARG0 #arg2 ] !>,
+    OUTPUT.RELS <! !> ].
+
+;; |point of view|
+noun_detless_pp_idiom_mtr := monotonic_mtr &
+  [ INPUT.RELS <! [ LBL handle,
+                    ARG0 ref-ind,
+                    ARG1 ref-ind & #arg1 ],
+                  [ LBL handle,
+                    ARG0 #arg1 ],
+                  [ PRED idiom_q_i_rel, ARG0 #arg1 ] !>,
+    OUTPUT.RELS <! !> ].
+
+
+; wait one's turn
+basic_v_reflnp_idiom_mtr := monotonic_mtr &
+  [ INPUT.RELS.LIST 
+	      < [ LBL handle & #vlbl,
+		  ARG0 event,
+		  ARG1 #varg1,
+		  ARG2 ref-ind & #varg2 ],
+		[ LBL handle & #lbl,
+		  ARG0 #varg2 ],
+		[ LBL #vlbl,
+		  PRED id_rel,
+		  ARG1 #varg1,
+		  ARG2 #parg2 ],
+		[ LBL #lbl,
+		  PRED poss_rel,
+		  ARG1 #varg2,
+		  ARG2 #parg2 ], ... >,
+    OUTPUT.RELS <! !> ].
+
+v_reflnp_idiom_mtr := basic_v_reflnp_idiom_mtr &
+  [ INPUT.RELS <! relation, relation, relation, relation !> ].
+
+v_reflnp-pp_idiom_mtr := monotonic_mtr &
+  [ INPUT [ RELS.LIST
+	      < [ LBL handle & #vlbl,
+		  ARG0 event,
+		  ARG1 ref-ind & #varg1,
+		  ARG2 ref-ind & #varg2 ],
+		[ LBL handle & #lbl,
+		  ARG0 #varg2 ],
+		relation,
+		[ LBL #vlbl,
+		  PRED id_rel,
+		  ARG1 #varg1,
+		  ARG2 #parg2 ],
+		[ LBL #lbl,
+		  PRED poss_rel,
+		  ARG1 #varg2,
+		  ARG2 #parg2 ], ... > ],
+    OUTPUT.RELS <! !> ].
+
+v_reflnp-pp_seq_idiom_mtr := v_reflnp-pp_idiom_mtr &
+ [ INPUT [ RELS <! [ ARG2 #varg2,
+		     ARG3 #varg3 ],
+		   relation, 
+		   [ ARG0 #pparg2 ],
+		   relation, 
+		   relation, 
+		   [ LBL handle & #plbl,
+		     ARG1 #varg2,
+		     ARG2 #pparg2 ] !>,
+	   HCONS <! qeq & [ HARG #varg3,
+			    LARG #plbl ] !> ] ].
+
+v_reflnp-pp_seq2_idiom_mtr := v_reflnp-pp_idiom_mtr &
+  [ INPUT.RELS <! [ LBL #vlbl,
+		    ARG1 #varg1,
+		    ARG3 #varg3 ],
+		  relation,
+		  [ LBL #nlbl,
+		    ARG0 #varg3 ],
+	          relation,
+		  relation,
+	          relation,
+		[ LBL #vlbl,
+		  PRED id_rel,
+		  ARG1 #varg1,
+		  ARG2 #parg2 ],
+		[ LBL #nlbl,
+		  PRED poss_rel,
+		  ARG1 #varg3,
+		  ARG2 #parg2 ] !> ].
+
+;; "a taste of her own medicine"
+np_poss_idiom_mtr := monotonic_mtr &
+  [ INPUT.RELS <! [ LBL handle & #nlbl,
+		    ARG0 ref-ind,
+		    ARG1 #parg1 ],
+		[ LBL handle & #nlbl2,
+		  ARG0 #parg1 ],
+		[ LBL #nlbl,
+		  PRED id_rel,
+		  ARG2 #parg2 ],
+		[ LBL #nlbl2,
+		  PRED poss_rel,
+		  ARG1 #parg1,
+		  ARG2 #parg2 ] !>,
+    OUTPUT.RELS <! !> ].
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+classifier_noun_mtr := monotonic_mtr &
+  [ INPUT.RELS <! [ LBL handle,
+                    PRED quantum_n_of_rel,
+                    ARG0 ref-ind,
+                    ARG1 ref-ind & #arg1],
+                  [ ARG0 #arg1 ] !>,
+    OUTPUT.RELS <! !> ].
+
+expletive_it_gtr := generator_rule &
+[ CONTEXT [ RELS <! [ ] !> ],
+  FLAGS.TRIGGER "it" ].
+
+; Exclude adverbs with same pred as it-adjectives
+;
+expletive_it_adj_gtr := expletive_it_gtr &
+[ CONTEXT [ RELS <! [ ARG1 handle ] !> ] ].
+
+expletive_is_adj_expl_gtr := generator_rule &
+[ CONTEXT [ RELS <! [ ARG0 [ E.TENSE present ] ] !> ],
+  FLAGS.TRIGGER "be_c_is" ].
+
+expletive_was_adj_expl_gtr := generator_rule &
+[ CONTEXT [ RELS <! [ ARG0 [ E.TENSE past ] ] !> ],
+  FLAGS.TRIGGER "be_c_was" ].
+
+expletive_be_adj_expl_gtr1 := generator_rule &
+[ CONTEXT [ RELS <! [ ARG0 [ E.TENSE future ] ] !> ],
+  FLAGS.TRIGGER "be_c_be" ].
+
+expletive_be_adj_expl_gtr2 := generator_rule &
+[ CONTEXT [ RELS <! [ ARG0 [ E.TENSE untensed ] ] !> ],
+  FLAGS.TRIGGER "be_c_be" ].
+
+expletive_been_adj_expl_gtr := generator_rule &
+[ CONTEXT [ RELS <! [ ARG0 [ E.ASPECT.PRF + ] ] !> ],
+  FLAGS.TRIGGER "be_c_been" ].
+
+; Copula trigger rule types
+; Five rules for copula plus [ PROGR + ] verbs, with ref-ind in 
+; ARG1,2,3, or handle in ARG1,2 (sentential subject of active -- passive
+; treated separately).
+
+be_cop_x1_rule := arg0e+1x_gtr &
+ [ CONTEXT [ RELS <! [ PRED "~_v(?:_|$)",
+		       ARG0 [ E [ MOOD indicative,
+                                  ASPECT.PROGR + ] ],
+		       ARG1 #x ] !> ],
+   FLAGS.TRIGGER-CONSTRAINT.SYNSEM.LOCAL [ CONT.HOOK.XARG #x & [ PNG #png ],
+					   AGR.PNG #png ] ].
+
+be_cop_x2_rule := arg0e+2x_gtr &
+ [ CONTEXT [ RELS <! [ PRED "~_v(?:_|$)",
+		       ARG0 [ E [ MOOD indicative,
+                                  ASPECT.PROGR + ] ],
+		       ARG2 #x ] !> ],
+   FLAGS.TRIGGER-CONSTRAINT.SYNSEM.LOCAL [ CONT.HOOK.XARG #x & [ PNG #png ],
+					   AGR.PNG #png ] ].
+
+be_cop_x3_rule := arg0e+3x_gtr &
+ [ CONTEXT [ RELS <! [ PRED "~_v(?:_|$)",
+		       ARG0 [ E [ MOOD indicative,
+                                  ASPECT.PROGR + ] ],
+		       ARG3 #x ] !> ],
+   FLAGS.TRIGGER-CONSTRAINT.SYNSEM.LOCAL [ CONT.HOOK.XARG #x & [ PNG #png ],
+					   AGR.PNG #png ] ].
+
+; Special case for future-modal "going to" as in "He is going to leave."
+be_cop_going+to_rule := arg0e_gtr &
+ [ CONTEXT [ RELS <! [ PRED _going+to_v_qmodal_rel ] !> ] ].
+
+; Exclude 'are, 'were' since expletive 'it' and sentential subjects are
+; 3sg.
+be_cop_h1_rule := arg0e+1h_gtr &
+ [ CONTEXT [ RELS <! [ PRED "~_v(?:_|$)",
+		       ARG0 [ E [ MOOD indicative,
+                                  ASPECT.PROGR + ] ] ] !> ] ].
+
+be_cop_h2_rule := arg0e+2h_gtr &
+ [ CONTEXT [ RELS <! [ PRED "~_v(?:_|$)",
+		       ARG0 [ E [ MOOD indicative,
+                                  ASPECT.PROGR + ] ] ] !> ] ].
+
+; Five rules for copula with passives: Either a message's PSV is
+; coindexed with (1) a ref-ind (ARG 2,3) or (2) a handle (sentential subject 
+; of passive verb, as ARG2) -- where the PSV attribute is unconstrained, allow
+; both active and passive; or (3-4) context is a raising verb with a message
+; argument (ARG1,2), as in "It was known that Kim won", where the PSV value 
+; remains unbound since the syntactic subject is an expletive, invisible in MRS
+; This latter case is unfortunate, since it means copulas will be introduced
+; unnecessarily for lots of MRSs.
+; So for the moment, we'll limit the damage by restricting these expletive
+; subject passives to ones where there is no explicit 'by phrase', so we
+; won't generate e.g. "It was known by everyone that Kim won".  Maybe no
+; great loss for now.
+
+; Here the FILTER rel prevents triggering when the event introducing the
+; potentially passived argument is the ARG0 of a message whose PSV does not
+; license that argument.  The #u also in FLAGS.EQUAL prevents this filter
+; from being invoked if there is no value assigned in PSV, with the effect
+; that an underspecified (or absent) PSV value will be compatible with
+; this rule, so it will trigger.
+
+be_cop_2x_psv_rule := arg0e_gtr &
+ [ CONTEXT [ RELS <! [ PRED "~_v(?:_|$)",
+                       ARG0 [ E [ MOOD indicative ] ],
+                       ARG2 #x & event_or_index ] !> ],
+   FLAGS [ EQUAL < semarg >,
+           SUBSUME < #x >,
+	   TRIGGER-CONSTRAINT.SYNSEM.LOCAL [ CONT.HOOK.XARG #x & [ PNG #png ],
+					     AGR.PNG #png ] ] ].
+
+be_cop_3x_psv_rule := arg0e_gtr &
+ [ CONTEXT [ RELS <! [ PRED "~_v(?:_|$)",
+                       ARG0 [ E [ MOOD indicative ] ],
+                       ARG3 #x & event_or_index ] !> ],
+   FLAGS [ EQUAL < semarg >,
+           SUBSUME < #x >,
+	   TRIGGER-CONSTRAINT.SYNSEM.LOCAL [ CONT.HOOK.XARG #x & [ PNG #png ],
+					     AGR.PNG #png ] ] ].
+
+be_cop_2h_psv_rule := arg0e_gtr &
+ [ CONTEXT [ RELS <! [ ARG0 [ E [ MOOD indicative ] ],
+                       ARG2 #h & handle ],
+		     [ LBL #h,
+		       PRED "~_v(?:_|$)",
+		       ARG0.E.TENSE real_tense ] !> ],
+   FLAGS.EQUAL < event, #h > ].
+
+be_cop_3h_psv_rule := arg0e_gtr &
+ [ CONTEXT [ RELS <! [ ARG0 [ E [ MOOD indicative ] ],
+                       ARG3 #h & handle ],
+		     [ LBL #h,
+		       PRED "~_v(?:_|$)",
+		       ARG0.E.TENSE real_tense ] !> ],
+   FLAGS.EQUAL < event, #h > ].
+
+be_cop_expl_2h_psv_rule := arg0e_gtr &
+ [ CONTEXT [ RELS <! [ PRED "~_v(?:_|$)",
+                       ARG0 [ E [ MOOD indicative ] ],
+                       ARG1 #x & ref-ind,
+                       ARG2 #h & handle ] !> ],
+   FILTER.RELS <! [ ARG0 #x ] !>,
+   FLAGS.EQUAL < semarg, #h > ].
+
+be_cop_expl_3h_psv_rule := arg0e_gtr &
+ [ CONTEXT [ RELS <! [ PRED "~_v(?:_|$)",
+                       ARG0 [ E [ MOOD indicative ] ],
+                       ARG1 #x & ref-ind,
+                       ARG3 #h & handle ] !> ],
+   FILTER.RELS <! [ ARG0 #x ] !>,
+   FLAGS.EQUAL < semarg, #h > ].
+
+; Three rules for copula plus predicative PP or AP, with 3sg ref-ind ARG1,2,3
+
+be_cop_prd_1x_rule := arg0e+1x_gtr &
+ [ CONTEXT [ RELS <! [ PRED "~_[paj](?:_|$)",
+                       ARG0 [ E [ MOOD indicative ] ],
+		       ARG1 #x ] !> ],
+   FLAGS.TRIGGER-CONSTRAINT.SYNSEM.LOCAL [ CONT.HOOK [ XARG #x & [ PNG #png ] ],
+					   AGR.PNG #png ] ].
+
+be_cop_prd_2x_rule := arg0e+2x_gtr &
+ [ CONTEXT [ RELS <! [ PRED "~_[paj](?:_|$)",
+                       ARG0 [ E [ MOOD indicative ] ],
+		       ARG2 #x ] !> ],
+   FLAGS.TRIGGER-CONSTRAINT.SYNSEM.LOCAL [ CONT.HOOK.XARG #x & [ PNG #png ],
+					   AGR.PNG #png ] ].
+
+be_cop_prd_3x_rule := arg0e+3x_gtr &
+ [ CONTEXT [ RELS <! [ PRED "~_[paj](?:_|$)",
+                       ARG0 [ E [ MOOD indicative ] ],
+		       ARG2 #x ] !> ],
+   FLAGS.TRIGGER-CONSTRAINT.SYNSEM.LOCAL [ CONT.HOOK.XARG #x & [ PNG #png ],
+					   AGR.PNG #png ] ].
+
+; Two similar rules for copula plus adjective with message argument as
+; syntactic subject (again only ARG1,2 possible, and maybe even only ARG1).
+; Again, exclude 'am, are, were'
+
+be_cop_prd_1h_rule := arg0e+1h_gtr &
+ [ CONTEXT [ RELS <! [ PRED "~_[paj](?:_|$)",
+                       ARG0 [ E [ MOOD indicative ] ] ] !> ] ].
+
+be_cop_prd_2h_rule := arg0e+2h_gtr &
+ [ CONTEXT [ RELS <! [ PRED "~_[paj](?:_|$)",
+                       ARG0 [ E [ MOOD indicative ] ] ] !> ] ].
+
+; One rule for copula with purposive VP: 'Kim is to stay here.'
+be_cop_inf_rule := generator_rule &
+ [ CONTEXT.RELS <! [ PRED eventuality_rel ] !> ].
+
+; One rule for tag questions with there-copula in main clause (hack to avoid
+; spurious ambiguity).
+be_cop_tag_th_expl_rule := arg0e_gtr &
+ [ CONTEXT [ RELS <! [ PRED _be_v_there_rel ] !> ] ].
+
+; One rule for VP ellipsis with there-copula (hack to avoid spurious ambig).
+be_cop_ellip_th_expl_rule := arg0e_gtr &
+ [ CONTEXT [ RELS <! [ PRED _be_v_there_rel ],
+                     [ PRED ellipsis_expl_rel,
+                       ARG0 [ E [ MOOD indicative ] ] ] !> ] ].
+
+be_cop_ellip_rule := arg0e_gtr &
+ [ CONTEXT.RELS <! [ PRED ellipsis_ref_rel,
+                     ARG0.E.MOOD indicative,
+		     ARG1 #x ] !>,
+   FLAGS.TRIGGER-CONSTRAINT.SYNSEM.LOCAL [ CONT.HOOK.XARG #x & [ PNG #png ],
+					   AGR.PNG #png ] ].
+
+
+;; Rules for copula 'are/were' with group nouns which are semantically NUM 3s
+;; as in |a number of cats were arising/hired|
+be_cop_group_rule := arg0e_gtr &
+ [ CONTEXT [ RELS <! [ ARG0 [ E [ MOOD indicative ] ] ],
+		     [ ARG0 basic_non_expl-ind & #x & [ PNG [ PN 3s ] ],
+		       ARG1 basic_non_expl-ind & #arg & 
+			    [ PNG [ PN -3s ] ] ] !> ],
+   FLAGS [ EQUAL < semarg >,
+	   SUBSUME < #x, #arg > ] ].
+
+be_cop_were_group_rule := be_cop_group_rule &
+ [ CONTEXT [ RELS [ LIST [ FIRST [ ARG0 [ E [ TENSE past ] ] ] ] ] ] ].
+
+be_cop_are_group_rule := be_cop_group_rule &
+ [ CONTEXT [ RELS [ LIST [ FIRST [ ARG0 [ E [ TENSE present ] ] ] ] ] ] ].
+
+prep_particle_rule := generator_rule &
+ [ CONTEXT [ RELS <! [ ARG2 #x & ref-ind ] !> ],
+   FLAGS [ EQUAL < #x > ] ]. 
+
+prep_particle_n_rule := generator_rule &
+ [ CONTEXT [ RELS <! [ ARG1 #x & ref-ind ] !> ],
+   FLAGS [ EQUAL < #x > ] ]. 
+
+;; For OpenProof-specific entries (see end of `trigger.mtr')
+
+be_cop_promote_ind_gtr := arg0e_gtr &
+ [ CONTEXT.RELS <! [ ARG1 handle ] !>,
+   FLAGS.TRIGGER-CONSTRAINT.SYNSEM.LOCAL.CONT.HOOK.XARG it-ind ].
+
+;; For educ rules
+norm_monotonic_omtr := monotonic_omtr &
+ [ INPUT.HOOK.INDEX #ind,
+   OUTPUT.HOOK.INDEX #ind ].
+
+;; Common subj in coord Ss
+;; |Kim arose and Kim arrived| => |Kim arose and arrived|
+;;
+basic_coord_vp_mtr := norm_monotonic_omtr &
+[ CONTEXT.RELS <! [ ARG0 event & [ E.TENSE real_tense ], ARG1 #x1 ],
+		  [ ARG0 #x1 & ref-ind ] !>,
+  INPUT [ HOOK.INDEX #index,
+	  RELS <! [ PRED pos_conj_rel & #pred1, LBL #h14, ARG0 #e7, 
+		    ARG1 #h10 & handle, ARG2 #h11 & handle ],
+		  [ ARG0 #x2 & ref-ind, LBL #h9 ],
+		  [ PRED quant_rel, ARG0 #x2, RSTR #h20 & handle ],
+		  [ PRED #pred2, LBL #h4, ARG0 event, ARG1 #x2 ] !>,
+	  HCONS <! qeq & [ HARG #h20, LARG #h9 ], 
+		   qeq & [ HARG #h10, LARG #h12 ],
+		   qeq & [ HARG #h11, LARG #h13 ] !> ],
+  OUTPUT [ HOOK.INDEX #index,
+	   RELS <! [ PRED #pred1, LBL #h14, ARG0 #e7, ARG1 #h12, ARG2 #h13 ],
+		   [ PRED #pred2, LBL #h4, ARG1 #x1 ] !>,
+	   HCONS <! !> ],
+  FLAGS.SUBSUME < #x1, #x2, ... > ].
+
+
+;; Make sure the name's CARGs match
+;;
+coord_vp_named_mtr := basic_coord_vp_mtr &
+[ CONTEXT.RELS <! [ ], [ PRED gen_named_rel, CARG #carg ] !>,
+  INPUT.RELS <! [], [ PRED gen_named_rel, CARG #carg ], [], [] !>,
+  FLAGS.SUBSUME < semarg, semarg > ].
+
+;; Matching PNG values
+coord_vp_pron_mtr := basic_coord_vp_mtr &
+[ CONTEXT.RELS <! [ ], [ PRED pron_rel, ARG0.PNG #png ] !>,
+  INPUT.RELS <! [], [ PRED pron_rel, ARG0.PNG #png ], [], [] !>,
+  FLAGS.SUBSUME < semarg, semarg > ].
+
+coord_vp_noun_mtr := basic_coord_vp_mtr &
+[ CONTEXT.RELS <! [ ], [ PRED #pred & string ] !>,
+  INPUT.RELS <! [], [ PRED #pred ], [], [] !>,
+  FLAGS.SUBSUME < semarg, semarg > ].
+
+;; Reverse the order of two nonconjoined phrases: |X and Y| => |Y and X|
+;;
+;; DPF 2017-08-15 - Split into two, one for NPs and one for non-NPs?
+conj_reverse_mtr := norm_monotonic_omtr &
+[ INPUT.RELS <! [ PRED conj_nonrev_rel, LBL handle & #clbl, ARG0 #i1, 
+                  ARG1 nonconj_indiv & #i2, ARG2 nonconj_indiv & #i3 ] !>,
+  OUTPUT.RELS <! [ PRED conj_reversed_rel, LBL #clbl, ARG0 #i1, 
+                   ARG1 #i3, ARG2 #i2 ] !> ].
+
+basic_pro_subj_mtr := norm_monotonic_omtr &
+[ CONTEXT.RELS.LIST < [ ARG0 event & [ E.TENSE real_tense ], ARG1 #x1 ],
+		      [ ARG0 event & [ E.TENSE real_tense ], ARG1 #x2 ],
+		      [ ARG0 #x1 & ref-ind ],
+		      [ PRED quant_rel & #qpred, ARG0 #x1 ], ... >,
+  INPUT [ HOOK.INDEX #index,
+	  RELS.LIST < [ LBL #h10, ARG0 #x2 & ref-ind ],
+		      [ PRED #qpred, ARG0 #x2, RSTR #h20 ], ... > ],
+  OUTPUT [ HOOK.INDEX #index,
+	   RELS <! [ PRED pron_rel, LBL #h10, ARG0 #x2 ],
+		   [ PRED pronoun_q_rel, LBL handle, ARG0 #x2, RSTR #h20 ] !> ],
+  FLAGS.SUBSUME < #x2, ... > ].
+
+;; |Mary arose and Mary arrived| => |Mary arose and she arrived|
+;;
+pro_subj_mtr := basic_pro_subj_mtr &
+[ CONTEXT.RELS <! [ ], [ ], [ PRED gen_named_rel, CARG #carg ] !>,
+  INPUT.RELS <! [ PRED gen_named_rel, CARG #carg ], [ ] !>,
+  FLAGS.SUBSUME < semarg > ].
+
+pro_coord_subj_mtr := basic_pro_subj_mtr &
+[ CONTEXT.RELS.LIST < [ ], [ ], 
+		      [ PRED _and_c_rel, ARG1 #x1, ARG2 #x2 ], [ ],
+		      [ PRED gen_named_rel, ARG0 #x1, CARG #carg1 ],
+		      [ PRED gen_named_rel, ARG0 #x2, CARG #carg2 ], ... >,
+  INPUT [ RELS <! [ PRED pos_conj_rel, ARG0 ref-ind & [ SORT #sort ], 
+		    ARG1 #x3, ARG2 #x4 ], [ ],
+		  [ PRED gen_named_rel, ARG0 #x3, CARG #carg1 ],
+		  [ PRED gen_named_rel, ARG0 #x4, CARG #carg2 ], 
+		  [ PRED quant_rel, ARG0 #x3, RSTR #h20 ],
+		  [ PRED quant_rel, ARG0 #x4, RSTR #h21 ] !>,
+	  HCONS <! qeq & [ HARG #h20 ], qeq & [ HARG #h21 ] !> ],
+  OUTPUT [ RELS.LIST < [ ARG0.SORT #sort ], [ ], ... > ] ].
+
+;; |B and C arose and B and C arrived| => |B and C arose and they arrived|
+;;
+conjnct_pro_coord_subj_mtr := pro_coord_subj_mtr &
+[ CONTEXT.RELS <! [ ARG0 #e1 ], [ ARG0 #e2, ARG1 #x3 ], [ ],
+		  [ ], [ ], [ ], 
+		  [ PRED conj_rel, ARG0.SORT #sort,
+		    ARG1 #e1, ARG2 #e2 ] !>,
+  OUTPUT.RELS.LIST < [ ARG0 #x3 & [ PNG.PN 3p, SORT #sort ] ], ... >,
+  FLAGS.SUBSUME < semarg > ].

@@ -1,0 +1,11 @@
+[package]
+name = "emdysi-tdl"
+description = "Reader for DELPH-IN Type Description Language (TDL) files"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[lints]
+workspace = true

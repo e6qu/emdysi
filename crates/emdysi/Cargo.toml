@@ -1,0 +1,21 @@
+[package]
+name = "emdysi"
+description = "Command-line checker for English prose: grammar, spelling, style and AI-writing tells"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+emdysi-check = { path = "../emdysi-check", version = "0.1.0" }
+emdysi-parse = { path = "../emdysi-parse", version = "0.1.0" }
+
+[lints]
+workspace = true
+
+# The command is `en`; the crates.io name `en` belongs to another project,
+# so the package keeps the `emdysi` name.
+[[bin]]
+name = "en"
+path = "src/main.rs"

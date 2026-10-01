@@ -1,0 +1,88 @@
+[pack]
+name = "ai-tells"
+description = "Vocabulary and constructions that are over-represented in machine-written prose."
+
+[[rule]]
+id = "ai-tells.vocabulary"
+kind = "words"
+match = "lemma"
+severity = "warning"
+message = "'{match}' is over-used in machine-written prose; prefer a plainer word."
+words = [
+  "delve", "tapestry", "testament", "intricate", "showcase", "underscore",
+  "pivotal", "realm", "meticulous", "meticulously", "seamless", "seamlessly",
+  "multifaceted", "embark", "foster", "bolster", "vibrant", "harness",
+  "synergy", "holistic", "transformative", "commendable", "noteworthy",
+  "unwavering", "invaluable", "groundbreaking", "game-changer", "cutting-edge",
+  "ever-evolving", "paramount", "elevate", "unleash", "empower", "resonate",
+]
+
+[[rule]]
+id = "ai-tells.stock-phrases"
+kind = "words"
+match = "surface"
+severity = "warning"
+message = "Stock phrase '{match}'."
+words = [
+  "plays a crucial role", "plays a pivotal role", "a testament to",
+  "in today's fast-paced world", "in today’s fast-paced world",
+  "navigate the complexities", "rich tapestry", "shed light on",
+  "deep dive", "dive into", "at the end of the day", "stands as a",
+  "serves as a reminder", "the ever-evolving landscape",
+]
+
+[[rule]]
+id = "ai-tells.signposting"
+kind = "words"
+match = "surface"
+severity = "suggestion"
+message = "Signposting ('{match}') adds words without content."
+words = [
+  "it is important to note", "it's important to note", "it’s important to note",
+  "it is worth noting", "it's worth noting", "it’s worth noting",
+  "in conclusion", "in summary", "to sum up", "let's explore", "let’s explore",
+  "in this article", "as previously mentioned",
+]
+
+[[rule]]
+id = "ai-tells.chatbot"
+kind = "words"
+match = "surface"
+severity = "error"
+message = "Conversational residue from a chat assistant: '{match}'."
+words = [
+  "i hope this helps", "as an ai", "as a language model", "great question",
+  "certainly!", "i'd be happy to help", "i’d be happy to help",
+  "feel free to ask", "let me know if you have any other questions",
+]
+
+[[rule]]
+id = "ai-tells.not-x-but-y"
+kind = "regex"
+severity = "suggestion"
+message = "Contrast frame ('not X but Y'); state the point directly."
+pattern = "(?i)\\b(?:not|isn't|isn’t|wasn't|wasn’t|aren't|aren’t)\\s+(?:just|only|merely|simply)?\\s*[^.;:!?]{1,60}?(?:,|—|–|;)?\\s+(?:but|it's|it’s|it is)\\b"
+
+[[rule]]
+id = "ai-tells.participial-tail"
+kind = "construction"
+severity = "suggestion"
+message = "Trailing participial clause ('{match}') often adds vague commentary."
+rules = ["vp_sbrd-prd-prp_c"]
+
+[[rule]]
+id = "ai-tells.rule-of-three"
+kind = "coordination"
+severity = "suggestion"
+min = 3
+max = 3
+message = "Three-part list ('{match}'); check that each item earns its place."
+
+[[rule]]
+id = "ai-tells.em-dash"
+kind = "density"
+severity = "suggestion"
+chars = ["—"]
+per = 100
+max = 1.0
+message = "Em dashes are dense here ({count} per {per} words; at most {max} suggested)."

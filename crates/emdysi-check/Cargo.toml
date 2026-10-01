@@ -1,0 +1,16 @@
+[package]
+name = "emdysi-check"
+description = "Style, substance, spelling and grammar checks over parsed English text"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+emdysi-parse = { path = "../emdysi-parse", version = "0.1.0" }
+emdysi-text = { path = "../emdysi-text", version = "0.1.0" }
+fancy-regex = "0.19"
+
+[lints]
+workspace = true

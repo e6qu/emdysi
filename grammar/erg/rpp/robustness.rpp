@@ -1,0 +1,23 @@
+;;; -*- mode: fundamental; coding: utf-8; indent-tabs-mode: t; -*-
+
+;;;
+;;; every now and again, we are tempted (or at times forced) into guess-work,
+;;; to patch up broken inputs.
+;;;
+
+;; Normalize a series of vertical bars: |||| ||| ||||||||.
+![|]+							|||
+
+;; For educ, replace sandwiched period with distinguished character pair
+;; DPF 2020-06-23 - Note that this creates need for separate entries for
+;; "a.m." and "p.m." at least.
+!([^ ])([\.])([a-zA-Z]+|$)				\1 .~ \3
+
+;; For educ, replace any of three sandwiched commas with special character
+!([^ ])([,，、])([a-zA-Z]+|$)			\1 ⸴ \3
+
+;; For educ, replace any of three prefixed commas with special character pair
+!([,，、])([a-zA-Z]+|$)				,~ \2
+
+;; For educ, split at robust possessive "bus'es"
+!([^ ])[’'‘](es) 						\1 ’\2 

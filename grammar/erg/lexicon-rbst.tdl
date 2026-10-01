@@ -1,0 +1,570 @@
+;;; -*- Mode: tdl; Coding: utf-8; -*-
+;;;
+;;;  Copyright (c) 1994-2022
+;;;    Dan Flickinger, Rob Malouf, Emily M. Bender
+;;;    see LICENSE for conditions
+;;;
+;;;  lexicon-rbst.tdl
+;;;
+;;;  Lexical entries that are not part of the standard grammar of English, but 
+;;;  which appear with some frequency even in edited text, including duplicate 
+;;;  entries such as “the the” or the erroneous use of “a” with a vocalic onset 
+;;;  word, as in “a apple”. Each of these entries is marked with the feature-
+;;;  value pair “GENRE robust” so analyses using them can be controlled via the 
+;;;  appropriate root condition when parsing. Normally, they are included for 
+;;;  parsing to improve coverage, but excluded for generation.
+;;;
+;;;  Dan Flickinger, 1-Feb-2018
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+a_a_det_rbst := d_-_sg-a-a_le_mal &
+ [ ORTH < "a", "a" >,
+   SYNSEM [ LKEYS.KEYREL.PRED _a_q_rel,
+            PHON.ONSET voc ] ].
+
+a_a_det_2_rbst := d_-_sg-a-a_le_mal &
+ [ ORTH < "a", ",", "a" >,
+   SYNSEM [ LKEYS.KEYREL.PRED _a_q_rel,
+            PHON.ONSET voc ] ].
+
+a_a_det_3_rbst := d_-_sg-a-a_le_mal &
+ [ ORTH < "a", "–", "a" >,
+   SYNSEM [ LKEYS.KEYREL.PRED _a_q_rel,
+            PHON.ONSET voc ] ].
+
+a_det_3_rbst := d_-_sg-an_le_mal &
+ [ ORTH < "an", "a" >,
+   SYNSEM [ LKEYS.KEYREL.PRED _a_q_rel,
+            PHON.ONSET voc ] ].
+
+a_det_rbst := d_-_sg-a_le_mal &
+ [ ORTH < "a" >,
+   SYNSEM [ LKEYS.KEYREL.PRED _a_q_rel,
+            PHON.ONSET voc ] ].
+
+an_an_det_1_rbst := d_-_sg-a-a_le_mal &
+ [ ORTH < "an", "an" >,
+   SYNSEM [ LKEYS.KEYREL.PRED _a_q_rel,
+            PHON.ONSET voc ] ].
+
+an_an_det_1b_rbst := d_-_sg-a-a_le_mal &
+ [ ORTH < "an", ",", "an" >,
+   SYNSEM [ LKEYS.KEYREL.PRED _a_q_rel,
+            PHON.ONSET voc ] ].
+
+an_an_det_1c_rbst := d_-_sg-a-a_le_mal &
+ [ ORTH < "an", "–", "an" >,
+   SYNSEM [ LKEYS.KEYREL.PRED _a_q_rel,
+            PHON.ONSET voc ] ].
+
+an_det_2_rbst := d_-_sg-a_le_mal &
+ [ ORTH < "a", "an" >,
+   SYNSEM [ LKEYS.KEYREL.PRED _a_q_rel,
+            PHON.ONSET voc ] ].
+
+an_det_rbst := d_-_sg-an_le_mal &
+ [ ORTH < "an" >,
+   SYNSEM [ LKEYS.KEYREL.PRED _a_q_rel,
+            PHON.ONSET voc ] ].
+
+and_conj_stutter_rbst := c_xp_and_le_mal &
+ [ ORTH < "and", "and" >,
+   SYNSEM.PHON.ONSET voc ].
+
+and_conj_stutter2_rbst := c_xp_and_le_mal &
+ [ ORTH < "and", "–", "and" >,
+   SYNSEM.PHON.ONSET voc ].
+
+and_conj_stutter3_rbst := c_xp_and_le_mal &
+ [ ORTH < "and", "and", "and" >,
+   SYNSEM.PHON.ONSET voc ].
+
+and_conj_stutter4_rbst := c_xp_and_le_mal &
+ [ ORTH < "and", "–", "and", "–", "and" >,
+   SYNSEM.PHON.ONSET voc ].
+
+and_conj_stutter5_rbst := c_xp_and_le_mal &
+ [ ORTH < "and", ",", "and" >,
+   SYNSEM.PHON.ONSET voc ].
+
+and_conj_stutter6_rbst := c_xp_and_le_mal &
+ [ ORTH < "and", ",", "and", ",", "and" >,
+   SYNSEM.PHON.ONSET voc ].
+
+but_conj_stutter2_rbst := c_xp_but_le_mal &
+ [ ORTH < "but", "but", "but" >,
+   SYNSEM.PHON.ONSET con ].
+
+but_conj_stutter3_rbst := c_xp_but_le_mal &
+ [ ORTH < "but", "but", "but" >,
+   SYNSEM.PHON.ONSET con ].
+
+but_conj_stutter_rbst := c_xp_but_le_mal &
+ [ ORTH < "but", "but" >,
+   SYNSEM.PHON.ONSET con ].
+
+can_can_aux_pos_rbst := v_vp_mdl-p_le &
+ [ ORTH < "can", "can" >,
+   SYNSEM [ LKEYS.KEYREL.PRED _can_v_modal_rel,
+            PHON.ONSET con ],
+   GENRE robust ].
+
+he_stutter_1_mal := n_-_pr-he_le_rbst &
+ [ ORTH < "he", "he" >,
+   SYNSEM.PHON.ONSET con ].
+
+he_stutter_2_mal := n_-_pr-he_le_rbst &
+ [ ORTH < "he", "-", "he" >,
+   SYNSEM.PHON.ONSET con ].
+
+he_stutter_2-3_mal := n_-_pr-he_le_rbst &
+ [ ORTH < "he", "he", "he" >,
+   SYNSEM.PHON.ONSET con ].
+
+he_stutter_3_mal := n_-_pr-he_le_rbst &
+ [ ORTH < "he-", "he" >,
+   SYNSEM.PHON.ONSET con ].
+
+he_stutter_4_mal := n_-_pr-he_le_rbst &
+ [ ORTH < "he", ",", "he" >,
+   SYNSEM.PHON.ONSET con ].
+
+he_stutter_5_mal := n_-_pr-he_le_rbst &
+ [ ORTH < "he", ",", "he", ",", "he" >,
+   SYNSEM.PHON.ONSET con ].
+
+her_poss_stutter_2_rbst := d_-_poss-her_le_mal &
+ [ ORTH < "her", ",", "her" >,
+   SYNSEM.PHON.ONSET con ].
+
+her_poss_stutter_rbst := d_-_poss-her_le_mal &
+ [ ORTH < "her", "her" >,
+   SYNSEM.PHON.ONSET con ].
+
+her_stutter_1_mal := n_-_pr-her_le_rbst &
+ [ ORTH < "her", "-", "her" >,
+   SYNSEM.PHON.ONSET con ].
+
+her_stutter_2_mal := n_-_pr-her_le_rbst &
+ [ ORTH < "her", "her" >,
+   SYNSEM.PHON.ONSET con ].
+
+her_stutter_3_mal := n_-_pr-her_le_rbst &
+ [ ORTH < "her-", "her" >,
+   SYNSEM.PHON.ONSET con ].
+
+her_stutter_4_mal := n_-_pr-her_le_rbst &
+ [ ORTH < "her", "–", "her" >,
+   SYNSEM.PHON.ONSET con ].
+
+her_stutter_5_mal := n_-_pr-her_le_rbst &
+ [ ORTH < "her", ",", "her" >,
+   SYNSEM.PHON.ONSET con ].
+
+her_stutter_6_mal := n_-_pr-her_le_rbst &
+ [ ORTH < "her.", "her" >,
+   SYNSEM.PHON.ONSET con ].
+
+him_stutter_1_mal := n_-_pr-him_le_rbst &
+ [ ORTH < "him", "-", "him" >,
+   SYNSEM.PHON.ONSET con ].
+
+him_stutter_2_mal := n_-_pr-him_le_rbst &
+ [ ORTH < "him", "him" >,
+   SYNSEM.PHON.ONSET con ].
+
+him_stutter_3_mal := n_-_pr-him_le_rbst &
+ [ ORTH < "him-", "him" >,
+   SYNSEM.PHON.ONSET con ].
+
+him_stutter_4_mal := n_-_pr-him_le_rbst &
+ [ ORTH < "him", "–", "him" >,
+   SYNSEM.PHON.ONSET con ].
+
+him_stutter_5_mal := n_-_pr-him_le_rbst &
+ [ ORTH < "him", ",", "him" >,
+   SYNSEM.PHON.ONSET con ].
+
+him_stutter_6_mal := n_-_pr-him_le_rbst &
+ [ ORTH < "him.", "him" >,
+   SYNSEM.PHON.ONSET con ].
+
+his_poss_stutter_2_rbst := d_-_poss-his_le_mal &
+ [ ORTH < "his", ",", "his" >,
+   SYNSEM.PHON.ONSET con ].
+
+his_poss_stutter_rbst := d_-_poss-his_le_mal &
+ [ ORTH < "his", "his" >,
+   SYNSEM.PHON.ONSET con ].
+
+i_stutter_2_mal := n_-_pr-i_le_rbst &
+ [ ORTH < "I", ",", "I" >,
+   SYNSEM.PHON.ONSET voc ].
+
+i_stutter_3_mal := n_-_pr-i_le_rbst &
+ [ ORTH < "I", ",", "I", ",", "I" >,
+   SYNSEM.PHON.ONSET voc ].
+
+i_stutter_4_mal := n_-_pr-i_le_rbst &
+ [ ORTH < "I", "I" >,
+   SYNSEM.PHON.ONSET voc ].
+
+i_stutter_4-3_mal := n_-_pr-i_le_rbst &
+ [ ORTH < "I", "I", "I" >,
+   SYNSEM.PHON.ONSET voc ].
+
+i_stutter_6_mal := n_-_pr-i_le_rbst &
+ [ ORTH < "I-", "I" >,
+   SYNSEM.PHON.ONSET voc ].
+
+i_stutter_mal := n_-_pr-i_le_rbst &
+ [ ORTH < "I", "-", "I" >,
+   SYNSEM.PHON.ONSET voc ].
+
+it_stutter_1_mal := n_-_pr-it_le_rbst &
+ [ ORTH < "it", "-", "it" >,
+   SYNSEM.PHON.ONSET voc ].
+
+it_stutter_2_mal := n_-_pr-it_le_rbst &
+ [ ORTH < "it", "it" >,
+   SYNSEM.PHON.ONSET voc ].
+
+it_stutter_2b_mal := n_-_pr-it_le_rbst &
+ [ ORTH < "it", "it", "it" >,
+   SYNSEM.PHON.ONSET voc ].
+
+it_stutter_3_mal := n_-_pr-it_le_rbst &
+ [ ORTH < "it-", "it" >,
+   SYNSEM.PHON.ONSET voc ].
+
+it_stutter_4_mal := n_-_pr-it_le_rbst &
+ [ ORTH < "it", ",", "it" >,
+   SYNSEM.PHON.ONSET voc ].
+
+it_stutter_5_mal := n_-_pr-it_le_rbst &
+ [ ORTH < "it", ",", "it", ",", "it" >,
+   SYNSEM.PHON.ONSET voc ].
+
+its_poss_2_rbst := d_-_poss-its_le_mal &
+ [ ORTH < "it", "‘s" >,
+   SYNSEM.PHON.ONSET voc ].
+
+its_poss_2_u_rbst := d_-_poss-its_le_mal &
+ [ ORTH < "it", "’s" >,
+   SYNSEM.PHON.ONSET voc ].
+
+its_poss_rbst := d_-_poss-its_le_mal &
+ [ ORTH < "it", "'s" >,
+   SYNSEM.PHON.ONSET voc ].
+
+its_poss_stutter_2_rbst := d_-_poss-its_le_mal &
+ [ ORTH < "its", ",", "its" >,
+   SYNSEM.PHON.ONSET voc ].
+
+its_poss_stutter_rbst := d_-_poss-its_le_mal &
+ [ ORTH < "its", "its" >,
+   SYNSEM.PHON.ONSET voc ].
+
+me_stutter_1_mal := n_-_pr-me_le_rbst &
+ [ ORTH < "me", "-", "me" >,
+   SYNSEM.PHON.ONSET con ].
+
+me_stutter_2_mal := n_-_pr-me_le_rbst &
+ [ ORTH < "me", "me" >,
+   SYNSEM.PHON.ONSET con ].
+
+me_stutter_3_mal := n_-_pr-me_le_rbst &
+ [ ORTH < "me-", "me" >,
+   SYNSEM.PHON.ONSET con ].
+
+me_stutter_4_mal := n_-_pr-me_le_rbst &
+ [ ORTH < "me", "–", "me" >,
+   SYNSEM.PHON.ONSET con ].
+
+me_stutter_5_mal := n_-_pr-me_le_rbst &
+ [ ORTH < "me", ",", "me" >,
+   SYNSEM.PHON.ONSET con ].
+
+me_stutter_6_mal := n_-_pr-me_le_rbst &
+ [ ORTH < "me.", "me" >,
+   SYNSEM.PHON.ONSET con ].
+
+my_poss_stutter_2_rbst := d_-_poss-my_le_mal &
+ [ ORTH < "my", ",", "my" >,
+   SYNSEM.PHON.ONSET con ].
+
+my_poss_stutter_rbst := d_-_poss-my_le_mal &
+ [ ORTH < "my", "my" >,
+   SYNSEM.PHON.ONSET con ].
+
+of_poss_stutter_2_rbst := p_np_i-nm-poss_le_mal &
+ [ ORTH < "of", "–", "of" >,
+   SYNSEM [ LKEYS.KEYREL.PRED _of_p_rel,
+            PHON.ONSET voc ] ].
+
+of_poss_stutter_3_rbst := p_np_i-nm-poss_le_mal &
+ [ ORTH < "of", ",", "of" >,
+   SYNSEM [ LKEYS.KEYREL.PRED _of_p_rel,
+            PHON.ONSET voc ] ].
+
+of_poss_stutter_rbst := p_np_i-nm-poss_le_mal &
+ [ ORTH < "of", "of" >,
+   SYNSEM [ LKEYS.KEYREL.PRED _of_p_rel,
+            PHON.ONSET voc ] ].
+
+or_conj_stutter2_rbst := c_xp_or_le_mal &
+ [ ORTH < "or", ",", "or" >,
+   SYNSEM.PHON.ONSET voc ].
+
+or_conj_stutter3_rbst := c_xp_or_le_mal &
+ [ ORTH < "or", "or", "or" >,
+   SYNSEM.PHON.ONSET voc ].
+
+or_conj_stutter4_rbst := c_xp_or_le_mal &
+ [ ORTH < "or", ",", "or", ",", "or" >,
+   SYNSEM.PHON.ONSET voc ].
+
+or_conj_stutter_rbst := c_xp_or_le_mal &
+ [ ORTH < "or", "or" >,
+   SYNSEM.PHON.ONSET voc ].
+
+our_poss_stutter_2_rbst := d_-_poss-our_le_mal &
+ [ ORTH < "our", ",", "our" >,
+   SYNSEM.PHON.ONSET voc ].
+
+our_poss_stutter_rbst := d_-_poss-our_le_mal &
+ [ ORTH < "our", "our" >,
+   SYNSEM.PHON.ONSET voc ].
+
+she_stutter_1_mal := n_-_pr-she_le_rbst &
+ [ ORTH < "she", "-", "she" >,
+   SYNSEM.PHON.ONSET con ].
+
+she_stutter_2_mal := n_-_pr-she_le_rbst &
+ [ ORTH < "she", "she" >,
+   SYNSEM.PHON.ONSET con ].
+
+she_stutter_2-2_mal := n_-_pr-she_le_rbst &
+ [ ORTH < "sh", "she" >,
+   SYNSEM.PHON.ONSET con ].
+
+she_stutter_2-3_mal := n_-_pr-she_le_rbst &
+ [ ORTH < "she", "she", "she" >,
+   SYNSEM.PHON.ONSET con ].
+
+she_stutter_3_mal := n_-_pr-she_le_rbst &
+ [ ORTH < "she-", "she" >,
+   SYNSEM.PHON.ONSET con ].
+
+she_stutter_4_mal := n_-_pr-she_le_rbst &
+ [ ORTH < "she", ",", "she" >,
+   SYNSEM.PHON.ONSET con ].
+
+she_stutter_5_mal := n_-_pr-she_le_rbst &
+ [ ORTH < "she", ",", "she", ",", "she" >,
+   SYNSEM.PHON.ONSET con ].
+
+the_2_rbst := d_-_the_le_mal &
+ [ ORTH < "the", "a" >,
+   SYNSEM [ LKEYS.KEYREL.PRED _the_q_rel,
+            PHON.ONSET con ] ].
+
+the_3_rbst := d_-_the_le_mal &
+ [ ORTH < "a", "the" >,
+   SYNSEM [ LKEYS.KEYREL.PRED _the_q_rel,
+            PHON.ONSET con ] ].
+
+the_4_rbst := d_-_the_le_mal &
+ [ ORTH < "the", "both" >,
+   SYNSEM [ LKEYS.KEYREL.PRED _the_q_rel,
+            PHON.ONSET con ] ].
+
+the_5_rbst := d_-_the_le_mal &
+ [ ORTH < "the", "this" >,
+   SYNSEM [ LKEYS.KEYREL.PRED _the_q_rel,
+            PHON.ONSET con ] ].
+
+the_6_rbst := d_-_the_le_mal &
+ [ ORTH < "the", "these" >,
+   SYNSEM [ LKEYS.KEYREL.PRED _the_q_rel,
+            PHON.ONSET con ] ].
+
+the_7_rbst := d_-_the_le_mal &
+ [ ORTH < "the", "each" >,
+   SYNSEM [ LKEYS.KEYREL.PRED _the_q_rel,
+            PHON.ONSET con ] ].
+
+the_stutter_1_rbst := d_-_the_le_mal &
+ [ ORTH < "the", "–", "the" >,
+   SYNSEM [ LKEYS.KEYREL.PRED _the_q_rel,
+            PHON.ONSET con ] ].
+
+the_stutter_2_rbst := d_-_the_le_mal &
+ [ ORTH < "the", ",", "the" >,
+   SYNSEM [ LKEYS.KEYREL.PRED _the_q_rel,
+            PHON.ONSET con ] ].
+
+the_stutter_3_rbst := d_-_the_le_mal &
+ [ ORTH < "the", "the" >,
+   SYNSEM [ LKEYS.KEYREL.PRED _the_q_rel,
+            PHON.ONSET con ] ].
+
+their_poss_stutter_2_rbst := d_-_poss-their_le_mal &
+ [ ORTH < "their", ",", "their" >,
+   SYNSEM.PHON.ONSET con ].
+
+their_poss_stutter_rbst := d_-_poss-their_le_mal &
+ [ ORTH < "their", "their" >,
+   SYNSEM.PHON.ONSET con ].
+
+them_stutter_1_mal := n_-_pr-them_le_rbst &
+ [ ORTH < "them", "-", "them" >,
+   SYNSEM.PHON.ONSET con ].
+
+them_stutter_2_mal := n_-_pr-them_le_rbst &
+ [ ORTH < "them", "them" >,
+   SYNSEM.PHON.ONSET con ].
+
+them_stutter_3_mal := n_-_pr-them_le_rbst &
+ [ ORTH < "them-", "them" >,
+   SYNSEM.PHON.ONSET con ].
+
+them_stutter_4_mal := n_-_pr-them_le_rbst &
+ [ ORTH < "them", "–", "them" >,
+   SYNSEM.PHON.ONSET con ].
+
+them_stutter_5_mal := n_-_pr-them_le_rbst &
+ [ ORTH < "them", ",", "them" >,
+   SYNSEM.PHON.ONSET con ].
+
+them_stutter_6_mal := n_-_pr-them_le_rbst &
+ [ ORTH < "them.", "them" >,
+   SYNSEM.PHON.ONSET con ].
+
+they_stutter_1_mal := n_-_pr-they_le_rbst &
+ [ ORTH < "they", "-", "they" >,
+   SYNSEM.PHON.ONSET con ].
+
+they_stutter_2_mal := n_-_pr-they_le_rbst &
+ [ ORTH < "they", "they" >,
+   SYNSEM.PHON.ONSET con ].
+
+they_stutter_2-3_mal := n_-_pr-they_le_rbst &
+ [ ORTH < "they", "they", "they" >,
+   SYNSEM.PHON.ONSET con ].
+
+they_stutter_3_mal := n_-_pr-they_le_rbst &
+ [ ORTH < "they-", "they" >,
+   SYNSEM.PHON.ONSET con ].
+
+they_stutter_4_mal := n_-_pr-they_le_rbst &
+ [ ORTH < "they", ",", "they" >,
+   SYNSEM.PHON.ONSET con ].
+
+they_stutter_5_mal := n_-_pr-they_le_rbst &
+ [ ORTH < "they", ",", "they", ",", "they" >,
+   SYNSEM.PHON.ONSET con ].
+
+to_c_prop_stutter_2_rbst := cm_vp_to_le_mal &
+ [ ORTH < "to", ",", "to" >,
+   SYNSEM.PHON.ONSET con ].
+
+to_c_prop_stutter_rbst := cm_vp_to_le_mal &
+ [ ORTH < "to", "to" >,
+   SYNSEM.PHON.ONSET con ].
+
+to_p_stutter_2_rbst := p_np_i-nnm_le_mal &
+ [ ORTH < "to", ",", "to" >,
+   SYNSEM [ LKEYS.KEYREL.PRED _to_p_rel,
+            PHON.ONSET con ] ].
+
+to_p_stutter_rbst := p_np_i-nnm_le_mal &
+ [ ORTH < "to", "to" >,
+   SYNSEM [ LKEYS.KEYREL.PRED _to_p_rel,
+            PHON.ONSET con ] ].
+
+us_stutter_1_mal := n_-_pr-us_le_rbst &
+ [ ORTH < "us", "-", "us" >,
+   SYNSEM.PHON.ONSET con ].
+
+us_stutter_2_mal := n_-_pr-us_le_rbst &
+ [ ORTH < "us", "us" >,
+   SYNSEM.PHON.ONSET con ].
+
+us_stutter_3_mal := n_-_pr-us_le_rbst &
+ [ ORTH < "us-", "us" >,
+   SYNSEM.PHON.ONSET con ].
+
+us_stutter_4_mal := n_-_pr-us_le_rbst &
+ [ ORTH < "us", "–", "us" >,
+   SYNSEM.PHON.ONSET con ].
+
+us_stutter_5_mal := n_-_pr-us_le_rbst &
+ [ ORTH < "us", ",", "us" >,
+   SYNSEM.PHON.ONSET con ].
+
+us_stutter_6_mal := n_-_pr-us_le_rbst &
+ [ ORTH < "us.", "us" >,
+   SYNSEM.PHON.ONSET con ].
+
+we_stutter_1_mal := n_-_pr-we_le_rbst &
+ [ ORTH < "we", "-", "we" >,
+   SYNSEM.PHON.ONSET con ].
+
+we_stutter_2_mal := n_-_pr-we_le_rbst &
+ [ ORTH < "we", "we" >,
+   SYNSEM.PHON.ONSET con ].
+
+we_stutter_2-3_mal := n_-_pr-we_le_rbst &
+ [ ORTH < "we", "we", "we" >,
+   SYNSEM.PHON.ONSET con ].
+
+we_stutter_3_mal := n_-_pr-we_le_rbst &
+ [ ORTH < "we-", "we" >,
+   SYNSEM.PHON.ONSET con ].
+
+we_stutter_4_mal := n_-_pr-we_le_rbst &
+ [ ORTH < "we", "–", "we" >,
+   SYNSEM.PHON.ONSET con ].
+
+we_stutter_5_mal := n_-_pr-we_le_rbst &
+ [ ORTH < "we", ",", "we" >,
+   SYNSEM.PHON.ONSET con ].
+
+we_stutter_6_mal := n_-_pr-we_le_rbst &
+ [ ORTH < "we", ",", "we", ",", "we" >,
+   SYNSEM.PHON.ONSET con ].
+
+you_stutter_1_mal := n_-_pr-you_le_rbst &
+ [ ORTH < "you", "-", "you" >,
+   SYNSEM.PHON.ONSET con ].
+
+you_stutter_2_mal := n_-_pr-you_le_rbst &
+ [ ORTH < "you", "you" >,
+   SYNSEM.PHON.ONSET con ].
+
+you_stutter_2-3_mal := n_-_pr-you_le_rbst &
+ [ ORTH < "you", "you", "you" >,
+   SYNSEM.PHON.ONSET con ].
+
+you_stutter_3_mal := n_-_pr-you_le_rbst &
+ [ ORTH < "you-", "you" >,
+   SYNSEM.PHON.ONSET con ].
+
+you_stutter_4_mal := n_-_pr-you_le_rbst &
+ [ ORTH < "you", ",", "you" >,
+   SYNSEM.PHON.ONSET con ].
+
+you_stutter_5_mal := n_-_pr-you_le_rbst &
+ [ ORTH < "you", ",", "you", ",", "you" >,
+   SYNSEM.PHON.ONSET con ].
+
+your_poss_stutter_2_rbst := d_-_poss-your_le_mal &
+ [ ORTH < "your", ",", "your" >,
+   SYNSEM.PHON.ONSET con ].
+
+your_poss_stutter_rbst := d_-_poss-your_le_mal &
+ [ ORTH < "your", "your" >,
+   SYNSEM.PHON.ONSET con ].
+

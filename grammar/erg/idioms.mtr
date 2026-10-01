@@ -1,0 +1,1565 @@
+;;; Hey, emacs(1), this is -*- Mode: tdl; Coding: utf-8; -*- got it?
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Light adjectives
+;;
+fall+dead_idm := v_light_adj_idiom_mtr &  
+  [ INPUT.RELS <! [ PRED "_fall_v_i_rel" ],
+                  [ PRED "_dead_a_1_rel" ] !> ].
+
+fall+ill_idm := v_light_adj_idiom_mtr &  
+  [ INPUT.RELS <! [ PRED "_fall_v_i_rel" ],
+                  [ PRED "_ill_a_1_rel" ] !> ].
+
+fall+sick_idm := v_light_adj_idiom_mtr &  
+  [ INPUT.RELS <! [ PRED "_fall_v_i_rel" ],
+                  [ PRED "_sick_a_of_rel" ] !> ].
+
+make+certain_idm := v_light_adj_idiom_mtr &  
+  [ INPUT.RELS <! [ PRED "_make_v_i_rel" ],
+                  [ PRED "_certain_a_of_rel" ] !> ].
+
+make+clear_idm := v_light_adj_idiom_mtr &  
+  [ INPUT.RELS <! [ PRED "_make_v_i_rel" ],
+                  [ PRED "_clear_a_of_rel" ] !> ].
+
+make+good_idm := v_light_adj_idiom_mtr &  
+  [ INPUT.RELS <! [ PRED "_make_v_i_rel" ],
+                  [ PRED "_good_a_at-for-of_rel" ] !> ].
+
+make+light_idm := v_light_adj_idiom_mtr &  
+  [ INPUT.RELS <! [ PRED "_make_v_i_rel" ],
+                  [ PRED "_light_a_of_rel" ] !> ].
+
+make+perfect_idm := v_light_adj_idiom_mtr &  
+  [ INPUT.RELS <! [ PRED "_make_v_i_rel" ],
+                  [ PRED "_perfect_a_1_rel" ] !> ].
+
+make+sure_idm := v_light_adj_idiom_mtr &  
+  [ INPUT.RELS <! [ PRED "_make_v_i_rel" ],
+                  [ PRED "_sure_a_of_rel" ] !> ].
+
+see+fit_idm := v_adj_idiom_mtr &  
+  [ INPUT.RELS <! [ PRED "_see_v_i_rel" ],
+                  [ PRED "_fit_a_1_rel" ] !> ].
+
+think+fit_idm := v_adj_idiom_mtr &  
+  [ INPUT.RELS <! [ PRED "_think_v_i_rel" ],
+                  [ PRED "_fit_a_1_rel" ] !> ].
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Nbar + PP
+;;
+fall+prey+to_idm := v_nbar_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_fall_v_to-i_rel" ],
+                  [ PRED "_prey_n_i_rel" ],
+                  relation !> ].
+
+fall+victim+to_idm := v_nbar_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_fall_v_to-i_rel" ],
+                  [ PRED "_victim_n_i_rel" ],
+                  relation !> ].
+
+get+ahold+of_idm := v_nbar_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_get_v_of-i_rel" ],
+                  [ PRED "_ahold_n_i_rel" ],
+                  relation !> ].
+
+get+hold+of_idm := v_nbar_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_get_v_of-i_rel" ],
+                  [ PRED "_hold_n_i_rel" ],
+                  relation !> ].
+
+give+rise+to_idm := v_nbar_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_give_v_to-i_rel" ],
+                  [ PRED "_rise_n_i_rel" ],
+                  relation !> ].
+
+give+way+to_idm := v_nbar_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_give_v_to-i_rel" ],
+                  [ PRED "_way_n_i_rel" ],
+                  relation !> ].
+
+grab+ahold+of_idm := v_nbar_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_grab_v_i_rel" ],
+                  [ PRED "_ahold_n_i_rel" ],
+                  relation !> ].
+
+grab+hold+of_idm := v_nbar_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_grab_v_i_rel" ],
+                  [ PRED "_hold_n_i_rel" ],
+                  relation !> ].
+
+let+go+of_idm := v_nbar_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_let_v_i_rel" ],
+                  [ PRED "_go_n_i_rel" ],
+                  relation !> ].
+
+make+go+of_idm := v_nbar_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_make_v_of-i_rel" ],
+                  [ PRED "_go_n_i_rel" ],
+                  relation !> ].
+
+make+love+to_idm := v_nbar_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_make_v_to-i_rel" ],
+                  [ PRED "_love_n_of-for_rel" ],
+                  relation !> ].
+
+make+note+of_idm := v_nbar_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_make_v_of-i_rel" ],
+                  [ PRED "_note_n_i_rel" ],
+                  relation !> ].
+
+make+use+of_idm := v_nbar_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_make_v_of-i_rel" ],
+                  [ PRED "_use_n_of_rel" ],
+                  relation !> ].
+
+make+way+for_idm := v_nbar_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_make_v_for-i_rel" ],
+                  [ PRED "_way_n_i_rel" ],
+                  relation !> ].
+
+take+account+of_idm := v_nbar_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_take_v_of-i_rel" ],
+                  [ PRED "_account_n_i_rel" ],
+                  relation !> ].
+
+take+advantage+of_idm := v_nbar_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_take_v_of-i_rel" ],
+                  [ PRED "_advantage_n_i_rel" ],
+                  relation !> ].
+
+take+ahold+of_idm := v_nbar_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_take_v_of-i_rel" ],
+                  [ PRED "_ahold_n_i_rel" ],
+                  relation !> ].
+
+take+care+of_idm := v_nbar_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_take_v_of-i_rel" ],
+                  [ PRED "_care_n_1_rel" ],
+                  relation !> ].
+
+take+charge+of_idm := v_nbar_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_take_v_of-i_rel" ],
+                  [ PRED "_charge_n_i_rel" ],
+                  relation !> ].
+
+take+hold+of_idm := v_nbar_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_take_v_of-i_rel" ],
+                  [ PRED "_hold_n_i_rel" ],
+                  relation !> ].
+
+take+issue+with_idm := v_nbar_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_take_v_with-i_rel" ],
+                  [ PRED "_issue_n_1_rel" ],
+                  relation !> ].
+
+take+note+of_idm := v_nbar_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_take_v_of-i_rel" ],
+                  [ PRED "_note_n_i_rel" ],
+                  relation !> ].
+
+take+part+in_idm := v_nbar_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_take_v_in-i_rel" ],
+                  [ PRED "_part_n_i_rel" ],
+                  relation !> ].
+
+take+vacation_idm := v_nbar_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_take_v_of-i_rel" ],
+                  [ PRED "_vacation_n_1_rel" ],
+                  relation !> ].
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Nbar-pl + PP
+;;
+keep+tabs+on_idm := v_nbar-pl_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_keep_v_on-i_rel" ],
+                  [ PRED "_tabs_n_i_rel" ],
+                  relation !> ].
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Nbar
+;;
+abandon+ship_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_abandon_v_1_rel" ],
+                      [ PRED "_ship_n_i_rel" ], ... > ].
+
+catch+sight+of_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_catch_v_i_rel" ],
+                      [ PRED "_sight_n_i_rel" ], ... > ].
+
+come+into+being_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_come_v_i_rel" ],
+                      [ PRED "_being_n_i_rel" ], ... > ].
+
+curry+favor_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_curry_v_i_rel" ],
+                      [ PRED "_favor_n_1_rel" ], ... > ].
+
+fall+victim_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_fall_v_to-i_rel" ],
+                      [ PRED "_victim_n_i_rel" ], ... > ].
+
+file+suit_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_file_v_1_rel" ],
+                      [ PRED "_suit_n_i_rel" ], ... > ].
+
+follow+suit_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_follow_v_i_rel" ],
+                      [ PRED "_suit_n_i_rel" ], ... > ].
+
+gain+share_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_gain_v_i_rel" ],
+                      [ PRED "_share_n_i_rel" ], ... > ].
+
+give+way_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_give_v_to-i_rel" ],
+                      [ PRED "_way_n_i_rel" ], ... > ].
+
+;; For robust light verb "He gave speech"
+give+speech_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_give_v_1_rel" ],
+                      [ PRED "_speech_n_1_rel" ], ... > ].
+
+hit+bottom_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_hit_v_1_rel" ],
+                      [ PRED "_bottom_n_1_rel" ], ... > ].
+
+hold+office_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_hold_v_i_rel" ],
+                      [ PRED "_office_n_1_rel" ], ... > ].
+
+keep+pace_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_keep_v_i_rel" ],
+                      [ PRED "_pace_n_i_rel" ], ... > ].
+
+keep+score_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_keep_v_i_rel" ],
+                      [ PRED "_score_n_1_rel" ], ... > ].
+
+keep+track_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_keep_v_i_rel" ],
+                      [ PRED "_track_n_i_rel" ], ... > ].
+
+keep+watch_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_keep_v_i_rel" ],
+                      [ PRED "_watch_n_i_rel" ], ... > ].
+
+leave+office_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_leave_v_i_rel" ],
+                      [ PRED "_office_n_1_rel" ], ... > ].
+
+leave+town_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_leave_v_i_rel" ],
+                      [ PRED "_town_n_1_rel" ], ... > ].
+
+lose+count_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_lose_v_i_rel" ],
+                      [ PRED "_count_n_i_rel" ], ... > ].
+
+lose+face_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_lose_v_i_rel" ],
+                      [ PRED "_face_n_i_rel" ], ... > ].
+
+lose+heart_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_lose_v_i_rel" ],
+                      [ PRED "_heart_n_i_rel" ], ... > ].
+
+; Use same v_nbar_idiom_mtr type, since semantic properties are the same
+lose+sight+of_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_lose_v_i_rel" ],
+                      [ PRED "_sight_n_i_rel" ], ... > ].
+
+lose+touch_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_lose_v_i_rel" ],
+                      [ PRED "_touch_n_1_rel" ], ... > ].
+
+lose+track_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_lose_v_i_rel" ],
+                      [ PRED "_track_n_i_rel" ], ... > ].
+
+;; British
+move+house_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_move_v_cause_rel" ],
+                      [ PRED "_house_n_i_rel" ], ... > ].
+
+play+ball_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_play_v_1_rel" ],
+                      [ PRED "_ball_n_i_rel" ], ... > ].
+
+play+catch_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_play_v_1_rel" ],
+                      [ PRED "_catch_n_i_rel" ], ... > ].
+
+put+on+airs_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_put_v_on_rel" ],
+                      [ PRED "_airs_n_i_rel" ], ... > ].
+
+reverse+course_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_reverse_v_1_rel" ],
+                      [ PRED "_course_n_i_rel" ], ... > ].
+
+ride+herd_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_ride_v_i_rel" ],
+                      [ PRED "_herd_n_i_rel" ], ... > ].
+
+say+goodbye_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_say_v_i_rel" ],
+                      [ PRED "_goodbye_n_1_rel" ], ... > ].
+
+say+hello_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_say_v_i_rel" ],
+                      [ PRED "_hello_n_1_rel" ], ... > ].
+
+set+course_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_set_v_i_rel" ],
+                      [ PRED "_course_n_i_rel" ], ... > ].
+
+set+root_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_set_v_i_rel" ],
+                      [ PRED "_root_n_i_rel" ], ... > ].
+
+set+sail_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_set_v_i_rel" ],
+                      [ PRED "_sail_n_i_rel" ], ... > ].
+
+set+up+shop_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_set_v_up_rel" ],
+                      [ PRED "_shop_n_i_rel" ], ... > ].
+
+;; DPF 2018-04-14 - Only for robust |Kim *spoke/said hello|
+speak+hello_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_speak_v_i_rel" ],
+                      [ PRED "_hello_n_1_rel" ], ... > ].
+
+stand+for+office_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_stand_v_for-i_rel" ],
+                      [ PRED "_office_n_1_rel" ], ... > ].
+
+stand+guard_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_stand_v_i_rel" ],
+                      [ PRED "_guard_n_i_rel" ], ... > ].
+
+take+heart_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_take_v_of-i_rel" ],
+                      [ PRED "_heart_n_i_rel" ], ... > ].
+
+take+hold_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_take_v_of-i_rel" ],
+                      [ PRED "_hold_n_i_rel" ], ... > ].
+
+take+office_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_take_v_of-i_rel" ],
+                      [ PRED "_office_n_1_rel" ], ... > ].
+
+take+part_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_take_v_of-i_rel" ],
+                      [ PRED "_part_n_i_rel" ], ... > ].
+
+take+place_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_take_v_of-i_rel" ],
+                      [ PRED "_place_n_of_rel" ], ... > ].
+
+take+root_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_take_v_of-i_rel" ],
+                      [ PRED "_root_n_i_rel" ], ... > ].
+
+wave+goodbye_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_wave_v_i_rel" ],
+                      [ PRED "_goodbye_n_1_rel" ], ... > ].
+
+wave+hello_idm := v_nbar_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_wave_v_i_rel" ],
+                      [ PRED "_hello_n_1_rel" ], ... > ].
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; NP + XP
+;;
+bear+in+mind_idm := v_np_detlesspp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_bear_v_in-i_rel" ],
+                  [ PRED "_mind_n_1_rel" ],
+                  relation !> ].
+
+call+quits_idm := v_np_xp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_call_v_i_rel" ],
+                  [ PRED "_quits_n_i_rel" ], [] !> ].
+
+give+airs_idm := v_np_xp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_give_v_1_rel" ],
+                  [ PRED "_airs_n_i_rel" ], [] !> ].
+
+keep+a+secret_idm := v_np_xp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_keep_v_i_rel" ],
+                  [ PRED "_secret_n_1_rel" ], [] !> ].
+
+keep+company_idm := v_np_xp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_keep_v_i_rel" ],
+                  [ PRED "_company_n_of_rel" ], [] !> ].
+
+take+for+granted_idm := v_np2_xp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_take_v_for-i_rel" ],
+                  [ PRED "_granted_n_i_rel" ], [] !> ].
+
+take+into+account_idm := v_np_detlesspp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_take_v_into_rel" ],
+                  [ PRED "_account_n_i_rel" ],
+                  relation !> ].
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Detless PP
+;;
+into+account_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _into_p_rel ],
+                  [ PRED "_account_n_i_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+account_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_account_n_i_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+answer_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_answer_n_to_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+above+average_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _above_p_state_rel ],
+                  [ PRED "_average_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+below+average_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _below_p_state_rel ],
+                  [ PRED "_average_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+average_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_average_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+back_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_back_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+out+back_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _out_p_state_rel ],
+                  [ PRED "_back_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+off+base_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _off_p_rel ],
+                  [ PRED "_base_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+base_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_base_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+at+bat_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _at_p_state_rel ],
+                  [ PRED "_bat_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+battery_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_battery_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+at+bay_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _at_p_state_rel ],
+                  [ PRED "_bay_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+for+bed_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _for_p_rel ],
+                  [ PRED "_bed_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+bed_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_bed_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+into+bed_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _into_p_rel ],
+                  [ PRED "_bed_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+out+of+bed_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _out+of_p_rel ],
+                  [ PRED "_bed_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+to+bed_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _to_p_rel ],
+                  [ PRED "_bed_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+into+being_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _into_p_rel ],
+                  [ PRED "_being_n_i_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+bloom_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_bloom_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+into+bloom_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _into_p_rel ],
+                  [ PRED "_bloom_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+at+bottom_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _at_p_state_rel ],
+                  [ PRED "_bottom_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+out+of+breath_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _out+of_p_rel ],
+                  [ PRED "_breath_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+above+budget_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _above_p_state_rel ],
+                  [ PRED "_budget_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+budget_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_budget_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+over+budget_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _over_p_state_rel ],
+                  [ PRED "_budget_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+call_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_call_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+camera_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_camera_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+around+campus_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _around_p_rel ],
+                  [ PRED "_campus_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+off+campus_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _off_p_rel ],
+                  [ PRED "_campus_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+campus_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_campus_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+charge_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_charge_n_i_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+check_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_check_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+committee_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_committee_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+common_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_common_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+concert_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_concert_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+consequence_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_consequence_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+of+contract_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _of_p_rel ],
+                  [ PRED "_contract_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+under+contract_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _under_p_rel ],
+                  [ PRED "_contract_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+costume_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_costume_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+at+last+count_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _at_p_state_rel ],
+                  [ PRED "_count_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+off+course_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _off_p_state_rel ],
+                  [ PRED "_course_n_i_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+course_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_course_n_i_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+court_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_court_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+cue_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_cue_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+deck_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_deck_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+degree_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_degree_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+diameter_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_diameter_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+disk_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_disk_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+duplicate_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_duplicate_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+edge_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_edge_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+case+of+emergency_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in+case+of_p_rel ],
+                  [ PRED "_emergency_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+end_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_end_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+exhibit_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_exhibit_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+at+expense_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _at_p_state_rel ],
+                  [ PRED "_expense_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+from+favor_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _from_p_state_rel ],
+                  [ PRED "_favor_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+favor_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_favor_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+out+of+favor_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _out+of_p_rel ],
+                  [ PRED "_favor_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+to+favor_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _to_p_rel ],
+                  [ PRED "_favor_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+file_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_file_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+front_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_front_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+; British English
+in+future_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_future_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+at+first+glance_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _at_p_state_rel ],
+                  [ PRED "_glance_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+goal_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_goal_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+guard_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_guard_n_i_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+at+hand_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _at_p_state_rel ],
+                  [ PRED "_hand_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+hand_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_hand_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+hand_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_hand_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+out+of+hand_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _out+of_p_rel ],
+                  [ PRED "_hand_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+to+hand_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _to_p_rel ],
+                  [ PRED "_hand_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+at+heart_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _at_p_state_rel ],
+                  [ PRED "_heart_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+to+heart_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _to_p_rel ],
+                  [ PRED "_heart_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+high_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_high_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+hold_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_hold_n_i_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+from+holiday_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _from_p_state_rel ],
+                  [ PRED "_holiday_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+holiday_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_holiday_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+hospital_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_hospital_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+to+hospital_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _to_p_rel ],
+                  [ PRED "_hospital_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+without+incident_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _without_p_rel ],
+                  [ PRED "_incident_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+at+issue_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _at_p_state_rel ],
+                  [ PRED "_issue_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+at+last_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _at_p_state_rel ],
+                  [ PRED "_last_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+league_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_league_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+above+level_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _above_p_rel ],
+                  [ PRED "_level_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+at+level_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _at_p_state_rel ],
+                  [ PRED "_level_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+below+level_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _below_p_rel ],
+                  [ PRED "_level_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+comp+level_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED comp_rel ],
+                  [ PRED "_level_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+near+level_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _near_p_rel ],
+                  [ PRED "_level_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+over+level_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _over_p_rel ],
+                  [ PRED "_level_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+line_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_line_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+into+line_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _into_p_rel ],
+                  [ PRED "_line_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+line_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_line_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+out+of+line_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _out+of_p_rel ],
+                  [ PRED "_line_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+location_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_location_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+to+market_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _to_p_rel ],
+                  [ PRED "_market_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+mode_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_mode_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+by+morning_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _by_p_rel ],
+                  [ PRED "_morning_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+under+oath_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _under_p_rel ],
+                  [ PRED "_oath_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+occasion_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_occasion_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+offer_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_offer_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+from+office_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _from_p_state_rel ],
+                  [ PRED "_office_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+office_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_office_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+into+office_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _into_p_rel ],
+                  [ PRED "_office_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+out+of+office_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _out+of_p_rel ],
+                  [ PRED "_office_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+order_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_order_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+into+order_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _into_p_rel ],
+                  [ PRED "_order_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+order_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_order_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+out+of+order_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _out+of_p_rel ],
+                  [ PRED "_order_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+parallel_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_parallel_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+part_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_part_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+principle_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_principle_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+profile_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_profile_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+prospect_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_prospect_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+place_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_place_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+into+place_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _into_p_rel ],
+                  [ PRED "_place_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+out+of+place_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _out+of_p_rel ],
+                  [ PRED "_place_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+plan_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_plan_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+public_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_public_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+purpose_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_purpose_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+to+purpose_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _to_p_rel ],
+                  [ PRED "_purpose_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+question_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_question_n_about_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+into+question_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _into_p_rel ],
+                  [ PRED "_question_n_about_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+reach_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_reach_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+into+reach_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _into_p_rel ],
+                  [ PRED "_reach_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+out+of+reach_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _out+of_p_rel ],
+                  [ PRED "_reach_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+within+reach_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _within_p_rel ],
+                  [ PRED "_reach_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+of+record_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _of_p_rel ],
+                  [ PRED "_record_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+off+record_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _off_p_state_rel ],
+                  [ PRED "_record_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+record_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_record_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+at+report_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _at_p_state_rel ],
+                  [ PRED "_report_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+report_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_report_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+request_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_request_n_for_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+upon+request_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _upon_p_rel ],
+                  [ PRED "_request_n_for_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+at+root_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _at_p_state_rel ],
+                  [ PRED "_root_n_i_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+route_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_route_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+safari_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_safari_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+for+sale_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _for_p_rel ],
+                  [ PRED "_sale_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+sale_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_sale_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+ahead+of+schedule_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _ahead+of_p_rel ],
+                  [ PRED "_schedule_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+behind+schedule_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _behind_p_rel ],
+                  [ PRED "_schedule_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+schedule_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_schedule_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+at+sea_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _at_p_state_rel ],
+                  [ PRED "_sea_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+to+sea_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _to_p_rel ],
+                  [ PRED "_sea_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+during+season_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _during_p_rel ],
+                  [ PRED "_season_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+season_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_season_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+out+of+season_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _out+of_p_rel ],
+                  [ PRED "_season_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+sequence_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_sequence_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+out+of+sequence_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _out+of_p_rel ],
+                  [ PRED "_sequence_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+session_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_session_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+out+of+session_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _out+of_p_rel ],
+                  [ PRED "_session_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+shore_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_shore_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+for+show_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _for_p_rel ],
+                  [ PRED "_show_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+off+stage_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _off_p_rel ],
+                  [ PRED "_stage_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+stage_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_stage_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+at+stake_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _at_p_state_rel ],
+                  [ PRED "_stake_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+step_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_step_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+into+step_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _into_p_rel ],
+                  [ PRED "_step_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+out+of+step_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _out+of_p_rel ],
+                  [ PRED "_step_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+store_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_store_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+stride_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_stride_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+strike_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_strike_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+sum_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_sum_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+summary_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_summary_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+off+target_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _off_p_rel ],
+                  [ PRED "_target_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+target_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_target_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+to+task_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _to_p_rel ],
+                  [ PRED "_task_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+to+term_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _to_p_rel ],
+                  [ PRED "_term_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+top_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_top_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+total_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_total_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+off+tour_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _off_p_rel ],
+                  [ PRED "_tour_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+tour_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_tour_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+tow_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_tow_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+around+town_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _around_p_state_rel ],
+                  [ PRED "_town_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+from+town_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _from_p_state_rel ],
+                  [ PRED "_town_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+town_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_town_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+into+town_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _into_p_rel ],
+                  [ PRED "_town_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+out+of+town_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _out+of_p_rel ],
+                  [ PRED "_town_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+to+town_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _to_p_rel ],
+                  [ PRED "_town_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+off+track_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _off_p_rel ],
+                  [ PRED "_track_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+track_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_track_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+at+trial_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _at_p_state_rel ],
+                  [ PRED "_trial_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+trial_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_trial_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+to+trial_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _to_p_rel ],
+                  [ PRED "_trial_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+tune_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_tune_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+turn_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_turn_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+out+of+turn_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _out+of_p_rel ],
+                  [ PRED "_turn_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+uniform_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_uniform_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+out+of+uniform_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _out+of_p_rel ],
+                  [ PRED "_uniform_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+during+vacation_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _during_p_rel ],
+                  [ PRED "_vacation_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+vacation_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_vacation_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+from+view_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _from_p_state_rel ],
+                  [ PRED "_view_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+in+view_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _in_p_state_rel ],
+                  [ PRED "_view_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+into+view_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _into_p_rel ],
+                  [ PRED "_view_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+on+view_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_view_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+out+of+view_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _out+of_p_rel ],
+                  [ PRED "_view_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+under+way_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _under_p_rel ],
+                  [ PRED "_way_n_i_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+at+will_idm := detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _at_p_state_rel ],
+                  [ PRED "_will_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; PP idioms
+;;
+on+the+cheap_idm := pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_cheap_n_i_rel" ],
+                  [ PRED _the_q_rel ] !> ].
+
+on+the+sly_idm := pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED _on_p_state_rel ],
+                  [ PRED "_sly_n_i_rel" ],
+                  [ PRED _the_q_rel ] !> ].
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Classifier + noun
+;; 
+pair+glasses_idm := classifier_noun_mtr &
+  [ INPUT.RELS <! [ PRED _pair_n_of-i_rel ],
+                  [ PRED "_glass_n_of_rel" ] !> ].
+
+pair+hands_idm := classifier_noun_mtr &
+  [ INPUT.RELS <! [ PRED _pair_n_of-i_rel ],
+                  [ PRED "_hand_n_1_rel" ] !> ].
+
+pair+scissors_idm := classifier_noun_mtr &
+  [ INPUT.RELS <! [ PRED _pair_n_of-i_rel ],
+                  [ PRED "_scissors_n_pair_rel" ] !> ].
+
+pair+sunglasses_idm := classifier_noun_mtr &
+  [ INPUT.RELS <! [ PRED _pair_n_of-i_rel ],
+                  [ PRED "_sunglasses_n_pair_rel" ] !> ].
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Noun + detless-PP
+;;
+buyer+of+last+resort_idm := noun_detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_buyer_n_of_rel" ],
+                  [ PRED "_last+resort_n_i_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+center+of+town_idm := noun_detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_center_n_of_rel" ],
+                  [ PRED "_town_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+edge+of+town_idm := noun_detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_edge_n_of_rel" ],
+                  [ PRED "_town_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+middle+of+town_idm := noun_detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_middle_n_of_rel" ],
+                  [ PRED "_town_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+point+of+view_idm := noun_detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_point_n_of_rel" ],
+                  [ PRED "_view_n_of_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+sleight+of+hand_idm := noun_detless_pp_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_sleight_n_of_rel" ],
+                  [ PRED "_hand_n_1_rel" ],
+                  [ PRED idiom_q_i_rel ] !> ].
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; V + NP
+;;
+go+places_idm := v_np_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_go_v_i_rel" ],
+                      [ PRED "_place_n_of_rel",
+			ARG0.PNG.PN 3p ], ... > ].
+
+kick+the+bucket_idm := v_np_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_kick_v_i_rel" ],
+		  [ PRED "_bucket_n_1_rel" ] !> ].
+
+;;; Cognate object
+sleep_cognate_idm := v_np_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_sleep_v_i_rel" ],
+                      [ PRED "_sleep_n_1_rel" ] > ].
+
+suck+eggs_idm := v_np_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_suck_v_i_rel" ],
+		  [ PRED "_egg_n_1_rel" ] !> ].
+
+up+the+ante_idm := v_np_idiom_mtr &
+  [ INPUT.RELS <! [ PRED "_up_v_i_rel" ],
+		  [ PRED "_ante_n_1_rel" ] !> ].
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Other
+;;
+
+;; For negative conditional `for' as in |If it weren't for Kim, we'd have lost|
+;; but |*If it were for Kim, we would have lost|
+;;
+negcond_for_idiom_mtr_idm := monotonic_mtr &
+  [ INPUT [ RELS <! [ PRED _for_p_ncond-i_rel,
+		      LBL #lbl ],
+		    [ PRED neg_rel,
+		      ARG1 #harg ] !>,
+          HCONS <! qeq & [ HARG #harg, LARG #lbl ] !> ],
+    OUTPUT.RELS <! !> ].
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Reflexive possessives: 'rack one's brains'
+;;
+;; X(NP) V1 X's N1
+;;
+cast+lot+with_ir_idm := v_reflnp_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_cast_v_with-i_rel" ],
+                      [ PRED "_lot_n_1_rel" ], ... > ].
+
+copper+bets_ir_idm := v_reflnp_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_copper_v_i_rel" ],
+                      [ PRED "_bets_n_i_rel" ], ... > ].
+
+cry+eyes+out_ir_idm := v_reflnp_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_cry_v_out-i_rel" ],
+                      [ PRED "_eye_n_1_rel" ], ... > ].
+
+wait+turn_ir_idm := v_reflnp_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_wait_v_i_rel" ],
+                      [ PRED "_turn_n_of_rel" ], ... > ].
+
+wrack+brains_ir_idm := v_reflnp_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_wrack_v_i_rel" ],
+                      [ PRED "_brain_n_1_rel" ], ... > ].
+
+;; XNP V1+P1 X's N1
+;; "We cashed in our chips"
+
+cash+in+chips_ir_idm := v_reflnp_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_cash_v_in-i_rel" ],
+                      [ PRED "_chip_n_1_rel" ], ... > ].
+
+come+out+of+shell_ir_idm := v_reflnp_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_come_v_out+of-i_rel" ],
+                      [ PRED "_shell_n_1_rel" ], ... > ].
+
+make+up+mind_ir_idm := v_reflnp_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_make_v_up-i_rel" ],
+                      [ PRED "_mind_n_1_rel" ], ... > ].
+
+;; NP PP-of
+
+taste+of+medicine_ir_idm := np_poss_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_taste_n_of-i_rel" ],
+                      [ PRED "_medicine_n_1_rel" ], ... > ].
+
+
+#|
+;; XNP V1 X's N1 P1 X
+;; "He has his head in the clouds"
+;;
+have+head+in+clouds_ir_idm := v_reflnp-pp_seq_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_have_v_prd_rel" ],
+                      [ PRED "_head_n_of_rel" ],
+		      [ PRED _in_p_state_rel ],
+		      [ PRED "_clouds_n_i_rel"], ... > ].
+|#
+
+;; XNP V1 X's N1 [PP P1 X's N2]
+;; "He wore his heart on his sleeve"
+;; 
+wear+heart+on+sleeve_ir_idm := v_reflnp-pp_seq2_idiom_mtr &
+  [ INPUT.RELS.LIST < [ PRED "_wear_v_on-i_rel" ],
+                      [ PRED "_heart_n_1_rel" ],
+		      [ PRED "_sleeve_n_1_rel"], ... > ].
+
+

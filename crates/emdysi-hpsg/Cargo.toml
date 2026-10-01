@@ -1,0 +1,15 @@
+[package]
+name = "emdysi-hpsg"
+description = "DELPH-IN compatible HPSG processing: type hierarchy, typed feature structures, unification"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+emdysi-tdl = { path = "../emdysi-tdl", version = "0.1.0" }
+fancy-regex = "0.19"
+
+[lints]
+workspace = true

@@ -1,0 +1,703 @@
+//! Rule packs: TOML files of rules (see `docs/rules.md`).
+//!
+//! ```toml
+//! [pack]
+//! name = "example"
+//!
+//! [[rule]]
+//! id = "example.delve"
+//! kind = "words"            # words | regex | construction | coordination
+//!                           # | sentence-length | density | spelling | grammar
+//! words = ["delve", "tapestry"]
+//! match = "lemma"           # or "surface"
+//! severity = "warning"      # error | warning | suggestion
+//! message = "'{match}' is a common tell of machine-written prose."
+//! ```
+
+use std::collections::HashMap;
+
+use emdysi_parse::Erg;
+use fancy_regex::Regex;
+
+use crate::toml::{Table, Value};
+use crate::{Analysis, Diagnostic, Severity};
+
+#[derive(Debug)]
+pub struct PackError(pub String);
+
+impl std::fmt::Display for PackError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+
+impl std::error::Error for PackError {}
+
+#[derive(Debug, Clone)]
+pub struct Pack {
+    pub name: String,
+    pub description: String,
+    pub rules: Vec<Rule>,
+}
+
+#[derive(Debug, Clone)]
+pub struct Rule {
+    pub id: String,
+    pub severity: Severity,
+    pub message: String,
+    pub description: String,
+    pub kind: Kind,
+}
+
+/// A glob over names: `*` matches any run of characters.
+#[derive(Debug, Clone)]
+pub struct Glob(String);
+
+impl Glob {
+    pub fn matches(&self, s: &str) -> bool {
+        fn go(p: &[u8], s: &[u8]) -> bool {
+            match p.first() {
+                None => s.is_empty(),
+                Some(b'*') => (0..=s.len()).any(|i| go(&p[1..], &s[i..])),
+                Some(&c) => s.first() == Some(&c) && go(&p[1..], &s[1..]),
+            }
+        }
+        go(self.0.as_bytes(), s.as_bytes())
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MatchOn {
+    Lemma,
+    Surface,
+}
+
+#[derive(Debug, Clone)]
+pub enum Kind {
+    /// Words or phrases, matched on lemmas (from the parse) or surface
+    /// forms. `replace` maps a listed item to an automatic fix.
+    Words {
+        items: Vec<Vec<String>>,
+        on: MatchOn,
+        replace: HashMap<String, String>,
+    },
+    /// A regular expression over the sentence text.
+    Regex { re: Regex, replace: Option<String> },
+    /// Derivation nodes whose rule, lexical entry or lexical type matches.
+    Construction {
+        rules: Vec<Glob>,
+        entries: Vec<Glob>,
+        types: Vec<Glob>,
+        /// If set, one of these words must occur within `window` tokens
+        /// before the match (e.g. a form of *be* for passives).
+        preceded_by: Vec<String>,
+        window: usize,
+    },
+    /// Coordinations with exactly / at least this many conjuncts.
+    Coordination { min: usize, max: usize },
+    /// Sentences longer than `max` words.
+    SentenceLength { max: usize },
+    /// More than `max` occurrences of any of `chars` or `words` per
+    /// `per` words, over the whole document.
+    Density {
+        chars: Vec<char>,
+        words: Vec<String>,
+        per: f64,
+        max: f64,
+    },
+    /// Words the grammar's lexicon does not know.
+    Spelling {
+        min_length: usize,
+        ignore: Vec<String>,
+    },
+    /// Sentences without a strict (fully grammatical) analysis.
+    Grammar,
+}
+
+fn get_str(t: &Table, k: &str) -> Option<String> {
+    t.get(k).and_then(Value::as_str).map(String::from)
+}
+
+fn get_list(t: &Table, k: &str) -> Vec<String> {
+    t.get(k).and_then(Value::as_str_list).unwrap_or_default()
+}
+
+fn globs(t: &Table, k: &str) -> Vec<Glob> {
+    get_list(t, k).into_iter().map(Glob).collect()
+}
+
+impl Pack {
+    pub fn parse(src: &str) -> Result<Pack, PackError> {
+        let t = crate::toml::parse(src).map_err(|e| PackError(e.to_string()))?;
+        let meta = t
+            .get("pack")
+            .and_then(Value::as_table)
+            .cloned()
+            .unwrap_or_default();
+        let name = get_str(&meta, "name").ok_or_else(|| PackError("missing [pack] name".into()))?;
+        let mut rules = Vec::new();
+        for (i, r) in t
+            .get("rule")
+            .and_then(Value::as_array)
+            .unwrap_or(&[])
+            .iter()
+            .enumerate()
+        {
+            let r = r
+                .as_table()
+                .ok_or_else(|| PackError(format!("rule {i} is not a table")))?;
+            rules.push(
+                Rule::from_table(r).map_err(|e| PackError(format!("rule {}: {}", i + 1, e.0)))?,
+            );
+        }
+        Ok(Pack {
+            name,
+            description: get_str(&meta, "description").unwrap_or_default(),
+            rules,
+        })
+    }
+}
+
+impl Rule {
+    fn from_table(t: &Table) -> Result<Rule, PackError> {
+        let id = get_str(t, "id").ok_or_else(|| PackError("missing id".into()))?;
+        let kind_name =
+            get_str(t, "kind").ok_or_else(|| PackError(format!("{id}: missing kind")))?;
+        let err = |m: &str| PackError(format!("{id}: {m}"));
+        let num = |k: &str| t.get(k).and_then(Value::as_f64);
+        let kind = match kind_name.as_str() {
+            "words" => {
+                let items: Vec<Vec<String>> = get_list(t, "words")
+                    .iter()
+                    .map(|w| {
+                        w.to_lowercase()
+                            .split_whitespace()
+                            .map(String::from)
+                            .collect()
+                    })
+                    .filter(|v: &Vec<String>| !v.is_empty())
+                    .collect();
+                if items.is_empty() {
+                    return Err(err("words rule needs `words`"));
+                }
+                let on = match get_str(t, "match").as_deref() {
+                    None | Some("lemma") => MatchOn::Lemma,
+                    Some("surface") => MatchOn::Surface,
+                    Some(o) => return Err(err(&format!("unknown match {o:?}"))),
+                };
+                let replace = t
+                    .get("replace")
+                    .and_then(Value::as_table)
+                    .map(|m| {
+                        m.iter()
+                            .filter_map(|(k, v)| {
+                                v.as_str().map(|s| (k.to_lowercase(), s.to_string()))
+                            })
+                            .collect()
+                    })
+                    .unwrap_or_default();
+                Kind::Words { items, on, replace }
+            }
+            "regex" => {
+                let pat = get_str(t, "pattern").ok_or_else(|| err("regex rule needs `pattern`"))?;
+                let re = Regex::new(&pat).map_err(|e| err(&format!("bad pattern: {e}")))?;
+                Kind::Regex {
+                    re,
+                    replace: get_str(t, "replace"),
+                }
+            }
+            "construction" => {
+                let k = Kind::Construction {
+                    rules: globs(t, "rules"),
+                    entries: globs(t, "entries"),
+                    types: globs(t, "types"),
+                    preceded_by: get_list(t, "preceded_by")
+                        .iter()
+                        .map(|w| w.to_lowercase())
+                        .collect(),
+                    window: num("window").unwrap_or(3.0) as usize,
+                };
+                if let Kind::Construction {
+                    rules,
+                    entries,
+                    types,
+                    ..
+                } = &k
+                {
+                    if rules.is_empty() && entries.is_empty() && types.is_empty() {
+                        return Err(err("construction rule needs `rules`, `entries` or `types`"));
+                    }
+                }
+                k
+            }
+            "coordination" => Kind::Coordination {
+                min: num("min").unwrap_or(3.0) as usize,
+                max: num("max").unwrap_or(f64::INFINITY).min(1e6) as usize,
+            },
+            "sentence-length" => Kind::SentenceLength {
+                max: num("max").ok_or_else(|| err("sentence-length rule needs `max`"))? as usize,
+            },
+            "density" => Kind::Density {
+                chars: get_list(t, "chars")
+                    .iter()
+                    .flat_map(|s| s.chars())
+                    .collect(),
+                words: get_list(t, "words")
+                    .iter()
+                    .map(|w| w.to_lowercase())
+                    .collect(),
+                per: num("per").unwrap_or(100.0),
+                max: num("max").ok_or_else(|| err("density rule needs `max`"))?,
+            },
+            "spelling" => Kind::Spelling {
+                min_length: num("min_length").unwrap_or(3.0) as usize,
+                ignore: get_list(t, "ignore")
+                    .iter()
+                    .map(|w| w.to_lowercase())
+                    .collect(),
+            },
+            "grammar" => Kind::Grammar,
+            k => return Err(err(&format!("unknown kind {k:?}"))),
+        };
+        let severity = match get_str(t, "severity") {
+            None => Severity::Warning,
+            Some(s) => {
+                Severity::parse(&s).ok_or_else(|| err(&format!("unknown severity {s:?}")))?
+            }
+        };
+        Ok(Rule {
+            message: get_str(t, "message").unwrap_or_else(|| id.clone()),
+            description: get_str(t, "description").unwrap_or_default(),
+            id,
+            severity,
+            kind,
+        })
+    }
+
+    fn diag(&self, a: &Analysis, s: usize, from: usize, to: usize, matched: &str) -> Diagnostic {
+        Diagnostic {
+            rule: self.id.clone(),
+            severity: self.severity,
+            message: self.message.replace("{match}", matched),
+            range: a.source_range(s, from, to),
+            replacement: None,
+            suggestions: Vec::new(),
+            sentence: Some(s),
+        }
+    }
+
+    pub fn run(&self, erg: &Erg, a: &Analysis, out: &mut Vec<Diagnostic>) {
+        match &self.kind {
+            Kind::Words { items, on, replace } => self.run_words(a, items, *on, replace, out),
+            Kind::Regex { re, replace } => {
+                for (si, s) in a.sentences.iter().enumerate() {
+                    for m in re.captures_iter(s.original.as_str()).flatten() {
+                        let m0 = m.get(0).unwrap();
+                        let from = s.original[..m0.start()].chars().count();
+                        let to = from + m0.as_str().chars().count();
+                        let mut d = self.diag(a, si, from, to, m0.as_str());
+                        if let Some(rep) = replace {
+                            let mut expanded = String::new();
+                            m.expand(rep, &mut expanded);
+                            d.replacement = Some(expanded);
+                        }
+                        out.push(d);
+                    }
+                }
+            }
+            Kind::Construction {
+                rules,
+                entries,
+                types,
+                preceded_by,
+                window,
+            } => {
+                for (si, s) in a.sentences.iter().enumerate() {
+                    let Some(r) = s.best() else { continue };
+                    for n in &r.nodes {
+                        let hit = if n.leaf {
+                            entries.iter().any(|g| g.matches(&n.name))
+                                || (!types.is_empty()
+                                    && r.words.iter().any(|w| {
+                                        w.entry == n.name
+                                            && w.from == n.from
+                                            && types.iter().any(|g| g.matches(&w.le_type))
+                                    }))
+                        } else {
+                            rules.iter().any(|g| g.matches(&n.name))
+                        };
+                        let context_ok = preceded_by.is_empty() || {
+                            let before: Vec<&emdysi_parse::InputToken> =
+                                s.tokens.iter().filter(|t| t.to <= n.from).collect();
+                            before
+                                .iter()
+                                .rev()
+                                .take(*window)
+                                .any(|t| preceded_by.contains(&t.form.to_lowercase()))
+                        };
+                        if hit && context_ok {
+                            let text: String = s
+                                .original
+                                .chars()
+                                .skip(n.from)
+                                .take(n.to - n.from)
+                                .collect();
+                            out.push(self.diag(a, si, n.from, n.to, &text));
+                        }
+                    }
+                }
+            }
+            Kind::Coordination { min, max } => {
+                for (si, s) in a.sentences.iter().enumerate() {
+                    let Some(r) = s.best() else { continue };
+                    for (ni, n) in r.nodes.iter().enumerate() {
+                        let is_top = |name: &str| name.contains("_crd") && name.ends_with("-t_c");
+                        if n.leaf || !is_top(&n.name) {
+                            continue;
+                        }
+                        // Conjuncts: the top rule joins two; each mid rule
+                        // on the way down adds one.
+                        let mut count = 2;
+                        let mut cur = ni;
+                        loop {
+                            let next = r.nodes[cur].children.iter().copied().find(|&c| {
+                                r.nodes[c].name.contains("_crd")
+                                    && (r.nodes[c].name.ends_with("-m_c")
+                                        || r.nodes[c].name.ends_with("-im_c"))
+                            });
+                            match next {
+                                Some(c) => {
+                                    count += 1;
+                                    cur = c;
+                                }
+                                None => break,
+                            }
+                        }
+                        if count >= *min && count <= *max {
+                            let text: String = s
+                                .original
+                                .chars()
+                                .skip(n.from)
+                                .take(n.to - n.from)
+                                .collect();
+                            out.push(self.diag(a, si, n.from, n.to, &text));
+                        }
+                    }
+                }
+            }
+            Kind::SentenceLength { max } => {
+                for (si, s) in a.sentences.iter().enumerate() {
+                    let n = s.word_count();
+                    if n > *max {
+                        let len = s.original.chars().count();
+                        let mut d = self.diag(a, si, 0, len, &s.original);
+                        d.message = d
+                            .message
+                            .replace("{count}", &n.to_string())
+                            .replace("{max}", &max.to_string());
+                        out.push(d);
+                    }
+                }
+            }
+            Kind::Density {
+                chars,
+                words,
+                per,
+                max,
+            } => {
+                let mut total_words = 0usize;
+                let mut hits: Vec<(usize, usize, usize, String)> = Vec::new();
+                for (si, s) in a.sentences.iter().enumerate() {
+                    total_words += s.word_count();
+                    for (ci, c) in s.original.chars().enumerate() {
+                        if chars.contains(&c) {
+                            hits.push((si, ci, ci + 1, c.to_string()));
+                        }
+                    }
+                    for t in &s.tokens {
+                        if words.contains(&t.form.to_lowercase()) {
+                            hits.push((si, t.from, t.to, t.form.clone()));
+                        }
+                    }
+                }
+                let rate = hits.len() as f64 * per / total_words.max(1) as f64;
+                if rate > *max {
+                    for (si, from, to, m) in hits {
+                        let mut d = self.diag(a, si, from, to, &m);
+                        d.message = d
+                            .message
+                            .replace("{count}", &format!("{rate:.1}"))
+                            .replace("{max}", &format!("{max}"))
+                            .replace("{per}", &format!("{per}"));
+                        out.push(d);
+                    }
+                }
+            }
+            Kind::Spelling { min_length, ignore } => {
+                for (si, s) in a.sentences.iter().enumerate() {
+                    for t in &s.tokens {
+                        let w = &t.form;
+                        // Only plain lower-case words: names, acronyms, code
+                        // and numbers are out of scope.
+                        if w.chars().count() < *min_length
+                            || !w.chars().all(|c| c.is_lowercase() || c == '\'' || c == '-')
+                            || w.contains("--")
+                            || s.text
+                                .chars()
+                                .skip(t.from)
+                                .take(t.to - t.from)
+                                .all(|c| c == 'x')
+                            || ignore.contains(w)
+                        {
+                            continue;
+                        }
+                        let known = |p: &str| crate::dict::tier(p).is_some() || erg.known_word(p);
+                        let parts: Vec<&str> = w
+                            .split(['-', '\'', '’'])
+                            .filter(|p| !p.is_empty())
+                            .collect();
+                        if known(w) || parts.iter().all(|p| known(p)) {
+                            continue;
+                        }
+                        let (sugg, confident) = suggestions(erg, w, 5);
+                        let mut d = self.diag(a, si, t.from, t.to, w);
+                        d.message = d.message.replace(
+                            "{suggestion}",
+                            &sugg
+                                .first()
+                                .cloned()
+                                .map(|x| format!(" Did you mean '{x}'?"))
+                                .unwrap_or_default(),
+                        );
+                        // Fix automatically only when one candidate is clearly
+                        // the most plausible typo, or the only one.
+                        let single = sugg.len() == 1
+                            && edit_distance(w, &sugg[0]) == 1
+                            && w.chars().count() >= 4;
+                        if confident || single {
+                            d.replacement = sugg.first().cloned();
+                        }
+                        d.suggestions = sugg;
+                        out.push(d);
+                    }
+                }
+            }
+            Kind::Grammar => {
+                for (si, s) in a.sentences.iter().enumerate() {
+                    let Some(p) = &s.parse else { continue };
+                    let block_kind = a.blocks[s.block].kind;
+                    if matches!(
+                        block_kind,
+                        emdysi_text::blocks::BlockKind::Heading(_)
+                            | emdysi_text::blocks::BlockKind::TableCell
+                    ) {
+                        continue;
+                    }
+                    if p.readings.is_empty() || !s.strict() {
+                        let len = s.original.chars().count();
+                        let mut d = self.diag(a, si, 0, len, &s.original);
+                        let why = if p.readings.is_empty() {
+                            if p.exhausted {
+                                "too complex to analyse in time"
+                            } else {
+                                "no grammatical analysis found"
+                            }
+                        } else {
+                            "only a fragment or informal analysis found"
+                        };
+                        d.message = d.message.replace("{reason}", why);
+                        out.push(d);
+                    }
+                }
+            }
+        }
+    }
+
+    fn run_words(
+        &self,
+        a: &Analysis,
+        items: &[Vec<String>],
+        on: MatchOn,
+        replace: &HashMap<String, String>,
+        out: &mut Vec<Diagnostic>,
+    ) {
+        for (si, s) in a.sentences.iter().enumerate() {
+            // Units: (lemma or surface, from, to), from the best reading when
+            // there is one, else from the tokens.
+            let units: Vec<(String, usize, usize)> = match (on, s.best()) {
+                (MatchOn::Lemma, Some(r)) => r
+                    .words
+                    .iter()
+                    .flat_map(|w| {
+                        // Multiword entries contribute one unit per word.
+                        let parts: Vec<String> =
+                            w.lemma.split_whitespace().map(String::from).collect();
+                        if parts.len() <= 1 {
+                            vec![(w.lemma.clone(), w.from, w.to)]
+                        } else {
+                            parts.into_iter().map(|p| (p, w.from, w.to)).collect()
+                        }
+                    })
+                    .collect(),
+                _ => s
+                    .tokens
+                    .iter()
+                    .map(|t| (t.form.to_lowercase(), t.from, t.to))
+                    .collect(),
+            };
+            for item in items {
+                if item.is_empty() || item.len() > units.len() {
+                    continue;
+                }
+                for start in 0..=units.len() - item.len() {
+                    if (0..item.len()).all(|k| units[start + k].0 == item[k]) {
+                        let from = units[start].1;
+                        let to = units[start + item.len() - 1].2;
+                        let text: String = s
+                            .original
+                            .chars()
+                            .skip(from)
+                            .take(to.saturating_sub(from))
+                            .collect();
+                        let mut d = self.diag(a, si, from, to, &text);
+                        if let Some(rep) = replace.get(&item.join(" ")) {
+                            d.replacement = Some(match_case(&text, rep));
+                            d.message = d.message.replace("{replacement}", rep);
+                        }
+                        out.push(d);
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Give `rep` the capitalization pattern of `like`.
+fn match_case(like: &str, rep: &str) -> String {
+    if like.chars().next().is_some_and(char::is_uppercase) {
+        let mut c = rep.chars();
+        c.next()
+            .map(|f| f.to_uppercase().chain(c).collect())
+            .unwrap_or_default()
+    } else {
+        rep.to_string()
+    }
+}
+
+/// Damerau-Levenshtein distance (optimal string alignment).
+pub fn edit_distance(a: &str, b: &str) -> usize {
+    let a: Vec<char> = a.to_lowercase().chars().collect();
+    let b: Vec<char> = b.to_lowercase().chars().collect();
+    let mut d = vec![vec![0usize; b.len() + 1]; a.len() + 1];
+    for (i, row) in d.iter_mut().enumerate() {
+        row[0] = i;
+    }
+    for (j, cell) in d[0].iter_mut().enumerate() {
+        *cell = j;
+    }
+    for i in 1..=a.len() {
+        for j in 1..=b.len() {
+            let cost = usize::from(a[i - 1] != b[j - 1]);
+            d[i][j] = (d[i - 1][j] + 1)
+                .min(d[i][j - 1] + 1)
+                .min(d[i - 1][j - 1] + cost);
+            if i > 1 && j > 1 && a[i - 1] == b[j - 2] && a[i - 2] == b[j - 1] {
+                d[i][j] = d[i][j].min(d[i - 2][j - 2] + 1);
+            }
+        }
+    }
+    d[a.len()][b.len()]
+}
+
+/// Keyboard neighbours on a QWERTY layout.
+fn adjacent_keys(a: char, b: char) -> bool {
+    const ROWS: [&str; 3] = ["qwertyuiop", "asdfghjkl", "zxcvbnm"];
+    let pos = |c: char| {
+        ROWS.iter()
+            .enumerate()
+            .find_map(|(r, row)| row.find(c).map(|i| (r as i32, i as i32)))
+    };
+    match (pos(a), pos(b)) {
+        (Some((r1, c1)), Some((r2, c2))) => (r1 - r2).abs() <= 1 && (c1 - c2).abs() <= 1,
+        _ => false,
+    }
+}
+
+/// How plausible it is that `typed` is a typo for `target` (lower is more
+/// plausible), for candidates one edit away.
+fn typo_cost(typed: &str, target: &str) -> f64 {
+    let a: Vec<char> = typed.chars().collect();
+    let b: Vec<char> = target.chars().collect();
+    let prefix = a.iter().zip(&b).take_while(|(x, y)| x == y).count();
+    if a.len() == b.len() {
+        if prefix + 1 < a.len()
+            && a[prefix] == b[prefix + 1]
+            && a[prefix + 1] == b[prefix]
+            && a[prefix + 2..] == b[prefix + 2..]
+        {
+            return 0.5; // transposition
+        }
+        return if adjacent_keys(a[prefix], b[prefix]) {
+            0.8
+        } else {
+            1.0
+        };
+    }
+    // One letter missing from (or added to) what was typed: cheap when it
+    // doubles or undoubles a letter.
+    let (long, i) = if b.len() > a.len() {
+        (&b, prefix)
+    } else {
+        (&a, prefix)
+    };
+    let c = long[i];
+    let doubled = (i > 0 && long[i - 1] == c) || long.get(i + 1) == Some(&c);
+    if doubled { 0.6 } else { 0.9 }
+}
+
+/// Spelling suggestions: listed or grammar-known words one edit away (two
+/// if none), most plausible and most common first. The flag says whether
+/// the first suggestion is clearly the intended word.
+fn suggestions(erg: &Erg, word: &str, max: usize) -> (Vec<String>, bool) {
+    let lower = word.to_lowercase();
+    let known = |w: &str| crate::dict::tier(w).is_some() || erg.known_word(w);
+    let mut found: Vec<(f64, u8, String)> = Vec::new();
+    let mut seen = std::collections::HashSet::new();
+    let e1 = emdysi_parse::edits(&lower);
+    for e in &e1 {
+        if seen.insert(e.clone()) && known(e) {
+            found.push((
+                typo_cost(&lower, e),
+                crate::dict::tier(e).unwrap_or(70),
+                e.clone(),
+            ));
+        }
+    }
+    if found.is_empty() && lower.chars().count() <= 12 {
+        for a in &e1 {
+            for e in emdysi_parse::edits(a) {
+                if seen.insert(e.clone()) && crate::dict::tier(&e).is_some() {
+                    found.push((2.0, crate::dict::tier(&e).unwrap_or(70), e));
+                }
+            }
+        }
+    }
+    found.sort_by(|x, y| x.0.total_cmp(&y.0).then(x.1.cmp(&y.1)).then(x.2.cmp(&y.2)));
+    // Confident: a cheap typo (transposition or doubled letter) with no
+    // equally cheap rival of similar commonness.
+    let confident = match found.as_slice() {
+        [first, rest @ ..] => {
+            first.0 <= 0.6
+                && rest
+                    .first()
+                    .is_none_or(|r| r.0 > first.0 || r.1 >= first.1 + 15)
+        }
+        [] => false,
+    };
+    let out = found
+        .into_iter()
+        .take(max)
+        .map(|(_, _, w)| match_case(word, &w))
+        .collect();
+    (out, confident)
+}

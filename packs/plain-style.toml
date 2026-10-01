@@ -1,0 +1,65 @@
+[pack]
+name = "plain-style"
+description = "Plain-language conventions: active voice, short sentences, concrete wording."
+
+[[rule]]
+id = "plain-style.passive"
+kind = "construction"
+severity = "suggestion"
+message = "Passive voice ('{match}'); consider naming who acts."
+rules = ["v_pas*_odlr"]
+# A form of "be" or "get" shortly before: excludes adjectival uses such as
+# "fast-paced" or "the written report".
+preceded_by = ["am", "is", "are", "was", "were", "be", "been", "being", "'re", "’re", "get", "gets", "got", "gotten", "getting"]
+window = 3
+
+[[rule]]
+id = "plain-style.sentence-length"
+kind = "sentence-length"
+severity = "suggestion"
+max = 35
+message = "Long sentence ({count} words; at most {max} suggested)."
+
+[[rule]]
+id = "plain-style.intensifiers"
+kind = "words"
+match = "surface"
+severity = "suggestion"
+message = "'{match}' rarely adds meaning."
+words = ["very", "really", "extremely", "basically", "actually", "literally", "totally", "incredibly", "truly"]
+
+[[rule]]
+id = "plain-style.wordy"
+kind = "words"
+match = "surface"
+severity = "warning"
+message = "Wordy: use '{replacement}' for '{match}'."
+words = [
+  "in order to", "due to the fact that", "at this point in time", "utilize",
+  "a large number of", "prior to", "in the event that", "with regard to",
+  "in spite of the fact that", "for the purpose of",
+]
+replace = { "in order to" = "to", "due to the fact that" = "because", "at this point in time" = "now", "utilize" = "use", "a large number of" = "many", "prior to" = "before", "in the event that" = "if", "with regard to" = "about", "in spite of the fact that" = "although", "for the purpose of" = "to" }
+
+[[rule]]
+id = "plain-style.expletive-there"
+kind = "construction"
+severity = "suggestion"
+message = "Expletive 'there' ('{match}'); consider a more direct subject."
+entries = ["there_expl"]
+
+[[rule]]
+id = "plain-style.repeated-word"
+kind = "regex"
+severity = "error"
+message = "Repeated word '{match}'."
+pattern = "(?i)\\b(\\w+)\\s+\\1\\b"
+replace = "$1"
+
+[[rule]]
+id = "plain-style.double-space"
+kind = "regex"
+severity = "suggestion"
+message = "Several spaces in a row."
+pattern = "(?<=\\S)  +(?=\\S)"
+replace = " "
