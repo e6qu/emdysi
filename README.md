@@ -22,6 +22,7 @@ notices in `THIRD_PARTY_NOTICES` once added.
 | `crates/emdysi-tdl` | Reader for TDL, the grammar-definition language of the ERG |
 | `crates/emdysi-hpsg` | Type hierarchy, typed feature structures, unification, grammar compilation |
 | `crates/emdysi-repp` | REPP tokenizer with character offsets |
+| `crates/emdysi-text` | Markdown and plain-text prose blocks with source offsets; sentence segmentation |
 | `crates/emdysi-parse` | Pipeline: tokenizing, tagging, token mapping, lexical lookup, parsing with the ERG |
 | `grammar/erg/` | Vendored English Resource Grammar (MIT), see `VENDORED.md` |
 | `corpora/` | Test-only corpora, each with its own license |

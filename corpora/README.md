@@ -18,3 +18,4 @@ Rules for adding a corpus:
 | Corpus | License | Contents |
 |---|---|---|
 | [`erg-gold/`](erg-gold/SOURCE.md) | MIT (ERG annotations); text by the ERG authors or public domain | ERG test suites `mrs`, `csli`, `esd`, `control`, `ccs` and the public-domain `sh-spec` (Sherlock Holmes) with gold derivations |
+| [`golden-rules/`](golden-rules/SOURCE.md) | MIT | Sentence-segmentation test cases from pySBD / Pragmatic Segmenter |

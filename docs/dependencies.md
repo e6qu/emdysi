@@ -23,6 +23,9 @@ LGPL and GPL) requires a new decision.
 | bit-vec | 0.8.0 | Apache-2.0 OR MIT | crate `Cargo.toml` + `LICENSE-MIT`, `LICENSE-APACHE` | 2026-10-01 |
 | aho-corasick | 1.1.5 | Unlicense OR MIT | crate `Cargo.toml` + `LICENSE-MIT`, `UNLICENSE` | 2026-10-01 |
 | memchr | 2.8.3 | Unlicense OR MIT | crate `Cargo.toml` + `LICENSE-MIT`, `UNLICENSE` | 2026-10-01 |
+| pulldown-cmark | 0.13.4 (default features off) | MIT | crate `Cargo.toml` + `LICENSE` (Copyright 2015 Google Inc.) | 2026-10-01 |
+| bitflags | 2.13.2 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-MIT`, `LICENSE-APACHE` | 2026-10-01 |
+| unicase | 2.9.0 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-MIT`, `LICENSE-APACHE` | 2026-10-01 |
 
 ## Data
 
