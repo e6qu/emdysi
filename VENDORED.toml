@@ -1,0 +1,203 @@
+# Registry of third-party and non-code material in this repository.
+#
+# Every file under grammar/, corpora/ and data/, and every data file
+# compiled into a crate, belongs to exactly one entry here. Each entry
+# records where the material comes from (upstream, exact version), under
+# which license and whose copyright, how it was changed, and what it is
+# used for. `VENDORED.sha256` pins the content of every listed file.
+# `python3 scripts/check-vendored.py` verifies both (run in CI); after an
+# intended change, run it with `--update` and review the diff.
+#
+# Fields:
+#   paths        directories or files covered (repository-relative)
+#   name         what it is
+#   upstream     where it comes from ("this repository" for own material)
+#   version      exact upstream version: commit hash, release or date
+#   retrieved    date the copy was taken (YYYY-MM-DD)
+#   license      SPDX identifier, or LicenseRef-* with the text in-tree
+#   license_files  license text(s) shipped alongside, repository-relative
+#   copyright    copyright holders as stated upstream
+#   provenance   where the text/data itself originates, and why it is clean
+#   modifications  what was changed relative to upstream ("none" if verbatim)
+#   use          "shipped" (compiled into or loaded by the tool) or "test"
+#   source_doc   the detailed SOURCE.md
+
+[[item]]
+id = "erg"
+paths = ["grammar/erg"]
+name = "English Resource Grammar (ERG), 2025 release line"
+upstream = "https://github.com/delph-in/erg"
+version = "13b615ab607374ed7cafe753830e23043a22b71d"
+retrieved = "2026-10-01"
+license = "MIT"
+license_files = ["grammar/erg/LICENSE"]
+copyright = "Dan Flickinger, Rob Malouf, Emily M. Bender, Stephan Oepen and the DELPH-IN contributors (ERG file headers and METADATA)"
+provenance = "Hand-written grammar; METADATA declares LICENSE=\"MIT\". Files were grepped for GPL/LGPL/CC/all-rights-reserved notices; none found."
+modifications = "Subset of files only, including the grammar-error (mal-rule) variant in educ/ and mal.tdl (see SOURCE.md); SOURCE.md added. No file content changed."
+use = "shipped"
+source_doc = "grammar/erg/SOURCE.md"
+
+[[item]]
+id = "erg-gold-constructed"
+paths = ["corpora/erg-gold/mrs", "corpora/erg-gold/csli", "corpora/erg-gold/esd", "corpora/erg-gold/control", "corpora/erg-gold/ccs"]
+name = "ERG gold treebank profiles built from constructed test suites"
+upstream = "https://github.com/delph-in/erg (tsdb/gold)"
+version = "13b615ab607374ed7cafe753830e23043a22b71d"
+retrieved = "2026-10-01"
+license = "MIT"
+license_files = ["corpora/erg-gold/LICENSE"]
+copyright = "ERG developers (item authors oe, danf); annotations by the ERG treebankers"
+provenance = "Sentences constructed by the grammar developers as test suites (not excerpts of third-party text); annotations are part of the MIT-licensed ERG repository."
+modifications = "none (profiles copied verbatim)"
+use = "test"
+source_doc = "corpora/erg-gold/SOURCE.md"
+
+[[item]]
+id = "erg-gold-sh-spec"
+paths = ["corpora/erg-gold/sh-spec"]
+name = "ERG gold treebank profile of 'The Adventure of the Speckled Band'"
+upstream = "https://github.com/delph-in/erg (tsdb/gold/sh-spec)"
+version = "13b615ab607374ed7cafe753830e23043a22b71d"
+retrieved = "2026-10-01"
+license = "MIT"
+license_files = ["corpora/erg-gold/LICENSE"]
+copyright = "Text: public domain (Arthur Conan Doyle, 1892; author died 1930). Annotations: ERG developers (MIT)."
+provenance = "Public-domain short story; annotations from the ERG repository."
+modifications = "none (profile copied verbatim)"
+use = "test"
+source_doc = "corpora/erg-gold/SOURCE.md"
+
+[[item]]
+id = "erg-gold-docs"
+paths = ["corpora/erg-gold/SOURCE.md", "corpora/erg-gold/LICENSE"]
+name = "Provenance note and license text for the ERG gold profiles"
+upstream = "this repository (LICENSE copied from https://github.com/delph-in/erg)"
+version = "13b615ab607374ed7cafe753830e23043a22b71d"
+retrieved = "2026-10-01"
+license = "MIT"
+license_files = ["corpora/erg-gold/LICENSE"]
+copyright = "emdysi contributors (SOURCE.md); ERG developers (LICENSE)"
+provenance = "Documentation."
+modifications = "n/a"
+use = "test"
+source_doc = "corpora/erg-gold/SOURCE.md"
+
+[[item]]
+id = "golden-rules"
+paths = ["corpora/golden-rules"]
+name = "English 'Golden Rules' sentence-segmentation test cases"
+upstream = "https://github.com/nipunsadvilkar/pySBD (tests/lang/test_english.py), originating in https://github.com/diasks2/pragmatic_segmenter"
+version = "5905f13be4fc95f407b98392e0ec303617a33d86"
+retrieved = "2026-10-01"
+license = "MIT"
+license_files = ["corpora/golden-rules/LICENSE"]
+copyright = "Copyright (c) 2019 Nipun Sadvilkar"
+provenance = "47 short constructed test cases from the Pragmatic Segmenter (MIT)."
+modifications = "Converted from Python test cases to TSV (en.tsv); one pytest.param case omitted."
+use = "test"
+source_doc = "corpora/golden-rules/SOURCE.md"
+
+[[item]]
+id = "ai-prose"
+paths = ["corpora/ai-prose"]
+name = "AI-style prose samples with expected diagnostics"
+upstream = "this repository"
+version = "written 2026-10-01"
+retrieved = "2026-10-01"
+license = "MIT"
+license_files = ["LICENSE"]
+copyright = "Copyright (c) 2026 emdysi contributors"
+provenance = "Written for this project; no text copied from other sources; names and figures invented. expected/ is generated by crates/emdysi-check/tests/corpus.rs."
+modifications = "n/a"
+use = "test"
+source_doc = "corpora/ai-prose/README.md"
+
+[[item]]
+id = "corpora-readme"
+paths = ["corpora/README.md"]
+name = "Corpus policy"
+upstream = "this repository"
+version = "n/a"
+retrieved = "2026-10-01"
+license = "MIT"
+license_files = ["LICENSE"]
+copyright = "Copyright (c) 2026 emdysi contributors"
+provenance = "Documentation."
+modifications = "n/a"
+use = "test"
+source_doc = "corpora/README.md"
+
+[[item]]
+id = "scowl"
+paths = ["data/scowl/en-60.tsv", "data/scowl/variants.tsv", "data/scowl/Copyright", "data/scowl/SOURCE.md"]
+name = "English Speller Database (ESDB/SCOWL) word list, size 60, and US/GB variant pairs"
+upstream = "https://github.com/en-wl/wordlist"
+version = "1e5b7d3a72f47a71da5d28686c1dd4b397178485"
+retrieved = "2026-10-01"
+license = "LicenseRef-SCOWL"
+license_files = ["data/scowl/Copyright"]
+copyright = "Copyright 2000-2026 by Kevin Atkinson (ESDB); see data/scowl/Copyright for the sources ESDB is derived from"
+provenance = "Generated with the upstream tools (word-list 60 A,B,Z 1; no Australian spellings, which carry an additional notice). Per the Copyright file, for a generated list of size 80 or below that is not Australian English, no additional copyright applies beyond the notice before the ===."
+modifications = "Generated lists, not upstream files: en-60.tsv adds each word's smallest ESDB size; variants.tsv is produced by data/scowl/gen-variants.py from the same database."
+use = "shipped"
+source_doc = "data/scowl/SOURCE.md"
+
+[[item]]
+id = "scowl-tools"
+paths = ["data/scowl/gen-variants.py"]
+name = "Generator for the US/GB variant table"
+upstream = "this repository"
+version = "n/a"
+retrieved = "2026-10-01"
+license = "MIT"
+license_files = ["LICENSE"]
+copyright = "Copyright (c) 2026 emdysi contributors"
+provenance = "Own code."
+modifications = "n/a"
+use = "test"
+source_doc = "data/scowl/SOURCE.md"
+
+[[item]]
+id = "rank-model"
+paths = ["crates/emdysi-parse/data/rank.tsv"]
+name = "Parse-ranking model weights"
+upstream = "this repository (trained by crates/emdysi-parse/examples/train.rs)"
+version = "trained 2026-10-01 on corpora/erg-gold"
+retrieved = "2026-10-01"
+license = "MIT"
+license_files = ["LICENSE", "corpora/erg-gold/LICENSE"]
+copyright = "Copyright (c) 2026 emdysi contributors; derived only from the MIT-licensed ERG gold profiles listed above"
+provenance = "Averaged-perceptron weights over derivation features; training data is only corpora/erg-gold (no LDC or NC data)."
+modifications = "n/a"
+use = "shipped"
+source_doc = "docs/decisions.md"
+
+[[item]]
+id = "erg-errors"
+paths = ["data/erg-errors/errors.tsv", "data/erg-errors/SOURCE.md"]
+name = "ERG grammar-error codes and feedback texts"
+upstream = "https://github.com/delph-in/erg (educ/ParserErrorCodes.xlsx)"
+version = "13b615ab607374ed7cafe753830e23043a22b71d"
+retrieved = "2026-10-01"
+license = "MIT"
+license_files = ["grammar/erg/LICENSE"]
+copyright = "Dan Flickinger and the ERG developers (educ/METADATA declares LICENSE=\"MIT\")"
+provenance = "Feedback texts and example sentences written by the ERG developers for the grammar-error (EPGY/Redbird) deployment."
+modifications = "Converted from the vendored grammar/erg/educ/ParserErrorCodes.xlsx by data/erg-errors/gen-errors.py: English feedback, error class and examples only (Chinese texts and comments dropped); one row per error code."
+use = "shipped"
+source_doc = "data/erg-errors/SOURCE.md"
+
+[[item]]
+id = "erg-errors-tools"
+paths = ["data/erg-errors/gen-errors.py"]
+name = "Converter for the ERG error table"
+upstream = "this repository"
+version = "n/a"
+retrieved = "2026-10-01"
+license = "MIT"
+license_files = ["LICENSE"]
+copyright = "Copyright (c) 2026 emdysi contributors"
+provenance = "Own code."
+modifications = "n/a"
+use = "test"
+source_doc = "data/erg-errors/SOURCE.md"

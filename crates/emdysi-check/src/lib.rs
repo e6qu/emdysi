@@ -51,6 +51,9 @@ pub struct Sentence {
     pub tokens: Vec<InputToken>,
     /// Why the sentence was not parsed, if it was not.
     pub skipped: Option<String>,
+    /// Analysis by the grammar-error variant of the grammar, for sentences
+    /// without a strict analysis (see [`Options::diagnose`]).
+    pub mal_parse: Option<Parse>,
 }
 
 impl Sentence {
@@ -123,6 +126,9 @@ pub struct Options {
     pub timeout: Duration,
     /// Readings recovered per sentence; rules look at the best ones.
     pub max_readings: usize,
+    /// Re-parse sentences without a strict analysis with the grammar-error
+    /// variant of the grammar, to name the error.
+    pub diagnose: bool,
 }
 
 impl Default for Options {
@@ -133,12 +139,19 @@ impl Default for Options {
             max_tokens: 100,
             timeout: Duration::from_secs(10),
             max_readings: 100,
+            diagnose: true,
         }
     }
 }
 
 /// A sentence's parse outcome: index, parse, tokens, reason for skipping.
-type Parsed = (usize, Option<Parse>, Vec<InputToken>, Option<String>);
+type Parsed = (
+    usize,
+    Option<Parse>,
+    Vec<InputToken>,
+    Option<String>,
+    Option<Parse>,
+);
 
 /// Split a document into sentences and parse them.
 pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analysis {
@@ -174,6 +187,7 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                 parse: None,
                 tokens: Vec::new(),
                 skipped: None,
+                mal_parse: None,
             });
         }
     }
@@ -212,12 +226,33 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                             Err(e) => (None, Some(e.to_string())),
                         }
                     };
-                    results.lock().unwrap().push((i, parse, tokens, skipped));
+                    let strict = parse.as_ref().is_some_and(|p| {
+                        p.readings.iter().any(|r| emdysi_parse::is_strict(&r.root))
+                    });
+                    // Unknown words are analysed generically, so a wrong
+                    // form ("buyed") can still look grammatical.
+                    let generic = parse.as_ref().is_some_and(|p| {
+                        p.readings
+                            .first()
+                            .is_some_and(|r| r.words.iter().any(|w| w.generic))
+                    });
+                    let mal_parse = if opts.diagnose && parse.is_some() && (!strict || generic) {
+                        erg.mal().and_then(|m| {
+                            m.parse_limited(text, opts.timeout, opts.max_readings).ok()
+                        })
+                    } else {
+                        None
+                    };
+                    results
+                        .lock()
+                        .unwrap()
+                        .push((i, parse, tokens, skipped, mal_parse));
                 }
             });
         }
     });
-    for (i, parse, tokens, skipped) in results.into_inner().unwrap() {
+    for (i, parse, tokens, skipped, mal_parse) in results.into_inner().unwrap() {
+        sents[i].mal_parse = mal_parse;
         sents[i].parse = parse;
         sents[i].tokens = tokens;
         sents[i].skipped = skipped;

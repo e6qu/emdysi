@@ -1,0 +1,26 @@
+;; 2020-05-29 - Using agreed convention, a token of form |Abcd\Efgh| is a
+;; proper name that the preprocessor has asserted requires a specifier, by
+;; replacing space with backslash, as in |[the] Great\Wall|
+;;
+generic_name_oblspr_tmr := token_mapping_rule &
+[ +INPUT < [ +FORM #form & ^[[:alnum:]]+\\\\[[:alnum:]]+$,
+             +CLASS non_alphanumeric,
+             +TRAIT #trait & [ +UW + ], +PRED #pred, +CARG #carg,
+             +ID #id, +FROM #from, +TO #to, 
+             +TNT [ +MAIN #main, +TAGS < ^NNP$ > ] ] >,
+  +OUTPUT < [ +FORM #form, +CLASS proper_spr_ne,
+              +TRAIT #trait, +PRED #pred, +CARG #carg,
+              +ID #id, +FROM #from, +TO #to, 
+             +TNT null_tnt & [ +MAIN #main ] ] >,
+  +CONTEXT < >,
+  +POSITION "I1@O1" ].   
+
+;; 2020-06-02 - Add token for e.g. |e27| that leaves +INITIAL underspecified
+;; and expect the original token to get filtered out
+;;
+lower_name_tmr := basic_add_ne_tmt &
+[ +CONTEXT < [ +CLASS proper_ne & 
+		      [ +INITIAL +, 
+			+CASE non_capitalized+lower ] ] >,
+  +OUTPUT < [ +TRAIT.+UW +, +CLASS proper_ne ] > ].   
+

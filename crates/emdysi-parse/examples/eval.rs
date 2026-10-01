@@ -50,13 +50,19 @@ fn main() {
         .map(|f| (f[0].clone(), f[2].clone()))
         .collect();
     let mut gold: HashMap<String, String> = HashMap::new();
+    let mut gold_mrs: HashMap<String, String> = HashMap::new();
     for f in read_relation(dir, "result") {
         if f.len() > 10 {
             if let (Some(item), Some(tree)) = (parse_to_item.get(&f[0]), parse_sexp(&f[10])) {
                 gold.insert(item.clone(), skeleton(&tree, true));
+                if let Some(m) = f.get(13).filter(|m| !m.is_empty()) {
+                    gold_mrs.insert(item.clone(), m.clone());
+                }
             }
         }
     }
+    let mrs_checked = std::sync::atomic::AtomicUsize::new(0);
+    let mrs_ok = std::sync::atomic::AtomicUsize::new(0);
 
     let results = Mutex::new(Vec::new());
     let next = Mutex::new(0usize);
@@ -82,6 +88,26 @@ fn main() {
                         .collect();
                     let g = gold.get(id).cloned();
                     let hit = g.as_ref().is_some_and(|g| ours.iter().any(|o| o == g));
+                    // Semantics of the reading with the gold derivation.
+                    if let (Some(g), Some(gm)) = (&g, gold_mrs.get(id)) {
+                        if let Some(k) = ours.iter().position(|o| o == g) {
+                            let ours_mrs = p.readings[k].mrs.as_ref();
+                            let gold_m = emdysi_hpsg::mrs::Mrs::parse_simple(gm);
+                            mrs_checked.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                            let same = match (ours_mrs, &gold_m) {
+                                (Some(a), Some(b)) => emdysi_hpsg::mrs::isomorphic(a, b),
+                                _ => false,
+                            };
+                            if same {
+                                mrs_ok.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                            } else if std::env::var("MRS_VERBOSE").is_ok() {
+                                println!(
+                                    "MRS {id} {text}\n  gold: {gm}\n  ours: {}",
+                                    ours_mrs.map(|m| m.to_simple()).unwrap_or_default()
+                                );
+                            }
+                        }
+                    }
                     results.lock().unwrap().push((
                         id.clone(),
                         text.clone(),
@@ -153,6 +179,11 @@ fn main() {
             }
         }
     }
+    println!(
+        "{dir}: MRS identical to gold for {}/{} gold trees",
+        mrs_ok.load(std::sync::atomic::Ordering::Relaxed),
+        mrs_checked.load(std::sync::atomic::Ordering::Relaxed)
+    );
     println!(
         "{dir}: grammatical {wf_parsed}/{wf} parsed; ungrammatical {nwf_parsed}/{nwf} parsed; gold tree found {gold_hit}/{with_gold}, ranked first {top1}; {exhausted} hit limits; total {total:?}"
     );

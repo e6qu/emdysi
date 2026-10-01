@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 use std::time::Duration;
 
-use emdysi_check::report::{OutputFormat, render, render_parses};
+use emdysi_check::report::{OutputFormat, ParseDetails, render, render_parses};
 use emdysi_check::{Checker, Format, Options, Pack, Severity, analyze, apply_fixes};
 use emdysi_parse::{Erg, default_grammar_dir};
 
@@ -37,6 +37,7 @@ OPTIONS:
     --max-tokens N         do not parse sentences longer than N tokens (default 100)
     --timeout SECS         time limit per sentence (default 10)
     --derivations          with `parse`, also print derivation trees
+    --mrs                  with `parse`, also print the semantics (MRS)
     --grammar DIR          grammar directory (default: the bundled ERG)
     --fail-on error|warning|suggestion  exit with status 1 if a diagnostic this
                            severe or worse is found (default: error)
@@ -50,7 +51,7 @@ struct Args {
     input: Option<Format>,
     output: OutputFormat,
     opts: Options,
-    derivations: bool,
+    show: ParseDetails,
     grammar: PathBuf,
     fail_on: Severity,
 }
@@ -69,7 +70,7 @@ fn parse_args() -> Result<Args, String> {
         input: None,
         output: OutputFormat::Plain,
         opts: Options::default(),
-        derivations: false,
+        show: ParseDetails::default(),
         grammar: default_grammar_dir(),
         fail_on: Severity::Error,
     };
@@ -107,7 +108,8 @@ fn parse_args() -> Result<Args, String> {
                         .map_err(|_| "--timeout needs a number")?,
                 )
             }
-            "--derivations" => a.derivations = true,
+            "--derivations" => a.show.derivations = true,
+            "--mrs" => a.show.mrs = true,
             "--grammar" => a.grammar = PathBuf::from(need(&mut it, &arg)?),
             "--fail-on" => {
                 a.fail_on = Severity::parse(&need(&mut it, &arg)?)
@@ -186,7 +188,7 @@ fn run() -> Result<bool, String> {
     for (name, src, format) in docs {
         let a = analyze(&erg, &src, format, &args.opts);
         match args.command.as_str() {
-            "parse" => print!("{}", render_parses(&a, args.output, args.derivations)),
+            "parse" => print!("{}", render_parses(&a, args.output, &args.show)),
             "fix" => {
                 let diags = checker.check(&erg, &a);
                 let (fixed, n) = apply_fixes(&src, &diags);

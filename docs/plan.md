@@ -14,6 +14,8 @@ with the ERG port (decision D4) as the parsing core.
 | M6 | Orthographic morphology (`%suffix`/`%prefix`, letter sets, `irregs.tab`) and lexical lookup, including generic entries for unknown words | done (multiword entries inflect on the last word) |
 | M7 | Rule-based POS tagger feeding `+TNT` tags (decision D3) | first heuristic version |
 | M8 | Chart parser: agenda, rule filter, quick-check, ambiguity packing, unpacking, root conditions | agenda (shorter spans first), quick-check (incl. two-step for binary rules), packing, unpacking, root conditions done; chart pruning for inputs over 20 positions (the ranker's local features score edges, 40 kept per span) and best-first unpacking |
+| M9a | Semantics: MRS read-out (VPM, SimpleMRS, isomorphism, well-formedness checks) | done: identical to the gold MRS for all 2,966 gold analyses reproduced (mrs, csli, esd, ccs, control, sh-spec) |
+| M9b | Named grammatical errors with the ERG's mal-rule variant (`educ/`) | done: on csli, 104 of 388 ungrammatical items get a named error and 70 a generic one; 17 of 965 grammatical items get a false named error |
 | M9 | Output: derivation trees, labelled phrase-structure trees, sentence type; plain-text and Markdown rendering | derivations and labelled trees done |
 | M10 | Parse selection and robust fallback for fragments | averaged-perceptron ranker on clean gold: 81.7% exact match held out on 2,626 items of all lengths (77.9% when trained on the earlier, short-only set); the ERG's fragment/informal roots act as fallback, then a cover of the input by the fewest partial analyses |
 | M11 | Sentence segmentation and Markdown input with span mapping | done (46/47 Golden Rules) |

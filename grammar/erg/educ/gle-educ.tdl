@@ -1,0 +1,44 @@
+;; For missing det in |they arrived in 1920s|
+;;
+generic_pl_noun_ne_rbst := n_-_c-pl-gen_le_mal &
+  [ ORTH < "_generic_plur_ne_" >,
+    TOKENS.+LIST < [ +CLASS plur_ne ] > ].
+
+;; Ordinal followed by |place| or |prize|
+ord_prize_ne := d_-_the_le &
+  [ ORTH < "_generic_ord_ne_" >,
+    SYNSEM.LOCAL.CAT.VAL.SPEC.FIRST.--MIN _place_n_1_rel,
+    TOKENS.+LIST < [ +CLASS ord_ne ] > ].
+
+generic_dom_ord_euro_ne_rbst := n_-_pn-dom-e-gen_le &
+  [ ORTH < "_generic_dom_ord_ne_" >,
+    TOKENS.+LIST < [ +CLASS dom_ord_ne ] >,
+    GENRE robust ].
+
+;; Proper name, obligatory specifier |[the] Nile|
+;;
+generic_proper_spr_ne := n_-_c-nm-gen_le &
+  [ ORTH < "_generic_proper_spr_ne_" >,
+    TOKENS.+LIST < [ +CLASS proper_spr_ne ] > ].
+
+;; Prevent generic plurals
+genericname_pl := n_-_pn-unk_le &
+  [ ORTH < "_generic_nnps_" >,
+    TOKENS.+LIST < [ +TNT.+TAGS.FIRST "NOMATCH" ] > ].
+
+;; Add generic noun entries for both "JJ" and "RB", for more robustness, such as
+;; for "highest cbd strain"
+generic_mass_count_noun_jj := n_-_mc-unk_le &
+  [ ORTH < "_generic_nn_" >,
+    TOKENS.+LIST < [ +TNT.+TAGS.FIRST "JJ" ] > ].
+
+generic_mass_count_noun_rb := n_-_mc-unk_le &
+  [ ORTH < "_generic_nn_" >,
+    TOKENS.+LIST < [ +TNT.+TAGS.FIRST "RB" ] > ].
+
+generic_card_ne_rbst := aj_-_i-crd-gen_le &
+  [ ORTH < "_generic_card_ne_" >,
+    SYNSEM.PHON.ONSET con_or_voc,
+    TOKENS.+LIST < [ +CLASS card_malcomma_ne ] >,
+    GENRE robust ].
+

@@ -124,6 +124,9 @@ pub enum Kind {
     },
     /// Sentences without a strict (fully grammatical) analysis.
     Grammar,
+    /// Specific grammatical errors, named by the grammar-error variant of
+    /// the ERG (mal-rules and robust lexical entries).
+    GrammarErrors,
     /// American and British spellings (and British -ise and -ize) mixed in
     /// one document. The variety used most (or `prefer`) wins; the others
     /// are fixed to it.
@@ -285,6 +288,7 @@ impl Rule {
                     .collect(),
             },
             "grammar" => Kind::Grammar,
+            "grammar-errors" => Kind::GrammarErrors,
             "consistency" => {
                 let variety = |k: &str, allowed: [&str; 2]| -> Result<Option<Variety>, PackError> {
                     match get_str(t, k) {
@@ -563,9 +567,25 @@ impl Rule {
                 prefer,
                 prefer_suffix,
             } => self.run_consistency(a, *prefer, *prefer_suffix, out),
+            Kind::GrammarErrors => {
+                for (si, s) in a.sentences.iter().enumerate() {
+                    for e in grammar_errors(s) {
+                        let mut d = self.diag(a, si, e.from, e.to, &e.text);
+                        d.message = d
+                            .message
+                            .replace("{feedback}", &e.feedback)
+                            .replace("{code}", &e.code);
+                        out.push(d);
+                    }
+                }
+            }
             Kind::Grammar => {
                 for (si, s) in a.sentences.iter().enumerate() {
                     let Some(p) = &s.parse else { continue };
+                    // A named error is reported by `grammar-errors` instead.
+                    if !grammar_errors(s).is_empty() {
+                        continue;
+                    }
                     let block_kind = a.blocks[s.block].kind;
                     if matches!(
                         block_kind,
@@ -756,6 +776,113 @@ impl Rule {
             }
         }
     }
+}
+
+/// A grammatical error found by the grammar-error variant of the ERG.
+#[derive(Debug, Clone, PartialEq)]
+pub struct GrammarError {
+    /// The ERG rule, lexical entry or lexical type that names the error.
+    pub code: String,
+    /// Character span in the sentence.
+    pub from: usize,
+    pub to: usize,
+    pub text: String,
+    /// Feedback text, with `$X` filled in.
+    pub feedback: String,
+}
+
+/// Whether an item of a robust analysis marks an error.
+fn is_error_item(name: &str) -> bool {
+    !name.starts_with("root_")
+        && (name.contains("_rbst")
+            || name.contains("_mal")
+            || crate::dict::erg_errors().contains_key(name))
+}
+
+/// The errors named by the best analysis of the grammar-error variant of
+/// the ERG: the reading with the fewest error items (none if some reading
+/// has none).
+pub fn grammar_errors(s: &crate::Sentence) -> Vec<GrammarError> {
+    let Some(p) = &s.mal_parse else {
+        return Vec::new();
+    };
+    let items = |r: &emdysi_parse::Reading| -> Vec<(String, usize, usize)> {
+        let mut out = Vec::new();
+        for n in &r.nodes {
+            if is_error_item(&n.name) {
+                out.push((n.name.clone(), n.from, n.to));
+            }
+        }
+        for w in &r.words {
+            if is_error_item(&w.le_type) && !out.iter().any(|(c, ..)| *c == w.entry) {
+                out.push((w.le_type.clone(), w.from, w.to));
+            }
+        }
+        out
+    };
+    // Whole-sentence analyses are preferred to fragments; among them, the
+    // one that assumes the fewest errors.
+    let sentence_root = |r: &str| {
+        matches!(
+            r,
+            "root_decl" | "root_question" | "root_command" | "root_robust_s" | "root_robust_ques"
+        ) || emdysi_parse::is_strict(r)
+    };
+    let pick = |whole: bool| {
+        p.readings
+            .iter()
+            .filter(|r| !whole || sentence_root(&r.root))
+            .map(items)
+            .min_by_key(|e| e.len())
+    };
+    let Some(best) = pick(true).or_else(|| pick(false)) else {
+        return Vec::new();
+    };
+    let chars: Vec<char> = s.original.chars().collect();
+    let mut out: Vec<GrammarError> = Vec::new();
+    for (code, from, to) in best {
+        let text: String = chars
+            .get(from..to)
+            .map(|c| c.iter().collect())
+            .unwrap_or_default();
+        let word = text
+            .trim_end_matches(|c: char| c.is_ascii_punctuation())
+            .trim();
+        let feedback = match crate::dict::erg_errors().get(&code) {
+            Some(e) => e.feedback.replace("$X", &format!("'{word}'")),
+            None => format!("Possible grammatical error near '{word}'."),
+        };
+        let e = GrammarError {
+            code,
+            from,
+            to: from + word.chars().count().max(1),
+            text: word.to_string(),
+            feedback,
+        };
+        if !out
+            .iter()
+            .any(|o| o.feedback == e.feedback && o.from == e.from)
+        {
+            out.push(e);
+        }
+    }
+    // When the grammar has a strict analysis that treats some word as
+    // unknown (re-parsed for wrong forms such as "buyed"), only errors on
+    // those words count: elsewhere the strict analysis stands.
+    if s.strict() {
+        let unknown: Vec<(usize, usize)> = s
+            .best()
+            .map(|r| {
+                r.words
+                    .iter()
+                    .filter(|w| w.generic)
+                    .map(|w| (w.from, w.to))
+                    .collect()
+            })
+            .unwrap_or_default();
+        out.retain(|e| unknown.iter().any(|&(f, t)| e.from < t && f < e.to));
+    }
+    out
 }
 
 /// Give `rep` the capitalization pattern of `like`.

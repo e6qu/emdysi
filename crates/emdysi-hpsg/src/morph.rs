@@ -34,6 +34,10 @@ pub struct Morphology {
     letter_sets: HashMap<char, HashSet<char>>,
     /// Surface form -> (rule, stem), from the irregular-forms table.
     irregs: HashMap<String, Vec<(String, String)>>,
+    /// (rule, stem) pairs that have an irregular form: the regular
+    /// application of the rule to the stem is blocked (as in ACE and the
+    /// LKB), so that e.g. *buyed* is not a past tense of *buy*.
+    irregular: HashSet<(String, String)>,
 }
 
 impl Morphology {
@@ -58,6 +62,7 @@ impl Morphology {
             rules,
             letter_sets,
             irregs: HashMap::new(),
+            irregular: HashSet::new(),
         }
     }
 
@@ -71,6 +76,8 @@ impl Morphology {
                     .entry(form.to_lowercase())
                     .or_default()
                     .push((rule.to_lowercase(), stem.to_lowercase()));
+                self.irregular
+                    .insert((rule.to_lowercase(), stem.to_lowercase()));
             }
         }
     }
@@ -127,7 +134,11 @@ impl Morphology {
         for rule in &self.rules {
             for (lhs, rhs) in &rule.pairs {
                 if let Some(base) = self.undo(form, lhs, rhs, rule.prefix) {
-                    if base.is_empty() {
+                    if base.is_empty()
+                        || self
+                            .irregular
+                            .contains(&(rule.name.to_lowercase(), base.to_lowercase()))
+                    {
                         continue;
                     }
                     let mut o = outer.clone();

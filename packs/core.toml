@@ -11,6 +11,13 @@ message = "Unknown word '{match}'.{suggestion}"
 description = "Lower-case words that neither the grammar's lexicon nor its inflection rules account for. Names, acronyms, numbers and inline code are skipped. A fix is applied only when exactly one known word is one edit away."
 
 [[rule]]
+id = "core.grammar-errors"
+kind = "grammar-errors"
+severity = "warning"
+message = "{feedback}"
+description = "Grammatical errors named by the grammar-error variant of the English Resource Grammar (its mal-rules and robust lexical entries): subject-verb agreement, wrong verb forms, missing articles, a/an, plural compounds and more. Only sentences without a strict analysis are re-parsed."
+
+[[rule]]
 id = "core.grammar"
 kind = "grammar"
 severity = "suggestion"
