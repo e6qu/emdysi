@@ -162,10 +162,16 @@ fn main() {
         gold: c.gold,
     };
     let is_test = |i: usize| i % 10 == 0;
+    let train_keys: Option<std::collections::HashSet<String>> = std::env::var("TRAIN_KEYS")
+        .ok()
+        .map(|p| load_cache(&p).into_iter().map(|c| c.key).collect());
     let train_set: Vec<Example> = cached
         .iter()
         .enumerate()
         .filter(|(i, _)| !is_test(*i))
+        // TRAIN_KEYS=<cache file> trains only on the items of an earlier
+        // cache, to compare training sets on the same test split.
+        .filter(|(_, c)| train_keys.as_ref().is_none_or(|k| k.contains(&c.key)))
         .map(|(_, c)| to_example(c))
         .collect();
     let test_set: Vec<&Cached> = cached
@@ -189,6 +195,15 @@ fn main() {
     };
     let (hit, n) = accuracy(&model);
     let (base, _) = accuracy(&Model::default());
+    // OLD_MODEL=<rank.tsv> also scores another model on the same split.
+    if let Ok(p) = std::env::var("OLD_MODEL") {
+        let (old, _) = accuracy(&Model::parse(&std::fs::read_to_string(p).unwrap()));
+        println!(
+            "held-out exact match of {}: {old}/{}",
+            std::env::var("OLD_MODEL").unwrap(),
+            test_set.len()
+        );
+    }
     let ambiguous = test_set.iter().filter(|c| c.readings.len() > 1).count();
     println!(
         "held-out exact match: {hit}/{n} ({:.1}%); unranked first reading: {base}/{n}; {ambiguous} test items ambiguous",
