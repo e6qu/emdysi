@@ -187,7 +187,15 @@ impl Erg {
     pub fn load(dir: &Path) -> Result<Erg, Error> {
         let loaded =
             emdysi_tdl::load(&dir.join("english.tdl"), emdysi_tdl::Env::Type).map_err(err)?;
-        let grammar = Grammar::compile(&loaded).map_err(err)?;
+        // The compiled type system is cached outside the source tree
+        // (EMDYSI_CACHE_DIR, XDG_CACHE_HOME or ~/.cache); EMDYSI_NO_CACHE
+        // turns the cache off.
+        let cache_dir = if std::env::var_os("EMDYSI_NO_CACHE").is_some() {
+            None
+        } else {
+            emdysi_hpsg::cache::default_dir()
+        };
+        let grammar = Grammar::compile_cached(&loaded, cache_dir.as_deref()).map_err(err)?;
         let repp = emdysi_repp::erg(dir).map_err(err)?;
         let mut u = Unifier::new();
         let token_mapping =

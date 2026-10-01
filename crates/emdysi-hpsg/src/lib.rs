@@ -2,6 +2,7 @@
 //! structures and unification, built from grammars written in TDL.
 
 mod bitset;
+pub mod cache;
 pub mod chartmap;
 pub mod dag;
 pub mod desc;

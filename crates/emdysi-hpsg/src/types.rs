@@ -38,20 +38,20 @@ impl std::fmt::Display for HierarchyError {
 
 impl std::error::Error for HierarchyError {}
 
-type GlbCache = HashMap<(TypeId, TypeId), Option<TypeId>, BuildHasherDefault<FxHasher>>;
+pub(crate) type GlbCache = HashMap<(TypeId, TypeId), Option<TypeId>, BuildHasherDefault<FxHasher>>;
 
 pub struct Hierarchy {
-    names: Vec<String>,
-    index: HashMap<String, TypeId>,
+    pub(crate) names: Vec<String>,
+    pub(crate) index: HashMap<String, TypeId>,
     /// Number of declared types (including `*top*`); ids beyond are GLB types.
-    n_declared: usize,
-    codes: Vec<BitSet>,
-    code_index: HashMap<BitSet, TypeId>,
+    pub(crate) n_declared: usize,
+    pub(crate) codes: Vec<BitSet>,
+    pub(crate) code_index: HashMap<BitSet, TypeId>,
     /// Ancestors (reflexive) of each type, as a bit set over all type ids.
-    ancestors: Vec<BitSet>,
-    parents: Vec<Vec<TypeId>>,
-    children: Vec<Vec<TypeId>>,
-    glb_cache: RwLock<GlbCache>,
+    pub(crate) ancestors: Vec<BitSet>,
+    pub(crate) parents: Vec<Vec<TypeId>>,
+    pub(crate) children: Vec<Vec<TypeId>>,
+    pub(crate) glb_cache: RwLock<GlbCache>,
 }
 
 impl Hierarchy {

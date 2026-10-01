@@ -41,9 +41,9 @@ pub struct Grammar {
     /// For each feature, the most general type it is appropriate for.
     pub intro: Vec<TypeId>,
     /// Expanded constraint of every type, indexed by type id.
-    constraints: Vec<Arc<Dag>>,
+    pub(crate) constraints: Vec<Arc<Dag>>,
     /// Whether a type's constraint is just the type (no features).
-    atomic: Vec<bool>,
+    pub(crate) atomic: Vec<bool>,
     pub instances: Vec<Instance>,
     pub instance_index: HashMap<String, usize>,
     pub letter_sets: Vec<emdysi_tdl::LetterSet>,
@@ -116,7 +116,13 @@ impl Grammar {
             errors,
         };
         g.expand_types(&descs);
+        g.add_instances(loaded);
+        Ok(g)
+    }
 
+    /// Record the instances (lexical entries, rules, ...) of a loaded grammar.
+    pub(crate) fn add_instances(&mut self, loaded: &emdysi_tdl::Loaded) {
+        let g = self;
         for e in &loaded.entries {
             if let Env::Instance(status) = &e.env {
                 let name = e.def.name.to_lowercase();
@@ -130,7 +136,6 @@ impl Grammar {
                 });
             }
         }
-        Ok(g)
     }
 
     pub fn constraint(&self, t: TypeId) -> &Arc<Dag> {

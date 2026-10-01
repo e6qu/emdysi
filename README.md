@@ -42,8 +42,12 @@ TOML files; see [`docs/rules.md`](docs/rules.md). The built-in packs are:
 - `plain-style`: passive voice, long sentences, intensifiers, wordy phrases,
   expletive *there*, repeated words.
 
-Loading the grammar takes about ten seconds; parsing takes from tens of
-milliseconds to a few seconds per sentence.
+The first run compiles the grammar (about five seconds) and caches the
+result in `$EMDYSI_CACHE_DIR`, `$XDG_CACHE_HOME/emdysi` or `~/.cache/emdysi`
+(never in the repository); later runs load in about a second. The cache is
+keyed by the grammar sources, so editing them recompiles. Set
+`EMDYSI_NO_CACHE=1` to bypass it. Parsing takes from tens of milliseconds to
+a few seconds per sentence.
 
 ## License
 
