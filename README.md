@@ -13,8 +13,9 @@ DELPH-IN processing stack: TDL reader, typed feature structures and
 unification, REPP tokenizer, chart mapping, morphology and a packing chart
 parser. On the ERG's own test suites it parses 98% of the grammatical items
 and finds the gold analysis among its readings for 98.5% of them. A parse
-ranker trained on license-clean gold trees picks the gold analysis first for
-90.5% of held-out sentences.
+ranker trained on license-clean gold trees (2,626 items of all lengths)
+picks the gold analysis first for 81.7% of held-out sentences, long ones
+included.
 
 Status: working prototype. See [`docs/plan.md`](docs/plan.md) for progress,
 [`docs/prior-art.md`](docs/prior-art.md) for the survey of existing tools and
