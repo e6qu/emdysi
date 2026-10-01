@@ -1,0 +1,275 @@
+predicates:
+
+  a_or_freerel_q : ARG0 x, RSTR h, BODY h.
+  a_or_no_q : ARG0 x, RSTR h, BODY h.
+  abstr_def_or_udef_q : ARG0 x, RSTR h, BODY h.
+  abstr_deg : ARG0 x.
+  abstract_q : ARG0 x, RSTR h, BODY h.
+  addressee : ARG0 i, ARG1 x, ARG2 u.
+  any_q : ARG0 x, RSTR h, BODY h.
+  appos : ARG0 e, ARG1 x, ARG2 i.
+  appos : ARG0 e, ARG1 x { IND + }, ARG2 x.
+  appos : ARG0 e, ARG1 x { NUM pl, IND + }, ARG2 x.
+  approx_grad : ARG0 i, ARG1 i.
+  approx_grad : ARG0 i, ARG1 x { NUM sg, IND + }.
+  basic_free_relative_q : ARG0 x, RSTR h, BODY h.
+  basic_numbered_hour : ARG0 x { NUM sg, IND + }.
+  be_v_id : ARG0 i, ARG1 u, ARG2 u.
+  be_v_id-or-nv : ARG0 i, ARG1 u, ARG2 u.
+  be_v_nv : ARG0 i, ARG1 u, ARG2 u.
+  both_all_q : ARG0 x, RSTR h, BODY h.
+  both_all_udef_q : ARG0 x, RSTR h, BODY h.
+  card : ARG0 i, ARG1 u.
+  card : ARG0 i, ARG1 x { NUM pl, IND + }.
+  card : ARG0 e, ARG1 x { NUM pl }.
+  card : ARG0 e, ARG1 x { NUM sg }.
+  comp : ARG0 e, ARG1 u, [ ARG2 u ].
+  comp_equal : ARG0 e, ARG1 u, [ ARG2 u ].
+  compound : ARG0 e, ARG1 u, ARG2 u.
+  compound : ARG0 i, ARG1 u, ARG2 x { IND + }.
+  compound : ARG0 e, ARG1 u, ARG2 x { NUM pl }.
+  compound : ARG0 i, ARG1 u, ARG2 x { NUM sg, IND + }.
+  compound : ARG0 e, ARG1 x { NUM sg, IND - }, ARG2 x.
+  compound : ARG0 i, ARG1 x { IND + }, ARG2 u.
+  compound : ARG0 e, ARG1 x { GEND n, NUM sg, IND - }, ARG2 u.
+  cop_id : ARG0 i, ARG1 u, ARG2 u.
+  ctime : ARG0 x { NUM sg, IND + }.
+  def_explicit_q : ARG0 x, RSTR h, BODY h.
+  def_explicit_q : ARG0 x { NUM sg }, RSTR h, BODY h.
+  def_implicit_q : ARG0 x { NUM sg }, RSTR h, BODY h.
+  def_implicit_q : ARG0 x, RSTR h, BODY h.
+  def_implicit_q : ARG0 x { NUM sg, IND + }, RSTR h, BODY h.
+  def_implicit_q : ARG0 x { GEND n, NUM sg }, RSTR h, BODY h.
+  def_or_meas_noproper : ARG0 x, RSTR h, BODY h.
+  def_or_proper_q : ARG0 x, RSTR h, BODY h.
+  def_or_udef_or_demon_q : ARG0 x, RSTR h, BODY h.
+  def_or_udef_q : ARG0 x, RSTR h, BODY h.
+  def_poss_or_barepl_or_prop_q : ARG0 x, RSTR h, BODY h.
+  def_poss_q : ARG0 x, RSTR h, BODY h.
+  def_poss_q : ARG0 x { NUM sg }, RSTR h, BODY h.
+  def_q : ARG0 x, RSTR h, BODY h.
+  def_udef_some_a_no_q : ARG0 x, RSTR h, BODY h.
+  defdate_q : ARG0 x, RSTR h, BODY h.
+  demon_far_q : ARG0 x, RSTR h, BODY h.
+  demon_near_q : ARG0 x, RSTR h, BODY h.
+  demonstrative_q : ARG0 x, RSTR h, BODY h.
+  discourse : ARG0 i, ARG1 h, ARG2 h.
+  dofm : ARG0 x { GEND n, NUM sg, IND + }, ARG1 x.
+  dofm : ARG0 x { GEND n, NUM sg, IND - }, ARG1 x.
+  dofw : ARG0 x { IND + }.
+  ellipsis : ARG0 e, [ ARG1 u ].
+  ellipsis_expl : ARG0 e, ARG1 u.
+  ellipsis_ref : ARG0 e, [ ARG1 u ].
+  elliptical_n : ARG0 x.
+  era : ARG0 x { NUM sg, IND - }.
+  eventuality : ARG0 e, ARG1 h.
+  every_q : ARG0 x { NUM sg }, RSTR h, BODY h.
+  exchange_n : ARG0 x.
+  excl : ARG0 i.
+  exist_or_univ_q : ARG0 x, RSTR h, BODY h.
+  explicit_noagr_nodef_q : ARG0 x, RSTR h, BODY h.
+  explicit_nodef_q : ARG0 x, RSTR h, BODY h.
+  explicit_or_proper_q : ARG0 x, RSTR h, BODY h.
+  explicit_q : ARG0 x, RSTR h, BODY h.
+  explicit_quant_agr_q : ARG0 x, RSTR h, BODY h.
+  explicit_quant_noagr_q : ARG0 x, RSTR h, BODY h.
+  explicit_quant_or_udef_noagr_q : ARG0 x, RSTR h, BODY h.
+  few+if+any_a : ARG0 e, ARG1 x.
+  fraction : ARG0 i, ARG1 i.
+  free_relative_ever_q : ARG0 x, RSTR h, BODY h.
+  free_relative_ever_q : ARG0 x { NUM sg }, RSTR h, BODY h.
+  free_relative_q : ARG0 x { NUM sg }, RSTR h, BODY h.
+  free_relative_q : ARG0 x, RSTR h, BODY h.
+  fw_seq : ARG0 i, ARG1 u, [ ARG2 u ].
+  fw_seq : ARG0 x { NUM sg }, ARG1 u, ARG2 u.
+  generic_entity : ARG0 i.
+  generic_entity : ARG0 x { NUM pl, IND + }, [ ARG1 x ].
+  generic_entity : ARG0 x { NUM pl }.
+  generic_entity : ARG0 x { GEND n, NUM sg }.
+  generic_nom : ARG0 x { IND + }.
+  generic_v : ARG0 e, ARG1 x, ARG2 x.
+  generic_verb : ARG0 e, [ ARG1 h ].
+  greet : ARG0 i.
+  holiday : ARG0 x { NUM sg, IND - }.
+  id : ARG0 i, ARG1 u, ARG2 u.
+  id : ARG0 e, ARG1 x { NUM sg }, ARG2 u.
+  id : ARG0 e, ARG1 x { NUM pl, IND + }, ARG2 u.
+  idiom_q_i : ARG0 x, RSTR h, BODY h.
+  impl_or_expl_or_pron_q : ARG0 x, RSTR h, BODY h.
+  impl_or_expl_or_prop_q : ARG0 x, RSTR h, BODY h.
+  impl_or_expl_q : ARG0 x, RSTR h, BODY h.
+  impl_or_proper_q : ARG0 x, RSTR h, BODY h.
+  impl_or_the_q : ARG0 x, RSTR h, BODY h.
+  implicit_conj : ARG0 i, ARG1 u, ARG2 i.
+  implicit_conj : ARG0 i, ARG1 u, ARG2 e.
+  implicit_q : ARG0 x, RSTR h, BODY h.
+  indef_or_def_or_meas_or_num : ARG0 x, RSTR h, BODY h.
+  indef_or_num_q : ARG0 x, RSTR h, BODY h.
+  interval : ARG0 x.
+  interval : ARG0 x { NUM sg }.
+  interval_p_end : ARG0 i, ARG1 x, ARG2 u.
+  interval_p_end : ARG0 e, ARG1 x { NUM sg }, ARG2 u.
+  interval_p_start : ARG0 e, ARG1 x, ARG2 u.
+  interval_p_start : ARG0 e, ARG1 x { NUM sg }, ARG2 u.
+  little-few_a : ARG0 i, ARG1 i.
+  loc_nonsp : ARG0 i, ARG1 u, ARG2 u.
+  loc_nonsp : ARG0 e, ARG1 u, ARG2 x { NUM sg }.
+  manner : ARG0 x.
+  manner : ARG0 x { NUM sg }.
+  meas_nom : ARG0 x, RSTR h, BODY h.
+  meas_np : ARG0 x.
+  meas_np_or_proper_q : ARG0 x, RSTR h, BODY h.
+  measure : ARG0 e, ARG1 u, ARG2 x.
+  minus_c : ARG0 x, ARG1 x, ARG2 u.
+  minute_n : ARG0 x { NUM sg }.
+  minute_n : ARG0 x.
+  mod : ARG0 e, ARG1 u, ARG2 u.
+  mofy : ARG0 x, ARG1 x.
+  mofy : ARG0 x { IND + }, [ ARG1 x ].
+  more_comp : ARG0 i, [ ARG1 i ], [ ARG2 u ].
+  more_comp : ARG0 i, ARG1 e.
+  much-many_a : ARG0 i, ARG1 p.
+  much-many_a : ARG0 e, ARG1 i.
+  named : ARG0 x { IND + }.
+  named : ARG0 x { NUM sg, IND + }.
+  named : ARG0 x { NUM pl, IND + }.
+  named : ARG0 x { GEND f, IND + }.
+  named : ARG0 x { GEND m, IND + }.
+  named_n : ARG0 x { IND + }.
+  named_n : ARG0 x { NUM pl, IND + }.
+  ne_x : ARG0 e, ARG1 h, ARG2 h.
+  neg : ARG0 i, [ ARG1 e ].
+  neg : ARG0 e { TENSE past, MOOD subjunctive }, ARG1 h.
+  neg : ARG0 i, ARG1 h.
+  neg : ARG0 e { TENSE past }, ARG1 h.
+  neg : ARG0 e { PERF + }, ARG1 h.
+  neg : ARG0 e { TENSE past, MOOD subjunctive, PERF + }, ARG1 h.
+  neg : ARG0 e { TENSE fut }, ARG1 h.
+  neg : ARG0 e { TENSE past, PERF + }, ARG1 h.
+  no_q : ARG0 x, RSTR h, BODY h.
+  nodef_q : ARG0 x, RSTR h, BODY h.
+  nominalization : ARG0 x { GEND n, NUM sg }, ARG1 h.
+  nominalization : ARG0 i, ARG1 h.
+  nominalization : ARG0 x { NUM sg }, ARG1 h.
+  non_day_time : ARG0 x { NUM sg }.
+  non_freerel_q : ARG0 x, RSTR h, BODY h.
+  non_pronoun_q : ARG0 x, RSTR h, BODY h.
+  nondef_explicit_q : ARG0 x, RSTR h, BODY h.
+  nontemp_loc_nonsp : ARG0 i, ARG1 u, ARG2 u.
+  nontemp_loc_nonsp : ARG0 e, ARG1 u, ARG2 x { NUM sg }.
+  not_x_deg : ARG0 e, ARG1 u.
+  num_or_demon_q : ARG0 x, RSTR h, BODY h.
+  num_or_proper_q : ARG0 x, RSTR h, BODY h.
+  num_q : ARG0 x, RSTR h, BODY h.
+  num_seq : ARG0 x { NUM sg }, ARG1 x, ARG2 x.
+  number_q : ARG0 x, RSTR h, BODY h.
+  numbered_hour_unk : ARG0 x { NUM sg, IND + }.
+  of_p : ARG0 e, ARG1 x, ARG2 x.
+  of_p : ARG0 e, ARG1 x, ARG2 x { IND + }.
+  one+less_a : ARG0 e, ARG1 i { NUM sg }.
+  one+more_a : ARG0 e, ARG1 i { NUM sg }.
+  ord : ARG0 i, ARG1 u.
+  parenthetical : ARG0 i, ARG1 i, ARG2 u.
+  part_of : ARG0 x, ARG1 x.
+  part_of : ARG0 x { NUM pl }, ARG1 x.
+  part_of : ARG0 x { NUM sg }, ARG1 x.
+  person : ARG0 x { NUM sg }.
+  person : ARG0 x.
+  place_n : ARG0 x { NUM sg }.
+  place_n : ARG0 x { GEND n, NUM sg }.
+  place_n : ARG0 x.
+  plus : ARG0 e, ARG1 e, ARG2 e.
+  plus : ARG0 i, ARG1 i, ARG2 h, ARG3 h.
+  plus_c : ARG0 x { NUM sg, IND + }, ARG1 u, ARG2 x.
+  plus_c : ARG0 x, ARG1 x, ARG2 u.
+  polite : ARG0 i, ARG1 u.
+  poss : ARG0 e, ARG1 x, ARG2 i { NUM pl }.
+  poss : ARG0 e, ARG1 i, ARG2 u.
+  poss : ARG0 e, ARG1 x, ARG2 i { NUM sg }.
+  poss : ARG0 e, ARG1 x, ARG2 x { GEND m-or-f, NUM sg }.
+  poss : ARG0 e, ARG1 x, ARG2 x { GEND n, NUM sg }.
+  poss : ARG0 e, ARG1 x, ARG2 x { GEND f, NUM sg }.
+  poss : ARG0 e, ARG1 x, ARG2 x { GEND f, NUM sg, IND + }.
+  poss : ARG0 e, ARG1 x, ARG2 x { GEND m, NUM sg, IND + }.
+  poss : ARG0 e, ARG1 x, ARG2 x { GEND m, NUM sg }.
+  prednom_state : ARG0 e, ARG1 x.
+  pron : ARG0 x.
+  pron : ARG0 x { IND + }.
+  pron : ARG0 x { NUM pl, IND + }.
+  pron : ARG0 x { GEND m-or-f, NUM sg, IND + }.
+  pron : ARG0 x { NUM sg, IND + }.
+  pron : ARG0 x { NUM sg }.
+  pron : ARG0 x { NUM pl }.
+  pron : ARG0 x { GEND f, NUM sg }.
+  pron : ARG0 x { GEND m-or-f, NUM sg }.
+  pron : ARG0 x { GEND f, NUM sg, IND + }.
+  pron : ARG0 x { GEND n, NUM sg }.
+  pron : ARG0 x { GEND n, NUM sg, IND + }.
+  pron : ARG0 x { GEND m, NUM sg, IND + }.
+  pron : ARG0 x { GEND m, NUM sg }.
+  pronoun_q : ARG0 x, RSTR h, BODY h.
+  pronoun_q : ARG0 x { IND + }, RSTR h, BODY h.
+  pronoun_q : ARG0 x { NUM pl, IND + }, RSTR h, BODY h.
+  pronoun_q : ARG0 x { GEND m-or-f, NUM sg, IND + }, RSTR h, BODY h.
+  pronoun_q : ARG0 x { NUM sg, IND + }, RSTR h, BODY h.
+  pronoun_q : ARG0 x { NUM sg }, RSTR h, BODY h.
+  pronoun_q : ARG0 x { NUM pl }, RSTR h, BODY h.
+  pronoun_q : ARG0 x { GEND f, NUM sg }, RSTR h, BODY h.
+  pronoun_q : ARG0 x { GEND m-or-f, NUM sg }, RSTR h, BODY h.
+  pronoun_q : ARG0 x { GEND f, NUM sg, IND + }, RSTR h, BODY h.
+  pronoun_q : ARG0 x { GEND n, NUM sg }, RSTR h, BODY h.
+  pronoun_q : ARG0 x { GEND n, NUM sg, IND + }, RSTR h, BODY h.
+  pronoun_q : ARG0 x { GEND m, NUM sg, IND + }, RSTR h, BODY h.
+  pronoun_q : ARG0 x { GEND m, NUM sg }, RSTR h, BODY h.
+  proper_q : ARG0 x, RSTR h, BODY h.
+  property : ARG0 x.
+  prpstn_to_prop : ARG0 e, ARG1 h, ARG2 x.
+  quant : ARG0 i, RSTR h, BODY h.
+  quoted : ARG0 i.
+  reason : ARG0 x.
+  recip_pro : ARG0 x { NUM pl }.
+  recip_pro : ARG0 x.
+  refl_mod : ARG0 i, ARG1 e, ARG2 x { GEND f, NUM sg }.
+  refl_mod : ARG0 i, ARG1 e, ARG2 x { GEND m-or-f, NUM sg }.
+  refl_mod : ARG0 i, ARG1 e, ARG2 x { NUM pl }.
+  refl_mod : ARG0 i, ARG1 e, ARG2 x { NUM sg }.
+  refl_mod : ARG0 i, ARG1 e, ARG2 x { GEND n, NUM sg }.
+  refl_mod : ARG0 i, ARG1 e, ARG2 x { GEND m, NUM sg }.
+  relative_mod : ARG0 i, ARG1 x, ARG2 h.
+  season : ARG0 x { NUM sg, IND - }, [ ARG1 x ].
+  season : ARG0 x { NUM pl, IND + }.
+  season : ARG0 x { IND + }.
+  some-any_q : ARG0 x, RSTR h, BODY h.
+  some_q : ARG0 x, RSTR h, BODY h.
+  string : ARG0 x.
+  subord : ARG0 e, ARG1 h, ARG2 h.
+  superl : [ ARG0 i ], [ ARG1 u ].
+  temp : ARG0 x { NUM sg }.
+  temp : ARG0 x.
+  temp_loc_nonsp : ARG0 i, ARG1 u, ARG2 u.
+  temp_loc_nonsp : ARG0 e, ARG1 u, ARG2 x { NUM sg }.
+  temp_loc_x : ARG0 i, ARG1 u, ARG2 u.
+  temp_loc_x : ARG0 e, ARG1 u, ARG2 x { NUM sg }.
+  thing : ARG0 x { NUM sg }.
+  thing : ARG0 x.
+  time_n : ARG0 x { NUM sg }.
+  time_n : ARG0 x.
+  times : ARG0 e, ARG1 e, ARG2 e.
+  times : ARG0 i, ARG1 i, ARG2 h, ARG3 h.
+  timezone_p : ARG0 e, ARG1 i.
+  udef_or_number_q : ARG0 x, RSTR h, BODY h.
+  udef_or_proper_q : ARG0 x, RSTR h, BODY h.
+  udef_q : ARG0 x, RSTR h, BODY h.
+  udef_q : ARG0 x { NUM sg, IND + }, RSTR h, BODY h.
+  udef_q : ARG0 x { IND + }, RSTR h, BODY h.
+  udef_q : ARG0 x { NUM pl }, RSTR h, BODY h.
+  udef_q : ARG0 x { NUM sg }, RSTR h, BODY h.
+  unknown : ARG0 e, ARG u.
+  unspec_a : ARG0 i, ARG1 x.
+  unspec_manner : ARG0 e, ARG1 i, ARG2 x.
+  unspec_manner : ARG0 e, ARG1 u, ARG2 x { NUM sg }.
+  v_event : ARG0 e.
+  which_q : ARG0 x, RSTR h, BODY h.
+  which_q : ARG0 x { NUM sg }, RSTR h, BODY h.
+  with_p : ARG0 e, ARG1 u, ARG2 x.
+  yofc : ARG0 i { IND + }, ARG1 e.

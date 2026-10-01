@@ -1,0 +1,52 @@
+;;;
+;;; when creating the SEM-I, ditch a lot of the variable property information,
+;;; essentially only keeping what is relevant in terms of the interface.
+;;;
+
+GEND : GEND
+  m      >> m
+  f      >> f
+  n      >> n
+  m-or-f >> m-or-f
+  *      >> !
+
+
+NUM : NUM
+  sg >> sg
+  pl >> pl
+  *  >> !
+
+
+IND : IND
+  + >> +
+  - >> -
+  * >> !
+
+
+TENSE : TENSE
+  past   >> past
+  pre    >> pres
+  fut    >> fut
+  *      >> !
+
+
+MOOD : MOOD 
+  subjunctive >> subjunctive
+  *           >> !
+
+
+PROG : PROG
+  + >> +
+  * >> !
+
+
+PERF : PERF
+  + >> +
+  * >> !
+
+;; DPF 2020-12-17 - Only used in mal-variant of the ERG
+;;
+SEMPOS : SEMPOS
+  adjrel >> adjrel
+  advrel >> advrel
+  

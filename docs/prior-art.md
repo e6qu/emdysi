@@ -5,6 +5,8 @@ files, crate sources, model metadata) where reachable. Items marked
 **(unverified)** came from search snippets or secondary sources and must be
 re-checked before any data is bundled.
 
+Decisions taken after this survey are recorded in [decisions.md](decisions.md).
+
 Goal of the project: an **MIT-licensed Rust** library and CLI that
 
 1. parses English into phrase (constituency) and sentence structure,
