@@ -15,3 +15,8 @@
   Australian English "no additional copyright applies and including the
   notice before the === is sufficient". The full file is kept here anyway.
 - Use: spelling (known words and suggestion ranking) in `emdysi-check`.
+- `variants.tsv`: American and British spelling pairs (and British -ise
+  and -ize pairs), generated from the same database by
+  [`gen-variants.py`](gen-variants.py):
+  `python3 gen-variants.py scowl.db en-60.tsv > variants.tsv`. Only words
+  in `en-60.tsv` are kept. Use: the `consistency` rule kind.

@@ -63,4 +63,16 @@ fn checks_and_fixes() {
         !d2.iter().any(|x| x.rule == "plain-style.passive"),
         "{d2:?}"
     );
+
+    // Mixed American and British spelling: the majority wins.
+    let src3 = "The colour of the theatre was grey. We analyzed the color.\n";
+    let a3 = analyze(&erg, src3, Format::Plain, &opts);
+    let d3 = checker.check(&erg, &a3);
+    let c: Vec<&Diagnostic> = d3.iter().filter(|x| x.rule == "core.consistency").collect();
+    assert_eq!(c.len(), 2, "{d3:?}");
+    let (fixed3, _) = apply_fixes(src3, &c.into_iter().cloned().collect::<Vec<_>>());
+    assert_eq!(
+        fixed3,
+        "The colour of the theatre was grey. We analysed the colour.\n"
+    );
 }

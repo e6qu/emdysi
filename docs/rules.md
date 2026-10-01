@@ -96,6 +96,19 @@ Sentences for which the grammar finds no analysis, or only a fragment or
 informal one. `{reason}` is available in messages. Headings and table cells
 are exempt.
 
+### `consistency`
+
+American and British spellings mixed in one document, e.g. *color* and
+*colour*, or, in British spelling, *-ise* and *-ize* (*organise*,
+*organize*). Either variety is accepted on its own; when both occur, the one
+used more often wins (the first one used, on a tie) and the other words are
+fixed to it. `prefer` (`"us"` or `"gb"`) and `prefer_suffix` (`"ise"` or
+`"ize"`) fix the choice instead. `{variety}`, `{dominant}` and
+`{replacement}` are available in messages. The variant pairs come from ESDB
+(see [`data/scowl/SOURCE.md`](../data/scowl/SOURCE.md)); words that are
+standard in both varieties in some sense (*tire*, *program*, *check*) are
+not flagged.
+
 ## Disabling rules
 
 `--disable RULE` skips a rule. `--disable 'plain-style.*'` skips a whole

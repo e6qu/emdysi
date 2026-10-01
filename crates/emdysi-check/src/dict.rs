@@ -29,3 +29,55 @@ pub fn tier(word: &str) -> Option<u8> {
     let m = words();
     m.get(word).or_else(|| m.get(&word.to_lowercase())).copied()
 }
+
+const VARIANTS: &str = include_str!("../../../data/scowl/variants.tsv");
+
+/// A spelling that belongs to one variety: American (`Us`) or British
+/// (`Gb`), or British with `-ise` or `-ize` (Oxford) endings.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Variety {
+    Us,
+    Gb,
+    Ise,
+    Ize,
+}
+
+impl Variety {
+    pub fn parse(s: &str) -> Option<Variety> {
+        match s {
+            "us" => Some(Variety::Us),
+            "gb" => Some(Variety::Gb),
+            "ise" => Some(Variety::Ise),
+            "ize" => Some(Variety::Ize),
+            _ => None,
+        }
+    }
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Variety::Us => "American",
+            Variety::Gb => "British",
+            Variety::Ise => "-ise",
+            Variety::Ize => "-ize",
+        }
+    }
+}
+
+/// Lower-case word -> the varieties it is specific to, each with the
+/// corresponding spelling of the other variety (from ESDB, see
+/// `data/scowl/SOURCE.md`).
+pub fn variants() -> &'static HashMap<String, Vec<(Variety, String)>> {
+    static MAP: OnceLock<HashMap<String, Vec<(Variety, String)>>> = OnceLock::new();
+    MAP.get_or_init(|| {
+        let mut m: HashMap<String, Vec<(Variety, String)>> = HashMap::new();
+        for line in VARIANTS.lines().filter(|l| !l.starts_with('#')) {
+            let mut f = line.split('\t');
+            if let (Some(w), Some(Some(v)), Some(o)) =
+                (f.next(), f.next().map(Variety::parse), f.next())
+            {
+                m.entry(w.to_string()).or_default().push((v, o.to_string()));
+            }
+        }
+        m
+    })
+}
