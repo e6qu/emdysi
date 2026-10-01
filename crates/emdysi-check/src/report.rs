@@ -87,8 +87,17 @@ pub fn render(a: &Analysis, diags: &[Diagnostic], name: &str, format: OutputForm
     out
 }
 
+/// What `render_parses` shows besides the phrase-structure tree.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct ParseDetails {
+    pub derivations: bool,
+    /// The semantics (MRS) of the best reading.
+    pub mrs: bool,
+}
+
 /// Sentence-by-sentence parse report.
-pub fn render_parses(a: &Analysis, format: OutputFormat, derivations: bool) -> String {
+pub fn render_parses(a: &Analysis, format: OutputFormat, show: &ParseDetails) -> String {
+    let derivations = show.derivations;
     let mut out = String::new();
     for (i, s) in a.sentences.iter().enumerate() {
         let (line, _) = a.line_col(a.sentence_source(i).start);
@@ -118,6 +127,11 @@ pub fn render_parses(a: &Analysis, format: OutputFormat, derivations: bool) -> S
                         let _ = writeln!(out, "    {}", r.derivation);
                     }
                 }
+                if show.mrs {
+                    if let Some(m) = best.and_then(|r| r.mrs.as_ref()) {
+                        let _ = writeln!(out, "    {}", m.to_simple());
+                    }
+                }
             }
             OutputFormat::Markdown => {
                 let _ = writeln!(
@@ -132,6 +146,11 @@ pub fn render_parses(a: &Analysis, format: OutputFormat, derivations: bool) -> S
                 if derivations {
                     if let Some(r) = best {
                         let _ = writeln!(out, "\n   ```\n   {}\n   ```", r.derivation);
+                    }
+                }
+                if show.mrs {
+                    if let Some(m) = best.and_then(|r| r.mrs.as_ref()) {
+                        let _ = writeln!(out, "\n   ```\n   {}\n   ```", m.to_simple());
                     }
                 }
             }

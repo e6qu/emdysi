@@ -59,6 +59,8 @@ pub struct Erg {
     pub le_types: Vec<String>,
     /// Chart-pruning beam for a first, faster pass (see `parse`).
     pub first_beam: Option<usize>,
+    /// How to read semantics (MRS) out of a parse.
+    pub mrs: Option<emdysi_hpsg::mrs::MrsConfig>,
 }
 
 /// Edges kept per chart cell when pruning (see [`ParserConfig::cell_beam`]).
@@ -145,6 +147,8 @@ pub struct Reading {
     pub words: Vec<Word>,
     /// The feature structure of the whole sentence.
     pub dag: Arc<emdysi_hpsg::Dag>,
+    /// The semantics (Minimal Recursion Semantics) of the reading.
+    pub mrs: Option<emdysi_hpsg::mrs::Mrs>,
 }
 
 /// Character span of a sequence of lattice tokens.
@@ -341,7 +345,20 @@ impl Erg {
         let le_types = (0..grammar.instances.len())
             .map(|i| rank::lexical_type(&grammar, i))
             .collect();
+        let mrs = ace_setting(&config_src, "variable-property-mapping")
+            .first()
+            .map(|f| dir.join("ace").join(f.trim_matches('"')))
+            .and_then(|p| std::fs::read_to_string(p).ok())
+            .and_then(|src| {
+                let vpm = emdysi_hpsg::vpm::Vpm::parse(&grammar, &src);
+                emdysi_hpsg::mrs::MrsConfig::new(
+                    &grammar,
+                    vpm,
+                    &ace_setting(&config_src, "mrs-deleted-roles"),
+                )
+            });
         Ok(Erg {
+            mrs,
             first_beam: Some(20),
             le_types,
             orth,
@@ -501,6 +518,10 @@ impl Erg {
                     nodes,
                     words,
                     dag: r.dag.clone(),
+                    mrs: self
+                        .mrs
+                        .as_ref()
+                        .and_then(|c| emdysi_hpsg::mrs::extract(&self.grammar, c, &r.dag)),
                     root: r.root.clone(),
                     derivation: derivation(&self.grammar, &self.rules, &r.deriv, &forms),
                     // Labelling costs unifications; only the best readings get trees.

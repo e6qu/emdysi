@@ -10,10 +10,12 @@ pub mod grammar;
 pub mod labels;
 pub mod lexicon;
 pub mod morph;
+pub mod mrs;
 pub mod parser;
 pub mod types;
 pub mod typesys;
 pub mod unify;
+pub mod vpm;
 
 pub use dag::Dag;
 pub use grammar::{Grammar, GrammarError, Instance};

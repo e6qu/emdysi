@@ -144,6 +144,8 @@ pub struct Item {
     pub text: String,
     pub wf: bool,
     pub gold: Option<String>,
+    /// The gold reading's MRS (SimpleMRS), if recorded.
+    pub mrs: Option<String>,
 }
 
 pub fn items(dir: &str) -> Vec<Item> {
@@ -153,10 +155,14 @@ pub fn items(dir: &str) -> Vec<Item> {
         .map(|f| (f[0].clone(), f[2].clone()))
         .collect();
     let mut gold: std::collections::HashMap<String, String> = Default::default();
+    let mut mrs: std::collections::HashMap<String, String> = Default::default();
     for f in read_relation(dir, "result") {
         if f.len() > 10 {
             if let (Some(item), Some(tree)) = (parse_to_item.get(&f[0]), parse_sexp(&f[10])) {
                 gold.insert(item.clone(), skeleton(&tree, true));
+                if let Some(m) = f.get(13).filter(|m| !m.is_empty()) {
+                    mrs.insert(item.clone(), m.clone());
+                }
             }
         }
     }
@@ -165,6 +171,7 @@ pub fn items(dir: &str) -> Vec<Item> {
         .filter(|f| f.len() > 10)
         .map(|f| Item {
             gold: gold.get(&f[0]).cloned(),
+            mrs: mrs.get(&f[0]).cloned(),
             id: f[0].clone(),
             text: f[6].clone(),
             wf: f[10] == "1",
