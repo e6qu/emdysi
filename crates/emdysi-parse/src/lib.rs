@@ -261,7 +261,8 @@ impl Erg {
         let config = ParserConfig {
             deleted_daughters,
             roots,
-            max_edges: 200_000,
+            max_edges: 100_000,
+            max_nodes: 100_000_000,
             timeout: Duration::from_secs(60),
             packing_restrictor,
             max_readings: 1000,

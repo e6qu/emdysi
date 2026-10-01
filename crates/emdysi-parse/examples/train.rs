@@ -61,11 +61,16 @@ fn main() {
     };
 
     let mut cached = load_cache(&cache_path);
-    if cached.is_empty() {
+    // Parse whatever is not cached yet; the cache is appended to as items
+    // are parsed, so an interrupted run can be resumed.
+    if std::env::var("NO_PARSE").is_err() {
         let mut erg = Erg::load(&default_grammar_dir()).unwrap();
-        erg.config.timeout = Duration::from_secs(30);
+        erg.config.timeout = Duration::from_secs(20);
         erg.config.max_readings = 500;
+        erg.config.max_nodes = 30_000_000;
         erg.trees_for = 0;
+        let done: std::collections::HashSet<String> =
+            cached.iter().map(|c| c.key.clone()).collect();
         let mut work: Vec<(String, Item)> = Vec::new();
         for d in &dirs {
             let name = std::path::Path::new(d)
@@ -74,12 +79,25 @@ fn main() {
                 .to_string_lossy()
                 .to_string();
             for it in items(d) {
-                if it.wf && it.gold.is_some() {
-                    work.push((format!("{name}:{}", it.id), it));
+                let key = format!("{name}:{}", it.id);
+                // Long items are slow and memory-hungry, and add little.
+                if it.wf
+                    && it.gold.is_some()
+                    && !done.contains(&key)
+                    && it.text.split_whitespace().count() <= 30
+                {
+                    work.push((key, it));
                 }
             }
         }
         eprintln!("parsing {} items", work.len());
+        let cache_file = Mutex::new(
+            std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(&cache_path)
+                .unwrap(),
+        );
         let out = Mutex::new(Vec::new());
         let next = Mutex::new(0usize);
         std::thread::scope(|s| {
@@ -101,26 +119,30 @@ fn main() {
                             parse_sexp(&r.derivation).is_some_and(|t| skeleton(&t, false) == gold)
                         });
                         if let Some(g) = idx {
-                            out.lock().unwrap().push(Cached {
+                            let c = Cached {
                                 key: key.clone(),
                                 gold: g,
                                 readings: p.readings.into_iter().map(|r| r.features).collect(),
-                            });
+                            };
+                            let mut text = format!("#\t{}\t{}\n", c.key, c.gold);
+                            for r in &c.readings {
+                                text.push_str(&r.join(" "));
+                                text.push('\n');
+                            }
+                            cache_file
+                                .lock()
+                                .unwrap()
+                                .write_all(text.as_bytes())
+                                .unwrap();
+                            out.lock().unwrap().push(c);
                         }
                     }
                 });
             }
         });
-        cached = out.into_inner().unwrap();
-        cached.sort_by(|a, b| a.key.cmp(&b.key));
-        let mut f = std::io::BufWriter::new(std::fs::File::create(&cache_path).unwrap());
-        for c in &cached {
-            writeln!(f, "#\t{}\t{}", c.key, c.gold).unwrap();
-            for r in &c.readings {
-                writeln!(f, "{}", r.join(" ")).unwrap();
-            }
-        }
+        cached.extend(out.into_inner().unwrap());
     }
+    cached.sort_by(|a, b| a.key.cmp(&b.key));
     eprintln!(
         "{} items with the gold reading among the readings",
         cached.len()

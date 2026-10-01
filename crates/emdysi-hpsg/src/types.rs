@@ -139,9 +139,19 @@ impl Hierarchy {
 
     /// Add GLB types until the codes are closed under non-empty intersection.
     fn close(&mut self) {
+        let debug = std::env::var("EMDYSI_DEBUG_GLB").is_ok();
+        // Pairs whose intersection was already looked at in earlier rounds.
+        let mut checked: HashSet<(TypeId, TypeId), BuildHasherDefault<FxHasher>> =
+            HashSet::default();
         loop {
+            let t0 = std::time::Instant::now();
             self.compute_structure();
-            let mut pairs: HashSet<(TypeId, TypeId)> = HashSet::new();
+            if debug {
+                eprintln!("structure {:?} ({} types)", t0.elapsed(), self.codes.len());
+            }
+            let t0 = std::time::Instant::now();
+            let mut pairs: HashSet<(TypeId, TypeId), BuildHasherDefault<FxHasher>> =
+                HashSet::default();
             for m in 0..self.codes.len() {
                 if self.parents[m].len() < 2 {
                     continue;
@@ -152,10 +162,20 @@ impl Hierarchy {
                         if self.ancestors[a].contains(b) || self.ancestors[b].contains(a) {
                             continue;
                         }
-                        pairs.insert((a as TypeId, b as TypeId));
+                        let pair = (a as TypeId, b as TypeId);
+                        if !checked.contains(&pair) {
+                            pairs.insert(pair);
+                        }
                     }
                 }
             }
+            if debug {
+                eprintln!("pairs {:?} ({})", t0.elapsed(), pairs.len());
+            }
+            // Sorted so that GLB type numbering is deterministic.
+            let mut pairs: Vec<(TypeId, TypeId)> = pairs.into_iter().collect();
+            pairs.sort_unstable();
+            checked.extend(pairs.iter().copied());
             let mut added = false;
             for (a, b) in pairs {
                 let code = self.codes[a as usize].intersection(&self.codes[b as usize]);
@@ -198,23 +218,22 @@ impl Hierarchy {
             }
             ancestors.push(anc);
         }
+        // Immediate parents: take strict ancestors from the most specific
+        // (smallest code) up; one not yet covered by a chosen parent's
+        // ancestors is itself a parent.
+        let sizes: Vec<usize> = self.codes.iter().map(BitSet::count).collect();
         let mut parents = vec![Vec::new(); n];
-        for t in 0..n {
-            let mut above = BitSet::new(n);
-            for u in ancestors[t].iter() {
-                if u != t {
-                    for v in ancestors[u].iter() {
-                        if v != u {
-                            above.insert(v);
-                        }
-                    }
+        for (t, ps) in parents.iter_mut().enumerate() {
+            let mut cand: Vec<usize> = ancestors[t].iter().filter(|&u| u != t).collect();
+            cand.sort_by_key(|&u| (sizes[u], u));
+            let mut covered = BitSet::new(n);
+            for u in cand {
+                if !covered.contains(u) {
+                    ps.push(u as TypeId);
+                    covered.union_with(&ancestors[u]);
                 }
             }
-            for u in ancestors[t].iter() {
-                if u != t && !above.contains(u) {
-                    parents[t].push(u as TypeId);
-                }
-            }
+            ps.sort_unstable();
         }
         let mut children = vec![Vec::new(); n];
         for (c, ps) in parents.iter().enumerate() {

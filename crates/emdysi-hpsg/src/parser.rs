@@ -182,6 +182,9 @@ pub struct ParserConfig {
     pub deleted_daughters: Vec<FeatId>,
     pub roots: Vec<(String, Arc<Dag>)>,
     pub max_edges: usize,
+    /// Upper bound on the total size (in nodes) of the feature structures
+    /// in the chart, as a memory limit.
+    pub max_nodes: usize,
     pub timeout: Duration,
     /// Features ignored when comparing edges for ambiguity packing; `None`
     /// disables packing.
@@ -244,6 +247,7 @@ pub struct Parser<'g> {
     n: usize,
     deadline: Instant,
     stats: Stats,
+    nodes: usize,
 }
 
 impl<'g> Parser<'g> {
@@ -285,6 +289,7 @@ impl<'g> Parser<'g> {
             n: 0,
             deadline: Instant::now(),
             stats: Stats::default(),
+            nodes: 0,
         }
     }
 
@@ -411,7 +416,10 @@ impl<'g> Parser<'g> {
         agenda.sort_unstable_by(|a, b| b.cmp(a));
         let mut by_span: HashMap<(usize, usize), Vec<usize>> = HashMap::new();
         while let Some(id) = agenda.pop() {
-            if self.chart.len() > self.config.max_edges || Instant::now() > self.deadline {
+            if self.chart.len() > self.config.max_edges
+                || self.nodes > self.config.max_nodes
+                || Instant::now() > self.deadline
+            {
                 exhausted = true;
                 break;
             }
@@ -785,6 +793,7 @@ impl<'g> Parser<'g> {
         self.stats.attempts += 1;
         let dags: Vec<Arc<Dag>> = dtrs.iter().map(|&d| self.chart[d].dag.clone()).collect();
         if let Some(dag) = self.unify_rule(ri, &dags) {
+            self.nodes += dag.nodes.len();
             let id = self.chart.len();
             self.chart.push(Edge {
                 start,
