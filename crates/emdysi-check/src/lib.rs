@@ -64,7 +64,7 @@ impl Sentence {
     pub fn strict(&self) -> bool {
         self.parse
             .as_ref()
-            .is_some_and(|p| p.readings.iter().any(|r| r.root == "root_strict"))
+            .is_some_and(|p| p.readings.iter().any(|r| emdysi_parse::is_strict(&r.root)))
     }
 
     pub fn word_count(&self) -> usize {
@@ -121,6 +121,8 @@ pub struct Options {
     /// Sentences with more tokens than this are not parsed.
     pub max_tokens: usize,
     pub timeout: Duration,
+    /// Readings recovered per sentence; rules look at the best ones.
+    pub max_readings: usize,
 }
 
 impl Default for Options {
@@ -130,6 +132,7 @@ impl Default for Options {
             threads: std::thread::available_parallelism().map_or(2, |n| n.get()),
             max_tokens: 100,
             timeout: Duration::from_secs(10),
+            max_readings: 100,
         }
     }
 }
@@ -204,7 +207,7 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                             )),
                         )
                     } else {
-                        match erg.parse_with_timeout(text, opts.timeout) {
+                        match erg.parse_limited(text, opts.timeout, opts.max_readings) {
                             Ok(p) => (Some(p), None),
                             Err(e) => (None, Some(e.to_string())),
                         }

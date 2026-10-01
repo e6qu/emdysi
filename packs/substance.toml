@@ -1,0 +1,64 @@
+[pack]
+name = "substance"
+description = "Hedged, vague and unsupported claims: what a reader cannot check or act on."
+
+[[rule]]
+id = "substance.hedge-verb"
+kind = "construction"
+severity = "suggestion"
+message = "'{match}' hedges the claim; state it directly, or say what it depends on."
+description = "Raising verbs and adjectives that distance the writer from a claim: 'seems to', 'appears to', 'tends to', 'is likely to'. Found in the grammar's analysis, so 'appear on stage' or 'a likely story' are not flagged."
+entries = ["seem1", "appear_v1", "tend_v1", "likely_a2"]
+
+[[rule]]
+id = "substance.hedge-adverb"
+kind = "words"
+match = "surface"
+severity = "suggestion"
+message = "Hedge '{match}'; say how sure you are, or why."
+words = [
+  "arguably", "potentially", "conceivably", "presumably", "seemingly",
+  "to some extent", "to a certain extent", "in some ways", "in a sense",
+  "it could be argued", "it can be argued", "one could argue",
+]
+
+[[rule]]
+id = "substance.stacked-hedge"
+kind = "regex"
+severity = "warning"
+message = "Stacked hedges ('{match}'): one is enough."
+description = "A modal verb followed by a hedging adverb, e.g. 'may potentially', 'could possibly'."
+pattern = "(?i)\\b(?:may|might|could|can)\\s+(?:potentially|possibly|perhaps|conceivably|arguably)\\b"
+
+[[rule]]
+id = "substance.weasel"
+kind = "regex"
+severity = "warning"
+message = "Vague attribution ('{match}'): who, and where? Cite the source."
+description = "Claims attributed to unnamed studies, experts or people. Sentences with a citation (a link, a bracketed number, 'et al.' or a parenthesized year) are skipped."
+pattern = "(?i)\\b(?:(?:many |some |most )?(?:studies|research|researchers|experts|scientists|critics|observers|analysts|people)\\s+(?:have\\s+)?(?:show|shows|shown|suggest|suggests|suggested|say|says|said|believe|believes|agree|agrees|argue|argues|found|find|finds|note|notes)|it\\s+is\\s+(?:widely|generally|commonly|often)\\s+(?:believed|accepted|known|agreed|thought|said))\\b"
+unless = "\\[\\d+\\]|https?://|\\bet al\\.|\\([^()]*\\b(?:1[89]|20)\\d\\d[a-z]?\\)"
+
+[[rule]]
+id = "substance.vague-quantity"
+kind = "words"
+match = "surface"
+severity = "suggestion"
+message = "Vague quantity '{match}'; give a number or an example."
+words = [
+  "a number of", "a wide range of", "a wide variety of", "a variety of",
+  "a plethora of", "a myriad of", "myriad", "countless", "numerous",
+  "a host of", "a multitude of",
+]
+
+[[rule]]
+id = "substance.certainty"
+kind = "words"
+match = "surface"
+severity = "suggestion"
+message = "'{match}' asserts certainty instead of showing it; give the evidence."
+words = [
+  "clearly", "obviously", "undeniably", "unquestionably", "indisputably",
+  "undoubtedly", "without a doubt", "it goes without saying", "of course",
+  "needless to say",
+]

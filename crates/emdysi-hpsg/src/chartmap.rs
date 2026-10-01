@@ -26,6 +26,7 @@ use std::sync::Arc;
 
 use crate::dag::Dag;
 use crate::grammar::Grammar;
+use crate::types::{TOP, TypeId};
 use crate::typesys::{FeatId, LiteralKind, TypeSystem};
 use crate::unify::Unifier;
 
@@ -64,7 +65,14 @@ pub struct MapRule {
     outputs: Vec<u32>,
     positions: Vec<Pos>,
     regex_slots: Vec<RegexSlot>,
+    /// Per item (contexts, then inputs), paths with the type the rule
+    /// requires there: an entry whose type at one of them is incompatible
+    /// cannot match, which is cheaper to see than by unification.
+    prefilter: Vec<Vec<(Vec<FeatId>, TypeId)>>,
 }
+
+/// Paths checked per item by the prefilter.
+const PREFILTER_PATHS: usize = 64;
 
 #[derive(Debug)]
 pub struct MapRuleError(pub String);
@@ -122,7 +130,9 @@ impl MapRule {
             .unwrap_or_default();
         let positions = parse_positions(&pos_str).map_err(MapRuleError)?;
         let mut regex_slots = Vec::new();
+        let mut prefilter = Vec::new();
         for (k, &item) in contexts.iter().chain(inputs.iter()).enumerate() {
+            let mut checks = Vec::new();
             // Breadth-first so that each regex is reached by its shortest path.
             let mut seen = HashSet::new();
             let mut queue = vec![(item, Vec::<FeatId>::new())];
@@ -133,11 +143,15 @@ impl MapRule {
                 if !seen.insert(n) {
                     continue;
                 }
-                if let Some((LiteralKind::Regex, _)) = g.ts.literal_value(dag.ty(n)) {
-                    regex_slots.push(RegexSlot {
+                match g.ts.literal_value(dag.ty(n)) {
+                    Some((LiteralKind::Regex, _)) => regex_slots.push(RegexSlot {
                         item: k,
                         path: path.clone(),
-                    });
+                    }),
+                    _ if dag.ty(n) != TOP && !path.is_empty() && checks.len() < PREFILTER_PATHS => {
+                        checks.push((path.clone(), dag.ty(n)));
+                    }
+                    _ => {}
                 }
                 for &(f, v) in dag.arcs(n) {
                     let mut p = path.clone();
@@ -145,6 +159,7 @@ impl MapRule {
                     queue.push((v, p));
                 }
             }
+            prefilter.push(checks);
         }
         Ok(MapRule {
             name: name.to_string(),
@@ -154,6 +169,7 @@ impl MapRule {
             outputs,
             positions,
             regex_slots,
+            prefilter,
         })
     }
 }
@@ -328,8 +344,11 @@ impl<'g> ChartMapper<'g> {
     pub fn apply(&mut self, lat: &mut Lattice) {
         let mut fired: HashSet<(usize, Vec<usize>)> = HashSet::new();
         for ri in 0..self.rules.len() {
+            // Entries do not change once added: whether one matches an item
+            // of this rule is computed once.
+            let mut cache: HashMap<(usize, usize), bool> = HashMap::new();
             for _ in 0..MAX_FIRINGS_PER_RULE {
-                let Some(m) = self.find_match(ri, lat, &fired) else {
+                let Some(m) = self.find_match(ri, lat, &fired, &mut cache) else {
                     break;
                 };
                 fired.insert((ri, m.ids.clone()));
@@ -362,6 +381,13 @@ impl<'g> ChartMapper<'g> {
     }
 
     fn item_matches(&mut self, rule: &MapRule, items: &[u32], k: usize, entry: &Entry) -> bool {
+        for (path, t) in &rule.prefilter[k] {
+            if let Some(n) = entry.dag.follow(0, path) {
+                if self.g.ts.glb(entry.dag.ty(n), *t).is_none() {
+                    return false;
+                }
+            }
+        }
         let cons = self.g.constraint_fn();
         let u = &mut self.unifier;
         u.begin();
@@ -378,6 +404,7 @@ impl<'g> ChartMapper<'g> {
         ri: usize,
         lat: &Lattice,
         fired: &HashSet<(usize, Vec<usize>)>,
+        cache: &mut HashMap<(usize, usize), bool>,
     ) -> Option<Match> {
         let rule = &self.rules[ri];
         let items: Vec<u32> = rule
@@ -393,7 +420,15 @@ impl<'g> ChartMapper<'g> {
         for k in 0..items.len() {
             let mut c = Vec::new();
             for (id, e) in lat.alive() {
-                if self.item_matches(rule, &items, k, e) {
+                let m = match cache.get(&(k, id)) {
+                    Some(&m) => m,
+                    None => {
+                        let m = self.item_matches(rule, &items, k, e);
+                        cache.insert((k, id), m);
+                        m
+                    }
+                };
+                if m {
                     c.push(id);
                 }
             }

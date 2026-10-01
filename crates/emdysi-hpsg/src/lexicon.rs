@@ -170,19 +170,29 @@ impl Lexicon {
                 .entry(form.clone())
                 .or_insert_with(|| self.morph.analyze(form, &|s| self.is_stem(s), 3))
                 .clone();
+            // The entry is unified with the token once, whatever the number
+            // of analyses that lead to it.
+            let mut by_inst: Vec<(usize, Vec<Vec<String>>)> = Vec::new();
             for a in an.iter().filter(|a| !a.rules.is_empty()) {
                 if let Some(cands) = self.by_first.get(&a.stem) {
                     for &ei in cands {
                         if self.entries[ei].orth.len() == 1 {
-                            out.extend(self.make(
-                                g,
-                                self.entries[ei].inst,
-                                &[*id],
-                                lat,
-                                a.rules.clone(),
-                                u,
-                            ));
+                            let inst = self.entries[ei].inst;
+                            match by_inst.iter_mut().find(|(i, _)| *i == inst) {
+                                Some((_, rs)) => rs.push(a.rules.clone()),
+                                None => by_inst.push((inst, vec![a.rules.clone()])),
+                            }
                         }
+                    }
+                }
+            }
+            for (inst, chains) in by_inst {
+                if let Some(item) = self.make(g, inst, &[*id], lat, Vec::new(), u) {
+                    for rules in chains {
+                        out.push(LexItem {
+                            pending: rules,
+                            ..item.clone()
+                        });
                     }
                 }
             }

@@ -145,8 +145,10 @@ pub struct Edge {
     pub dag: Arc<Dag>,
     pub kind: EdgeKind,
     pub daughters: Vec<usize>,
-    /// Orthographic rules still to apply (lexical edges only).
-    pub pending: Vec<String>,
+    /// Orthographic rule chains still to apply, innermost first, one per
+    /// morphological analysis (lexical edges only). An empty chain means
+    /// the edge is a complete word.
+    pub pending: Vec<Vec<String>>,
     pub lexical: bool,
     qc: Vec<TypeId>,
     /// For daughter positions 0 and 1, the rules whose daughter this edge
@@ -161,6 +163,14 @@ pub struct Edge {
     restricted: Option<Arc<Dag>>,
     /// Model score of the best derivation found for this edge.
     pub score: f64,
+}
+
+impl Edge {
+    /// Whether the edge is a complete word or phrase (no orthographic rule
+    /// is required to apply).
+    pub fn complete(&self) -> bool {
+        !self.lexical || self.pending.iter().any(Vec::is_empty)
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -225,6 +235,9 @@ pub struct ParserConfig {
     /// Chart pruning applies only to inputs longer than this many
     /// positions; shorter ones are parsed exhaustively.
     pub cell_beam_from: usize,
+    /// The first this many root conditions are preferred: readings under
+    /// them are recovered before any other.
+    pub preferred_roots: usize,
     /// At most this many instantiations are kept per edge when unpacking,
     /// the best-scoring first (with a scorer).
     pub unpack_beam: usize,
@@ -396,9 +409,30 @@ impl<'g> Parser<'g> {
 
         // Phase 1: lexical rules.
         let mut lexical = Vec::new();
-        let mut agenda: Vec<Edge> = items
+        // Analyses of the same entry over the same tokens differ only in
+        // their rule chains: one edge carries them all, so a shared prefix
+        // of rules is applied once.
+        let mut grouped: Vec<LexItem> = Vec::new();
+        let mut index: HashMap<(usize, Vec<usize>), usize> = HashMap::new();
+        let mut chains: Vec<Vec<Vec<String>>> = Vec::new();
+        for it in items {
+            match index.get(&(it.inst, it.tokens.clone())) {
+                Some(&k) => {
+                    if !chains[k].contains(&it.pending) {
+                        chains[k].push(it.pending);
+                    }
+                }
+                None => {
+                    index.insert((it.inst, it.tokens.clone()), grouped.len());
+                    chains.push(vec![it.pending.clone()]);
+                    grouped.push(it);
+                }
+            }
+        }
+        let mut agenda: Vec<Edge> = grouped
             .into_iter()
-            .map(|it| {
+            .zip(chains)
+            .map(|(it, pending)| {
                 let qc = self.qc.vector(&it.dag, 0);
                 let score = self.scorer.map_or(0.0, |s| s.lexical(it.inst));
                 Edge {
@@ -410,7 +444,7 @@ impl<'g> Parser<'g> {
                         tokens: it.tokens,
                     },
                     daughters: Vec::new(),
-                    pending: it.pending,
+                    pending,
                     lexical: true,
                     qc,
                     fits: Default::default(),
@@ -443,10 +477,16 @@ impl<'g> Parser<'g> {
                     continue;
                 }
                 let pending = if rule.orth {
-                    match e.pending.first() {
-                        Some(next) if *next == rule.name => e.pending[1..].to_vec(),
-                        _ => continue,
+                    let rest: Vec<Vec<String>> = e
+                        .pending
+                        .iter()
+                        .filter(|c| c.first() == Some(&rule.name))
+                        .map(|c| c[1..].to_vec())
+                        .collect();
+                    if rest.is_empty() {
+                        continue;
                     }
+                    rest
                 } else {
                     e.pending.clone()
                 };
@@ -481,7 +521,7 @@ impl<'g> Parser<'g> {
         let complete: Vec<usize> = lexical
             .iter()
             .copied()
-            .filter(|&i| self.chart[i].pending.is_empty())
+            .filter(|&i| self.chart[i].complete())
             .collect();
         let mut keep: HashSet<usize> = complete.iter().copied().collect();
         let mut filtered = 0;
@@ -645,27 +685,75 @@ impl<'g> Parser<'g> {
                     .collect()
             })
             .unwrap_or_default();
+        // Unpack edges that can satisfy the first (strictest) root
+        // conditions first, the best-scoring first, so that a cap on
+        // readings keeps the best analyses. Edges packed into a spanning
+        // edge are more specific, so a root that fails on it fails on them.
+        let mut spanning: Vec<(usize, usize)> = spanning
+            .into_iter()
+            .filter_map(|id| {
+                let dag = self.chart[id].dag.clone();
+                let roots: Vec<Arc<Dag>> =
+                    self.config.roots.iter().map(|(_, r)| r.clone()).collect();
+                let preferred = self.config.preferred_roots.max(1);
+                roots
+                    .iter()
+                    .position(|r| self.unifies(r, &dag))
+                    .map(|k| (if k < preferred { 0 } else { k }, id))
+            })
+            .collect();
+        spanning.sort_by(|a, b| {
+            a.0.cmp(&b.0)
+                .then(self.chart[b.1].score.total_cmp(&self.chart[a.1].score))
+                .then(a.1.cmp(&b.1))
+        });
+        let spanning: Vec<usize> = spanning.into_iter().map(|(_, id)| id).collect();
         let mut readings = Vec::new();
         let unpack_start = Instant::now();
         let mut memo: HashMap<usize, Vec<Inst>> = HashMap::new();
-        'outer: for id in spanning {
-            for inst in self.unpack(id, &mut memo) {
-                if readings.len() >= self.config.max_readings || Instant::now() > self.deadline {
-                    break 'outer;
-                }
-                for (name, root) in &self.config.roots {
-                    if self.unifies(root, &inst.dag) {
-                        readings.push(Reading {
-                            root: name.clone(),
-                            deriv: inst.deriv.clone(),
-                            dag: inst.dag.clone(),
-                        });
-                        break;
+        // Two passes: readings under the preferred (strictest) root conditions,
+        // then the others, so that the cap on readings does not crowd out
+        // strict analyses with fragments.
+        let mut taken: HashSet<(usize, usize)> = HashSet::new();
+        'outer: for pass in 0..2 {
+            for &id in &spanning {
+                for (k, inst) in self.unpack(id, &mut memo).into_iter().enumerate() {
+                    if readings.len() >= self.config.max_readings || Instant::now() > self.deadline
+                    {
+                        break 'outer;
+                    }
+                    if taken.contains(&(id, k)) {
+                        continue;
+                    }
+                    let split = self
+                        .config
+                        .preferred_roots
+                        .clamp(1, self.config.roots.len().max(1));
+                    let split = split.min(self.config.roots.len());
+                    let roots = if pass == 0 {
+                        &self.config.roots[..split]
+                    } else {
+                        &self.config.roots[split..]
+                    };
+                    let roots = roots.to_vec();
+                    for (name, root) in &roots {
+                        if self.unifies(root, &inst.dag) {
+                            taken.insert((id, k));
+                            readings.push(Reading {
+                                root: name.clone(),
+                                deriv: inst.deriv.clone(),
+                                dag: inst.dag.clone(),
+                            });
+                            break;
+                        }
                     }
                 }
             }
         }
         if readings.is_empty() && self.config.fragments {
+            // The fallback has its own short time allowance.
+            let grace = (self.config.timeout / 5).min(Duration::from_secs(2));
+            self.deadline = Instant::now() + grace;
             if let Some(r) = self.fragment_cover(&mut memo) {
                 readings.push(r);
             }
@@ -691,7 +779,7 @@ impl<'g> Parser<'g> {
         best[0] = Some((0, 0.0, usize::MAX));
         let mut ending: Vec<Vec<usize>> = vec![Vec::new(); n + 1];
         for (id, e) in self.chart.iter().enumerate() {
-            if e.state == EdgeState::Active && e.pending.is_empty() && e.end > e.start {
+            if e.state == EdgeState::Active && e.complete() && e.end > e.start {
                 ending[e.end].push(id);
             }
         }

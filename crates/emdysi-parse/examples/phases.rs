@@ -27,6 +27,12 @@ fn main() {
                 );
             }
         }
+        let scorer = emdysi_parse::rank::ChartScorer {
+            grammar: &erg.grammar,
+            rules: &erg.rules,
+            model: &erg.model,
+            le_types: &erg.le_types,
+        };
         let r = Parser::new(
             &erg.grammar,
             &erg.rules,
@@ -34,6 +40,7 @@ fn main() {
             &erg.config,
             &erg.lexical_filtering,
         )
+        .with_scorer(&scorer)
         .parse(&lat, items);
         let t4 = t.elapsed();
         println!(

@@ -37,6 +37,7 @@ Words or phrases. `words` lists them; phrases are space-separated words.
   analysis, so `delve` also matches *delves* and *delving*. Sentences without
   an analysis fall back to surface forms.
 - `match = "surface"`: compare the words as written (case-insensitive).
+- Overlapping matches of one rule are reported once, for the longest item.
 - `replace`: a table from listed items to automatic fixes. The fix keeps the
   capitalization of the matched text. `{replacement}` is available in
   messages.
@@ -45,7 +46,8 @@ Words or phrases. `words` lists them; phrases are space-separated words.
 
 `pattern` is a regular expression (fancy-regex syntax, with look-around and
 back-references) matched against each sentence. With `replace`, matches are
-fixed automatically; `$1` and similar refer to capture groups.
+fixed automatically; `$1` and similar refer to capture groups. Sentences that
+match `unless` are skipped, e.g. claims that come with a citation.
 
 ### `construction`
 
@@ -60,6 +62,11 @@ its constructions, so many syntactic checks are exact:
 - `types`: globs over lexical types, e.g. `v_np_le`.
 - `preceded_by` and `window` (default 3): require one of these words within
   `window` tokens before the match, e.g. a form of *be* for passives.
+- `not_parent`: globs over rule names; a match whose parent node (or an
+  ancestor reached through lexical rules) is one of them is skipped, e.g.
+  `v_j-*` for participles converted to adjectives (*the most underrated
+  tool*).
+- `except`: matched words to skip (case-insensitive).
 
 To find the names to use, run `en parse --derivations` on an example.
 

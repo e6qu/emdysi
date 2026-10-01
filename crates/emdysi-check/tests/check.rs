@@ -4,7 +4,7 @@ use emdysi_check::*;
 use emdysi_parse::{Erg, default_grammar_dir};
 
 fn packs() -> Vec<Pack> {
-    ["core", "ai-tells", "plain-style"]
+    ["core", "ai-tells", "plain-style", "substance"]
         .iter()
         .map(|p| {
             let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))

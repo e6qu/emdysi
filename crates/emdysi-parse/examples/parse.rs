@@ -15,6 +15,12 @@ fn main() {
     {
         erg.config.cell_beam_from = n;
     }
+    if let Some(n) = std::env::var("MAX_READINGS")
+        .ok()
+        .and_then(|b| b.parse::<usize>().ok())
+    {
+        erg.config.max_readings = n;
+    }
     if let Some(t) = std::env::var("TIMEOUT")
         .ok()
         .and_then(|b| b.parse::<u64>().ok())
