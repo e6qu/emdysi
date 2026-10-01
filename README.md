@@ -15,7 +15,11 @@ parser. On the ERG's own test suites it parses 98% of the grammatical items
 and finds the gold analysis among its readings for 98.5% of them. A parse
 ranker trained on license-clean gold trees (2,626 items of all lengths)
 picks the gold analysis first for 81.7% of held-out sentences, long ones
-included.
+included. Each analysis comes with its semantics as Minimal Recursion
+Semantics (MRS, `en parse --mrs`), identical to the ERG's gold MRS for all
+2,966 gold analyses we reproduce. Sentences the grammar rejects are
+re-parsed with the ERG's grammar-error ("mal-rule") variant, which names
+the error (agreement, verb forms, articles, ...).
 
 Status: working prototype. See [`docs/plan.md`](docs/plan.md) for progress,
 [`docs/prior-art.md`](docs/prior-art.md) for the survey of existing tools and
@@ -36,7 +40,8 @@ Input is plain text or Markdown (chosen from the file extension, or with
 `--input`); output is plain text or Markdown (`--format`). Rule packs are
 TOML files; see [`docs/rules.md`](docs/rules.md). The built-in packs are:
 
-- `core`: spelling (with safe automatic fixes) and grammaticality;
+- `core`: spelling (with safe automatic fixes), named grammatical errors,
+  grammaticality and US/GB spelling consistency;
 - `ai-tells`: vocabulary, stock phrases and constructions over-represented
   in machine-written prose (contrast frames, trailing participial clauses,
   three-part lists, em-dash density, chat-assistant residue);

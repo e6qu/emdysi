@@ -2,7 +2,11 @@ use emdysi_parse::*;
 
 fn main() {
     let t = std::time::Instant::now();
-    let mut erg = Erg::load(&default_grammar_dir()).unwrap();
+    let config = std::env::var("CONFIG").unwrap_or_else(|_| "ace/config.tdl".to_string());
+    let mut erg = Erg::load_config(&default_grammar_dir(), &config).unwrap();
+    for w in &erg.warnings {
+        eprintln!("warning: {w}");
+    }
     if let Some(b) = std::env::var("CELL_BEAM")
         .ok()
         .and_then(|b| b.parse::<usize>().ok())

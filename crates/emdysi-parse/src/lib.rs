@@ -61,7 +61,17 @@ pub struct Erg {
     pub first_beam: Option<usize>,
     /// How to read semantics (MRS) out of a parse.
     pub mrs: Option<emdysi_hpsg::mrs::MrsConfig>,
+    /// Problems found while loading (e.g. rules that could not be built).
+    pub warnings: Vec<String>,
+    /// The grammar directory.
+    pub dir: PathBuf,
+    /// The grammar-error ("mal-rule") variant of the grammar, loaded on
+    /// first use (see [`Erg::mal`]).
+    mal: std::sync::OnceLock<Option<Box<Erg>>>,
 }
+
+/// The ACE configuration of the ERG's grammar-error variant.
+pub const MAL_CONFIG: &str = "ace/config-mal.tdl";
 
 /// Edges kept per chart cell when pruning (see [`ParserConfig::cell_beam`]).
 pub const DEFAULT_CELL_BEAM: usize = 40;
@@ -226,9 +236,25 @@ fn tdl_string(s: &str) -> String {
 }
 
 impl Erg {
+    /// Load the grammar with its default parsing configuration
+    /// (`ace/config.tdl`).
     pub fn load(dir: &Path) -> Result<Erg, Error> {
-        let loaded =
-            emdysi_tdl::load(&dir.join("english.tdl"), emdysi_tdl::Env::Type).map_err(err)?;
+        Self::load_config(dir, "ace/config.tdl")
+    }
+
+    /// Load the grammar with an ACE configuration file, relative to `dir`
+    /// (e.g. `ace/config-mal.tdl` for the grammar-error variant of the ERG).
+    pub fn load_config(dir: &Path, config: &str) -> Result<Erg, Error> {
+        let config_path = dir.join(config);
+        let config_src = std::fs::read_to_string(&config_path).map_err(err)?;
+        let config_dir = config_path.parent().unwrap_or(dir).to_path_buf();
+        let setting_path = |key: &str| -> Option<PathBuf> {
+            ace_setting(&config_src, key)
+                .first()
+                .map(|f| config_dir.join(f.trim_matches('"')))
+        };
+        let top = setting_path("grammar-top").unwrap_or_else(|| dir.join("english.tdl"));
+        let loaded = emdysi_tdl::load(&top, emdysi_tdl::Env::Type).map_err(err)?;
         // The compiled type system is cached outside the source tree
         // (EMDYSI_CACHE_DIR, XDG_CACHE_HOME or ~/.cache); EMDYSI_NO_CACHE
         // turns the cache off.
@@ -238,16 +264,39 @@ impl Erg {
             emdysi_hpsg::cache::default_dir()
         };
         let grammar = Grammar::compile_cached(&loaded, cache_dir.as_deref()).map_err(err)?;
-        let repp = emdysi_repp::erg(dir).map_err(err)?;
+        let repp = match setting_path("preprocessor") {
+            Some(main) => {
+                let modules: Vec<String> = ace_setting(&config_src, "preprocessor-modules")
+                    .iter()
+                    .filter_map(|m| {
+                        Path::new(m.trim_matches('"'))
+                            .file_stem()
+                            .map(|s| s.to_string_lossy().to_string())
+                    })
+                    .collect();
+                let refs: Vec<&str> = modules.iter().map(String::as_str).collect();
+                emdysi_repp::Repp::load(&main, &refs).map_err(err)?
+            }
+            None => emdysi_repp::erg(dir).map_err(err)?,
+        };
         let mut u = Unifier::new();
         let token_mapping =
             compile_rules(&grammar, "token-mapping-rule", &mut u).map_err(|e| err(e.0))?;
         let lexical_filtering =
             compile_rules(&grammar, "lexical-filtering-rule", &mut u).map_err(|e| err(e.0))?;
-        let config_src = std::fs::read_to_string(dir.join("ace/config.tdl")).map_err(err)?;
 
         let mut morph = Morphology::from_grammar(&grammar);
-        morph.load_irregs(&std::fs::read_to_string(dir.join("irregs.tab")).map_err(err)?);
+        let irregs: Vec<PathBuf> = ace_setting(&config_src, "irregular-forms")
+            .iter()
+            .map(|f| config_dir.join(f.trim_matches('"')))
+            .collect();
+        for f in if irregs.is_empty() {
+            vec![dir.join("irregs.tab")]
+        } else {
+            irregs
+        } {
+            morph.load_irregs(&std::fs::read_to_string(f).map_err(err)?);
+        }
         let path = |p: &str| {
             grammar
                 .path(p)
@@ -261,22 +310,32 @@ impl Erg {
 
         let qc = QuickCheck::parse_ace(
             &grammar,
-            &std::fs::read_to_string(dir.join("ace/ace-erg-qc.txt")).map_err(err)?,
+            &std::fs::read_to_string(
+                setting_path("quickcheck-code").unwrap_or_else(|| dir.join("ace/ace-erg-qc.txt")),
+            )
+            .map_err(err)?,
         );
         let args = grammar.feat("ARGS").ok_or_else(|| err("no ARGS feature"))?;
         let spanning: HashSet<String> = ace_setting(&config_src, "spanning-only-rules")
             .into_iter()
             .collect();
         let mut rules = Vec::new();
+        let mut warnings = Vec::new();
         for inst in &grammar.instances {
             let lexical = match inst.status.as_deref() {
                 Some("rule") => false,
                 Some("lex-rule") => true,
                 _ => continue,
             };
-            let dag = grammar
-                .expand(&inst.body, &mut u)
-                .map_err(|e| err(format!("{}: {e}", inst.name)))?;
+            let dag = match grammar.expand(&inst.body, &mut u) {
+                Ok(d) => d,
+                Err(e) => {
+                    // A rule the processor cannot build is reported and left
+                    // out, as ACE does, rather than failing the whole load.
+                    warnings.push(format!("rule {}: {e}", inst.name));
+                    continue;
+                }
+            };
             let mut rule = Rule::new(
                 &grammar,
                 &inst.name,
@@ -347,7 +406,7 @@ impl Erg {
             .collect();
         let mrs = ace_setting(&config_src, "variable-property-mapping")
             .first()
-            .map(|f| dir.join("ace").join(f.trim_matches('"')))
+            .map(|f| config_dir.join(f.trim_matches('"')))
             .and_then(|p| std::fs::read_to_string(p).ok())
             .and_then(|src| {
                 let vpm = emdysi_hpsg::vpm::Vpm::parse(&grammar, &src);
@@ -358,6 +417,9 @@ impl Erg {
                 )
             });
         Ok(Erg {
+            dir: dir.to_path_buf(),
+            mal: std::sync::OnceLock::new(),
+            warnings,
             mrs,
             first_beam: Some(20),
             le_types,
@@ -374,6 +436,22 @@ impl Erg {
             qc,
             config,
         })
+    }
+
+    /// The grammar-error variant of the grammar: the ERG with its
+    /// "mal-rules" and robust lexical entries (`ace/config-mal.tdl`), which
+    /// analyse common errors (agreement, wrong verb forms, missing
+    /// determiners, a/an, ...) and name them. Loaded on first use; `None`
+    /// if the grammar does not provide it.
+    pub fn mal(&self) -> Option<&Erg> {
+        self.mal
+            .get_or_init(|| {
+                if !self.dir.join(MAL_CONFIG).exists() {
+                    return None;
+                }
+                Erg::load_config(&self.dir, MAL_CONFIG).ok().map(Box::new)
+            })
+            .as_deref()
     }
 
     /// Tokenize and tag a sentence.

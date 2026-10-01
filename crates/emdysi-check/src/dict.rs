@@ -81,3 +81,47 @@ pub fn variants() -> &'static HashMap<String, Vec<(Variety, String)>> {
         m
     })
 }
+
+const ERG_ERRORS: &str = include_str!("../../../data/erg-errors/errors.tsv");
+
+/// An entry of the ERG's grammar-error table: error class (`R` rule, `I`
+/// incomplete, `D` determiner, `W` warning/awkward), feedback text (`$X`
+/// stands for the word) and example sentences.
+#[derive(Debug, Clone)]
+pub struct ErgError {
+    pub class: String,
+    pub feedback: String,
+    pub examples: Vec<String>,
+}
+
+/// Error code (an ERG rule, lexical entry, lexical type or root) -> entry.
+pub fn erg_errors() -> &'static HashMap<String, ErgError> {
+    static MAP: OnceLock<HashMap<String, ErgError>> = OnceLock::new();
+    MAP.get_or_init(|| {
+        ERG_ERRORS
+            .lines()
+            .filter(|l| !l.starts_with('#'))
+            .filter_map(|l| {
+                let mut f = l.split('\t');
+                let code = f.next()?.to_string();
+                let class = f.next()?.to_string();
+                let feedback = f.next()?.to_string();
+                let examples = f
+                    .next()
+                    .unwrap_or("")
+                    .split(" | ")
+                    .filter(|x| !x.is_empty())
+                    .map(String::from)
+                    .collect();
+                Some((
+                    code,
+                    ErgError {
+                        class,
+                        feedback,
+                        examples,
+                    },
+                ))
+            })
+            .collect()
+    })
+}

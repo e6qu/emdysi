@@ -97,10 +97,22 @@ suggestion is applied automatically only when it is clearly the most likely
 correction: a transposed or doubled letter, or the only known word one edit
 away.
 
+### `grammar-errors`
+
+Specific grammatical errors named by the grammar-error ("mal-rule")
+variant of the English Resource Grammar: subject-verb agreement (*He go*),
+wrong verb forms (*buyed*), missing determiners (*went to house*), *a*/*an*,
+plural first nouns in compounds and others, about 800 error codes in all.
+Sentences without a strict analysis, or whose analysis relies on an
+unknown word, are re-parsed with that variant (loaded on first use); the
+whole-sentence analysis that assumes the fewest errors is used.
+`{feedback}` (the ERG's own message) and `{code}` (the rule or entry that
+names the error) are available in messages.
+
 ### `grammar`
 
 Sentences for which the grammar finds no analysis, or only a fragment or
-informal one. `{reason}` is available in messages. Headings and table cells
+informal one, and for which `grammar-errors` names no specific error. `{reason}` is available in messages. Headings and table cells
 are exempt.
 
 ### `consistency`

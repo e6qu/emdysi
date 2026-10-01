@@ -33,7 +33,7 @@ license = "MIT"
 license_files = ["grammar/erg/LICENSE"]
 copyright = "Dan Flickinger, Rob Malouf, Emily M. Bender, Stephan Oepen and the DELPH-IN contributors (ERG file headers and METADATA)"
 provenance = "Hand-written grammar; METADATA declares LICENSE=\"MIT\". Files were grepped for GPL/LGPL/CC/all-rights-reserved notices; none found."
-modifications = "Subset of files only (see SOURCE.md); SOURCE.md added. No file content changed."
+modifications = "Subset of files only, including the grammar-error (mal-rule) variant in educ/ and mal.tdl (see SOURCE.md); SOURCE.md added. No file content changed."
 use = "shipped"
 source_doc = "grammar/erg/SOURCE.md"
 
@@ -171,3 +171,33 @@ provenance = "Averaged-perceptron weights over derivation features; training dat
 modifications = "n/a"
 use = "shipped"
 source_doc = "docs/decisions.md"
+
+[[item]]
+id = "erg-errors"
+paths = ["data/erg-errors/errors.tsv", "data/erg-errors/SOURCE.md"]
+name = "ERG grammar-error codes and feedback texts"
+upstream = "https://github.com/delph-in/erg (educ/ParserErrorCodes.xlsx)"
+version = "13b615ab607374ed7cafe753830e23043a22b71d"
+retrieved = "2026-10-01"
+license = "MIT"
+license_files = ["grammar/erg/LICENSE"]
+copyright = "Dan Flickinger and the ERG developers (educ/METADATA declares LICENSE=\"MIT\")"
+provenance = "Feedback texts and example sentences written by the ERG developers for the grammar-error (EPGY/Redbird) deployment."
+modifications = "Converted from the vendored grammar/erg/educ/ParserErrorCodes.xlsx by data/erg-errors/gen-errors.py: English feedback, error class and examples only (Chinese texts and comments dropped); one row per error code."
+use = "shipped"
+source_doc = "data/erg-errors/SOURCE.md"
+
+[[item]]
+id = "erg-errors-tools"
+paths = ["data/erg-errors/gen-errors.py"]
+name = "Converter for the ERG error table"
+upstream = "this repository"
+version = "n/a"
+retrieved = "2026-10-01"
+license = "MIT"
+license_files = ["LICENSE"]
+copyright = "Copyright (c) 2026 emdysi contributors"
+provenance = "Own code."
+modifications = "n/a"
+use = "test"
+source_doc = "data/erg-errors/SOURCE.md"

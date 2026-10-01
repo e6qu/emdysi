@@ -75,4 +75,21 @@ fn checks_and_fixes() {
         fixed3,
         "The colour of the theatre was grey. We analysed the colour.\n"
     );
+
+    // Named grammatical errors, from the grammar-error variant of the ERG.
+    let src4 = "He go to school every day. We buyed a new car. The dog barked.\n";
+    let a4 = analyze(&erg, src4, Format::Plain, &opts);
+    let d4 = checker.check(&erg, &a4);
+    assert!(
+        rules_at(src4, &d4, "go to").contains(&"core.grammar-errors"),
+        "{d4:?}"
+    );
+    assert!(
+        rules_at(src4, &d4, "buyed").contains(&"core.grammar-errors"),
+        "{d4:?}"
+    );
+    assert!(
+        !rules_at(src4, &d4, "dog").contains(&"core.grammar-errors"),
+        "{d4:?}"
+    );
 }

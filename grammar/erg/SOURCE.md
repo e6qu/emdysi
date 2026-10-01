@@ -17,6 +17,18 @@ tokenizer (`rpp/`), token-mapping rules (`tmr/`), variable-property mappings
 (`*.vpm`), semantic interface files (`etc/*.smi`), `trigger.mtr`,
 `idioms.mtr`, and the metadata/citation files.
 
+The grammar-error ("mal-rule") variant used for naming errors, from the
+same commit: `mal.tdl` (top file), `ace/config-mal.tdl`, and from `educ/`
+the files `mal.tdl` includes (`tmr-educ`, `lfr-educ`, `ctype-educ`,
+`lextypes-educ`, `letypes-mal`, `lexicon-mal`, `ple-educ`, `gle-educ`,
+`constr-mal`, `lexrinst-mal`, `lexrinst-tok`, `roots-educ`), the irregular
+forms it uses (`irregs-educ.tab`, `irregs-robust.tab`), its version and
+metadata files (`Version-mal.lsp`, `METADATA`, `citation.bib`), and
+`ParserErrorCodes.xlsx`, the table of error codes and feedback texts
+(converted to `data/erg-errors/errors.tsv`). `educ/METADATA` declares
+`LICENSE="MIT"`; the files carry the same copyright header as the rest of
+the grammar.
+
 ## What is deliberately excluded
 
 - `tsdb/` treebanks: several profiles contain third-party text (e.g. Wall
@@ -28,7 +40,8 @@ tokenizer (`rpp/`), token-mapping rules (`tmr/`), variable-property mappings
   trained on corpora that include LDC-licensed text. Not used; v1 uses a
   rule-based tagger and heuristic ranking.
 - WordNet-derived lexicon variants (`lex-wn.tdl`, `letypes-wn-*.tdl`, ...),
-  dialect/education variants, tool-specific directories (`lkb/`, `pet/`,
+  dialect variants, the rest of `educ/` (paraphrase and masking variants,
+  generation settings), tool-specific directories (`lkb/`, `pet/`,
   `agree/`, `openproof/`, `docs/`).
 
 Do not edit files here; local changes belong in separate overlay files so the
