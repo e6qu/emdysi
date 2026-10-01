@@ -27,3 +27,5 @@ Rules for adding a corpus:
 | [`erg-gold/`](erg-gold/SOURCE.md) | MIT (ERG annotations); text by the ERG authors or public domain | ERG test suites `mrs`, `csli`, `esd`, `control`, `ccs` and the public-domain `sh-spec` (Sherlock Holmes) with gold derivations |
 | [`golden-rules/`](golden-rules/SOURCE.md) | MIT | Sentence-segmentation test cases from pySBD / Pragmatic Segmenter |
 | [`ai-prose/`](ai-prose/README.md) | MIT (written for this project) | Short documents in the style of machine-written prose, plus a plainly written control, with the expected diagnostics of the built-in packs |
+| [`blimp/`](blimp/SOURCE.md) | CC BY 4.0 | Sample of BLiMP (2,010 minimal pairs, 67 paradigms of syntax, morphology and semantics) |
+| [`zorro/`](zorro/SOURCE.md) | MIT | Sample of Zorro (690 minimal pairs, 23 paradigms) |

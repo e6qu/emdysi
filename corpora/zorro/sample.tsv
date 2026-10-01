@@ -1,0 +1,691 @@
+# uid	field	phenomenon	good	bad; first 30 pairs per paradigm, see SOURCE.md
+agreement_determiner_noun-across_1_adjective	zorro	agreement_determiner_noun	look at this purple thing .	look at this purple things .
+agreement_determiner_noun-across_1_adjective	zorro	agreement_determiner_noun	this purple thing went there .	this purple things went there .
+agreement_determiner_noun-across_1_adjective	zorro	agreement_determiner_noun	this purple thing did not happen .	this purple things did not happen .
+agreement_determiner_noun-across_1_adjective	zorro	agreement_determiner_noun	i saw this purple thing .	i saw this purple things .
+agreement_determiner_noun-across_1_adjective	zorro	agreement_determiner_noun	look at that purple thing .	look at that purple things .
+agreement_determiner_noun-across_1_adjective	zorro	agreement_determiner_noun	that purple thing went there .	that purple things went there .
+agreement_determiner_noun-across_1_adjective	zorro	agreement_determiner_noun	that purple thing did not happen .	that purple things did not happen .
+agreement_determiner_noun-across_1_adjective	zorro	agreement_determiner_noun	i saw that purple thing .	i saw that purple things .
+agreement_determiner_noun-across_1_adjective	zorro	agreement_determiner_noun	look at these purple things .	look at these purple thing .
+agreement_determiner_noun-across_1_adjective	zorro	agreement_determiner_noun	these purple things went there .	these purple thing went there .
+agreement_determiner_noun-across_1_adjective	zorro	agreement_determiner_noun	these purple things did not happen .	these purple thing did not happen .
+agreement_determiner_noun-across_1_adjective	zorro	agreement_determiner_noun	i saw these purple things .	i saw these purple thing .
+agreement_determiner_noun-across_1_adjective	zorro	agreement_determiner_noun	look at those purple things .	look at those purple thing .
+agreement_determiner_noun-across_1_adjective	zorro	agreement_determiner_noun	those purple things went there .	those purple thing went there .
+agreement_determiner_noun-across_1_adjective	zorro	agreement_determiner_noun	those purple things did not happen .	those purple thing did not happen .
+agreement_determiner_noun-across_1_adjective	zorro	agreement_determiner_noun	i saw those purple things .	i saw those purple thing .
+agreement_determiner_noun-across_1_adjective	zorro	agreement_determiner_noun	look at this soft arm .	look at this soft arms .
+agreement_determiner_noun-across_1_adjective	zorro	agreement_determiner_noun	this soft arm went there .	this soft arms went there .
+agreement_determiner_noun-across_1_adjective	zorro	agreement_determiner_noun	this soft arm did not happen .	this soft arms did not happen .
+agreement_determiner_noun-across_1_adjective	zorro	agreement_determiner_noun	i saw this soft arm .	i saw this soft arms .
+agreement_determiner_noun-across_1_adjective	zorro	agreement_determiner_noun	look at that soft arm .	look at that soft arms .
+agreement_determiner_noun-across_1_adjective	zorro	agreement_determiner_noun	that soft arm went there .	that soft arms went there .
+agreement_determiner_noun-across_1_adjective	zorro	agreement_determiner_noun	that soft arm did not happen .	that soft arms did not happen .
+agreement_determiner_noun-across_1_adjective	zorro	agreement_determiner_noun	i saw that soft arm .	i saw that soft arms .
+agreement_determiner_noun-across_1_adjective	zorro	agreement_determiner_noun	look at these soft arms .	look at these soft arm .
+agreement_determiner_noun-across_1_adjective	zorro	agreement_determiner_noun	these soft arms went there .	these soft arm went there .
+agreement_determiner_noun-across_1_adjective	zorro	agreement_determiner_noun	these soft arms did not happen .	these soft arm did not happen .
+agreement_determiner_noun-across_1_adjective	zorro	agreement_determiner_noun	i saw these soft arms .	i saw these soft arm .
+agreement_determiner_noun-across_1_adjective	zorro	agreement_determiner_noun	look at those soft arms .	look at those soft arm .
+agreement_determiner_noun-across_1_adjective	zorro	agreement_determiner_noun	those soft arms went there .	those soft arm went there .
+agreement_determiner_noun-between_neighbors	zorro	agreement_determiner_noun	this color must be white .	this colors must be white .
+agreement_determiner_noun-between_neighbors	zorro	agreement_determiner_noun	this color can be white .	this colors can be white .
+agreement_determiner_noun-between_neighbors	zorro	agreement_determiner_noun	that color must be white .	that colors must be white .
+agreement_determiner_noun-between_neighbors	zorro	agreement_determiner_noun	that color can be white .	that colors can be white .
+agreement_determiner_noun-between_neighbors	zorro	agreement_determiner_noun	these colors must be white .	these color must be white .
+agreement_determiner_noun-between_neighbors	zorro	agreement_determiner_noun	these colors can be white .	these color can be white .
+agreement_determiner_noun-between_neighbors	zorro	agreement_determiner_noun	those colors must be white .	those color must be white .
+agreement_determiner_noun-between_neighbors	zorro	agreement_determiner_noun	those colors can be white .	those color can be white .
+agreement_determiner_noun-between_neighbors	zorro	agreement_determiner_noun	this foot must be personal .	this feet must be personal .
+agreement_determiner_noun-between_neighbors	zorro	agreement_determiner_noun	this foot can be personal .	this feet can be personal .
+agreement_determiner_noun-between_neighbors	zorro	agreement_determiner_noun	that foot must be personal .	that feet must be personal .
+agreement_determiner_noun-between_neighbors	zorro	agreement_determiner_noun	that foot can be personal .	that feet can be personal .
+agreement_determiner_noun-between_neighbors	zorro	agreement_determiner_noun	these feet must be personal .	these foot must be personal .
+agreement_determiner_noun-between_neighbors	zorro	agreement_determiner_noun	these feet can be personal .	these foot can be personal .
+agreement_determiner_noun-between_neighbors	zorro	agreement_determiner_noun	those feet must be personal .	those foot must be personal .
+agreement_determiner_noun-between_neighbors	zorro	agreement_determiner_noun	those feet can be personal .	those foot can be personal .
+agreement_determiner_noun-between_neighbors	zorro	agreement_determiner_noun	this difference must be ready .	this differences must be ready .
+agreement_determiner_noun-between_neighbors	zorro	agreement_determiner_noun	this difference can be ready .	this differences can be ready .
+agreement_determiner_noun-between_neighbors	zorro	agreement_determiner_noun	that difference must be ready .	that differences must be ready .
+agreement_determiner_noun-between_neighbors	zorro	agreement_determiner_noun	that difference can be ready .	that differences can be ready .
+agreement_determiner_noun-between_neighbors	zorro	agreement_determiner_noun	these differences must be ready .	these difference must be ready .
+agreement_determiner_noun-between_neighbors	zorro	agreement_determiner_noun	these differences can be ready .	these difference can be ready .
+agreement_determiner_noun-between_neighbors	zorro	agreement_determiner_noun	those differences must be ready .	those difference must be ready .
+agreement_determiner_noun-between_neighbors	zorro	agreement_determiner_noun	those differences can be ready .	those difference can be ready .
+agreement_determiner_noun-between_neighbors	zorro	agreement_determiner_noun	this restaurant must be healthy .	this restaurants must be healthy .
+agreement_determiner_noun-between_neighbors	zorro	agreement_determiner_noun	this restaurant can be healthy .	this restaurants can be healthy .
+agreement_determiner_noun-between_neighbors	zorro	agreement_determiner_noun	that restaurant must be healthy .	that restaurants must be healthy .
+agreement_determiner_noun-between_neighbors	zorro	agreement_determiner_noun	that restaurant can be healthy .	that restaurants can be healthy .
+agreement_determiner_noun-between_neighbors	zorro	agreement_determiner_noun	these restaurants must be healthy .	these restaurant must be healthy .
+agreement_determiner_noun-between_neighbors	zorro	agreement_determiner_noun	these restaurants can be healthy .	these restaurant can be healthy .
+agreement_subject_verb-across_prepositional_phrase	zorro	agreement_subject_verb	the lie on the foot is flat .	the lies on the foot is flat .
+agreement_subject_verb-across_prepositional_phrase	zorro	agreement_subject_verb	the lie on the feet is flat .	the lies on the feet is flat .
+agreement_subject_verb-across_prepositional_phrase	zorro	agreement_subject_verb	the lie on the foot was flat .	the lies on the foot was flat .
+agreement_subject_verb-across_prepositional_phrase	zorro	agreement_subject_verb	the lie on the feet was flat .	the lies on the feet was flat .
+agreement_subject_verb-across_prepositional_phrase	zorro	agreement_subject_verb	the lies on the foot are flat .	the lie on the foot are flat .
+agreement_subject_verb-across_prepositional_phrase	zorro	agreement_subject_verb	the lies on the feet are flat .	the lie on the feet are flat .
+agreement_subject_verb-across_prepositional_phrase	zorro	agreement_subject_verb	the lies on the foot were flat .	the lie on the foot were flat .
+agreement_subject_verb-across_prepositional_phrase	zorro	agreement_subject_verb	the lies on the feet were flat .	the lie on the feet were flat .
+agreement_subject_verb-across_prepositional_phrase	zorro	agreement_subject_verb	the book by the type is simple .	the books by the type is simple .
+agreement_subject_verb-across_prepositional_phrase	zorro	agreement_subject_verb	the book by the types is simple .	the books by the types is simple .
+agreement_subject_verb-across_prepositional_phrase	zorro	agreement_subject_verb	the book by the type was simple .	the books by the type was simple .
+agreement_subject_verb-across_prepositional_phrase	zorro	agreement_subject_verb	the book by the types was simple .	the books by the types was simple .
+agreement_subject_verb-across_prepositional_phrase	zorro	agreement_subject_verb	the books by the type are simple .	the book by the type are simple .
+agreement_subject_verb-across_prepositional_phrase	zorro	agreement_subject_verb	the books by the types are simple .	the book by the types are simple .
+agreement_subject_verb-across_prepositional_phrase	zorro	agreement_subject_verb	the books by the type were simple .	the book by the type were simple .
+agreement_subject_verb-across_prepositional_phrase	zorro	agreement_subject_verb	the books by the types were simple .	the book by the types were simple .
+agreement_subject_verb-across_prepositional_phrase	zorro	agreement_subject_verb	the page on the whale is hard .	the pages on the whale is hard .
+agreement_subject_verb-across_prepositional_phrase	zorro	agreement_subject_verb	the page on the whales is hard .	the pages on the whales is hard .
+agreement_subject_verb-across_prepositional_phrase	zorro	agreement_subject_verb	the page on the whale was hard .	the pages on the whale was hard .
+agreement_subject_verb-across_prepositional_phrase	zorro	agreement_subject_verb	the page on the whales was hard .	the pages on the whales was hard .
+agreement_subject_verb-across_prepositional_phrase	zorro	agreement_subject_verb	the pages on the whale are hard .	the page on the whale are hard .
+agreement_subject_verb-across_prepositional_phrase	zorro	agreement_subject_verb	the pages on the whales are hard .	the page on the whales are hard .
+agreement_subject_verb-across_prepositional_phrase	zorro	agreement_subject_verb	the pages on the whale were hard .	the page on the whale were hard .
+agreement_subject_verb-across_prepositional_phrase	zorro	agreement_subject_verb	the pages on the whales were hard .	the page on the whales were hard .
+agreement_subject_verb-across_prepositional_phrase	zorro	agreement_subject_verb	the star by the minute is ordered .	the stars by the minute is ordered .
+agreement_subject_verb-across_prepositional_phrase	zorro	agreement_subject_verb	the star by the minutes is ordered .	the stars by the minutes is ordered .
+agreement_subject_verb-across_prepositional_phrase	zorro	agreement_subject_verb	the star by the minute was ordered .	the stars by the minute was ordered .
+agreement_subject_verb-across_prepositional_phrase	zorro	agreement_subject_verb	the star by the minutes was ordered .	the stars by the minutes was ordered .
+agreement_subject_verb-across_prepositional_phrase	zorro	agreement_subject_verb	the stars by the minute are ordered .	the star by the minute are ordered .
+agreement_subject_verb-across_prepositional_phrase	zorro	agreement_subject_verb	the stars by the minutes are ordered .	the star by the minutes are ordered .
+agreement_subject_verb-across_relative_clause	zorro	agreement_subject_verb	the book that i like is poor .	the books that i like is poor .
+agreement_subject_verb-across_relative_clause	zorro	agreement_subject_verb	the book that you like is poor .	the books that you like is poor .
+agreement_subject_verb-across_relative_clause	zorro	agreement_subject_verb	the book that we like is poor .	the books that we like is poor .
+agreement_subject_verb-across_relative_clause	zorro	agreement_subject_verb	the book that he likes is poor .	the books that he likes is poor .
+agreement_subject_verb-across_relative_clause	zorro	agreement_subject_verb	the book that she likes is poor .	the books that she likes is poor .
+agreement_subject_verb-across_relative_clause	zorro	agreement_subject_verb	the book that it likes is poor .	the books that it likes is poor .
+agreement_subject_verb-across_relative_clause	zorro	agreement_subject_verb	the book that was there is poor .	the books that was there is poor .
+agreement_subject_verb-across_relative_clause	zorro	agreement_subject_verb	the books that i like are poor .	the book that i like are poor .
+agreement_subject_verb-across_relative_clause	zorro	agreement_subject_verb	the books that you like are poor .	the book that you like are poor .
+agreement_subject_verb-across_relative_clause	zorro	agreement_subject_verb	the books that we like are poor .	the book that we like are poor .
+agreement_subject_verb-across_relative_clause	zorro	agreement_subject_verb	the books that he likes are poor .	the book that he likes are poor .
+agreement_subject_verb-across_relative_clause	zorro	agreement_subject_verb	the books that she likes are poor .	the book that she likes are poor .
+agreement_subject_verb-across_relative_clause	zorro	agreement_subject_verb	the books that it likes are poor .	the book that it likes are poor .
+agreement_subject_verb-across_relative_clause	zorro	agreement_subject_verb	the books that were there are poor .	the book that were there are poor .
+agreement_subject_verb-across_relative_clause	zorro	agreement_subject_verb	the books that i like were poor .	the book that i like were poor .
+agreement_subject_verb-across_relative_clause	zorro	agreement_subject_verb	the books that you like were poor .	the book that you like were poor .
+agreement_subject_verb-across_relative_clause	zorro	agreement_subject_verb	the books that we like were poor .	the book that we like were poor .
+agreement_subject_verb-across_relative_clause	zorro	agreement_subject_verb	the books that he likes were poor .	the book that he likes were poor .
+agreement_subject_verb-across_relative_clause	zorro	agreement_subject_verb	the books that she likes were poor .	the book that she likes were poor .
+agreement_subject_verb-across_relative_clause	zorro	agreement_subject_verb	the books that it likes were poor .	the book that it likes were poor .
+agreement_subject_verb-across_relative_clause	zorro	agreement_subject_verb	the books that were there were poor .	the book that were there were poor .
+agreement_subject_verb-across_relative_clause	zorro	agreement_subject_verb	the book that i like was poor .	the books that i like was poor .
+agreement_subject_verb-across_relative_clause	zorro	agreement_subject_verb	the book that you like was poor .	the books that you like was poor .
+agreement_subject_verb-across_relative_clause	zorro	agreement_subject_verb	the book that we like was poor .	the books that we like was poor .
+agreement_subject_verb-across_relative_clause	zorro	agreement_subject_verb	the book that he likes was poor .	the books that he likes was poor .
+agreement_subject_verb-across_relative_clause	zorro	agreement_subject_verb	the book that she likes was poor .	the books that she likes was poor .
+agreement_subject_verb-across_relative_clause	zorro	agreement_subject_verb	the book that it likes was poor .	the books that it likes was poor .
+agreement_subject_verb-across_relative_clause	zorro	agreement_subject_verb	the book that was there was poor .	the books that was there was poor .
+agreement_subject_verb-across_relative_clause	zorro	agreement_subject_verb	the girl that i like is bad .	the girls that i like is bad .
+agreement_subject_verb-across_relative_clause	zorro	agreement_subject_verb	the girl that you like is bad .	the girls that you like is bad .
+agreement_subject_verb-in_question_with_aux	zorro	agreement_subject_verb	where does the horse go ?	where does the horses go ?
+agreement_subject_verb-in_question_with_aux	zorro	agreement_subject_verb	what does the horse do ?	what does the horses do ?
+agreement_subject_verb-in_question_with_aux	zorro	agreement_subject_verb	how does the horse fit in here ?	how does the horses fit in here ?
+agreement_subject_verb-in_question_with_aux	zorro	agreement_subject_verb	how does the horse become expected ?	how does the horses become expected ?
+agreement_subject_verb-in_question_with_aux	zorro	agreement_subject_verb	when does the horse stop working ?	when does the horses stop working ?
+agreement_subject_verb-in_question_with_aux	zorro	agreement_subject_verb	when does the horse start ?	when does the horses start ?
+agreement_subject_verb-in_question_with_aux	zorro	agreement_subject_verb	where do the horses go ?	where do the horse go ?
+agreement_subject_verb-in_question_with_aux	zorro	agreement_subject_verb	what do the horses do ?	what do the horse do ?
+agreement_subject_verb-in_question_with_aux	zorro	agreement_subject_verb	how do the horses fit in here ?	how do the horse fit in here ?
+agreement_subject_verb-in_question_with_aux	zorro	agreement_subject_verb	how do the horses become expected ?	how do the horse become expected ?
+agreement_subject_verb-in_question_with_aux	zorro	agreement_subject_verb	when do the horses stop working ?	when do the horse stop working ?
+agreement_subject_verb-in_question_with_aux	zorro	agreement_subject_verb	when do the horses start ?	when do the horse start ?
+agreement_subject_verb-in_question_with_aux	zorro	agreement_subject_verb	how does the horse become full ?	how does the horses become full ?
+agreement_subject_verb-in_question_with_aux	zorro	agreement_subject_verb	how do the horses become full ?	how do the horse become full ?
+agreement_subject_verb-in_question_with_aux	zorro	agreement_subject_verb	where does the bear go ?	where does the bears go ?
+agreement_subject_verb-in_question_with_aux	zorro	agreement_subject_verb	what does the bear do ?	what does the bears do ?
+agreement_subject_verb-in_question_with_aux	zorro	agreement_subject_verb	how does the bear fit in here ?	how does the bears fit in here ?
+agreement_subject_verb-in_question_with_aux	zorro	agreement_subject_verb	how does the bear become english ?	how does the bears become english ?
+agreement_subject_verb-in_question_with_aux	zorro	agreement_subject_verb	when does the bear stop working ?	when does the bears stop working ?
+agreement_subject_verb-in_question_with_aux	zorro	agreement_subject_verb	when does the bear start ?	when does the bears start ?
+agreement_subject_verb-in_question_with_aux	zorro	agreement_subject_verb	where do the bears go ?	where do the bear go ?
+agreement_subject_verb-in_question_with_aux	zorro	agreement_subject_verb	what do the bears do ?	what do the bear do ?
+agreement_subject_verb-in_question_with_aux	zorro	agreement_subject_verb	how do the bears fit in here ?	how do the bear fit in here ?
+agreement_subject_verb-in_question_with_aux	zorro	agreement_subject_verb	how do the bears become english ?	how do the bear become english ?
+agreement_subject_verb-in_question_with_aux	zorro	agreement_subject_verb	when do the bears stop working ?	when do the bear stop working ?
+agreement_subject_verb-in_question_with_aux	zorro	agreement_subject_verb	when do the bears start ?	when do the bear start ?
+agreement_subject_verb-in_question_with_aux	zorro	agreement_subject_verb	where does the call go ?	where does the calls go ?
+agreement_subject_verb-in_question_with_aux	zorro	agreement_subject_verb	what does the call do ?	what does the calls do ?
+agreement_subject_verb-in_question_with_aux	zorro	agreement_subject_verb	how does the call fit in here ?	how does the calls fit in here ?
+agreement_subject_verb-in_question_with_aux	zorro	agreement_subject_verb	how does the call become silly ?	how does the calls become silly ?
+agreement_subject_verb-in_simple_question	zorro	agreement_subject_verb	where is the way ?	where is the ways ?
+agreement_subject_verb-in_simple_question	zorro	agreement_subject_verb	what is the way ?	what is the ways ?
+agreement_subject_verb-in_simple_question	zorro	agreement_subject_verb	what color is the way ?	what color is the ways ?
+agreement_subject_verb-in_simple_question	zorro	agreement_subject_verb	is the way not quick ?	is the ways not quick ?
+agreement_subject_verb-in_simple_question	zorro	agreement_subject_verb	is the way where it should be ?	is the ways where it should be ?
+agreement_subject_verb-in_simple_question	zorro	agreement_subject_verb	is the way something you like ?	is the ways something you like ?
+agreement_subject_verb-in_simple_question	zorro	agreement_subject_verb	is the way a good idea ?	is the ways a good idea ?
+agreement_subject_verb-in_simple_question	zorro	agreement_subject_verb	where was the way ?	where was the ways ?
+agreement_subject_verb-in_simple_question	zorro	agreement_subject_verb	what was the way ?	what was the ways ?
+agreement_subject_verb-in_simple_question	zorro	agreement_subject_verb	what color was the way ?	what color was the ways ?
+agreement_subject_verb-in_simple_question	zorro	agreement_subject_verb	was the way not quick ?	was the ways not quick ?
+agreement_subject_verb-in_simple_question	zorro	agreement_subject_verb	was the way where it should be ?	was the ways where it should be ?
+agreement_subject_verb-in_simple_question	zorro	agreement_subject_verb	was the way something you like ?	was the ways something you like ?
+agreement_subject_verb-in_simple_question	zorro	agreement_subject_verb	was the way a good idea ?	was the ways a good idea ?
+agreement_subject_verb-in_simple_question	zorro	agreement_subject_verb	where are the ways ?	where are the way ?
+agreement_subject_verb-in_simple_question	zorro	agreement_subject_verb	what are the ways ?	what are the way ?
+agreement_subject_verb-in_simple_question	zorro	agreement_subject_verb	what color are the ways ?	what color are the way ?
+agreement_subject_verb-in_simple_question	zorro	agreement_subject_verb	are the ways not quick ?	are the way not quick ?
+agreement_subject_verb-in_simple_question	zorro	agreement_subject_verb	are the ways where they should be ?	are the way where they should be ?
+agreement_subject_verb-in_simple_question	zorro	agreement_subject_verb	are the ways something you like ?	are the way something you like ?
+agreement_subject_verb-in_simple_question	zorro	agreement_subject_verb	are the ways a good idea ?	are the way a good idea ?
+agreement_subject_verb-in_simple_question	zorro	agreement_subject_verb	where were the ways ?	where were the way ?
+agreement_subject_verb-in_simple_question	zorro	agreement_subject_verb	what were the ways ?	what were the way ?
+agreement_subject_verb-in_simple_question	zorro	agreement_subject_verb	what color were the ways ?	what color were the way ?
+agreement_subject_verb-in_simple_question	zorro	agreement_subject_verb	were the ways not quick ?	were the way not quick ?
+agreement_subject_verb-in_simple_question	zorro	agreement_subject_verb	were the ways where they should be ?	were the way where they should be ?
+agreement_subject_verb-in_simple_question	zorro	agreement_subject_verb	were the ways something you like ?	were the way something you like ?
+agreement_subject_verb-in_simple_question	zorro	agreement_subject_verb	were the ways a good idea ?	were the way a good idea ?
+agreement_subject_verb-in_simple_question	zorro	agreement_subject_verb	where is the call ?	where is the calls ?
+agreement_subject_verb-in_simple_question	zorro	agreement_subject_verb	what is the call ?	what is the calls ?
+anaphor_agreement-pronoun_gender	zorro	anaphor_agreement	will Mark want himself ?	will Mark want herself ?
+anaphor_agreement-pronoun_gender	zorro	anaphor_agreement	will a woman want herself ?	will a woman want himself ?
+anaphor_agreement-pronoun_gender	zorro	anaphor_agreement	Mark will not want himself .	Mark will not want herself .
+anaphor_agreement-pronoun_gender	zorro	anaphor_agreement	a woman will not want herself .	a woman will not want himself .
+anaphor_agreement-pronoun_gender	zorro	anaphor_agreement	should Alexander make himself the scale ?	should Alexander make herself the scale ?
+anaphor_agreement-pronoun_gender	zorro	anaphor_agreement	should a woman make herself the scale ?	should a woman make himself the scale ?
+anaphor_agreement-pronoun_gender	zorro	anaphor_agreement	Alexander should make himself the scale .	Alexander should make herself the scale .
+anaphor_agreement-pronoun_gender	zorro	anaphor_agreement	a woman should make herself the scale .	a woman should make himself the scale .
+anaphor_agreement-pronoun_gender	zorro	anaphor_agreement	must that man tell himself about the guess ?	must that man tell herself about the guess ?
+anaphor_agreement-pronoun_gender	zorro	anaphor_agreement	must a woman tell herself about the guess ?	must a woman tell himself about the guess ?
+anaphor_agreement-pronoun_gender	zorro	anaphor_agreement	that man did not tell himself about the guess .	that man did not tell herself about the guess .
+anaphor_agreement-pronoun_gender	zorro	anaphor_agreement	a woman did not tell herself about the guess .	a woman did not tell himself about the guess .
+anaphor_agreement-pronoun_gender	zorro	anaphor_agreement	must Roger work with himself on the stand ?	must Roger work with herself on the stand ?
+anaphor_agreement-pronoun_gender	zorro	anaphor_agreement	must she work with herself on the stand ?	must she work with himself on the stand ?
+anaphor_agreement-pronoun_gender	zorro	anaphor_agreement	Roger must work with himself on the stand .	Roger must work with herself on the stand .
+anaphor_agreement-pronoun_gender	zorro	anaphor_agreement	she must work with herself on the stand .	she must work with himself on the stand .
+anaphor_agreement-pronoun_gender	zorro	anaphor_agreement	will that man tell himself about the bear ?	will that man tell herself about the bear ?
+anaphor_agreement-pronoun_gender	zorro	anaphor_agreement	will that woman tell herself about the bear ?	will that woman tell himself about the bear ?
+anaphor_agreement-pronoun_gender	zorro	anaphor_agreement	that man will not tell himself about the bear .	that man will not tell herself about the bear .
+anaphor_agreement-pronoun_gender	zorro	anaphor_agreement	that woman will not tell herself about the bear .	that woman will not tell himself about the bear .
+anaphor_agreement-pronoun_gender	zorro	anaphor_agreement	can Michael be like himself ?	can Michael be like herself ?
+anaphor_agreement-pronoun_gender	zorro	anaphor_agreement	can that woman be like herself ?	can that woman be like himself ?
+anaphor_agreement-pronoun_gender	zorro	anaphor_agreement	Michael can be like himself .	Michael can be like herself .
+anaphor_agreement-pronoun_gender	zorro	anaphor_agreement	that woman can be like herself .	that woman can be like himself .
+anaphor_agreement-pronoun_gender	zorro	anaphor_agreement	should Philip tell himself about the rock ?	should Philip tell herself about the rock ?
+anaphor_agreement-pronoun_gender	zorro	anaphor_agreement	should Sarah tell herself about the rock ?	should Sarah tell himself about the rock ?
+anaphor_agreement-pronoun_gender	zorro	anaphor_agreement	Philip should not tell himself about the rock .	Philip should not tell herself about the rock .
+anaphor_agreement-pronoun_gender	zorro	anaphor_agreement	Sarah should not tell herself about the rock .	Sarah should not tell himself about the rock .
+anaphor_agreement-pronoun_gender	zorro	anaphor_agreement	can Michael run to himself ?	can Michael run to herself ?
+anaphor_agreement-pronoun_gender	zorro	anaphor_agreement	can Sarah run to herself ?	can Sarah run to himself ?
+argument_structure-dropped_argument	zorro	argument_structure	give me the poor boat .	the poor boat gives me .
+argument_structure-dropped_argument	zorro	argument_structure	ask me about the boat .	the boat asked me about .
+argument_structure-dropped_argument	zorro	argument_structure	the boat looks at me .	the boat looks at some .
+argument_structure-dropped_argument	zorro	argument_structure	give us the purple sister .	the purple sister gives us .
+argument_structure-dropped_argument	zorro	argument_structure	ask us about the sister .	the sister asked us about .
+argument_structure-dropped_argument	zorro	argument_structure	a sister saw him there .	a sister saw him by .
+argument_structure-dropped_argument	zorro	argument_structure	give her the fixed boat .	the fixed boat gives her .
+argument_structure-dropped_argument	zorro	argument_structure	tell her about the boat .	the boat tells her about .
+argument_structure-dropped_argument	zorro	argument_structure	the boat saw me there .	the boat saw me by .
+argument_structure-dropped_argument	zorro	argument_structure	give me the top duke .	the top duke gives me .
+argument_structure-dropped_argument	zorro	argument_structure	ask me about the duke .	the duke asked me about .
+argument_structure-dropped_argument	zorro	argument_structure	one duke saw me there .	one duke saw me by .
+argument_structure-dropped_argument	zorro	argument_structure	give us the polar dinosaur .	the polar dinosaur gives us .
+argument_structure-dropped_argument	zorro	argument_structure	tell us about the dinosaur .	the dinosaur tells us about .
+argument_structure-dropped_argument	zorro	argument_structure	some dinosaur moves fast .	some dinosaur moves to .
+argument_structure-dropped_argument	zorro	argument_structure	give her the polar doctor .	the polar doctor gives her .
+argument_structure-dropped_argument	zorro	argument_structure	ask her about the doctor .	the doctor asked her about .
+argument_structure-dropped_argument	zorro	argument_structure	a doctor changed her .	a doctor changed one .
+argument_structure-dropped_argument	zorro	argument_structure	give me the fixed wolf .	the fixed wolf gives me .
+argument_structure-dropped_argument	zorro	argument_structure	tell me about the wolf .	the wolf tells me about .
+argument_structure-dropped_argument	zorro	argument_structure	the wolf moves fast .	the wolf moves to .
+argument_structure-dropped_argument	zorro	argument_structure	give her the last duke .	the last duke gives her .
+argument_structure-dropped_argument	zorro	argument_structure	tell her about the duke .	the duke tells her about .
+argument_structure-dropped_argument	zorro	argument_structure	a duke created him .	a duke created a .
+argument_structure-dropped_argument	zorro	argument_structure	give her the little doctor .	the little doctor gives her .
+argument_structure-dropped_argument	zorro	argument_structure	a doctor wanted him .	a doctor wanted to .
+argument_structure-dropped_argument	zorro	argument_structure	give me the good dinosaur .	the good dinosaur gives me .
+argument_structure-dropped_argument	zorro	argument_structure	ask me about the dinosaur .	the dinosaur asked me about .
+argument_structure-dropped_argument	zorro	argument_structure	one dinosaur saw them there .	one dinosaur saw them by .
+argument_structure-dropped_argument	zorro	argument_structure	give them the wrong slave .	the wrong slave gives them .
+argument_structure-swapped_arguments	zorro	argument_structure	he made the slave her label .	the slave made her label he .
+argument_structure-swapped_arguments	zorro	argument_structure	they made the wolf her ball .	the wolf made her ball they .
+argument_structure-swapped_arguments	zorro	argument_structure	i built the boat a drop .	the boat built a drop i .
+argument_structure-swapped_arguments	zorro	argument_structure	we gave the pig one counter .	the pig gave one counter we .
+argument_structure-swapped_arguments	zorro	argument_structure	i brought the doctor that bet .	the doctor brought that bet i .
+argument_structure-swapped_arguments	zorro	argument_structure	she showed the slave one picture .	the slave showed one picture she .
+argument_structure-swapped_arguments	zorro	argument_structure	i made the slave one bird .	the slave made one bird i .
+argument_structure-swapped_arguments	zorro	argument_structure	we gave the duke a boom .	the duke gave a boom we .
+argument_structure-swapped_arguments	zorro	argument_structure	i made the doctor that apple .	the doctor made that apple i .
+argument_structure-swapped_arguments	zorro	argument_structure	he made the slave my baby .	the slave made my baby he .
+argument_structure-swapped_arguments	zorro	argument_structure	she gave the slave the movie .	the slave gave the movie she .
+argument_structure-swapped_arguments	zorro	argument_structure	she brought the doctor this picture .	the doctor brought this picture she .
+argument_structure-swapped_arguments	zorro	argument_structure	she showed the boat my guess .	the boat showed my guess she .
+argument_structure-swapped_arguments	zorro	argument_structure	they made the wolf his picture .	the wolf made his picture they .
+argument_structure-swapped_arguments	zorro	argument_structure	he gave the sister this growth .	the sister gave this growth he .
+argument_structure-swapped_arguments	zorro	argument_structure	she showed the slave a guess .	the slave showed a guess she .
+argument_structure-swapped_arguments	zorro	argument_structure	they showed the doctor one access .	the doctor showed one access they .
+argument_structure-swapped_arguments	zorro	argument_structure	we made the duke that bear .	the duke made that bear we .
+argument_structure-swapped_arguments	zorro	argument_structure	we brought the doctor the fuel .	the doctor brought the fuel we .
+argument_structure-swapped_arguments	zorro	argument_structure	she gave the dinosaur my ball .	the dinosaur gave my ball she .
+argument_structure-swapped_arguments	zorro	argument_structure	i built the dinosaur the mind .	the dinosaur built the mind i .
+argument_structure-swapped_arguments	zorro	argument_structure	they built the wolf his dinner .	the wolf built his dinner they .
+argument_structure-swapped_arguments	zorro	argument_structure	he built the duke the rock .	the duke built the rock he .
+argument_structure-swapped_arguments	zorro	argument_structure	she made the dinosaur this movie .	the dinosaur made this movie she .
+argument_structure-swapped_arguments	zorro	argument_structure	she brought the dinosaur that growth .	the dinosaur brought that growth she .
+argument_structure-swapped_arguments	zorro	argument_structure	she gave the sister one plan .	the sister gave one plan she .
+argument_structure-swapped_arguments	zorro	argument_structure	she gave the pig his stadium .	the pig gave his stadium she .
+argument_structure-swapped_arguments	zorro	argument_structure	we gave the dinosaur that book .	the dinosaur gave that book we .
+argument_structure-swapped_arguments	zorro	argument_structure	she showed the wolf the picture .	the wolf showed the picture she .
+argument_structure-swapped_arguments	zorro	argument_structure	i built the wolf his memory .	the wolf built his memory i .
+argument_structure-transitive	zorro	argument_structure	Philip thinks .	Philip affected .
+argument_structure-transitive	zorro	argument_structure	did Philip read ?	did Philip keep ?
+argument_structure-transitive	zorro	argument_structure	Richard waves .	Richard let .
+argument_structure-transitive	zorro	argument_structure	would Richard run ?	would Richard record ?
+argument_structure-transitive	zorro	argument_structure	does her slave know ?	does her slave use ?
+argument_structure-transitive	zorro	argument_structure	can Richard change ?	can Richard force ?
+argument_structure-transitive	zorro	argument_structure	could Philip run ?	could Philip be ?
+argument_structure-transitive	zorro	argument_structure	her sister moved .	her sister let .
+argument_structure-transitive	zorro	argument_structure	did her sister eat ?	did her sister say ?
+argument_structure-transitive	zorro	argument_structure	this sister lived .	this sister saw .
+argument_structure-transitive	zorro	argument_structure	will this sister study ?	will this sister force ?
+argument_structure-transitive	zorro	argument_structure	Laura accepted .	Laura helped .
+argument_structure-transitive	zorro	argument_structure	could Laura change ?	could Laura have ?
+argument_structure-transitive	zorro	argument_structure	did they turn ?	did they force ?
+argument_structure-transitive	zorro	argument_structure	William runs .	William played .
+argument_structure-transitive	zorro	argument_structure	can William read ?	can William give ?
+argument_structure-transitive	zorro	argument_structure	Alexander lies .	Alexander saw .
+argument_structure-transitive	zorro	argument_structure	can Alexander eat ?	can Alexander become ?
+argument_structure-transitive	zorro	argument_structure	could Philip eat ?	could Philip put ?
+argument_structure-transitive	zorro	argument_structure	did we think ?	did we take ?
+argument_structure-transitive	zorro	argument_structure	her dinosaur improved .	her dinosaur hurt .
+argument_structure-transitive	zorro	argument_structure	did her dinosaur live ?	did her dinosaur tell ?
+argument_structure-transitive	zorro	argument_structure	would his dinosaur play ?	would his dinosaur be ?
+argument_structure-transitive	zorro	argument_structure	can we play ?	can we support ?
+argument_structure-transitive	zorro	argument_structure	can Richard live ?	can Richard show ?
+argument_structure-transitive	zorro	argument_structure	some doctor falls .	some doctor entered .
+argument_structure-transitive	zorro	argument_structure	does some doctor turn ?	does some doctor become ?
+argument_structure-transitive	zorro	argument_structure	does his wolf eat ?	does his wolf make ?
+argument_structure-transitive	zorro	argument_structure	it worked .	it stopped .
+argument_structure-transitive	zorro	argument_structure	does it think ?	does it be ?
+binding-principle_a	zorro	binding	Ben thinks about himself calling this fuel .	Ben thinks about himself called this fuel .
+binding-principle_a	zorro	binding	Anne thinks about herself calling this fuel .	Anne thinks about herself called this fuel .
+binding-principle_a	zorro	binding	Ben thinks about himself getting this fuel .	Ben thinks about himself gets this fuel .
+binding-principle_a	zorro	binding	Anne thinks about herself getting this fuel .	Anne thinks about herself gets this fuel .
+binding-principle_a	zorro	binding	Roger thinks about himself trying this stand .	Roger thinks about himself tried this stand .
+binding-principle_a	zorro	binding	Laura thinks about herself trying this stand .	Laura thinks about herself tried this stand .
+binding-principle_a	zorro	binding	Roger thinks about himself making this stand .	Roger thinks about himself makes this stand .
+binding-principle_a	zorro	binding	Laura thinks about herself making this stand .	Laura thinks about herself makes this stand .
+binding-principle_a	zorro	binding	Bill must not think about himself putting away some color .	Bill must not think about himself put away some color .
+binding-principle_a	zorro	binding	Sarah must not think about herself putting away some color .	Sarah must not think about herself put away some color .
+binding-principle_a	zorro	binding	Bill must not think about himself planning some color .	Bill must not think about himself plans some color .
+binding-principle_a	zorro	binding	Sarah must not think about herself planning some color .	Sarah must not think about herself plans some color .
+binding-principle_a	zorro	binding	Bill did not think about himself moving some back .	Bill did not think about himself moved some back .
+binding-principle_a	zorro	binding	Sarah did not think about herself moving some back .	Sarah did not think about herself moved some back .
+binding-principle_a	zorro	binding	Bill did not think about himself planning some back .	Bill did not think about himself plans some back .
+binding-principle_a	zorro	binding	Sarah did not think about herself planning some back .	Sarah did not think about herself plans some back .
+binding-principle_a	zorro	binding	Henry must think about himself putting away a guess .	Henry must think about himself put away a guess .
+binding-principle_a	zorro	binding	Sarah must think about herself putting away a guess .	Sarah must think about herself put away a guess .
+binding-principle_a	zorro	binding	Henry must think about himself seeing a guess .	Henry must think about himself sees a guess .
+binding-principle_a	zorro	binding	Sarah must think about herself seeing a guess .	Sarah must think about herself sees a guess .
+binding-principle_a	zorro	binding	William thinks about himself calling that ball .	William thinks about himself called that ball .
+binding-principle_a	zorro	binding	Sarah thinks about herself calling that ball .	Sarah thinks about herself called that ball .
+binding-principle_a	zorro	binding	William thinks about himself running to that ball .	William thinks about himself runs to that ball .
+binding-principle_a	zorro	binding	Sarah thinks about herself running to that ball .	Sarah thinks about herself runs to that ball .
+binding-principle_a	zorro	binding	Mark did not think about himself covering this whale .	Mark did not think about himself covered this whale .
+binding-principle_a	zorro	binding	Sarah did not think about herself covering this whale .	Sarah did not think about herself covered this whale .
+binding-principle_a	zorro	binding	Mark did not think about himself calling this whale .	Mark did not think about himself calls this whale .
+binding-principle_a	zorro	binding	Sarah did not think about herself calling this whale .	Sarah did not think about herself calls this whale .
+binding-principle_a	zorro	binding	Obama must think about himself putting away some plan .	Obama must think about himself put away some plan .
+binding-principle_a	zorro	binding	Laura must think about herself putting away some plan .	Laura must think about herself put away some plan .
+case-subjective_pronoun	zorro	case	i brought the wolf my hill .	the wolf brought i my hill .
+case-subjective_pronoun	zorro	case	i gave the wolf her night .	the wolf gave i her night .
+case-subjective_pronoun	zorro	case	we showed the dinosaur this person .	the dinosaur showed we this person .
+case-subjective_pronoun	zorro	case	they built the doctor her dance .	the doctor built they her dance .
+case-subjective_pronoun	zorro	case	i brought the dinosaur one memory .	the dinosaur brought i one memory .
+case-subjective_pronoun	zorro	case	they gave the pig his suit .	the pig gave they his suit .
+case-subjective_pronoun	zorro	case	they brought the slave this label .	the slave brought they this label .
+case-subjective_pronoun	zorro	case	i gave the doctor my camera .	the doctor gave i my camera .
+case-subjective_pronoun	zorro	case	we brought the slave the mind .	the slave brought we the mind .
+case-subjective_pronoun	zorro	case	we showed the boat his game .	the boat showed we his game .
+case-subjective_pronoun	zorro	case	we gave the slave one memory .	the slave gave we one memory .
+case-subjective_pronoun	zorro	case	we made the pig the sky .	the pig made we the sky .
+case-subjective_pronoun	zorro	case	i built the pig my book .	the pig built i my book .
+case-subjective_pronoun	zorro	case	we brought the doctor that fuel .	the doctor brought we that fuel .
+case-subjective_pronoun	zorro	case	we built the sister the bet .	the sister built we the bet .
+case-subjective_pronoun	zorro	case	she built the sister her hill .	the sister built she her hill .
+case-subjective_pronoun	zorro	case	i showed the sister this book .	the sister showed i this book .
+case-subjective_pronoun	zorro	case	they built the boat her lady .	the boat built they her lady .
+case-subjective_pronoun	zorro	case	i gave the duke her person .	the duke gave i her person .
+case-subjective_pronoun	zorro	case	i brought the duke a game .	the duke brought i a game .
+case-subjective_pronoun	zorro	case	we brought the dinosaur his truck .	the dinosaur brought we his truck .
+case-subjective_pronoun	zorro	case	we showed the dinosaur a bear .	the dinosaur showed we a bear .
+case-subjective_pronoun	zorro	case	we brought the wolf his scale .	the wolf brought we his scale .
+case-subjective_pronoun	zorro	case	i made the doctor this counter .	the doctor made i this counter .
+case-subjective_pronoun	zorro	case	we made the sister her cast .	the sister made we her cast .
+case-subjective_pronoun	zorro	case	they brought the sister a scale .	the sister brought they a scale .
+case-subjective_pronoun	zorro	case	we brought the pig his back .	the pig brought we his back .
+case-subjective_pronoun	zorro	case	she made the pig one bank .	the pig made she one bank .
+case-subjective_pronoun	zorro	case	she showed the boat a media .	the boat showed she a media .
+case-subjective_pronoun	zorro	case	they gave the wolf this camera .	the wolf gave they this camera .
+ellipsis-n_bar	zorro	ellipsis	Mark fixed one worn canal and Roger fixed more .	Mark fixed one canal and Roger fixed more worn .
+ellipsis-n_bar	zorro	ellipsis	the slave fixed one worn canal and Roger fixed more .	the slave fixed one canal and Roger fixed more worn .
+ellipsis-n_bar	zorro	ellipsis	Philip managed one personal duck and Laura managed two .	Philip managed one duck and Laura managed two personal .
+ellipsis-n_bar	zorro	ellipsis	some wolf managed one personal duck and Laura managed two .	some wolf managed one duck and Laura managed two personal .
+ellipsis-n_bar	zorro	ellipsis	Roger married one filled change and Mark married two .	Roger married one change and Mark married two filled .
+ellipsis-n_bar	zorro	ellipsis	that wolf married one filled change and Mark married two .	that wolf married one change and Mark married two filled .
+ellipsis-n_bar	zorro	ellipsis	Laura started one ready floor and Laura started several .	Laura started one floor and Laura started several ready .
+ellipsis-n_bar	zorro	ellipsis	this boat started one ready floor and Laura started several .	this boat started one floor and Laura started several ready .
+ellipsis-n_bar	zorro	ellipsis	Philip visited one positive god and Sarah visited several .	Philip visited one god and Sarah visited several positive .
+ellipsis-n_bar	zorro	ellipsis	his slave visited one positive god and Sarah visited several .	his slave visited one god and Sarah visited several positive .
+ellipsis-n_bar	zorro	ellipsis	Michael visited one little whale and Roger visited three .	Michael visited one whale and Roger visited three little .
+ellipsis-n_bar	zorro	ellipsis	a sister visited one little whale and Roger visited three .	a sister visited one whale and Roger visited three little .
+ellipsis-n_bar	zorro	ellipsis	William moved one poor circle and Alexander moved a lot more .	William moved one circle and Alexander moved a lot more poor .
+ellipsis-n_bar	zorro	ellipsis	her duke moved one poor circle and Alexander moved a lot more .	her duke moved one circle and Alexander moved a lot more poor .
+ellipsis-n_bar	zorro	ellipsis	Mark entered one hard dog and Philip entered a lot more .	Mark entered one dog and Philip entered a lot more hard .
+ellipsis-n_bar	zorro	ellipsis	this dinosaur entered one hard dog and Philip entered a lot more .	this dinosaur entered one dog and Philip entered a lot more hard .
+ellipsis-n_bar	zorro	ellipsis	Alexander moved one nice pain and Michael moved a lot more .	Alexander moved one pain and Michael moved a lot more nice .
+ellipsis-n_bar	zorro	ellipsis	a boat moved one nice pain and Michael moved a lot more .	a boat moved one pain and Michael moved a lot more nice .
+ellipsis-n_bar	zorro	ellipsis	Richard entered one flat circle and Mark entered several .	Richard entered one circle and Mark entered several flat .
+ellipsis-n_bar	zorro	ellipsis	your wolf entered one flat circle and Mark entered several .	your wolf entered one circle and Mark entered several flat .
+ellipsis-n_bar	zorro	ellipsis	Michael carried one yellow dog and Richard carried three .	Michael carried one dog and Richard carried three yellow .
+ellipsis-n_bar	zorro	ellipsis	a duke carried one yellow dog and Richard carried three .	a duke carried one dog and Richard carried three yellow .
+ellipsis-n_bar	zorro	ellipsis	Sarah visited one nice telephone and Richard visited more .	Sarah visited one telephone and Richard visited more nice .
+ellipsis-n_bar	zorro	ellipsis	that wolf visited one nice telephone and Richard visited more .	that wolf visited one telephone and Richard visited more nice .
+ellipsis-n_bar	zorro	ellipsis	Mark moved one winning bible and Philip moved a lot more .	Mark moved one bible and Philip moved a lot more winning .
+ellipsis-n_bar	zorro	ellipsis	that dinosaur moved one winning bible and Philip moved a lot more .	that dinosaur moved one bible and Philip moved a lot more winning .
+ellipsis-n_bar	zorro	ellipsis	Richard moved one ordered dog and Mark moved several .	Richard moved one dog and Mark moved several ordered .
+ellipsis-n_bar	zorro	ellipsis	the pig moved one ordered dog and Mark moved several .	the pig moved one dog and Mark moved several ordered .
+ellipsis-n_bar	zorro	ellipsis	Richard entered one last college and Sarah entered a lot more .	Richard entered one college and Sarah entered a lot more last .
+ellipsis-n_bar	zorro	ellipsis	this doctor entered one last college and Sarah entered a lot more .	this doctor entered one college and Sarah entered a lot more last .
+filler-gap-wh_question_object	zorro	filler	Laura married the dinner that the wolf could close .	Laura married what the dinner could close the wolf .
+filler-gap-wh_question_object	zorro	filler	Laura married the dinner that the wolf got .	Laura married what the dinner got the wolf .
+filler-gap-wh_question_object	zorro	filler	Sarah got the plan that the dinosaur could study .	Sarah got what the plan could study the dinosaur .
+filler-gap-wh_question_object	zorro	filler	Sarah got the plan that the dinosaur ended .	Sarah got what the plan ended the dinosaur .
+filler-gap-wh_question_object	zorro	filler	Donald marked the sky that the pig could find .	Donald marked what the sky could find the pig .
+filler-gap-wh_question_object	zorro	filler	Donald marked the sky that the pig reached .	Donald marked what the sky reached the pig .
+filler-gap-wh_question_object	zorro	filler	Richard ended the dance that the duke could close .	Richard ended what the dance could close the duke .
+filler-gap-wh_question_object	zorro	filler	Richard ended the dance that the duke destroyed .	Richard ended what the dance destroyed the duke .
+filler-gap-wh_question_object	zorro	filler	Alexander cut the suit that the sister could make .	Alexander cut what the suit could make the sister .
+filler-gap-wh_question_object	zorro	filler	Alexander cut the suit that the sister knew .	Alexander cut what the suit knew the sister .
+filler-gap-wh_question_object	zorro	filler	Roger ended the baby that the wolf could become .	Roger ended what the baby could become the wolf .
+filler-gap-wh_question_object	zorro	filler	Roger ended the baby that the wolf married .	Roger ended what the baby married the wolf .
+filler-gap-wh_question_object	zorro	filler	Alexander claimed the sky that the doctor could close .	Alexander claimed what the sky could close the doctor .
+filler-gap-wh_question_object	zorro	filler	Alexander claimed the sky that the doctor married .	Alexander claimed what the sky married the doctor .
+filler-gap-wh_question_object	zorro	filler	Alexander ended the clock that the dinosaur could use .	Alexander ended what the clock could use the dinosaur .
+filler-gap-wh_question_object	zorro	filler	Alexander ended the clock that the dinosaur got .	Alexander ended what the clock got the dinosaur .
+filler-gap-wh_question_object	zorro	filler	Sarah knew the general that the doctor could record .	Sarah knew what the general could record the doctor .
+filler-gap-wh_question_object	zorro	filler	Sarah knew the general that the doctor knew .	Sarah knew what the general knew the doctor .
+filler-gap-wh_question_object	zorro	filler	Sarah destroyed the book that the dinosaur could close .	Sarah destroyed what the book could close the dinosaur .
+filler-gap-wh_question_object	zorro	filler	Sarah destroyed the book that the dinosaur related .	Sarah destroyed what the book related the dinosaur .
+filler-gap-wh_question_object	zorro	filler	Richard related the stand that the pig could use .	Richard related what the stand could use the pig .
+filler-gap-wh_question_object	zorro	filler	Richard related the stand that the pig reached .	Richard related what the stand reached the pig .
+filler-gap-wh_question_object	zorro	filler	Richard related the movie that the pig could change .	Richard related what the movie could change the pig .
+filler-gap-wh_question_object	zorro	filler	Richard related the movie that the pig knew .	Richard related what the movie knew the pig .
+filler-gap-wh_question_object	zorro	filler	Donald marked the fuel that the duke could become .	Donald marked what the fuel could become the duke .
+filler-gap-wh_question_object	zorro	filler	Donald marked the fuel that the duke reached .	Donald marked what the fuel reached the duke .
+filler-gap-wh_question_object	zorro	filler	Sarah got the lady that the boat could find .	Sarah got what the lady could find the boat .
+filler-gap-wh_question_object	zorro	filler	Sarah got the lady that the boat related .	Sarah got what the lady related the boat .
+filler-gap-wh_question_object	zorro	filler	Sarah marked the couple that the wolf could record .	Sarah marked what the couple could record the wolf .
+filler-gap-wh_question_object	zorro	filler	Sarah marked the couple that the wolf reached .	Sarah marked what the couple reached the wolf .
+filler-gap-wh_question_subject	zorro	filler	Laura ended the finger that can make boats .	Laura ended who the finger can make boats .
+filler-gap-wh_question_subject	zorro	filler	Laura ended the finger that is watching boats .	Laura ended who the finger is watching boats .
+filler-gap-wh_question_subject	zorro	filler	Philip related to the call that can find whales .	Philip related to who the call can find whales .
+filler-gap-wh_question_subject	zorro	filler	Philip related to the call that is moving whales .	Philip related to who the call is moving whales .
+filler-gap-wh_question_subject	zorro	filler	Michael ended the picture that can record words .	Michael ended who the picture can record words .
+filler-gap-wh_question_subject	zorro	filler	Michael ended the picture that is facing words .	Michael ended who the picture is facing words .
+filler-gap-wh_question_subject	zorro	filler	Richard cut the way that can record differences .	Richard cut who the way can record differences .
+filler-gap-wh_question_subject	zorro	filler	Richard cut the way that is losing differences .	Richard cut who the way is losing differences .
+filler-gap-wh_question_subject	zorro	filler	Mark ended the toy that can close lies .	Mark ended who the toy can close lies .
+filler-gap-wh_question_subject	zorro	filler	Mark ended the toy that is washing lies .	Mark ended who the toy is washing lies .
+filler-gap-wh_question_subject	zorro	filler	Philip reached the foot that can study hands .	Philip reached who the foot can study hands .
+filler-gap-wh_question_subject	zorro	filler	Philip reached the foot that is making hands .	Philip reached who the foot is making hands .
+filler-gap-wh_question_subject	zorro	filler	Michael reached the water that can use parents .	Michael reached who the water can use parents .
+filler-gap-wh_question_subject	zorro	filler	Michael reached the water that is making parents .	Michael reached who the water is making parents .
+filler-gap-wh_question_subject	zorro	filler	Philip got the day that can become arms .	Philip got who the day can become arms .
+filler-gap-wh_question_subject	zorro	filler	Philip got the day that is fishing arms .	Philip got who the day is fishing arms .
+filler-gap-wh_question_subject	zorro	filler	Mark ended the day that can use engines .	Mark ended who the day can use engines .
+filler-gap-wh_question_subject	zorro	filler	Mark ended the day that is depending on engines .	Mark ended who the day is depending on engines .
+filler-gap-wh_question_subject	zorro	filler	Alexander related to the king that can find stands .	Alexander related to who the king can find stands .
+filler-gap-wh_question_subject	zorro	filler	Alexander related to the king that is rolling stands .	Alexander related to who the king is rolling stands .
+filler-gap-wh_question_subject	zorro	filler	Mark destroyed the bird that can record children .	Mark destroyed who the bird can record children .
+filler-gap-wh_question_subject	zorro	filler	Mark destroyed the bird that is coming to children .	Mark destroyed who the bird is coming to children .
+filler-gap-wh_question_subject	zorro	filler	Donald got the hand that can become bones .	Donald got who the hand can become bones .
+filler-gap-wh_question_subject	zorro	filler	Donald got the hand that is rolling bones .	Donald got who the hand is rolling bones .
+filler-gap-wh_question_subject	zorro	filler	Sarah cut the king that can change girls .	Sarah cut who the king can change girls .
+filler-gap-wh_question_subject	zorro	filler	Sarah cut the king that is making girls .	Sarah cut who the king is making girls .
+filler-gap-wh_question_subject	zorro	filler	Alexander claimed the lie that can study toys .	Alexander claimed who the lie can study toys .
+filler-gap-wh_question_subject	zorro	filler	Alexander claimed the lie that is writing about toys .	Alexander claimed who the lie is writing about toys .
+filler-gap-wh_question_subject	zorro	filler	Mark ended the lie that can make cars .	Mark ended who the lie can make cars .
+filler-gap-wh_question_subject	zorro	filler	Mark ended the lie that is writing about cars .	Mark ended who the lie is writing about cars .
+irregular-verb	zorro	irregular	Michael chose the good one some time ago .	Michael chosen the good one some time ago .
+irregular-verb	zorro	irregular	Michael had chosen the good one some time ago .	Michael had chose the good one some time ago .
+irregular-verb	zorro	irregular	Alexander began to work some time ago .	Alexander begun to work some time ago .
+irregular-verb	zorro	irregular	Alexander had begun to work some time ago .	Alexander had began to work some time ago .
+irregular-verb	zorro	irregular	Donald took some food this morning .	Donald taken some food this morning .
+irregular-verb	zorro	irregular	Donald had taken some food this morning .	Donald had took some food this morning .
+irregular-verb	zorro	irregular	Philip spoke without thinking over there .	Philip spoken without thinking over there .
+irregular-verb	zorro	irregular	Philip had spoken without thinking over there .	Philip had spoke without thinking over there .
+irregular-verb	zorro	irregular	William grew quickly at home .	William grown quickly at home .
+irregular-verb	zorro	irregular	William had grown quickly at home .	William had grew quickly at home .
+irregular-verb	zorro	irregular	Alexander came too late over there .	Alexander come too late over there .
+irregular-verb	zorro	irregular	Alexander had come too late over there .	Alexander had came too late over there .
+irregular-verb	zorro	irregular	Laura gave something sweet to the baby over there .	Laura given something sweet to the baby over there .
+irregular-verb	zorro	irregular	Laura had given something sweet to the baby over there .	Laura had gave something sweet to the baby over there .
+irregular-verb	zorro	irregular	Alexander knew a lot of things over there .	Alexander known a lot of things over there .
+irregular-verb	zorro	irregular	Alexander had known a lot of things over there .	Alexander had knew a lot of things over there .
+irregular-verb	zorro	irregular	Roger wrote with a large pen some time ago .	Roger written with a large pen some time ago .
+irregular-verb	zorro	irregular	Roger had written with a large pen some time ago .	Roger had wrote with a large pen some time ago .
+irregular-verb	zorro	irregular	Philip took a paper some time ago .	Philip taken a paper some time ago .
+irregular-verb	zorro	irregular	Philip had taken a paper some time ago .	Philip had took a paper some time ago .
+irregular-verb	zorro	irregular	Richard wrote a note some time ago .	Richard written a note some time ago .
+irregular-verb	zorro	irregular	Richard had written a note some time ago .	Richard had wrote a note some time ago .
+irregular-verb	zorro	irregular	Roger began to work over there .	Roger begun to work over there .
+irregular-verb	zorro	irregular	Roger had begun to work over there .	Roger had began to work over there .
+irregular-verb	zorro	irregular	Laura came just in time this morning .	Laura come just in time this morning .
+irregular-verb	zorro	irregular	Laura had come just in time this morning .	Laura had came just in time this morning .
+irregular-verb	zorro	irregular	Laura began to work some time ago .	Laura begun to work some time ago .
+irregular-verb	zorro	irregular	Laura had begun to work some time ago .	Laura had began to work some time ago .
+irregular-verb	zorro	irregular	William knew she could do it over there .	William known she could do it over there .
+irregular-verb	zorro	irregular	William had known she could do it over there .	William had knew she could do it over there .
+island-effects-adjunct_island	zorro	island	who should William have without watching the baby ?	who should William have the baby without watching ?
+island-effects-adjunct_island	zorro	island	what did William have without watching the baby ?	what did William have the baby without watching ?
+island-effects-adjunct_island	zorro	island	who should Roger have while washing the procedure ?	who should Roger have the procedure while washing ?
+island-effects-adjunct_island	zorro	island	what did Roger have while washing the procedure ?	what did Roger have the procedure while washing ?
+island-effects-adjunct_island	zorro	island	who should Mark turn while facing the color ?	who should Mark turn the color while facing ?
+island-effects-adjunct_island	zorro	island	what did Mark turn while facing the color ?	what did Mark turn the color while facing ?
+island-effects-adjunct_island	zorro	island	who should Donald get after making the cast ?	who should Donald get the cast after making ?
+island-effects-adjunct_island	zorro	island	what did Donald get after making the cast ?	what did Donald get the cast after making ?
+island-effects-adjunct_island	zorro	island	who should Mark use after writing the truck ?	who should Mark use the truck after writing ?
+island-effects-adjunct_island	zorro	island	what did Mark use after writing the truck ?	what did Mark use the truck after writing ?
+island-effects-adjunct_island	zorro	island	who should Mark present before flying over the stand ?	who should Mark present the stand before flying over ?
+island-effects-adjunct_island	zorro	island	what did Mark present before flying over the stand ?	what did Mark present the stand before flying over ?
+island-effects-adjunct_island	zorro	island	who should Mark work for without rolling the suit ?	who should Mark work for the suit without rolling ?
+island-effects-adjunct_island	zorro	island	what did Mark work for without rolling the suit ?	what did Mark work for the suit without rolling ?
+island-effects-adjunct_island	zorro	island	who should Philip use without fishing the access ?	who should Philip use the access without fishing ?
+island-effects-adjunct_island	zorro	island	what did Philip use without fishing the access ?	what did Philip use the access without fishing ?
+island-effects-adjunct_island	zorro	island	who should Roger keep after losing the valley ?	who should Roger keep the valley after losing ?
+island-effects-adjunct_island	zorro	island	what did Roger keep after losing the valley ?	what did Roger keep the valley after losing ?
+island-effects-adjunct_island	zorro	island	who should Michael turn while trying the plan ?	who should Michael turn the plan while trying ?
+island-effects-adjunct_island	zorro	island	what did Michael turn while trying the plan ?	what did Michael turn the plan while trying ?
+island-effects-adjunct_island	zorro	island	who should Philip study without making the tradition ?	who should Philip study the tradition without making ?
+island-effects-adjunct_island	zorro	island	what did Philip study without making the tradition ?	what did Philip study the tradition without making ?
+island-effects-adjunct_island	zorro	island	who should Philip use without telling the baby ?	who should Philip use the baby without telling ?
+island-effects-adjunct_island	zorro	island	what did Philip use without telling the baby ?	what did Philip use the baby without telling ?
+island-effects-adjunct_island	zorro	island	who should Michael study without playing the memory ?	who should Michael study the memory without playing ?
+island-effects-adjunct_island	zorro	island	what did Michael study without playing the memory ?	what did Michael study the memory without playing ?
+island-effects-adjunct_island	zorro	island	who should Alexander study without watching the mind ?	who should Alexander study the mind without watching ?
+island-effects-adjunct_island	zorro	island	what did Alexander study without watching the mind ?	what did Alexander study the mind without watching ?
+island-effects-adjunct_island	zorro	island	who should Laura turn before depending on the general ?	who should Laura turn the general before depending on ?
+island-effects-adjunct_island	zorro	island	what did Laura turn before depending on the general ?	what did Laura turn the general before depending on ?
+island-effects-coordinate_structure_constraint	zorro	island	who must Philip and the dinosaur turn ?	who must Philip turn and the dinosaur ?
+island-effects-coordinate_structure_constraint	zorro	island	who were Philip and the dinosaur taking ?	who were Philip turn and the dinosaur ?
+island-effects-coordinate_structure_constraint	zorro	island	what did Philip and the dinosaur turn ?	what did Philip turn and the dinosaur ?
+island-effects-coordinate_structure_constraint	zorro	island	what were Philip and the dinosaur taking ?	what were Philip taking and the dinosaur ?
+island-effects-coordinate_structure_constraint	zorro	island	what did Roger and the sister work for ?	what did Roger work for and the sister ?
+island-effects-coordinate_structure_constraint	zorro	island	what were Roger and the sister saying ?	what were Roger saying and the sister ?
+island-effects-coordinate_structure_constraint	zorro	island	who must Michael and the doctor change ?	who must Michael change and the doctor ?
+island-effects-coordinate_structure_constraint	zorro	island	who were Michael and the doctor housing ?	who were Michael change and the doctor ?
+island-effects-coordinate_structure_constraint	zorro	island	what did Michael and the doctor change ?	what did Michael change and the doctor ?
+island-effects-coordinate_structure_constraint	zorro	island	what were Michael and the doctor housing ?	what were Michael housing and the doctor ?
+island-effects-coordinate_structure_constraint	zorro	island	who must Alexander and the dinosaur have ?	who must Alexander have and the dinosaur ?
+island-effects-coordinate_structure_constraint	zorro	island	who were Alexander and the dinosaur drawing ?	who were Alexander have and the dinosaur ?
+island-effects-coordinate_structure_constraint	zorro	island	what did Alexander and the dinosaur have ?	what did Alexander have and the dinosaur ?
+island-effects-coordinate_structure_constraint	zorro	island	what were Alexander and the dinosaur drawing ?	what were Alexander drawing and the dinosaur ?
+island-effects-coordinate_structure_constraint	zorro	island	who must William and the sister close ?	who must William close and the sister ?
+island-effects-coordinate_structure_constraint	zorro	island	who were William and the sister sleeping in ?	who were William close and the sister ?
+island-effects-coordinate_structure_constraint	zorro	island	what did William and the sister close ?	what did William close and the sister ?
+island-effects-coordinate_structure_constraint	zorro	island	what were William and the sister sleeping in ?	what were William sleeping in and the sister ?
+island-effects-coordinate_structure_constraint	zorro	island	who must Michael and the pig change ?	who must Michael change and the pig ?
+island-effects-coordinate_structure_constraint	zorro	island	who were Michael and the pig falling on ?	who were Michael change and the pig ?
+island-effects-coordinate_structure_constraint	zorro	island	what did Michael and the pig change ?	what did Michael change and the pig ?
+island-effects-coordinate_structure_constraint	zorro	island	what were Michael and the pig falling on ?	what were Michael falling on and the pig ?
+island-effects-coordinate_structure_constraint	zorro	island	who must Donald and the boat become ?	who must Donald become and the boat ?
+island-effects-coordinate_structure_constraint	zorro	island	who were Donald and the boat running to ?	who were Donald become and the boat ?
+island-effects-coordinate_structure_constraint	zorro	island	what did Donald and the boat become ?	what did Donald become and the boat ?
+island-effects-coordinate_structure_constraint	zorro	island	what were Donald and the boat running to ?	what were Donald running to and the boat ?
+island-effects-coordinate_structure_constraint	zorro	island	who must Alexander and the doctor become ?	who must Alexander become and the doctor ?
+island-effects-coordinate_structure_constraint	zorro	island	who were Alexander and the doctor talking about ?	who were Alexander become and the doctor ?
+island-effects-coordinate_structure_constraint	zorro	island	what did Alexander and the doctor become ?	what did Alexander become and the doctor ?
+island-effects-coordinate_structure_constraint	zorro	island	what were Alexander and the doctor talking about ?	what were Alexander talking about and the doctor ?
+local_attractor-in_question_with_aux	zorro	local_attractor	is the whale getting the person ?	is the whale gets the person ?
+local_attractor-in_question_with_aux	zorro	local_attractor	can the whale order ?	can the whale orders ?
+local_attractor-in_question_with_aux	zorro	local_attractor	is the lady finding the valley ?	is the lady finds the valley ?
+local_attractor-in_question_with_aux	zorro	local_attractor	can the lady want ?	can the lady wants ?
+local_attractor-in_question_with_aux	zorro	local_attractor	is the bank finding the night ?	is the bank finds the night ?
+local_attractor-in_question_with_aux	zorro	local_attractor	can the bank become ?	can the bank becomes ?
+local_attractor-in_question_with_aux	zorro	local_attractor	is the bird playing ?	is the bird plays ?
+local_attractor-in_question_with_aux	zorro	local_attractor	can the bird want ?	can the bird wants ?
+local_attractor-in_question_with_aux	zorro	local_attractor	is the stand taking the cabinet away ?	is the stand takes the cabinet away ?
+local_attractor-in_question_with_aux	zorro	local_attractor	can the stand use the cabinet ?	can the stand uses the cabinet ?
+local_attractor-in_question_with_aux	zorro	local_attractor	is the boom playing ?	is the boom plays ?
+local_attractor-in_question_with_aux	zorro	local_attractor	can the boom need ?	can the boom needs ?
+local_attractor-in_question_with_aux	zorro	local_attractor	is the rock showing the bet to the hill ?	is the rock shows the bet to the hill ?
+local_attractor-in_question_with_aux	zorro	local_attractor	can the rock change ?	can the rock changes ?
+local_attractor-in_question_with_aux	zorro	local_attractor	is the night taking the ball away ?	is the night takes the ball away ?
+local_attractor-in_question_with_aux	zorro	local_attractor	can the night give the ball the lady ?	can the night gives the ball the lady ?
+local_attractor-in_question_with_aux	zorro	local_attractor	is the access going ?	is the access goes ?
+local_attractor-in_question_with_aux	zorro	local_attractor	can the access take the drop away ?	can the access takes the drop away ?
+local_attractor-in_question_with_aux	zorro	local_attractor	is the book finding the access ?	is the book finds the access ?
+local_attractor-in_question_with_aux	zorro	local_attractor	can the book take the access away ?	can the book takes the access away ?
+local_attractor-in_question_with_aux	zorro	local_attractor	is the wolf finding the suit ?	is the wolf finds the suit ?
+local_attractor-in_question_with_aux	zorro	local_attractor	can the wolf give the suit the guess ?	can the wolf gives the suit the guess ?
+local_attractor-in_question_with_aux	zorro	local_attractor	is the plan seeing how the the rock works ?	is the plan sees how the the rock works ?
+local_attractor-in_question_with_aux	zorro	local_attractor	can the plan work ?	can the plan works ?
+local_attractor-in_question_with_aux	zorro	local_attractor	is the valley starting ?	is the valley starts ?
+local_attractor-in_question_with_aux	zorro	local_attractor	can the valley take the memory away ?	can the valley takes the memory away ?
+local_attractor-in_question_with_aux	zorro	local_attractor	is the home getting you ?	is the home gets you ?
+local_attractor-in_question_with_aux	zorro	local_attractor	can the home record ?	can the home records ?
+local_attractor-in_question_with_aux	zorro	local_attractor	is the slave using the game ?	is the slave uses the game ?
+local_attractor-in_question_with_aux	zorro	local_attractor	can the slave become ?	can the slave becomes ?
+npi_licensing-matrix_question	zorro	npi_licensing	does her boat ever play with the growth ?	her boat does ever play with the growth ?
+npi_licensing-matrix_question	zorro	npi_licensing	does Mark ever play with the growth ?	Mark does ever play with the growth ?
+npi_licensing-matrix_question	zorro	npi_licensing	will the dinosaur ever change ?	the dinosaur will ever change ?
+npi_licensing-matrix_question	zorro	npi_licensing	will Sarah ever change ?	Sarah will ever change ?
+npi_licensing-matrix_question	zorro	npi_licensing	should her dinosaur ever like ?	her dinosaur should ever like ?
+npi_licensing-matrix_question	zorro	npi_licensing	should Roger ever like ?	Roger should ever like ?
+npi_licensing-matrix_question	zorro	npi_licensing	could his pig ever like ?	his pig could ever like ?
+npi_licensing-matrix_question	zorro	npi_licensing	could Alexander ever like ?	Alexander could ever like ?
+npi_licensing-matrix_question	zorro	npi_licensing	could a duke ever keep the lady ?	a duke could ever keep the lady ?
+npi_licensing-matrix_question	zorro	npi_licensing	could Michael ever keep the lady ?	Michael could ever keep the lady ?
+npi_licensing-matrix_question	zorro	npi_licensing	did her pig ever find the access ?	her pig did ever find the access ?
+npi_licensing-matrix_question	zorro	npi_licensing	did Mark ever find the access ?	Mark did ever find the access ?
+npi_licensing-matrix_question	zorro	npi_licensing	does his doctor ever control the sky ?	his doctor does ever control the sky ?
+npi_licensing-matrix_question	zorro	npi_licensing	does Roger ever control the sky ?	Roger does ever control the sky ?
+npi_licensing-matrix_question	zorro	npi_licensing	would her dinosaur ever change ?	her dinosaur would ever change ?
+npi_licensing-matrix_question	zorro	npi_licensing	would Laura ever change ?	Laura would ever change ?
+npi_licensing-matrix_question	zorro	npi_licensing	would a pig ever find you ?	a pig would ever find you ?
+npi_licensing-matrix_question	zorro	npi_licensing	would Alexander ever find you ?	Alexander would ever find you ?
+npi_licensing-matrix_question	zorro	npi_licensing	should a pig ever want the guess ?	a pig should ever want the guess ?
+npi_licensing-matrix_question	zorro	npi_licensing	should Laura ever want the guess ?	Laura should ever want the guess ?
+npi_licensing-matrix_question	zorro	npi_licensing	would some wolf ever play with the person ?	some wolf would ever play with the person ?
+npi_licensing-matrix_question	zorro	npi_licensing	would Donald ever play with the person ?	Donald would ever play with the person ?
+npi_licensing-matrix_question	zorro	npi_licensing	did some slave ever control the fuel ?	some slave did ever control the fuel ?
+npi_licensing-matrix_question	zorro	npi_licensing	did Richard ever control the fuel ?	Richard did ever control the fuel ?
+npi_licensing-matrix_question	zorro	npi_licensing	should that doctor ever be the home ?	that doctor should ever be the home ?
+npi_licensing-matrix_question	zorro	npi_licensing	should Mark ever be the home ?	Mark should ever be the home ?
+npi_licensing-matrix_question	zorro	npi_licensing	will a sister ever like ?	a sister will ever like ?
+npi_licensing-matrix_question	zorro	npi_licensing	will Richard ever like ?	Richard will ever like ?
+npi_licensing-matrix_question	zorro	npi_licensing	did this sister ever control the dance ?	this sister did ever control the dance ?
+npi_licensing-matrix_question	zorro	npi_licensing	did Philip ever control the dance ?	Philip did ever control the dance ?
+npi_licensing-only_npi_licensor	zorro	npi_licensing	only Mark ever finds some suit .	even Mark ever finds some suit .
+npi_licensing-only_npi_licensor	zorro	npi_licensing	only Mark could ever like some suit .	even Mark could ever like some suit .
+npi_licensing-only_npi_licensor	zorro	npi_licensing	only your wolf ever moves your lady .	even your wolf ever moves your lady .
+npi_licensing-only_npi_licensor	zorro	npi_licensing	only your wolf can ever control your lady .	even your wolf can ever control your lady .
+npi_licensing-only_npi_licensor	zorro	npi_licensing	only your boat ever turns on his baby .	even your boat ever turns on his baby .
+npi_licensing-only_npi_licensor	zorro	npi_licensing	only your boat can ever like his baby .	even your boat can ever like his baby .
+npi_licensing-only_npi_licensor	zorro	npi_licensing	only Donald ever comes to some back .	even Donald ever comes to some back .
+npi_licensing-only_npi_licensor	zorro	npi_licensing	only Donald could ever be in some back .	even Donald could ever be in some back .
+npi_licensing-only_npi_licensor	zorro	npi_licensing	only your pig ever goes to some suit .	even your pig ever goes to some suit .
+npi_licensing-only_npi_licensor	zorro	npi_licensing	only your pig can ever be in some suit .	even your pig can ever be in some suit .
+npi_licensing-only_npi_licensor	zorro	npi_licensing	only your slave ever sees her whale .	even your slave ever sees her whale .
+npi_licensing-only_npi_licensor	zorro	npi_licensing	only your slave will ever keep her whale .	even your slave will ever keep her whale .
+npi_licensing-only_npi_licensor	zorro	npi_licensing	only her slave ever copies her bet .	even her slave ever copies her bet .
+npi_licensing-only_npi_licensor	zorro	npi_licensing	only her slave will ever like her bet .	even her slave will ever like her bet .
+npi_licensing-only_npi_licensor	zorro	npi_licensing	only Philip ever waves his cabinet .	even Philip ever waves his cabinet .
+npi_licensing-only_npi_licensor	zorro	npi_licensing	only Philip could ever like his cabinet .	even Philip could ever like his cabinet .
+npi_licensing-only_npi_licensor	zorro	npi_licensing	only the wolf ever looks like the couple .	even the wolf ever looks like the couple .
+npi_licensing-only_npi_licensor	zorro	npi_licensing	only the wolf can ever use the couple .	even the wolf can ever use the couple .
+npi_licensing-only_npi_licensor	zorro	npi_licensing	only Alexander ever comes to the boom .	even Alexander ever comes to the boom .
+npi_licensing-only_npi_licensor	zorro	npi_licensing	only Alexander could ever change the boom .	even Alexander could ever change the boom .
+npi_licensing-only_npi_licensor	zorro	npi_licensing	only your dinosaur ever finds her truck .	even your dinosaur ever finds her truck .
+npi_licensing-only_npi_licensor	zorro	npi_licensing	only your dinosaur can ever play her her truck .	even your dinosaur can ever play her her truck .
+npi_licensing-only_npi_licensor	zorro	npi_licensing	only Michael ever goes to his procedure .	even Michael ever goes to his procedure .
+npi_licensing-only_npi_licensor	zorro	npi_licensing	only Michael could ever change his procedure .	even Michael could ever change his procedure .
+npi_licensing-only_npi_licensor	zorro	npi_licensing	only Philip ever falls in your mind .	even Philip ever falls in your mind .
+npi_licensing-only_npi_licensor	zorro	npi_licensing	only Philip could ever change your mind .	even Philip could ever change your mind .
+npi_licensing-only_npi_licensor	zorro	npi_licensing	only William ever sounds some lady .	even William ever sounds some lady .
+npi_licensing-only_npi_licensor	zorro	npi_licensing	only William would ever change some lady .	even William would ever change some lady .
+npi_licensing-only_npi_licensor	zorro	npi_licensing	only Mark ever notes her bank .	even Mark ever notes her bank .
+npi_licensing-only_npi_licensor	zorro	npi_licensing	only Mark could ever control her bank .	even Mark could ever control her bank .
+quantifiers-existential_there	zorro	quantifiers	there are many books about soft birds .	there are most books about soft birds .
+quantifiers-existential_there	zorro	quantifiers	there are many birds that Sarah made .	there are most birds that Sarah made .
+quantifiers-existential_there	zorro	quantifiers	there aren't many movies about good differences .	there aren't every movies about good differences .
+quantifiers-existential_there	zorro	quantifiers	there aren't many differences that Laura made .	there aren't every differences that Laura made .
+quantifiers-existential_there	zorro	quantifiers	there aren't some stories about purple eggs .	there aren't most stories about purple eggs .
+quantifiers-existential_there	zorro	quantifiers	there aren't some eggs that William made .	there aren't most eggs that William made .
+quantifiers-existential_there	zorro	quantifiers	there are some signs about wrong stars .	there are most signs about wrong stars .
+quantifiers-existential_there	zorro	quantifiers	there are some stars that Mark made .	there are most stars that Mark made .
+quantifiers-existential_there	zorro	quantifiers	there was no movie about purple guys .	there was all movie about purple guys .
+quantifiers-existential_there	zorro	quantifiers	there was no guy that Roger made .	there was all guy that Roger made .
+quantifiers-existential_there	zorro	quantifiers	there are many stories about finished animals .	there are each stories about finished animals .
+quantifiers-existential_there	zorro	quantifiers	there are many animals that Michael made .	there are each animals that Michael made .
+quantifiers-existential_there	zorro	quantifiers	there were not many signs about little arms .	there were not each signs about little arms .
+quantifiers-existential_there	zorro	quantifiers	there were not many arms that Mark made .	there were not each arms that Mark made .
+quantifiers-existential_there	zorro	quantifiers	there isn't no movie about silly stands .	there isn't most movie about silly stands .
+quantifiers-existential_there	zorro	quantifiers	there isn't no stand that Alexander made .	there isn't most stand that Alexander made .
+quantifiers-existential_there	zorro	quantifiers	there were many stories about full whales .	there were each stories about full whales .
+quantifiers-existential_there	zorro	quantifiers	there were many whales that Sarah made .	there were each whales that Sarah made .
+quantifiers-existential_there	zorro	quantifiers	there was no movie about fixed pages .	there was all movie about fixed pages .
+quantifiers-existential_there	zorro	quantifiers	there was no page that Laura made .	there was all page that Laura made .
+quantifiers-existential_there	zorro	quantifiers	there were some books about abandoned things .	there were all books about abandoned things .
+quantifiers-existential_there	zorro	quantifiers	there were some things that Michael made .	there were all things that Michael made .
+quantifiers-existential_there	zorro	quantifiers	there were few books about poor bits .	there were most books about poor bits .
+quantifiers-existential_there	zorro	quantifiers	there were few bits that Donald made .	there were most bits that Donald made .
+quantifiers-existential_there	zorro	quantifiers	there is no story about fixed problems .	there is most story about fixed problems .
+quantifiers-existential_there	zorro	quantifiers	there is no problem that Richard made .	there is most problem that Richard made .
+quantifiers-existential_there	zorro	quantifiers	there were many books about personal whales .	there were every books about personal whales .
+quantifiers-existential_there	zorro	quantifiers	there were many whales that Laura made .	there were every whales that Laura made .
+quantifiers-existential_there	zorro	quantifiers	there aren't few books about needed bands .	there aren't every books about needed bands .
+quantifiers-existential_there	zorro	quantifiers	there aren't few bands that Alexander made .	there aren't every bands that Alexander made .
+quantifiers-superlative	zorro	quantifiers	no pig could stand on top of more than six days .	no pig could stand on top of at least six days .
+quantifiers-superlative	zorro	quantifiers	no wolf could carry more than six waters .	no wolf could carry at least six waters .
+quantifiers-superlative	zorro	quantifiers	no pig can stand on top of fewer than ten birds .	no pig can stand on top of at most ten birds .
+quantifiers-superlative	zorro	quantifiers	no boat could open the door to fewer than thirty stands .	no boat could open the door to at most thirty stands .
+quantifiers-superlative	zorro	quantifiers	no wolf could carry fewer than ten things .	no wolf could carry at most ten things .
+quantifiers-superlative	zorro	quantifiers	no pig could open the door to more than one story .	no pig could open the door to at least one story .
+quantifiers-superlative	zorro	quantifiers	no doctor can catch more than thirty toys .	no doctor can catch at least thirty toys .
+quantifiers-superlative	zorro	quantifiers	no boat could carry fewer than twenty pages .	no boat could carry at most twenty pages .
+quantifiers-superlative	zorro	quantifiers	no pig could stand on top of fewer than one window .	no pig could stand on top of at most one window .
+quantifiers-superlative	zorro	quantifiers	no dinosaur can carry more than nine cars .	no dinosaur can carry at least nine cars .
+quantifiers-superlative	zorro	quantifiers	no dinosaur could move to fewer than thirty windows .	no dinosaur could move to at most thirty windows .
+quantifiers-superlative	zorro	quantifiers	no boat could increase the size of more than thirty eggs .	no boat could increase the size of at least thirty eggs .
+quantifiers-superlative	zorro	quantifiers	no pig could catch more than twenty rings .	no pig could catch at least twenty rings .
+quantifiers-superlative	zorro	quantifiers	no dinosaur can increase the size of more than one problem .	no dinosaur can increase the size of at least one problem .
+quantifiers-superlative	zorro	quantifiers	no duke can open the door to more than six girls .	no duke can open the door to at least six girls .
+quantifiers-superlative	zorro	quantifiers	no boat could stand on top of fewer than ten books .	no boat could stand on top of at most ten books .
+quantifiers-superlative	zorro	quantifiers	no slave could leave fewer than ten colors .	no slave could leave at most ten colors .
+quantifiers-superlative	zorro	quantifiers	no slave could increase the size of fewer than twenty minutes .	no slave could increase the size of at most twenty minutes .
+quantifiers-superlative	zorro	quantifiers	no pig could carry fewer than one car .	no pig could carry at most one car .
+quantifiers-superlative	zorro	quantifiers	no slave can carry fewer than six calls .	no slave can carry at most six calls .
+quantifiers-superlative	zorro	quantifiers	no sister could open the door to more than nine bits .	no sister could open the door to at least nine bits .
+quantifiers-superlative	zorro	quantifiers	no slave could move to more than six calls .	no slave could move to at least six calls .
+quantifiers-superlative	zorro	quantifiers	no slave could exist without fewer than six dollars .	no slave could exist without at most six dollars .
+quantifiers-superlative	zorro	quantifiers	no boat could move to fewer than one whale .	no boat could move to at most one whale .
+quantifiers-superlative	zorro	quantifiers	no doctor could stand on top of fewer than twenty birds .	no doctor could stand on top of at most twenty birds .
+quantifiers-superlative	zorro	quantifiers	no doctor could open the door to more than thirty animals .	no doctor could open the door to at least thirty animals .
+quantifiers-superlative	zorro	quantifiers	no dinosaur could stand on top of more than twenty calls .	no dinosaur could stand on top of at least twenty calls .
+quantifiers-superlative	zorro	quantifiers	no duke could move to fewer than one stand .	no duke could move to at most one stand .
+quantifiers-superlative	zorro	quantifiers	no sister can catch more than ten problems .	no sister can catch at least ten problems .
+quantifiers-superlative	zorro	quantifiers	no wolf could move to fewer than nine animals .	no wolf could move to at most nine animals .
