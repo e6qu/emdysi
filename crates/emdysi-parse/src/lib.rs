@@ -18,6 +18,8 @@ use emdysi_hpsg::{Dag, Grammar, Unifier};
 use emdysi_repp::Repp;
 
 pub mod rank;
+
+pub use emdysi_hpsg::mrs;
 pub mod tagger;
 
 #[derive(Debug)]

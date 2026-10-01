@@ -97,6 +97,25 @@ suggestion is applied automatically only when it is clearly the most likely
 correction: a transposed or doubled letter, or the only known word one edit
 away.
 
+### `semantics`
+
+Checks on the semantics of the best strict analysis (the ERG's Minimal
+Recursion Semantics, see `en parse --mrs`). `check` selects one:
+
+- `missing-comparand`: the main predication is a comparative whose
+  standard is not expressed (*this approach is better*); attributive
+  comparatives (*a larger kitchen*) and quantities (*more desks*) are not
+  flagged.
+- `agentless-passive`: a tensed passive verb whose actor is not expressed
+  (*the report was written*, not *... by Kim*).
+- `stacked-negation`: two or more negations in a sentence (*did not see
+  nothing*). `{detail}` gives the count.
+- `bare-demonstrative`: a sentence opening with *this* or *that* as a whole
+  noun phrase (*This shows ...*).
+- `tense-shift`: in a paragraph with at least three declarative sentences,
+  a sentence in the past (or present) tense while at least two thirds of
+  the others are in the present (or past). `{detail}` explains.
+
 ### `grammar-errors`
 
 Specific grammatical errors named by the grammar-error ("mal-rule")

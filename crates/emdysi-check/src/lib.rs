@@ -17,6 +17,7 @@ use emdysi_text::segment::sentences;
 pub mod dict;
 pub mod report;
 pub mod rules;
+pub mod semantics;
 pub mod toml;
 
 pub use rules::{Pack, Rule};
