@@ -143,6 +143,8 @@ pub struct Reading {
     pub nodes: Vec<Node>,
     /// The lexical items, in order.
     pub words: Vec<Word>,
+    /// The feature structure of the whole sentence.
+    pub dag: Arc<emdysi_hpsg::Dag>,
 }
 
 /// Character span of a sequence of lattice tokens.
@@ -498,6 +500,7 @@ impl Erg {
                 Reading {
                     nodes,
                     words,
+                    dag: r.dag.clone(),
                     root: r.root.clone(),
                     derivation: derivation(&self.grammar, &self.rules, &r.deriv, &forms),
                     // Labelling costs unifications; only the best readings get trees.
