@@ -8,8 +8,8 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-emdysi-check = { path = "../emdysi-check" }
-emdysi-parse = { path = "../emdysi-parse" }
+emdysi-check = { path = "../emdysi-check", version = "0.1.0" }
+emdysi-parse = { path = "../emdysi-parse", version = "0.1.0" }
 
 [lints]
 workspace = true

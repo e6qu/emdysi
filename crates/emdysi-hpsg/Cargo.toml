@@ -8,7 +8,7 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-emdysi-tdl = { path = "../emdysi-tdl" }
+emdysi-tdl = { path = "../emdysi-tdl", version = "0.1.0" }
 fancy-regex = "0.19"
 
 [lints]
