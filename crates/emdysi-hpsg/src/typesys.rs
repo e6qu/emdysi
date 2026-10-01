@@ -67,6 +67,7 @@ pub struct TypeSystem {
     /// The type every string literal belongs to.
     pub string: TypeId,
     literals: RwLock<Literals>,
+    regexes: RwLock<HashMap<TypeId, Option<Arc<fancy_regex::Regex>>>>,
 }
 
 impl TypeSystem {
@@ -76,6 +77,7 @@ impl TypeSystem {
             hier,
             string,
             literals: RwLock::new(Literals::default()),
+            regexes: RwLock::new(HashMap::new()),
         }
     }
 
@@ -129,10 +131,41 @@ impl TypeSystem {
         }
         match (Self::is_literal(a), Self::is_literal(b)) {
             (false, false) => self.hier.glb(a, b),
-            (true, true) => None,
+            (true, true) => self.glb_literals(a, b),
             (true, false) => self.hier.subsumed_by(self.string, b).then_some(a),
             (false, true) => self.hier.subsumed_by(self.string, a).then_some(b),
         }
+    }
+
+    /// Two distinct literals unify only when one is a regex that matches the
+    /// other, a string.
+    fn glb_literals(&self, a: TypeId, b: TypeId) -> Option<TypeId> {
+        let (ka, sa) = self.literal_value(a)?;
+        let (kb, sb) = self.literal_value(b)?;
+        match (ka, kb) {
+            (LiteralKind::Regex, LiteralKind::Str) => self.regex_matches(a, &sb).then_some(b),
+            (LiteralKind::Str, LiteralKind::Regex) => self.regex_matches(b, &sa).then_some(a),
+            _ => None,
+        }
+    }
+
+    /// The compiled form of a regex literal, matching whole strings. `None`
+    /// if the literal is not a valid regex.
+    pub fn regex(&self, t: TypeId) -> Option<Arc<fancy_regex::Regex>> {
+        if let Some(r) = self.regexes.read().unwrap().get(&t) {
+            return r.clone();
+        }
+        let compiled = match self.literal_value(t) {
+            Some((LiteralKind::Regex, src)) => compile_anchored(&src).map(Arc::new),
+            _ => None,
+        };
+        self.regexes.write().unwrap().insert(t, compiled.clone());
+        compiled
+    }
+
+    fn regex_matches(&self, re: TypeId, s: &str) -> bool {
+        self.regex(re)
+            .is_some_and(|r| r.is_match(s).unwrap_or(false))
     }
 
     /// `a` is equal to or more specific than `b`.
@@ -154,4 +187,25 @@ impl TypeSystem {
             None => self.hier.name(t).to_string(),
         }
     }
+}
+
+/// Compile a `^...$` TDL pattern so that it must match the whole string,
+/// even when the pattern contains top-level alternation.
+pub fn compile_anchored(src: &str) -> Option<fancy_regex::Regex> {
+    let inner = src.strip_prefix('^').unwrap_or(src);
+    let inner = inner.strip_suffix('$').unwrap_or(inner);
+    // POSIX classes are Unicode-aware in the grammar's intended semantics.
+    let mut inner = inner.to_string();
+    for (posix, unicode) in [
+        ("[:upper:]", "\\p{Lu}"),
+        ("[:lower:]", "\\p{Ll}"),
+        ("[:alpha:]", "\\p{L}"),
+        ("[:digit:]", "\\p{Nd}"),
+        ("[:alnum:]", "\\p{L}\\p{N}"),
+        ("[:punct:]", "\\p{P}\\p{S}"),
+        ("[:space:]", "\\s"),
+    ] {
+        inner = inner.replace(posix, unicode);
+    }
+    fancy_regex::Regex::new(&format!("^(?:{inner})$")).ok()
 }

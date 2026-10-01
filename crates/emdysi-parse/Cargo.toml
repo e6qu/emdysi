@@ -1,6 +1,6 @@
 [package]
-name = "emdysi-hpsg"
-description = "DELPH-IN compatible HPSG processing: type hierarchy, typed feature structures, unification"
+name = "emdysi-parse"
+description = "English parsing pipeline running the English Resource Grammar"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -9,7 +9,8 @@ rust-version.workspace = true
 
 [dependencies]
 emdysi-tdl = { path = "../emdysi-tdl" }
-fancy-regex = "0.19"
+emdysi-hpsg = { path = "../emdysi-hpsg" }
+emdysi-repp = { path = "../emdysi-repp" }
 
 [lints]
 workspace = true

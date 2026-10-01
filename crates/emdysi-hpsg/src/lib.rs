@@ -2,9 +2,13 @@
 //! structures and unification, built from grammars written in TDL.
 
 mod bitset;
+pub mod chartmap;
 pub mod dag;
 pub mod desc;
 pub mod grammar;
+pub mod lexicon;
+pub mod morph;
+pub mod parser;
 pub mod types;
 pub mod typesys;
 pub mod unify;

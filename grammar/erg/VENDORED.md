@@ -11,7 +11,7 @@
 
 ## What is included
 
-Only the files needed by the default parsing configuration (`ace/config.tdl`):
+Only the files needed by the default parsing configuration (`ace/config.tdl`), plus `ace/ace-erg-qc.txt` (quick-check paths):
 `english.tdl` and everything it includes, `mtr.tdl`, `irregs.tab`, the REPP
 tokenizer (`rpp/`), token-mapping rules (`tmr/`), variable-property mappings
 (`*.vpm`), semantic interface files (`etc/*.smi`), `trigger.mtr`,

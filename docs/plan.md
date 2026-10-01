@@ -10,10 +10,10 @@ with the ERG port (decision D4) as the parsing core.
 | M2 | Type hierarchy: multiple inheritance, addenda, GLB closure, feature appropriateness | done |
 | M3 | Typed feature structures: unification, copying, subsumption; well-typed expansion of every ERG type, rule and lexical entry | unification, copying and expansion done; subsumption pending |
 | M4 | REPP tokenizer (`rpp/`) and token lattice with character spans | REPP done |
-| M5 | Chart mapping: token-mapping rules (`tmr/`) and lexical filtering (`lfr.tdl`) | |
-| M6 | Orthographic morphology (`%suffix`/`%prefix`, letter sets, `irregs.tab`) and lexical lookup, including generic entries for unknown words | |
-| M7 | Rule-based POS tagger feeding `+TNT` tags (decision D3) | |
-| M8 | Chart parser: agenda, rule filter, quick-check, ambiguity packing, unpacking, root conditions | |
+| M5 | Chart mapping: token-mapping rules (`tmr/`) and lexical filtering (`lfr.tdl`) | done |
+| M6 | Orthographic morphology (`%suffix`/`%prefix`, letter sets, `irregs.tab`) and lexical lookup, including generic entries for unknown words | done (multiword entries inflect on the last word) |
+| M7 | Rule-based POS tagger feeding `+TNT` tags (decision D3) | first heuristic version |
+| M8 | Chart parser: agenda, rule filter, quick-check, ambiguity packing, unpacking, root conditions | agenda, quick-check, root conditions done; packing and rule filter pending |
 | M9 | Output: derivation trees, labelled phrase-structure trees, sentence type; plain-text and Markdown rendering | |
 | M10 | Parse selection (heuristic first) and robust fallback for fragments | |
 | M11 | Sentence segmentation and Markdown input with span mapping | |

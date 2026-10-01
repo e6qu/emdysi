@@ -37,6 +37,8 @@ pub struct Unifier {
     ty: Vec<TypeId>,
     comp: Vec<u32>,
     copy: Vec<u32>,
+    copy_stamp: Vec<u32>,
+    copy_generation: u32,
     /// Added arcs: (feature, target handle, next arc in the node's list).
     comp_arcs: Vec<(FeatId, u32, u32)>,
     pub failure: Option<Failure>,
@@ -72,6 +74,7 @@ impl Unifier {
             self.ty.resize(n, NONE);
             self.comp.resize(n, NONE);
             self.copy.resize(n, NONE);
+            self.copy_stamp.resize(n, 0);
         }
         self.srcs.push((dag, base));
         base
@@ -84,7 +87,6 @@ impl Unifier {
             self.fwd[i] = NONE;
             self.ty[i] = NONE;
             self.comp[i] = NONE;
-            self.copy[i] = NONE;
         }
     }
 
@@ -266,7 +268,15 @@ impl Unifier {
     pub fn copy(&mut self, root: u32, drop: &[FeatId]) -> Option<Dag> {
         let root = self.find(root);
         let mut order = vec![root];
-        self.touch(root);
+        // Each copy gets its own stamp so several copies can be taken from
+        // one unification state.
+        self.copy_generation = self.copy_generation.wrapping_add(1);
+        if self.copy_generation == 0 {
+            self.copy_stamp.iter_mut().for_each(|s| *s = 0);
+            self.copy_generation = 1;
+        }
+        let cg = self.copy_generation;
+        self.copy_stamp[root as usize] = cg;
         self.copy[root as usize] = 0;
         let mut dag = Dag {
             nodes: Vec::new(),
@@ -283,8 +293,8 @@ impl Unifier {
                     continue;
                 }
                 let v = self.find(v);
-                self.touch(v);
-                if self.copy[v as usize] == NONE {
+                if self.copy_stamp[v as usize] != cg {
+                    self.copy_stamp[v as usize] = cg;
                     self.copy[v as usize] = order.len() as u32;
                     order.push(v);
                 }
