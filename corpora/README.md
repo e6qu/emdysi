@@ -15,6 +15,12 @@ Rules for adding a corpus:
 2. Record the upstream URL, version/commit, license and a short provenance
    note in `<corpus>/SOURCE.md`, and copy the license text alongside.
 3. Verify the license from the primary source, not a secondary listing.
+4. Add an entry to [`VENDORED.toml`](../VENDORED.toml) (upstream, exact
+   version, retrieval date, SPDX license, license file, copyright holders,
+   provenance, modifications, use) and run
+   `python3 scripts/check-vendored.py --update` to pin the files' hashes in
+   `VENDORED.sha256`. CI fails on any file that is not registered or whose
+   content changed.
 
 | Corpus | License | Contents |
 |---|---|---|

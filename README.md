@@ -69,7 +69,7 @@ notices in `THIRD_PARTY_NOTICES` once added.
 | `crates/emdysi-check` | Document analysis, rule packs, diagnostics, fixes, reports |
 | `crates/emdysi` | Command-line tool, installed as `en` |
 | `crates/emdysi-parse` | Pipeline: tokenizing, tagging, token mapping, lexical lookup, parsing with the ERG |
-| `grammar/erg/` | Vendored English Resource Grammar (MIT), see `VENDORED.md` |
+| `grammar/erg/` | Vendored English Resource Grammar (MIT), see `SOURCE.md` |
 | `packs/` | Built-in rule packs |
 | `data/scowl/` | English word list, American and British spellings (ESDB/SCOWL size 60) |
 | `corpora/` | Test-only corpora, each with its own license |
