@@ -21,6 +21,11 @@
 #   modifications  what was changed relative to upstream ("none" if verbatim)
 #   use          "shipped" (compiled into or loaded by the tool) or "test"
 #   source_doc   the detailed SOURCE.md
+#   ai_generated optional boolean; true if the text was produced by a
+#                language model (machine-generated text corpora)
+#   generator    required when ai_generated = true, optional otherwise:
+#                the models (or people) that produced the text, with the
+#                license or terms that apply to their output
 
 [[item]]
 id = "erg"
@@ -111,6 +116,8 @@ provenance = "Written for this project; no text copied from other sources; names
 modifications = "n/a"
 use = "test"
 source_doc = "corpora/ai-prose/README.md"
+ai_generated = false
+generator = "written for this project in the style of machine-written prose (not sampled from a model's output corpus); covered by the repository's MIT license"
 
 [[item]]
 id = "corpora-readme"
@@ -234,8 +241,8 @@ source_doc = "corpora/zorro/SOURCE.md"
 
 [[item]]
 id = "pair-sample-tools"
-paths = ["corpora/blimp/sample.py", "corpora/zorro/sample.py"]
-name = "Converters for the minimal-pair samples"
+paths = ["corpora/blimp/sample.py", "corpora/zorro/sample.py", "corpora/beemo/sample.py", "corpora/cheat/sample.py", "corpora/hh-rlhf/sample.py"]
+name = "Converters for the corpus samples (minimal pairs and machine-generated text)"
 upstream = "this repository"
 version = "n/a"
 retrieved = "2026-10-01"
@@ -246,3 +253,54 @@ provenance = "Own code."
 modifications = "n/a"
 use = "test"
 source_doc = "corpora/README.md"
+
+[[item]]
+id = "beemo-sample"
+paths = ["corpora/beemo/sample.tsv", "corpora/beemo/LICENSE", "corpora/beemo/SOURCE.md"]
+name = "Beemo machine-generated texts with expert edits (first 200 Generation/Open QA rows from Apache-2.0/MIT models)"
+upstream = "https://github.com/Toloka/beemo (dataset.parquet)"
+version = "cca3b817eb6d0bf7a60f885f3022696553eabb63"
+retrieved = "2026-10-02"
+license = "MIT"
+license_files = ["corpora/beemo/LICENSE"]
+copyright = "Copyright (c) 2024 Toloka"
+provenance = "Outputs of instruction-tuned LLMs for No Robots prompts, and the same outputs edited by Toloka's expert annotators. Upstream README: expert-edited texts MIT unless the generator's terms say otherwise; model outputs subject to the generator's terms; No Robots prompts and human texts CC BY-NC 4.0 (excluded)."
+modifications = "Rows: only zephyr-7b-beta, Mistral-7B-Instruct-v0.1 and Mixtral-8x7B-Instruct-v0.1, only categories Generation and Open QA (others restate No Robots input text), first 200 by id. Columns: id, model, category, model_output, human_edits only (prompt, prompt_id, human_output and the Llama-3.1/GPT-4o edits dropped). Converted to escaped TSV by corpora/beemo/sample.py; no text changed."
+use = "test"
+source_doc = "corpora/beemo/SOURCE.md"
+ai_generated = true
+generator = "HuggingFaceH4/zephyr-7b-beta (MIT), mistralai/Mistral-7B-Instruct-v0.1 (Apache-2.0), mistralai/Mixtral-8x7B-Instruct-v0.1 (Apache-2.0); expert edits by Toloka annotators (MIT)"
+
+[[item]]
+id = "cheat-sample"
+paths = ["corpora/cheat/sample.tsv", "corpora/cheat/LICENSE", "corpora/cheat/SOURCE.md"]
+name = "CHEAT ChatGPT-generated abstracts (first 200 records of the generation file)"
+upstream = "https://github.com/botianzhe/CHEAT (data/ieee-chatgpt-generation.jsonl)"
+version = "99bdfc2842963a5f3ba8f0a8439b0e1c6df82059"
+retrieved = "2026-10-02"
+license = "MIT"
+license_files = ["corpora/cheat/LICENSE"]
+copyright = "Copyright (c) 2023 security"
+provenance = "Abstracts written by ChatGPT from the title and keywords of IEEE papers (first-pass generation). The init, polish and fusion files (IEEE abstracts or derivatives of them) are excluded."
+modifications = "First 200 records in file order; only id and the generated abstract kept (IEEE titles and keywords dropped). Converted to escaped TSV by corpora/cheat/sample.py; whitespace trimmed, no text changed."
+use = "test"
+source_doc = "corpora/cheat/SOURCE.md"
+ai_generated = true
+generator = "OpenAI ChatGPT (2023; version not stated upstream); OpenAI terms assign output rights to the user; released by the dataset authors under MIT"
+
+[[item]]
+id = "hh-rlhf-sample"
+paths = ["corpora/hh-rlhf/sample.tsv", "corpora/hh-rlhf/LICENSE", "corpora/hh-rlhf/SOURCE.md"]
+name = "Anthropic HH-RLHF helpful-base: final assistant turn of the chosen dialogue (first 200 test records)"
+upstream = "https://github.com/anthropics/hh-rlhf (helpful-base/test.jsonl.gz, Git LFS)"
+version = "c72f5cee8eb7b4d2ea5617657f4430d5e333af07"
+retrieved = "2026-10-02"
+license = "MIT"
+license_files = ["corpora/hh-rlhf/LICENSE"]
+copyright = "Copyright (c) 2022 Anthropic"
+provenance = "Responses of Anthropic's context-distilled 52B assistant models in conversations with crowdworkers (Bai et al. 2022, arXiv:2204.05862). Only model text is kept; helpful-base only, no red-team or harmless data."
+modifications = "First 200 records of helpful-base/test.jsonl with a non-empty final assistant turn; only that turn of the chosen dialogue kept, with the line number as id (human turns and rejected dialogue dropped). Converted to escaped TSV by corpora/hh-rlhf/sample.py; whitespace trimmed, no text changed."
+use = "test"
+source_doc = "corpora/hh-rlhf/SOURCE.md"
+ai_generated = true
+generator = "Anthropic context-distilled 52B language models (2022); released by Anthropic under MIT"

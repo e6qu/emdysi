@@ -13,11 +13,19 @@ fn markdown_prose_and_offsets() {
                 "Some emphasis and code() text. Next line.",
                 BlockKind::Paragraph
             ),
+            ("", BlockKind::Code),
             ("item one", BlockKind::ListItem),
             ("item two", BlockKind::ListItem),
             ("quoted text", BlockKind::Quote),
         ]
     );
+    // The two items belong to one bulleted list.
+    assert_eq!(
+        (blocks[3].list, blocks[3].ordered, blocks[3].item),
+        (1, false, 1)
+    );
+    assert_eq!((blocks[4].list, blocks[4].item), (1, 2));
+    assert_eq!(blocks[5].list, 0);
     let p = &blocks[1];
     let at = p.text.find("emphasis").unwrap();
     let r = p.source_range(at..at + "emphasis".len());

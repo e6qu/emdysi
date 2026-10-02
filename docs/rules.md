@@ -23,6 +23,19 @@ Every rule has an `id` (use the pack name as a prefix), a `kind`, an optional
 and an optional `description`. In messages, `{match}` is the text the rule
 matched. Some kinds offer more placeholders, listed below.
 
+Optional fields shared by every kind:
+
+- `scope`: where the rule looks: `all` (the default), `heading`, `body`
+  (everything but headings), `paragraph`, `list-item`, or `lead` (the first
+  paragraph of the document and of each H1 or H2 section, where the main
+  point belongs);
+- `examples` and `acceptable`: Markdown documents the rule must flag and
+  must not flag. `cargo test` runs them for every pack in `packs/`, so a
+  rule's behaviour is pinned down by its own test cases;
+- `source` and `license`: where a rule or its word list comes from (a style
+  guide, another linter) and under which license, for rules adapted from
+  elsewhere. `en packs` shows the source.
+
 Only the subset of TOML that packs need is supported: tables, arrays of
 tables, strings (basic, literal, multi-line), numbers, booleans, arrays and
 inline tables.
@@ -146,6 +159,142 @@ fixed to it. `prefer` (`"us"` or `"gb"`) and `prefer_suffix` (`"ise"` or
 (see [`data/scowl/SOURCE.md`](../data/scowl/SOURCE.md)); words that are
 standard in both varieties in some sense (*tire*, *program*, *check*) are
 not flagged.
+
+### `structure`
+
+Document structure, from the block tree of a Markdown document. `check` is
+one of:
+
+- `heading-increment`: a heading more than one level below the previous one
+  (markdownlint MD001); `{from}`, `{to}`;
+- `single-h1`: more than one top-level heading (MD025); `{count}`;
+- `empty-section`: a heading with nothing under it before the next heading
+  of the same or a higher level;
+- `stacked-headings`: a heading followed directly by a subheading; `{next}`;
+- `lone-subsection`: the only subsection of a section;
+- `depth`: headings deeper than `max` (default 4); `{level}`, `{max}`;
+- `paragraph-length`: paragraphs over `max_words` words (default 150) or
+  `max_sentences` sentences; `{count}`, `{sentences}`;
+- `wall-of-text`: a run of paragraphs with no heading, list, table or code
+  block between them, over `max_words` words (default 450) or
+  `max_paragraphs` paragraphs (default 5); `{count}`, `{paragraphs}`;
+- `conclusion-at-end`: the last of two or more H2 sections is a conclusion
+  or summary (heading matching `pattern`), so the main point comes last.
+
+### `parallel`
+
+Sibling headings (`of = "headings"`: same level, same parent) or the items
+of one list (`of = "list-items"`) whose grammatical form differs from the
+majority: an instruction (imperative), an *-ing* phrase, a to-infinitive, a
+question, a full sentence or a noun phrase, read from the grammar's analysis
+of each. Groups of fewer than `min_items` (default 3) are skipped; a form
+must hold at least `majority` (default 0.75) of the group. `{form}` and
+`{majority}` are available in messages.
+
+### `acronyms`
+
+Acronyms and initialisms (two or more capitals, no run of three lower-case
+letters: *API*, *IaaS*, *PhD*; plural *s* stripped). A definition is found
+by Schwartz–Hearst alignment of the letters with the words before a
+parenthesized short form (*infrastructure as a service (IaaS)*), with a
+parenthesized long form after it (*IaaS (infrastructure as a service)*), or
+from *stands for* / *is short for*. `check` is one of `undefined`,
+`defined-after-use` (`{line}` of the definition), `used-once` (defined but
+not used again; `{long}`), `redefined` (`{long}`, `{first}`) and
+`first-use-in-heading`. Acronyms listed in `known`, in the glossary, or in
+the word list at least as common as `known_tier` (40 general audience, 50
+technical (the default), 60 expert) need no definition. Roman numerals,
+words in capitals for emphasis (*NOT*) and units or standards next to a
+number (*5 GB*, *RFC 9110*) are not acronyms.
+
+### `glossary`
+
+Terms of the glossary: `check = "deprecated"` flags deprecated or
+superseded terms with a fix to the concept's preferred term (inflected forms
+are found through the grammar's lemmas and get a suggestion instead);
+`check = "casing"` flags allowed terms written with other capitalization.
+`{preferred}` and `{concept}` are available in messages. See
+[Glossaries](#glossaries).
+
+### `variants`
+
+One term written in several ways in one document: spellings that differ only
+in hyphens, spaces or case (*e-mail* / *email*, *data set* / *dataset*,
+*front-end* / *frontend*), for words of at least `min_length` letters
+(default 5). The spelling the glossary prefers wins, else the one used most,
+else the first. Spellings to which the grammar gives different parts of
+speech (the verb *set up*, the noun *setup*) are different words and are left
+alone. `{preferred}` is available in messages.
+
+### `coined-words`
+
+Words that neither the grammar nor the word list knows, made of a known word
+and a productive affix (*promptability*, *agentification*,
+*hyperpersonalize*): `{base}`, `{affix}` and `{count}` (uses in the
+document). Only the first use is reported. Words defined in the document
+(*we call this X*, *X is a ...*, *the term X*, *"X"*), in the glossary or in
+`ignore` are not reported. The `spelling` kind leaves such words to this one
+when it has no spelling suggestion for them.
+
+### `concept-names`
+
+Capitalized names made of common words and a framework-like head noun from
+`heads` (*the Clarity Loop*, *the Trust Tax*) that are not defined, linked or
+in the glossary, and not in `except`. Names whose words are not common words
+(*the Pareto Principle*) are left alone.
+
+### `hyphen-chain`
+
+Hyphen chains of three or more parts that the grammar does not know as one
+word: a modifier fused onto its noun (*decision-making-framework*, fixed to
+*decision-making framework*), a chain used as a noun (*the
+single-source-of-truth*, suggested *single source of truth*), or a chain of
+four or more parts before a noun. Chains in `except` and numbers
+(*twenty-one*) are skipped. `{kind}` and `{fix}` are available in messages.
+
+### `ly-hyphen`
+
+A hyphen after an *-ly* adverb (*highly-available*, fixed to *highly
+available*), using the grammar's analysis to tell adverbs from *-ly* nouns
+and adjectives (*family-owned*, *early-stage*). `{fix}`.
+
+### `noun-stack`
+
+Noun-noun compounds of `min` (default 3) to `max` nouns (*customer data
+platform integration strategy*), from the grammar's compound rules. Proper
+names, runs of capitalized nouns and multiword glossary terms count as one
+noun; words the grammar does not know are not counted. `{count}`.
+
+## Glossaries
+
+A glossary lists concepts and their terms, following the TBX-Basic model of
+terminology management. Put it in its own file and load it with
+`--glossary FILE`, or add `[[concept]]` tables to a pack:
+
+```toml
+[[concept]]
+id = "sign-in"
+definition = "Authenticating to an account."
+term = [
+  { text = "sign in", pos = "verb", status = "preferred" },
+  { text = "log in", pos = "verb", status = "deprecated" },
+  { text = "sign-in", pos = "noun", status = "preferred" },
+]
+
+[[concept]]
+id = "javascript"
+term = [{ text = "JavaScript" }]
+```
+
+`status` is `preferred` (the default), `admitted`, `deprecated` or
+`superseded`; `pos` (`noun`, `verb`, `adjective` or `adverb`) is checked
+against the grammar's analysis; `case` is `exact` (the default when the term
+has a capital letter) or `any`. Every loaded glossary is used by every rule.
+Allowed terms are known words for the `spelling`, `coined-words` and
+`concept-names` kinds, count as one noun for `noun-stack`, need no
+definition as acronyms, and decide which spelling `variants` keeps. This is
+how a project declares its established jargon: once *customer data platform*
+is in the glossary, it is no longer a noun stack.
 
 ## Disabling rules
 

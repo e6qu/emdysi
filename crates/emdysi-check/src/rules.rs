@@ -8,6 +8,12 @@
 //! id = "example.delve"
 //! kind = "words"            # words | regex | construction | coordination
 //!                           # | sentence-length | density | spelling | grammar
+//!                           # | grammar-errors | semantics | consistency
+//!                           # | structure | parallel | acronyms | glossary
+//!                           # | variants | coined-words | concept-names
+//!                           # | hyphen-chain | ly-hyphen | noun-stack
+//! scope = "body"            # optional: all | heading | body | paragraph
+//!                           # | list-item | lead
 //! words = ["delve", "tapestry"]
 //! match = "lemma"           # or "surface"
 //! severity = "warning"      # error | warning | suggestion
@@ -20,6 +26,8 @@ use std::collections::HashMap;
 use emdysi_parse::Erg;
 use fancy_regex::Regex;
 
+use crate::structure::{Hit, ParallelOf, StructureCheck};
+use crate::terms::{AcronymCheck, Concept, Glossary, GlossaryCheck};
 use crate::toml::{Table, Value};
 use crate::{Analysis, Diagnostic, Severity};
 
@@ -39,6 +47,8 @@ pub struct Pack {
     pub name: String,
     pub description: String,
     pub rules: Vec<Rule>,
+    /// Glossary concepts (`[[concept]]`), shared by all rules.
+    pub concepts: Vec<Concept>,
 }
 
 #[derive(Debug, Clone)]
@@ -48,6 +58,46 @@ pub struct Rule {
     pub message: String,
     pub description: String,
     pub kind: Kind,
+    /// Where in a document the rule applies.
+    pub scope: Scope,
+    /// Documents (Markdown) the rule must flag, and documents it must not;
+    /// run as tests.
+    pub examples: Vec<String>,
+    pub acceptable: Vec<String>,
+    /// Where the rule or its word list comes from, and under which license,
+    /// for rules adapted from other tools or style guides.
+    pub source: Option<String>,
+    pub license: Option<String>,
+}
+
+/// The part of a document a rule looks at.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Scope {
+    All,
+    /// Headings only.
+    Heading,
+    /// Everything but headings.
+    Body,
+    /// Paragraphs (not headings, list items, quotes or table cells).
+    Paragraph,
+    ListItem,
+    /// The first paragraph of the document and of each top-level (H1 or
+    /// H2) section.
+    Lead,
+}
+
+impl Scope {
+    fn parse(s: &str) -> Option<Scope> {
+        match s {
+            "all" => Some(Scope::All),
+            "heading" => Some(Scope::Heading),
+            "body" => Some(Scope::Body),
+            "paragraph" => Some(Scope::Paragraph),
+            "list-item" => Some(Scope::ListItem),
+            "lead" => Some(Scope::Lead),
+            _ => None,
+        }
+    }
 }
 
 /// A glob over names: `*` matches any run of characters.
@@ -136,6 +186,40 @@ pub enum Kind {
         prefer: Option<Variety>,
         prefer_suffix: Option<Variety>,
     },
+    /// Document structure: heading hierarchy, section and paragraph size.
+    Structure(StructureCheck),
+    /// Sibling headings or list items whose grammatical form differs from
+    /// the majority.
+    Parallel {
+        of: ParallelOf,
+        min_items: usize,
+        majority: f64,
+    },
+    /// Acronyms and initialisms defined on first use. Word-list entries at
+    /// least as common as `known_tier` (and `known`) need no definition.
+    Acronyms {
+        check: AcronymCheck,
+        known_tier: u8,
+        known: Vec<String>,
+    },
+    /// Terms of the glossary (`[[concept]]` tables).
+    Glossary(GlossaryCheck),
+    /// One spelling per term: hyphen, space and case variants.
+    Variants { min_length: usize },
+    /// Words coined from a known word and an affix.
+    CoinedWords { ignore: Vec<String> },
+    /// Capitalized concept names of common words with a framework-like
+    /// head noun.
+    ConceptNames {
+        heads: Vec<String>,
+        except: Vec<String>,
+    },
+    /// Hyphen chains of three or more parts.
+    HyphenChain { except: Vec<String> },
+    /// A hyphen after an -ly adverb.
+    LyHyphen,
+    /// Noun-noun compounds of `min` to `max` nouns.
+    NounStack { min: usize, max: usize },
 }
 
 fn get_str(t: &Table, k: &str) -> Option<String> {
@@ -151,6 +235,22 @@ fn globs(t: &Table, k: &str) -> Vec<Glob> {
 }
 
 impl Pack {
+    /// A glossary file: `[[concept]]` tables only, as a pack without rules.
+    pub fn parse_glossary(src: &str) -> Result<Pack, PackError> {
+        let t = crate::toml::parse(src).map_err(|e| PackError(e.to_string()))?;
+        if t.contains_key("rule") {
+            return Err(PackError(
+                "a glossary has no [[rule]] tables; load it with --pack".into(),
+            ));
+        }
+        Ok(Pack {
+            name: "glossary".into(),
+            description: String::new(),
+            rules: Vec::new(),
+            concepts: crate::terms::parse_concepts(&t).map_err(PackError)?,
+        })
+    }
+
     pub fn parse(src: &str) -> Result<Pack, PackError> {
         let t = crate::toml::parse(src).map_err(|e| PackError(e.to_string()))?;
         let meta = t
@@ -174,10 +274,12 @@ impl Pack {
                 Rule::from_table(r).map_err(|e| PackError(format!("rule {}: {}", i + 1, e.0)))?,
             );
         }
+        let concepts = crate::terms::parse_concepts(&t).map_err(PackError)?;
         Ok(Pack {
             name,
             description: get_str(&meta, "description").unwrap_or_default(),
             rules,
+            concepts,
         })
     }
 }
@@ -318,7 +420,103 @@ impl Rule {
                     prefer_suffix: variety("prefer_suffix", ["ise", "ize"])?,
                 }
             }
+            "structure" => {
+                let c = get_str(t, "check").ok_or_else(|| err("structure rule needs `check`"))?;
+                let n = |k: &str, d: f64| num(k).unwrap_or(d) as usize;
+                Kind::Structure(match c.as_str() {
+                    "heading-increment" => StructureCheck::HeadingIncrement,
+                    "single-h1" => StructureCheck::SingleH1,
+                    "empty-section" => StructureCheck::EmptySection,
+                    "stacked-headings" => StructureCheck::StackedHeadings,
+                    "lone-subsection" => StructureCheck::LoneSubsection,
+                    "depth" => StructureCheck::Depth {
+                        max: n("max", 4.0) as u8,
+                    },
+                    "wall-of-text" => StructureCheck::WallOfText {
+                        max_words: n("max_words", 450.0),
+                        max_paragraphs: n("max_paragraphs", 5.0),
+                    },
+                    "paragraph-length" => StructureCheck::ParagraphLength {
+                        max_words: n("max_words", 150.0),
+                        max_sentences: n("max_sentences", usize::MAX as f64),
+                    },
+                    "conclusion-at-end" => {
+                        let pat = get_str(t, "pattern").unwrap_or_else(|| {
+                            r"(?i)^(?:in )?(?:conclusions?|summary|key takeaways|takeaways|final thoughts|closing thoughts|wrapping up|the bottom line|bottom line|tl;dr)\W*$".to_string()
+                        });
+                        StructureCheck::ConclusionAtEnd {
+                            pattern: Regex::new(&pat)
+                                .map_err(|e| err(&format!("bad pattern: {e}")))?,
+                        }
+                    }
+                    o => return Err(err(&format!("unknown structure check {o:?}"))),
+                })
+            }
+            "parallel" => Kind::Parallel {
+                of: match get_str(t, "of").as_deref() {
+                    Some("headings") => ParallelOf::Headings,
+                    Some("list-items") => ParallelOf::ListItems,
+                    _ => {
+                        return Err(err(
+                            "parallel rule needs `of` = \"headings\" or \"list-items\"",
+                        ));
+                    }
+                },
+                min_items: num("min_items").unwrap_or(3.0) as usize,
+                majority: num("majority").unwrap_or(0.75),
+            },
+            "acronyms" => {
+                let c = get_str(t, "check").ok_or_else(|| err("acronyms rule needs `check`"))?;
+                Kind::Acronyms {
+                    check: match c.as_str() {
+                        "undefined" => AcronymCheck::Undefined,
+                        "defined-after-use" => AcronymCheck::DefinedAfterUse,
+                        "used-once" => AcronymCheck::UsedOnce,
+                        "redefined" => AcronymCheck::Redefined,
+                        "first-use-in-heading" => AcronymCheck::FirstUseInHeading,
+                        o => return Err(err(&format!("unknown acronyms check {o:?}"))),
+                    },
+                    known_tier: num("known_tier").unwrap_or(50.0) as u8,
+                    known: get_list(t, "known"),
+                }
+            }
+            "glossary" => {
+                let c = get_str(t, "check").ok_or_else(|| err("glossary rule needs `check`"))?;
+                Kind::Glossary(match c.as_str() {
+                    "deprecated" => GlossaryCheck::Deprecated,
+                    "casing" => GlossaryCheck::Casing,
+                    o => return Err(err(&format!("unknown glossary check {o:?}"))),
+                })
+            }
+            "variants" => Kind::Variants {
+                min_length: num("min_length").unwrap_or(5.0) as usize,
+            },
+            "coined-words" => Kind::CoinedWords {
+                ignore: get_list(t, "ignore")
+                    .iter()
+                    .map(|w| w.to_lowercase())
+                    .collect(),
+            },
+            "concept-names" => Kind::ConceptNames {
+                heads: get_list(t, "heads"),
+                except: get_list(t, "except"),
+            },
+            "hyphen-chain" => Kind::HyphenChain {
+                except: get_list(t, "except")
+                    .iter()
+                    .map(|w| w.to_lowercase())
+                    .collect(),
+            },
+            "ly-hyphen" => Kind::LyHyphen,
+            "noun-stack" => Kind::NounStack {
+                min: num("min").unwrap_or(3.0) as usize,
+                max: num("max").unwrap_or(f64::INFINITY).min(1e6) as usize,
+            },
             k => return Err(err(&format!("unknown kind {k:?}"))),
+        };
+        let scope = match get_str(t, "scope") {
+            None => Scope::All,
+            Some(s) => Scope::parse(&s).ok_or_else(|| err(&format!("unknown scope {s:?}")))?,
         };
         let severity = match get_str(t, "severity") {
             None => Severity::Warning,
@@ -332,7 +530,43 @@ impl Rule {
             id,
             severity,
             kind,
+            scope,
+            examples: get_list(t, "examples"),
+            acceptable: get_list(t, "acceptable"),
+            source: get_str(t, "source"),
+            license: get_str(t, "license"),
         })
+    }
+
+    /// Whether sentence `s` is in the rule's scope.
+    fn in_scope(&self, a: &Analysis, s: usize, lead: &std::collections::HashSet<usize>) -> bool {
+        use emdysi_text::blocks::BlockKind as B;
+        let b = a.sentences[s].block;
+        let kind = a.blocks[b].kind;
+        match self.scope {
+            Scope::All => true,
+            Scope::Heading => matches!(kind, B::Heading(_)),
+            Scope::Body => !matches!(kind, B::Heading(_)),
+            Scope::Paragraph => kind == B::Paragraph,
+            Scope::ListItem => kind == B::ListItem,
+            Scope::Lead => lead.contains(&b),
+        }
+    }
+
+    fn hit_diag(&self, h: Hit) -> Diagnostic {
+        let mut message = self.message.replace("{match}", &h.text);
+        for (k, v) in &h.vars {
+            message = message.replace(&format!("{{{k}}}"), v);
+        }
+        Diagnostic {
+            rule: self.id.clone(),
+            severity: self.severity,
+            message,
+            range: h.range,
+            replacement: h.replacement,
+            suggestions: h.suggestions,
+            sentence: h.sentence,
+        }
     }
 
     fn diag(&self, a: &Analysis, s: usize, from: usize, to: usize, matched: &str) -> Diagnostic {
@@ -347,7 +581,49 @@ impl Rule {
         }
     }
 
-    pub fn run(&self, erg: &Erg, a: &Analysis, out: &mut Vec<Diagnostic>) {
+    /// Run the rule over an analysis, with the glossary of all loaded packs.
+    pub fn run(&self, erg: &Erg, a: &Analysis, g: &Glossary, out: &mut Vec<Diagnostic>) {
+        let mut found = Vec::new();
+        self.run_all(erg, a, g, &mut found);
+        if self.scope != Scope::All {
+            let lead = crate::structure::lead_blocks(a);
+            found.retain(|d| d.sentence.is_none_or(|s| self.in_scope(a, s, &lead)));
+        }
+        out.extend(found);
+    }
+
+    fn run_all(&self, erg: &Erg, a: &Analysis, g: &Glossary, out: &mut Vec<Diagnostic>) {
+        let hits = match &self.kind {
+            Kind::Structure(c) => Some(crate::structure::run_structure(c, a)),
+            Kind::Parallel {
+                of,
+                min_items,
+                majority,
+            } => Some(crate::structure::run_parallel(
+                a, *of, *min_items, *majority,
+            )),
+            Kind::Acronyms {
+                check,
+                known_tier,
+                known,
+            } => Some(crate::terms::run_acronyms(*check, a, *known_tier, known, g)),
+            Kind::Glossary(c) => Some(crate::terms::run_glossary(*c, g, a)),
+            Kind::Variants { min_length } => Some(crate::terms::run_variants(a, *min_length, g)),
+            Kind::CoinedWords { ignore } => Some(crate::terms::run_coined_words(erg, a, g, ignore)),
+            Kind::ConceptNames { heads, except } => {
+                Some(crate::terms::run_concept_names(a, heads, g, except))
+            }
+            Kind::HyphenChain { except } => Some(crate::compounds::run_kebab(a, except)),
+            Kind::LyHyphen => Some(crate::compounds::run_ly_hyphen(a)),
+            Kind::NounStack { min, max } => {
+                Some(crate::compounds::run_noun_stacks(a, *min, *max, g))
+            }
+            _ => None,
+        };
+        if let Some(hits) = hits {
+            out.extend(hits.into_iter().map(|h| self.hit_diag(h)));
+            return;
+        }
         match &self.kind {
             Kind::Words { items, on, replace } => self.run_words(a, items, *on, replace, out),
             Kind::Regex {
@@ -542,6 +818,7 @@ impl Rule {
                                 .take(t.to - t.from)
                                 .all(|c| c == 'x')
                             || ignore.contains(w)
+                            || g.knows_word(w)
                         {
                             continue;
                         }
@@ -551,6 +828,13 @@ impl Rule {
                             .filter(|p| !p.is_empty())
                             .collect();
                         if known(w) || parts.iter().all(|p| known(p)) {
+                            continue;
+                        }
+                        // A known word plus an affix ("promptability") is a
+                        // coinage, not a misspelling: see `coined-words`.
+                        if crate::terms::novel_derivation(erg, w).is_some()
+                            && suggestions(erg, w, 1).0.is_empty()
+                        {
                             continue;
                         }
                         let (sugg, confident) = suggestions(erg, w, 5);
@@ -632,6 +916,7 @@ impl Rule {
                     }
                 }
             }
+            _ => {} // document-level kinds, run above
         }
     }
 

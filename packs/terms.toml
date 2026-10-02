@@ -1,0 +1,205 @@
+[pack]
+name = "terms"
+description = "Terminology and jargon: define acronyms, keep one term per concept, use established words instead of coined ones, avoid hyphen chains and noun stacks."
+
+# A project glossary goes in its own file, loaded with `--glossary FILE`
+# (or as a pack with `--pack FILE`). Each concept lists its terms:
+#
+#   [[concept]]
+#   id = "sign-in"
+#   definition = "Authenticating to an account."
+#   term = [
+#     { text = "sign in", pos = "verb", status = "preferred" },
+#     { text = "log in", pos = "verb", status = "deprecated" },
+#   ]
+#
+# status: preferred | admitted | deprecated | superseded (as in TBX-Basic);
+# pos: noun | verb | adjective | adverb (optional; matched against the
+# grammar's analysis); case: exact | any (default: exact when the term has
+# a capital letter). Allowed terms are also known words for spelling,
+# coined-word and noun-stack checks.
+
+# Acronyms (Microsoft Writing Style Guide, Acronyms; plainlanguage.gov,
+# Minimize abbreviations). Definitions are found by Schwartz–Hearst
+# alignment: "infrastructure as a service (IaaS)", "IaaS (infrastructure as
+# a service)", or "IaaS stands for ...". Acronyms in the word list at least
+# as common as `known_tier` need no definition: 40 for a general audience
+# (TV, CEO, NASA), 50 for a technical one (API, URL, HTML), 60 for experts.
+
+[[rule]]
+id = "terms.undefined-acronym"
+kind = "acronyms"
+check = "undefined"
+known_tier = 50
+severity = "warning"
+message = "'{match}' is not defined; spell it out at first use, followed by the acronym in parentheses."
+description = "An acronym or initialism used without a definition anywhere in the document, unless it is common enough (see `known_tier`) or in the glossary."
+source = "Microsoft Writing Style Guide, Acronyms"
+examples = ["The RTO target is four hours.\n"]
+acceptable = ["The recovery time objective (RTO) target is four hours. The RTO is reviewed yearly.\n", "Send the PDF to the CEO.\n"]
+
+[[rule]]
+id = "terms.acronym-defined-after-use"
+kind = "acronyms"
+check = "defined-after-use"
+known_tier = 50
+severity = "warning"
+message = "'{match}' is used before it is defined (line {line}); define it at first use."
+description = "An acronym whose definition comes after its first use."
+source = "Microsoft Writing Style Guide, Acronyms"
+examples = ["Check the RTO first. The recovery time objective (RTO) is four hours.\n"]
+acceptable = ["The recovery time objective (RTO) is four hours. Check the RTO first.\n"]
+
+[[rule]]
+id = "terms.acronym-used-once"
+kind = "acronyms"
+check = "used-once"
+severity = "suggestion"
+message = "'{match}' is defined but never used again; write '{long}' and drop the acronym."
+description = "An acronym introduced but not used after its definition: the reader learns it for nothing."
+source = "Microsoft Writing Style Guide, Acronyms"
+examples = ["The recovery time objective (RTO) is four hours.\n"]
+acceptable = ["The recovery time objective (RTO) is four hours. The RTO is reviewed yearly.\n"]
+
+[[rule]]
+id = "terms.acronym-redefined"
+kind = "acronyms"
+check = "redefined"
+severity = "warning"
+message = "'{match}' is defined again as '{long}', but it was defined as '{first}'; one acronym, one meaning."
+description = "An acronym defined twice with different long forms."
+examples = ["The recovery time objective (RTO) is four hours. Each return to office (RTO) day is logged.\n"]
+acceptable = ["The recovery time objective (RTO) is four hours. The RTO is reviewed yearly.\n"]
+
+[[rule]]
+id = "terms.acronym-in-heading"
+kind = "acronyms"
+check = "first-use-in-heading"
+known_tier = 50
+severity = "suggestion"
+message = "'{match}' first appears in a heading; spell it out in the heading or define it in the text first."
+description = "An acronym whose first use is in a heading, where it cannot be defined."
+source = "Microsoft Writing Style Guide, Acronyms"
+examples = ["# Setting the RTO\n\nThe recovery time objective (RTO) is four hours.\n"]
+acceptable = ["# Setting the recovery time objective\n\nThe recovery time objective (RTO) is four hours. The RTO is reviewed yearly.\n"]
+
+# Terms.
+
+[[rule]]
+id = "terms.deprecated"
+kind = "glossary"
+check = "deprecated"
+severity = "warning"
+message = "Use '{preferred}' instead of '{match}' (glossary: {concept})."
+description = "A term the glossary marks as deprecated or superseded; the fix is the concept's preferred term. Inflected forms are matched through the grammar's lemmas and get a suggestion instead of a fix."
+source = "TBX-Basic administrative status; Vale substitution rules"
+
+[[rule]]
+id = "terms.casing"
+kind = "glossary"
+check = "casing"
+severity = "warning"
+message = "Write '{preferred}', as the glossary does."
+description = "A glossary term written with different capitalization (Javascript for JavaScript)."
+source = "Vale.Terms"
+
+[[rule]]
+id = "terms.variant-spelling"
+kind = "variants"
+min_length = 5
+severity = "warning"
+message = "'{match}' is also written '{preferred}' in this document; use one spelling."
+description = "One term written in several ways in one document (e-mail and email, data set and dataset, front-end and frontend). The spelling the glossary prefers, or else the one used most, wins. Spellings the grammar analyses as different parts of speech (the verb 'set up', the noun 'setup') are different words and are left alone."
+source = "plainlanguage.gov, Use the same terms consistently; Microsoft Writing Style Guide (one term, one concept)"
+examples = ["Send an email to the team. The e-mail should list the dates.\n"]
+acceptable = ["Set up the server. The setup takes an hour.\n", "Send an email to the team. The email should list the dates.\n"]
+
+# Invented jargon.
+
+[[rule]]
+id = "terms.coined-word"
+kind = "coined-words"
+severity = "suggestion"
+message = "'{match}' is not an established word ({base} + {affix}, used {count} time(s)); use an existing term or define it."
+description = "A word the grammar and the word list do not know, made of a known word and a productive affix ('promptability', 'agentification', 'hyperpersonalize'). Words defined in the document ('we call this X', 'X is a ...', 'the term X') or in the glossary are not reported. Misspellings are left to core.spelling."
+source = "Microsoft Writing Style Guide, Use technical terms carefully (don't create a new term if one already exists)"
+examples = ["The new release improves promptability across the suite.\n"]
+acceptable = ["The new release improves reliability across the suite.\n", "We call this property promptability: how well a model follows prompts. Promptability improved.\n"]
+
+[[rule]]
+id = "terms.coined-concept"
+kind = "concept-names"
+severity = "suggestion"
+message = "'{match}' reads like a coined concept name; use the established term, or define it and say where it comes from."
+description = "A capitalized name made of common words and a framework-like head noun ('the Clarity Loop', 'the Trust Tax') that is not defined, linked or in the glossary. Names that are not common words ('the Pareto Principle') are not reported."
+heads = [
+  "Framework", "Loop", "Layer", "Pillar", "Pillars", "Flywheel", "Tax", "Gap", "Paradigm",
+  "Principle", "Method", "Matrix", "Stack", "Engine", "Playbook", "Mindset", "Effect",
+  "Trap", "Spiral", "Cycle", "Triangle", "Formula", "Blueprint", "Model", "Equation",
+  "Ladder", "Funnel", "Compass", "Canvas", "Protocol", "Doctrine", "Quotient", "Paradox",
+]
+except = ["Agile Manifesto"]
+examples = ["Teams that ignore the Clarity Loop lose momentum.\n"]
+acceptable = ["Teams that ignore the Pareto Principle lose momentum.\n", "The clarity loop is how we review drafts: write, read aloud, cut. Teams that skip the Clarity Loop lose momentum.\n"]
+
+# Hyphens and compounds (Chicago, AP, Google and Microsoft agree: hyphenate
+# a compound modifier before its noun, never after an -ly adverb, and do not
+# fuse a modifier onto its head noun; plainlanguage.gov, Avoid noun strings).
+
+[[rule]]
+id = "terms.hyphen-chain"
+kind = "hyphen-chain"
+severity = "warning"
+message = "'{match}' is {kind}; write '{fix}'."
+description = "Hyphen chains of three or more parts that the grammar does not know as one word: a modifier fused onto its noun ('decision-making-framework' for 'decision-making framework'), a hyphenated noun phrase ('the single-source-of-truth'), or four or more parts before a noun."
+except = [
+  "state-of-the-art", "up-to-date", "out-of-date", "end-to-end", "face-to-face", "day-to-day",
+  "peer-to-peer", "one-to-one", "one-to-many", "many-to-many", "many-to-one", "point-to-point",
+  "mother-in-law", "father-in-law", "sister-in-law", "brother-in-law", "son-in-law",
+  "daughter-in-law", "parents-in-law", "word-of-mouth", "over-the-counter", "behind-the-scenes",
+  "back-to-back", "matter-of-fact", "up-to-the-minute", "off-the-shelf", "out-of-the-box",
+  "run-of-the-mill", "do-it-yourself", "pay-as-you-go", "all-in-one", "point-in-time",
+  "commander-in-chief", "editor-in-chief", "work-in-progress", "will-o'-the-wisp",
+  "jack-of-all-trades", "know-it-all", "happy-go-lucky", "merry-go-round", "up-and-coming",
+  "first-come-first-served", "one-on-one", "head-to-head", "door-to-door", "side-by-side",
+  "step-by-step", "hand-to-hand", "year-over-year", "month-over-month", "week-over-week",
+  "top-of-the-line", "out-of-pocket", "out-of-band", "out-of-memory", "out-of-scope",
+  "line-of-business", "proof-of-concept", "proof-of-work", "proof-of-stake",
+]
+examples = ["We built a decision-making-framework for the team.\n", "The single-source-of-truth is in the repository.\n"]
+acceptable = ["We built a decision-making framework for the team.\n", "The state-of-the-art model is small.\n", "The easy-to-use interface helps.\n"]
+
+[[rule]]
+id = "terms.ly-hyphen"
+kind = "ly-hyphen"
+severity = "warning"
+message = "No hyphen after an -ly adverb: '{fix}'."
+description = "A hyphen between an -ly adverb and the word it modifies ('highly-available'). The grammar's analysis tells adverbs from -ly adjectives and nouns, so 'family-owned' and 'early-stage' are left alone."
+source = "Chicago Manual of Style 7.85; AP Stylebook; Microsoft Writing Style Guide, Hyphens"
+examples = ["The service is highly-available.\n"]
+acceptable = ["The service is highly available.\n", "It is a family-owned company.\n"]
+
+[[rule]]
+id = "terms.noun-stack"
+kind = "noun-stack"
+min = 4
+severity = "warning"
+message = "'{match}' stacks {count} nouns; open it up with prepositions ('the strategy for integrating ...')."
+description = "A noun-noun compound of four or more nouns, from the grammar's compound rules. Proper names and multiword glossary terms count as one noun."
+scope = "body"
+source = "plainlanguage.gov, Avoid noun strings; Microsoft Writing Style Guide (avoid modifier stacks)"
+examples = ["Our customer data platform integration strategy failed.\n"]
+acceptable = ["Our strategy for integrating the customer data platform failed.\n"]
+
+[[rule]]
+id = "terms.noun-string"
+kind = "noun-stack"
+min = 3
+max = 3
+severity = "suggestion"
+message = "'{match}' stacks three nouns; consider opening it up, or add the term to the glossary if it is established."
+description = "A noun-noun compound of exactly three nouns."
+scope = "body"
+source = "plainlanguage.gov, Avoid noun strings"
+examples = ["The data platform team approved it.\n"]
+acceptable = ["The platform team approved it.\n"]
