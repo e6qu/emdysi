@@ -3,7 +3,8 @@
 (VENDORED.sha256).
 
 - Every entry has all required fields, its license files and source doc
-  exist, and its paths exist.
+  exist, and its paths exist. Entries with `ai_generated = true`
+  (machine-generated text) must also name their `generator`.
 - Every file under grammar/, corpora/ and data/ is covered by exactly one
   entry (files compiled into crates are listed explicitly).
 - Every covered file is in the manifest with a matching SHA-256, and the
@@ -64,6 +65,14 @@ def main():
             v = item.get(k)
             if v is None or v == "" or v == []:
                 errors.append(f"{iid}: missing field `{k}`")
+        ai = item.get("ai_generated", False)
+        if not isinstance(ai, bool):
+            errors.append(f"{iid}: `ai_generated` must be true or false")
+        gen = item.get("generator")
+        if gen is not None and (not isinstance(gen, str) or not gen.strip()):
+            errors.append(f"{iid}: `generator` must be a non-empty string")
+        if ai is True and gen is None:
+            errors.append(f"{iid}: `ai_generated = true` requires `generator`")
         if iid in ids:
             errors.append(f"{iid}: duplicate id")
         ids.add(iid)

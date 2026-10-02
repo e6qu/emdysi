@@ -120,3 +120,83 @@ each alone.
 | npi_licensing-only_npi_licensor | 30 | 100.0% | 0.0% | 0.0% |
 | quantifiers-existential_there | 30 | 100.0% | 30.0% | 30.0% |
 | quantifiers-superlative | 30 | 100.0% | 0.0% | 0.0% |
+
+## Machine-generated text samples
+
+Samples of machine-generated prose for evaluating the style packs are in
+[`corpora/beemo`](../corpora/beemo/SOURCE.md) (open-model outputs with
+expert edits), [`corpora/cheat`](../corpora/cheat/SOURCE.md)
+(ChatGPT-written abstracts) and
+[`corpora/hh-rlhf`](../corpora/hh-rlhf/SOURCE.md) (assistant turns). Each
+`sample.tsv` has one text per row, with backslash, tab, newline and
+carriage return escaped as `\\`, `\t`, `\n`, `\r`. `cargo run --release -p emdysi-check --example rule_rates -- FILE.tsv
+COLUMNS [ROWS]` checks the texts of the given columns with the built-in
+packs and prints, per rule, the number of diagnostics and the rate per
+1,000 words.
+
+### Beemo: model output against its expert edit
+
+The first 60 rows of the Beemo sample (columns 3 and 4: the raw output of
+zephyr-7b-beta, Mistral-7B or Mixtral-8x7B, and the same text after an
+expert annotator edited it); count (per 1,000 words):
+
+| Rule | model_output | expert_edited |
+|---|---|---|
+| words | 17113 | 14908 |
+| `ai-tells.chatbot` | 1 (0.1) | 0 (0.0) |
+| `ai-tells.not-x-but-y` | 11 (0.6) | 9 (0.6) |
+| `ai-tells.participial-tail` | 45 (2.6) | 36 (2.4) |
+| `ai-tells.rule-of-three` | 45 (2.6) | 41 (2.8) |
+| `ai-tells.signposting` | 4 (0.2) | 2 (0.1) |
+| `ai-tells.stock-phrases` | 0 (0.0) | 1 (0.1) |
+| `ai-tells.vocabulary` | 14 (0.8) | 14 (0.9) |
+| `core.consistency` | 3 (0.2) | 1 (0.1) |
+| `core.grammar` | 244 (14.3) | 215 (14.4) |
+| `core.grammar-errors` | 723 (42.2) | 549 (36.8) |
+| `core.spelling` | 23 (1.3) | 22 (1.5) |
+| `plain-style.double-space` | 0 (0.0) | 6 (0.4) |
+| `plain-style.expletive-there` | 21 (1.2) | 17 (1.1) |
+| `plain-style.intensifiers` | 31 (1.8) | 33 (2.2) |
+| `plain-style.passive` | 64 (3.7) | 70 (4.7) |
+| `plain-style.repeated-word` | 1 (0.1) | 1 (0.1) |
+| `plain-style.sentence-length` | 22 (1.3) | 10 (0.7) |
+| `plain-style.stacked-negation` | 4 (0.2) | 3 (0.2) |
+| `plain-style.tense-shift` | 6 (0.4) | 4 (0.3) |
+| `plain-style.wordy` | 3 (0.2) | 2 (0.1) |
+| `structure.long-paragraph` | 2 (0.1) | 2 (0.1) |
+| `structure.parallel-list` | 20 (1.2) | 12 (0.8) |
+| `structure.wall-of-text` | 30 (1.8) | 29 (1.9) |
+| `substance.agentless-passive` | 30 (1.8) | 30 (2.0) |
+| `substance.bare-demonstrative` | 5 (0.3) | 4 (0.3) |
+| `substance.certainty` | 3 (0.2) | 3 (0.2) |
+| `substance.hedge-adverb` | 1 (0.1) | 1 (0.1) |
+| `substance.hedge-verb` | 7 (0.4) | 3 (0.2) |
+| `substance.vague-quantity` | 2 (0.1) | 2 (0.1) |
+| `terms.acronym-used-once` | 1 (0.1) | 2 (0.1) |
+| `terms.coined-word` | 4 (0.2) | 2 (0.1) |
+| `terms.hyphen-chain` | 1 (0.1) | 1 (0.1) |
+| `terms.ly-hyphen` | 1 (0.1) | 1 (0.1) |
+| `terms.noun-stack` | 26 (1.5) | 14 (0.9) |
+| `terms.noun-string` | 29 (1.7) | 33 (2.2) |
+| `terms.undefined-acronym` | 4 (0.2) | 4 (0.3) |
+| `terms.variant-spelling` | 0 (0.0) | 1 (0.1) |
+
+Most prompts are creative writing (stories, poems, letters), not
+documents, so few structure and terminology rules apply. What the table
+shows:
+
+- Rules whose rate drops after expert editing point at what editors fix:
+  noun stacks of four or more nouns (1.5 to 0.9 per 1,000 words),
+  non-parallel list items (1.2 to 0.8), long sentences (1.3 to 0.7), named
+  grammatical errors, hedging verbs and coined words.
+- Rules with the same rate on both sides (wall of text, rule of three,
+  participial tails, agentless passives) describe the genre, not the
+  machine: editors kept them. They stay at suggestion level. `wall-of-text`
+  in particular fires on half of these stories, which is right for
+  documents meant to be scanned but not for fiction; disable it
+  (`--disable structure.wall-of-text`) for narrative text.
+- `core.grammar-errors` and `core.grammar` fire often on both sides (about
+  40 and 14 per 1,000 words): dialogue, poetry and informal punctuation
+  defeat the strict grammar. These rates, not the structure rules, are the
+  main source of noise on creative text.
+

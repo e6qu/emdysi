@@ -17,6 +17,8 @@ const BUILTIN_PACKS: &[(&str, &str)] = &[
         include_str!("../../../packs/plain-style.toml"),
     ),
     ("substance", include_str!("../../../packs/substance.toml")),
+    ("structure", include_str!("../../../packs/structure.toml")),
+    ("terms", include_str!("../../../packs/terms.toml")),
 ];
 
 const USAGE: &str = "\
@@ -33,7 +35,10 @@ USAGE:
     en packs                       list built-in rule packs and rules
 
 OPTIONS:
-    --pack NAME|FILE       rule pack to use (repeatable; default: core, ai-tells, plain-style, substance)
+    --pack NAME|FILE       rule pack to use (repeatable; default: core, ai-tells,
+                           plain-style, substance, structure, terms)
+    --glossary FILE        project glossary: [[concept]] tables of preferred,
+                           admitted and deprecated terms (repeatable)
     --disable RULE         skip a rule id, or a prefix ending in '*' (repeatable)
     --input plain|markdown input format (default: from the file extension; stdin is plain)
     --format plain|markdown  output format (default: plain)
@@ -58,6 +63,7 @@ struct Args {
     command: String,
     files: Vec<PathBuf>,
     packs: Vec<String>,
+    glossaries: Vec<PathBuf>,
     disabled: Vec<String>,
     input: Option<Format>,
     output: OutputFormat,
@@ -81,6 +87,7 @@ fn parse_args() -> Result<Args, String> {
         command,
         files: Vec::new(),
         packs: Vec::new(),
+        glossaries: Vec::new(),
         disabled: Vec::new(),
         input: None,
         output: OutputFormat::Plain,
@@ -99,6 +106,7 @@ fn parse_args() -> Result<Args, String> {
     while let Some(arg) = it.next() {
         match arg.as_str() {
             "--pack" => a.packs.push(need(&mut it, &arg)?),
+            "--glossary" => a.glossaries.push(PathBuf::from(need(&mut it, &arg)?)),
             "--disable" => a.disabled.push(need(&mut it, &arg)?),
             "--input" => {
                 a.input = Some(match need(&mut it, &arg)?.as_str() {
@@ -199,6 +207,9 @@ fn run() -> Result<bool, String> {
             println!("{}: {}", p.name, p.description);
             for r in &p.rules {
                 println!("  {} ({})", r.id, r.severity.as_str());
+                if let Some(src) = &r.source {
+                    println!("      source: {src}");
+                }
             }
         }
         return Ok(true);
@@ -206,7 +217,11 @@ fn run() -> Result<bool, String> {
     if !matches!(args.command.as_str(), "check" | "fix" | "parse" | "rewrite") {
         return Err(format!("unknown command {:?}\n\n{USAGE}", args.command));
     }
-    let packs = load_packs(&args.packs)?;
+    let mut packs = load_packs(&args.packs)?;
+    for g in &args.glossaries {
+        let src = std::fs::read_to_string(g).map_err(|e| format!("{}: {e}", g.display()))?;
+        packs.push(Pack::parse_glossary(&src).map_err(|e| format!("{}: {e}", g.display()))?);
+    }
     let docs = inputs(&args.files, args.input)?;
     let erg = Erg::load(&args.grammar).map_err(|e| format!("loading grammar: {e}"))?;
     let mut checker = Checker::new(packs);

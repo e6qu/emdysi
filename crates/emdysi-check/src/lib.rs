@@ -14,10 +14,13 @@ use emdysi_parse::{Erg, InputToken, Parse, Reading};
 use emdysi_text::blocks::{Block, BlockKind, markdown_blocks, plain_blocks};
 use emdysi_text::segment::sentences;
 
+pub mod compounds;
 pub mod dict;
 pub mod report;
 pub mod rules;
 pub mod semantics;
+pub mod structure;
+pub mod terms;
 pub mod toml;
 
 pub use rules::{Pack, Rule};
@@ -164,6 +167,7 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
     for (bi, b) in blocks.iter().enumerate() {
         // Headings and table cells are fragments by nature: one unit each.
         let ranges: Vec<Range<usize>> = match b.kind {
+            BlockKind::Code => Vec::new(),
             BlockKind::Heading(_) | BlockKind::TableCell => {
                 std::iter::once(0..b.text.len()).collect()
             }
@@ -314,6 +318,19 @@ pub struct Checker {
 }
 
 impl Checker {
+    /// The concepts of all packs.
+    pub fn glossary(&self) -> terms::Glossary {
+        terms::Glossary {
+            concepts: self
+                .packs
+                .iter()
+                .flat_map(|p| p.concepts.iter().cloned())
+                .collect(),
+        }
+    }
+}
+
+impl Checker {
     pub fn new(packs: Vec<Pack>) -> Self {
         Checker {
             packs,
@@ -330,10 +347,11 @@ impl Checker {
 
     pub fn check(&self, erg: &Erg, a: &Analysis) -> Vec<Diagnostic> {
         let mut out = Vec::new();
+        let glossary = self.glossary();
         for pack in &self.packs {
             for rule in &pack.rules {
                 if self.enabled(&rule.id) {
-                    rule.run(erg, a, &mut out);
+                    rule.run(erg, a, &glossary, &mut out);
                 }
             }
         }

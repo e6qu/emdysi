@@ -50,6 +50,14 @@ TOML files; see [`docs/rules.md`](docs/rules.md). The built-in packs are:
 - `substance`: hedged, vague and unsupported claims (*seems to*, *may
   potentially*, *studies show* without a citation, *a number of*,
   *clearly*).
+- `structure`: the main point first (no throat-clearing openings, no
+  conclusion held back to the end), a clean heading hierarchy (no skipped
+  levels, empty or lone sections), short paragraphs, specific headings, and
+  parallel headings and list items;
+- `terms`: acronyms defined at first use, one spelling per term, glossary
+  terms (`--glossary FILE`) instead of deprecated ones, no coined words or
+  concept names, no hyphen chains (*decision-making-framework*), no hyphen
+  after *-ly* adverbs and no noun stacks.
 
 `en rewrite` prints the text with guarded rewrites: the automatic fixes,
 spelling corrections and a small local language model's rewrites of

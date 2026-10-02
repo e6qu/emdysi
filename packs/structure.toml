@@ -1,0 +1,189 @@
+[pack]
+name = "structure"
+description = "Document structure: the main point first, a clean heading hierarchy, short paragraphs, parallel headings and lists."
+
+# Heading hierarchy (markdownlint MD001, MD025; Google and Microsoft style
+# guides).
+
+[[rule]]
+id = "structure.heading-increment"
+kind = "structure"
+check = "heading-increment"
+severity = "warning"
+message = "Heading jumps from level {from} to level {to}; add the missing level or promote this heading."
+description = "A heading more than one level below the previous heading (an H2 followed by an H4). Readers and tools use the hierarchy to navigate."
+source = "markdownlint MD001 (heading-increment)"
+examples = ["# Guide\n\nIntro.\n\n#### Details\n\nText.\n"]
+acceptable = ["# Guide\n\nIntro.\n\n## Details\n\nText.\n"]
+
+[[rule]]
+id = "structure.single-h1"
+kind = "structure"
+check = "single-h1"
+severity = "warning"
+message = "More than one top-level heading ({count}); a document has one title."
+description = "Several level-1 headings. The title is the one H1; sections start at H2."
+source = "markdownlint MD025 (single-title); Google developer documentation style guide"
+examples = ["# One\n\nText.\n\n# Two\n\nText.\n"]
+acceptable = ["# One\n\nText.\n\n## Two\n\nText.\n"]
+
+[[rule]]
+id = "structure.empty-section"
+kind = "structure"
+check = "empty-section"
+severity = "warning"
+message = "Section '{match}' is empty."
+description = "A heading with nothing under it before the next heading of the same or a higher level, or the end of the document."
+source = "textlint-rule-no-empty-section"
+examples = ["# Guide\n\nIntro.\n\n## Setup\n\n## Usage\n\nRun it.\n"]
+acceptable = ["# Guide\n\nIntro.\n\n## Setup\n\nInstall it.\n\n## Usage\n\nRun it.\n"]
+
+[[rule]]
+id = "structure.stacked-headings"
+kind = "structure"
+check = "stacked-headings"
+severity = "suggestion"
+message = "'{match}' is followed directly by '{next}'; say what the section covers before its first subsection."
+description = "Two headings in a row with no text between them. A sentence or two under the first heading tells readers what the section is for."
+source = "Microsoft Writing Style Guide, Headings"
+examples = ["# Guide\n\nIntro.\n\n## Setup\n\n### Linux\n\nRun it.\n\n### macOS\n\nRun it.\n"]
+acceptable = ["# Guide\n\nIntro.\n\n## Setup\n\nPick your system.\n\n### Linux\n\nRun it.\n\n### macOS\n\nRun it.\n"]
+
+[[rule]]
+id = "structure.lone-subsection"
+kind = "structure"
+check = "lone-subsection"
+severity = "suggestion"
+message = "'{match}' is the only subsection of its section; merge it into its parent or add a sibling."
+description = "A section with exactly one subsection: a level of hierarchy that organizes nothing."
+source = "Microsoft Writing Style Guide, Headings"
+examples = ["# Guide\n\nIntro.\n\n## Setup\n\nSteps.\n\n### Linux\n\nRun it.\n\n## Usage\n\nUse it.\n"]
+acceptable = ["# Guide\n\nIntro.\n\n## Setup\n\nSteps.\n\n### Linux\n\nRun it.\n\n### macOS\n\nRun it.\n\n## Usage\n\nUse it.\n"]
+
+[[rule]]
+id = "structure.depth"
+kind = "structure"
+check = "depth"
+max = 4
+severity = "suggestion"
+message = "Heading at level {level}; more than {max} levels are hard to follow. Split the document or flatten the hierarchy."
+description = "Headings deeper than level 4."
+source = "plainlanguage.gov, Use lots of useful headings (two or three levels)"
+examples = ["# A\n\nText.\n\n## B\n\nText.\n\n### C\n\nText.\n\n#### D\n\nText.\n\n##### E\n\nText.\n"]
+acceptable = ["# A\n\nText.\n\n## B\n\nText.\n\n### C\n\nText.\n"]
+
+# Size of paragraphs and sections (plainlanguage.gov: "no more than 150
+# words in three to eight sentences ... never be longer than 250 words").
+
+[[rule]]
+id = "structure.long-paragraph"
+kind = "structure"
+check = "paragraph-length"
+max_words = 150
+max_sentences = 8
+severity = "suggestion"
+message = "Paragraph of {count} words and {sentences} sentences; keep paragraphs to one topic and about 150 words."
+description = "Paragraphs longer than 150 words or 8 sentences."
+source = "plainlanguage.gov, Write short paragraphs"
+examples = ["One. Two. Three. Four. Five. Six. Seven. Eight. Nine.\n"]
+acceptable = ["One. Two. Three.\n"]
+
+[[rule]]
+id = "structure.very-long-paragraph"
+kind = "structure"
+check = "paragraph-length"
+max_words = 250
+severity = "warning"
+message = "Paragraph of {count} words; split it (no paragraph should exceed 250 words)."
+description = "Paragraphs longer than 250 words."
+source = "plainlanguage.gov, Write short paragraphs"
+
+[[rule]]
+id = "structure.wall-of-text"
+kind = "structure"
+check = "wall-of-text"
+max_words = 450
+max_paragraphs = 5
+severity = "suggestion"
+message = "{paragraphs} paragraphs ({count} words) without a heading, list or table; break the text up so readers can scan it."
+description = "A long run of paragraphs with nothing a reader can scan for: no heading, list, table or code block between them. Markdown documents only."
+source = "plainlanguage.gov, Use lots of useful headings"
+examples = ["# T\n\nA.\n\nB.\n\nC.\n\nD.\n\nE.\n\nF.\n"]
+acceptable = ["# T\n\nA.\n\nB.\n\n## U\n\nC.\n\nD.\n"]
+
+# The main point first (bottom line up front).
+
+[[rule]]
+id = "structure.conclusion-at-end"
+kind = "structure"
+check = "conclusion-at-end"
+severity = "suggestion"
+message = "The document ends with '{match}': put the main point and the conclusion at the top, not at the end."
+description = "The last section is a conclusion or summary. Readers who scan read the start, so the conclusion belongs there (bottom line up front); a closing summary can repeat it."
+source = "plainlanguage.gov, Organize (put the most important information first); Microsoft Writing Style Guide (start with the key takeaway)"
+examples = ["# Report\n\nWe looked at three options.\n\n## Options\n\nA, B and C.\n\n## Conclusion\n\nPick B.\n"]
+acceptable = ["# Report\n\nPick option B: it is the cheapest.\n\n## Options\n\nA, B and C.\n\n## Costs\n\nB costs least.\n"]
+
+[[rule]]
+id = "structure.throat-clearing"
+kind = "regex"
+scope = "lead"
+severity = "warning"
+message = "The opening ('{match}') delays the point; start with the conclusion or the key fact."
+description = "Openings of a document or top-level section that say nothing yet: scene-setting, announcements of what the text will do, rhetorical questions. Only the first paragraph of the document and of each H1 or H2 section is checked."
+source = "plainlanguage.gov, Organize; Microsoft Writing Style Guide, Top 10 tips"
+pattern = "(?i)^(?:in today's (?:\\w+[- ])*(?:world|landscape|age|era|environment)|in an? (?:\\w+[- ]){0,3}(?:world|landscape|era) (?:where|of)|in this day and age|in recent years|have you ever (?:wondered|asked yourself)|let's (?:dive|delve|take a (?:closer |deep )?look)|without further ado|as we all know|it is no secret that|it's no secret that|imagine (?:a world|for a moment)|(?:this|the following|in this) (?:article|post|guide|document|blog post|section|report)(?:,)? (?:will|we will|we'll|aims to|is going to) |in this (?:article|post|guide|document|section|report), (?:we|I) (?:will|'ll|are going to))"
+examples = ["# Tools\n\nIn today's fast-paced digital world, teams need better tools.\n", "# Tools\n\nIn this article, we will explore three tools.\n"]
+acceptable = ["# Tools\n\nTeams that adopted the new linter cut review time by a third.\n"]
+
+# Headings.
+
+[[rule]]
+id = "structure.vague-heading"
+kind = "regex"
+scope = "heading"
+severity = "suggestion"
+message = "Heading '{match}' says nothing about the content; name what the section tells the reader."
+description = "Headings that could stand over any text: Overview, Introduction, Background, General, Details, Miscellaneous, Other, Notes."
+source = "plainlanguage.gov, Use lots of useful headings"
+pattern = "(?i)^(?:overview|introduction|background|general|general information|details|miscellaneous|misc|other|other information|notes|more information|information|discussion|considerations)\\W*$"
+examples = ["# Release 2.0\n\nIt is out.\n\n## Overview\n\nText.\n\n## Changes\n\nText.\n"]
+acceptable = ["# Release 2.0\n\nIt is out.\n\n## What changed\n\nText.\n\n## How to upgrade\n\nText.\n"]
+
+[[rule]]
+id = "structure.back-loaded-heading"
+kind = "regex"
+scope = "heading"
+severity = "suggestion"
+message = "Heading starts with '{match}'; put the topic itself first."
+description = "Headings that start with filler before the topic: 'A note on', 'Some thoughts about', 'Everything you need to know about', 'A deep dive into'."
+source = "Microsoft Writing Style Guide, Headings (put the most important idea at the beginning)"
+pattern = "(?i)^(?:a (?:quick |short |brief )?(?:note|word|look|primer) (?:on|about|at)|some (?:thoughts|notes|words) (?:on|about)|everything you need to know about|all you need to know about|an? (?:deep[- ]dive|closer look|overview) (?:into|of|at)|understanding|exploring|unpacking|demystifying|navigating)\\b"
+examples = ["# Caching\n\nIt helps.\n\n## A note on eviction\n\nText.\n"]
+acceptable = ["# Caching\n\nIt helps.\n\n## Eviction\n\nText.\n"]
+
+[[rule]]
+id = "structure.parallel-headings"
+kind = "parallel"
+of = "headings"
+min_items = 3
+majority = 0.75
+severity = "suggestion"
+message = "Heading '{match}' is {form}, but its sibling headings are {majority}; give sibling headings the same form."
+description = "A heading whose grammatical form (instruction, -ing phrase, question, noun phrase, sentence) differs from at least 75% of its siblings, as the grammar analyses them."
+source = "Microsoft Writing Style Guide, Headings (parallel structure); plainlanguage.gov"
+examples = ["# Guide\n\nText.\n\n## Install the tool\n\nText.\n\n## Configure the server\n\nText.\n\n## Start the service\n\nText.\n\n## Troubleshooting tips\n\nText.\n"]
+acceptable = ["# Guide\n\nText.\n\n## Install the tool\n\nText.\n\n## Configure the server\n\nText.\n\n## Start the service\n\nText.\n\n## Fix common problems\n\nText.\n"]
+
+[[rule]]
+id = "structure.parallel-list"
+kind = "parallel"
+of = "list-items"
+min_items = 3
+majority = 0.6
+severity = "suggestion"
+message = "List item '{match}' is {form}, but most items are {majority}; give list items the same form."
+description = "A list item whose grammatical form differs from most items of its list (at least 60%), as the grammar analyses the first sentence of each."
+source = "Microsoft Writing Style Guide, Lists; plainlanguage.gov, Use lists"
+examples = ["To deploy:\n\n1. Build the image.\n2. Push the image.\n3. Update the service.\n4. The logs should be checked.\n"]
+acceptable = ["To deploy:\n\n1. Build the image.\n2. Push the image.\n3. Update the service.\n4. Check the logs.\n"]

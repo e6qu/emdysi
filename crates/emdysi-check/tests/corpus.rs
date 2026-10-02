@@ -10,13 +10,20 @@ use emdysi_check::*;
 use emdysi_parse::{Erg, default_grammar_dir};
 
 fn packs() -> Vec<Pack> {
-    ["core", "ai-tells", "plain-style", "substance"]
-        .iter()
-        .map(|p| {
-            let path = Path::new(env!("CARGO_MANIFEST_DIR")).join(format!("../../packs/{p}.toml"));
-            Pack::parse(&std::fs::read_to_string(path).unwrap()).unwrap()
-        })
-        .collect()
+    [
+        "core",
+        "ai-tells",
+        "plain-style",
+        "substance",
+        "structure",
+        "terms",
+    ]
+    .iter()
+    .map(|p| {
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join(format!("../../packs/{p}.toml"));
+        Pack::parse(&std::fs::read_to_string(path).unwrap()).unwrap()
+    })
+    .collect()
 }
 
 #[test]

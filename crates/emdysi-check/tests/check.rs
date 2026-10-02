@@ -4,14 +4,21 @@ use emdysi_check::*;
 use emdysi_parse::{Erg, default_grammar_dir};
 
 fn packs() -> Vec<Pack> {
-    ["core", "ai-tells", "plain-style", "substance"]
-        .iter()
-        .map(|p| {
-            let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-                .join(format!("../../packs/{p}.toml"));
-            Pack::parse(&std::fs::read_to_string(path).unwrap()).unwrap()
-        })
-        .collect()
+    [
+        "core",
+        "ai-tells",
+        "plain-style",
+        "substance",
+        "structure",
+        "terms",
+    ]
+    .iter()
+    .map(|p| {
+        let path =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(format!("../../packs/{p}.toml"));
+        Pack::parse(&std::fs::read_to_string(path).unwrap()).unwrap()
+    })
+    .collect()
 }
 
 fn rules_at<'a>(src: &str, diags: &'a [Diagnostic], text: &str) -> Vec<&'a str> {
@@ -116,5 +123,65 @@ fn checks_and_fixes() {
     assert!(
         rules_at(src5, &d5, "This shows").contains(&"substance.bare-demonstrative"),
         "{d5:?}"
+    );
+}
+
+#[test]
+fn glossary_terms() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let glossary = Pack::parse_glossary(
+        r#"
+[[concept]]
+id = "sign-in"
+definition = "Authenticating to an account."
+term = [
+  { text = "sign in", pos = "verb", status = "preferred" },
+  { text = "log in", pos = "verb", status = "deprecated" },
+]
+
+[[concept]]
+id = "javascript"
+term = [{ text = "JavaScript" }]
+
+[[concept]]
+id = "cdp"
+term = [{ text = "customer data platform", status = "preferred" }]
+
+[[concept]]
+id = "kubectl"
+term = [{ text = "kubectl" }]
+"#,
+    )
+    .unwrap();
+    let mut packs = packs();
+    packs.push(glossary);
+    let checker = Checker::new(packs);
+    let opts = Options {
+        threads: 2,
+        ..Options::default()
+    };
+    let src = "Log in to the console. We logged in twice. The Javascript client runs kubectl. \
+               The customer data platform team approved it.\n";
+    let a = analyze(&erg, src, Format::Plain, &opts);
+    let d = checker.check(&erg, &a);
+    let dep: Vec<&Diagnostic> = d.iter().filter(|x| x.rule == "terms.deprecated").collect();
+    assert_eq!(dep.len(), 2, "{d:?}");
+    assert_eq!(dep[0].replacement.as_deref(), Some("Sign in"));
+    // Inflected: a suggestion, not a fix.
+    assert_eq!(dep[1].replacement, None);
+    assert_eq!(dep[1].suggestions, vec!["sign in".to_string()]);
+    assert!(
+        rules_at(src, &d, "Javascript").contains(&"terms.casing"),
+        "{d:?}"
+    );
+    // Glossary words are known to spelling; a glossary term counts as one
+    // noun in a stack.
+    assert!(
+        !rules_at(src, &d, "kubectl").contains(&"core.spelling"),
+        "{d:?}"
+    );
+    assert!(
+        !rules_at(src, &d, "customer data").contains(&"terms.noun-string"),
+        "{d:?}"
     );
 }

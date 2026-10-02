@@ -17,10 +17,16 @@ Rules for adding a corpus:
 3. Verify the license from the primary source, not a secondary listing.
 4. Add an entry to [`VENDORED.toml`](../VENDORED.toml) (upstream, exact
    version, retrieval date, SPDX license, license file, copyright holders,
-   provenance, modifications, use) and run
+   provenance, modifications, use; for machine-generated text also
+   `ai_generated = true` and `generator`, the models that wrote it and the
+   terms on their output) and run
    `python3 scripts/check-vendored.py --update` to pin the files' hashes in
    `VENDORED.sha256`. CI fails on any file that is not registered or whose
-   content changed.
+   content changed. Where a dataset mixes material under different terms,
+   vendor only the permitted rows and columns (for example, model output
+   but not NC-licensed prompts), record the row and column filter in
+   `modifications` and `SOURCE.md`, and keep the script that applies it
+   (`sample.py`) beside the sample.
 
 | Corpus | License | Contents |
 |---|---|---|
@@ -29,3 +35,6 @@ Rules for adding a corpus:
 | [`ai-prose/`](ai-prose/README.md) | MIT (written for this project) | Short documents in the style of machine-written prose, plus a plainly written control, with the expected diagnostics of the built-in packs |
 | [`blimp/`](blimp/SOURCE.md) | CC BY 4.0 | Sample of BLiMP (2,010 minimal pairs, 67 paradigms of syntax, morphology and semantics) |
 | [`zorro/`](zorro/SOURCE.md) | MIT | Sample of Zorro (690 minimal pairs, 23 paradigms) |
+| [`beemo/`](beemo/SOURCE.md) | MIT | Sample of Beemo (200 outputs of zephyr-7b-beta, Mistral-7B and Mixtral-8x7B with expert edits; No Robots prompts and human texts excluded) |
+| [`cheat/`](cheat/SOURCE.md) | MIT | Sample of CHEAT (200 ChatGPT-written abstracts; IEEE titles, keywords and abstracts excluded) |
+| [`hh-rlhf/`](hh-rlhf/SOURCE.md) | MIT | Sample of Anthropic HH-RLHF helpful-base (200 final assistant turns; human turns excluded) |
