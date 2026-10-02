@@ -13,6 +13,15 @@ jobs:
       - run: cargo fmt --all --check
       - run: cargo clippy --all-targets -- -D warnings
       - run: cargo test --all
+  llama:
+    # The optional local-model backend builds llama.cpp from source.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - run: cargo clippy -p emdysi-rewrite -p emdysi --features emdysi-rewrite/llama,emdysi/llama -- -D warnings
   licenses:
     runs-on: ubuntu-latest
     steps:
@@ -21,3 +30,4 @@ jobs:
       - uses: EmbarkStudios/cargo-deny-action@v2
         with:
           command: check licenses bans sources
+          arguments: --all-features

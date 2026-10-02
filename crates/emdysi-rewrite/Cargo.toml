@@ -1,0 +1,21 @@
+[package]
+name = "emdysi-rewrite"
+description = "Guarded rewriting and typo correction: candidates from rules, spelling and an optional local language model, kept only when the grammar accepts them and their meaning is preserved"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[features]
+# A local model through llama.cpp (builds llama.cpp from source; needs
+# cmake and a C++ compiler).
+llama = ["dep:llama-cpp-2"]
+
+[dependencies]
+emdysi-check = { path = "../emdysi-check", version = "0.1.0" }
+emdysi-parse = { path = "../emdysi-parse", version = "0.1.0" }
+llama-cpp-2 = { version = "0.1.158", default-features = false, optional = true }
+
+[lints]
+workspace = true
