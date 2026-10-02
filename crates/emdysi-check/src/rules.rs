@@ -656,7 +656,7 @@ impl Rule {
                 min_items,
                 majority,
             } => Some(crate::structure::run_parallel(
-                a, *of, *min_items, *majority,
+                erg, a, *of, *min_items, *majority,
             )),
             Kind::Acronyms {
                 check,

@@ -200,3 +200,33 @@ shows:
   defeat the strict grammar. These rates, not the structure rules, are the
   main source of noise on creative text.
 
+## Headings and list items
+
+`cargo run --release -p emdysi-check --example forms -- FILE.md...` prints
+the forms the `parallel` rules assign to each heading and list item. On the
+repository's own documentation (README, `docs/`, the `SOURCE.md` files;
+70 headings and 165 list items, written by people):
+
+| | Strict analysis | Informal root | Fragment root | Robust root or a cover of partial analyses |
+|---|---|---|---|---|
+| Headings | 0 | 41 | 27 | 2 |
+| List items | 91 | 30 | 17 | 27 |
+
+Headings are fragments almost by definition, and the best analysis of a
+short fragment is often an imperative: *Rule packs*, *Test corpora* and
+*Open questions* all have verb readings. A heading's form is therefore the
+set of forms it can be read as: the best analysis's form plus, when no
+determiner follows the first word, a noun phrase if the grammar's lexicon
+has a non-verb entry for that word (and an instruction if it has a verb
+entry). An item is flagged only if none of its forms is the one most of its
+siblings share. *label: description* items (and items ending in a colon,
+before a nested list) form their own class.
+
+With these refinements the `parallel-headings` and `parallel-list` rules
+flag 15 of the 235 headings and items. Checked by hand, 14 are genuine
+mixtures (*label: description* items next to full sentences, a question
+among noun phrases, a statement among instructions); one was a long label
+before a nested list, now recognized. The first version, which used only
+the best analysis, flagged 21, several of them noun-phrase headings read as
+imperatives.
+

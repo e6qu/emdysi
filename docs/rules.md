@@ -184,12 +184,19 @@ one of:
 ### `parallel`
 
 Sibling headings (`of = "headings"`: same level, same parent) or the items
-of one list (`of = "list-items"`) whose grammatical form differs from the
-majority: an instruction (imperative), an *-ing* phrase, a to-infinitive, a
-question, a full sentence or a noun phrase, read from the grammar's analysis
-of each. Groups of fewer than `min_items` (default 3) are skipped; a form
-must hold at least `majority` (default 0.75) of the group. `{form}` and
-`{majority}` are available in messages.
+of one list (`of = "list-items"`) that cannot be read in the form most of
+their siblings share: an instruction (imperative), an *-ing* phrase, a
+to-infinitive, a question, a full sentence, a noun phrase, or a *label:
+description* item. Short fragments are often ambiguous (*Test corpora* is
+an instruction or a noun phrase), so each item counts for every form it can
+be read as: the form of its best analysis, plus a noun phrase or an
+instruction when the grammar's lexicon has such an entry for its first word
+(a noun reading only when no determiner follows: *Start the service* is
+not a noun phrase). Groups of fewer than `min_items` (default 3) are
+skipped; the most common form must fit at least `majority` (default 0.75)
+of the group. `{form}` (the item's best reading) and `{majority}` are
+available in messages. See [evaluation.md](evaluation.md#headings-and-list-items)
+for how this behaves on real documents.
 
 ### `acronyms`
 

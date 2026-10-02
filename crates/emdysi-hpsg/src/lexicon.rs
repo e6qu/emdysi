@@ -125,6 +125,12 @@ impl Lexicon {
         self.by_first.contains_key(w)
     }
 
+    /// Entries (indices into `entries`) whose orthography starts with this
+    /// word.
+    pub fn entries_starting(&self, w: &str) -> &[usize] {
+        self.by_first.get(w).map_or(&[], |v| v.as_slice())
+    }
+
     pub fn is_stem(&self, s: &str) -> bool {
         self.stems.contains(s)
     }
