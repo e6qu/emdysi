@@ -51,6 +51,14 @@ TOML files; see [`docs/rules.md`](docs/rules.md). The built-in packs are:
   potentially*, *studies show* without a citation, *a number of*,
   *clearly*).
 
+`en rewrite` prints the text with guarded rewrites: the automatic fixes,
+spelling corrections and, with `--model FILE.gguf` (a build with
+`--features llama`), a small local language model's rewrites of sentences
+the rules cannot fix. A candidate is kept only if the grammar gives it a
+strict analysis, its semantics keeps the original's content, and it
+introduces no new problem; the model's likelihood then picks among the
+survivors. Model weights are never bundled.
+
 The first run compiles the grammar (about five seconds) and caches the
 result in `$EMDYSI_CACHE_DIR`, `$XDG_CACHE_HOME/emdysi` or `~/.cache/emdysi`
 (never in the repository); later runs load in about a second. The cache is

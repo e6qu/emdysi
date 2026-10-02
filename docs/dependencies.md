@@ -27,6 +27,60 @@ LGPL and GPL) requires a new decision.
 | bitflags | 2.13.2 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-MIT`, `LICENSE-APACHE` | 2026-10-01 |
 | unicase | 2.9.0 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-MIT`, `LICENSE-APACHE` | 2026-10-01 |
 
+## Optional: the `llama` feature
+
+`en rewrite --model` needs a build with `--features llama`, which adds
+`llama-cpp-2` and builds llama.cpp from source. Not part of the default
+build. llama.cpp (`llama-cpp-sys-2`, `llama.cpp/LICENSE`) is MIT, Copyright
+(c) 2023-2026 The ggml authors; the code it vendors is permissive:
+cpp-httplib (MIT), nlohmann/json (MIT), sheredom/subprocess.h (Unlicense),
+stb (MIT or public domain), miniaudio (public domain or MIT-0), and hash
+functions: sha256 (public domain), rotate-bits (MIT), xxHash (BSD-2-Clause).
+Model weights are never bundled; the user supplies a GGUF file.
+
+| Crate | Version | License | Verified from | Date |
+|---|---|---|---|---|
+| bindgen | 0.72.1 | BSD-3-Clause | crate `Cargo.toml` + `LICENSE` | 2026-10-02 |
+| cc | 1.5.1 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT` | 2026-10-02 |
+| cexpr | 0.6.0 | Apache-2.0/MIT | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT` | 2026-10-02 |
+| cfg-if | 1.0.5 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT` | 2026-10-02 |
+| clang-sys | 1.9.1 | Apache-2.0 | crate `Cargo.toml` + `LICENSE.txt` | 2026-10-02 |
+| cmake | 0.1.58 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT` | 2026-10-02 |
+| either | 1.18.0 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT` | 2026-10-02 |
+| enumflags2 | 0.7.12 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT` | 2026-10-02 |
+| enumflags2_derive | 0.7.12 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT` | 2026-10-02 |
+| find-msvc-tools | 0.1.14 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT` | 2026-10-02 |
+| find_cuda_helper | 0.2.0 | MIT OR Apache-2.0 | crate `Cargo.toml` (no license file in the published crate; the repository's license files match) | 2026-10-02 |
+| glob | 0.3.4 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT` | 2026-10-02 |
+| itertools | 0.13.0 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT` | 2026-10-02 |
+| jobserver | 0.1.35 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT` | 2026-10-02 |
+| libc | 0.2.189 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT` | 2026-10-02 |
+| libloading | 0.8.9 | ISC | crate `Cargo.toml` + `LICENSE` | 2026-10-02 |
+| llama-cpp-2 | 0.1.158 | MIT OR Apache-2.0 | crate `Cargo.toml` (no license file in the published crate; the repository's license files match) | 2026-10-02 |
+| llama-cpp-sys-2 | 0.1.158 | MIT OR Apache-2.0 | crate `Cargo.toml` (no license file in the published crate; the repository's license files match) | 2026-10-02 |
+| log | 0.4.34 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT` | 2026-10-02 |
+| minimal-lexical | 0.2.1 | MIT/Apache-2.0 | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT`, `LICENSE.md` | 2026-10-02 |
+| nom | 7.1.3 | MIT | crate `Cargo.toml` + `LICENSE` | 2026-10-02 |
+| once_cell | 1.21.4 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT` | 2026-10-02 |
+| pin-project-lite | 0.2.17 | Apache-2.0 OR MIT | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT` | 2026-10-02 |
+| prettyplease | 0.2.37 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT` | 2026-10-02 |
+| proc-macro2 | 1.0.107 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT` | 2026-10-02 |
+| quote | 1.0.47 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT` | 2026-10-02 |
+| regex | 1.13.1 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT` | 2026-10-02 |
+| rustc-hash | 2.1.3 | Apache-2.0 OR MIT | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT` | 2026-10-02 |
+| same-file | 1.0.6 | Unlicense/MIT | crate `Cargo.toml` + `COPYING`, `LICENSE-MIT`, `UNLICENSE` | 2026-10-02 |
+| shlex | 1.3.0 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT` | 2026-10-02 |
+| shlex | 2.0.1 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT` | 2026-10-02 |
+| syn | 2.0.119 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT` | 2026-10-02 |
+| syn | 3.0.6 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT` | 2026-10-02 |
+| thiserror | 2.0.21 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT` | 2026-10-02 |
+| thiserror-impl | 2.0.21 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT` | 2026-10-02 |
+| tracing | 0.1.44 | MIT | crate `Cargo.toml` + `LICENSE` | 2026-10-02 |
+| tracing-attributes | 0.1.31 | MIT | crate `Cargo.toml` + `LICENSE` | 2026-10-02 |
+| tracing-core | 0.1.36 | MIT | crate `Cargo.toml` + `LICENSE` | 2026-10-02 |
+| unicode-ident | 1.0.26 | (MIT OR Apache-2.0) AND Unicode-3.0 | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT`, `LICENSE-UNICODE` | 2026-10-02 |
+| walkdir | 2.5.0 | Unlicense/MIT | crate `Cargo.toml` + `COPYING`, `LICENSE-MIT`, `UNLICENSE` | 2026-10-02 |
+
 ## Data
 
 Bundled data is listed in [`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md).
