@@ -185,3 +185,55 @@ term = [{ text = "kubectl" }]
         "{d:?}"
     );
 }
+
+#[test]
+fn existence_and_substitution() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let pack = Pack::parse(
+        r#"
+[pack]
+name = "t"
+
+[[rule]]
+id = "t.avoid"
+kind = "existence"
+ignorecase = true
+message = "Avoid '{match}'."
+tokens = ["back ?end", "fubar"]
+exceptions = ["Backend"]
+
+[[rule]]
+id = "t.wordy"
+kind = "substitution"
+ignorecase = true
+fix = true
+message = "Use '{replacement}' instead of '{match}'."
+[rule.swap]
+"in order to" = "to"
+"utilize" = "use|employ"
+"#,
+    )
+    .unwrap();
+    let checker = Checker::new(vec![pack]);
+    let opts = Options {
+        threads: 2,
+        ..Options::default()
+    };
+    let src = "In order to utilize the back end, read `fubar` and the Backend notes.\n";
+    let a = analyze(&erg, src, Format::Markdown, &opts);
+    let d = checker.check(&erg, &a);
+    let avoid: Vec<&str> = d
+        .iter()
+        .filter(|x| x.rule == "t.avoid")
+        .map(|x| &src[x.range.clone()])
+        .collect();
+    // Inline code and exceptions are skipped.
+    assert_eq!(avoid, vec!["back end"], "{d:?}");
+    let wordy: Vec<&Diagnostic> = d.iter().filter(|x| x.rule == "t.wordy").collect();
+    assert_eq!(wordy.len(), 2, "{d:?}");
+    assert_eq!(wordy[0].replacement.as_deref(), Some("To"));
+    assert_eq!(wordy[0].message, "Use 'To' instead of 'In order to'.");
+    // Several alternatives: suggestions only.
+    assert_eq!(wordy[1].replacement, None);
+    assert_eq!(wordy[1].suggestions, vec!["use", "employ"]);
+}

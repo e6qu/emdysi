@@ -12,6 +12,7 @@
 //!                           # | structure | parallel | acronyms | glossary
 //!                           # | variants | coined-words | concept-names
 //!                           # | hyphen-chain | ly-hyphen | noun-stack
+//!                           # | existence | substitution
 //! scope = "body"            # optional: all | heading | body | paragraph
 //!                           # | list-item | lead
 //! words = ["delve", "tapestry"]
@@ -220,6 +221,17 @@ pub enum Kind {
     LyHyphen,
     /// Noun-noun compounds of `min` to `max` nouns.
     NounStack { min: usize, max: usize },
+    /// Any of a list of patterns (Vale's `existence`): `tokens` are joined
+    /// into one pattern, between word boundaries unless `nonword`.
+    Existence { re: Regex, exceptions: Vec<String> },
+    /// Patterns with preferred replacements (Vale's `substitution`): `swap`
+    /// maps a pattern to its replacement; alternatives are separated by
+    /// `|`. Replacements are suggestions, automatic fixes only with
+    /// `fix = true` and a single alternative.
+    Substitution {
+        swaps: Vec<(Regex, Vec<String>)>,
+        fix: bool,
+    },
 }
 
 fn get_str(t: &Table, k: &str) -> Option<String> {
@@ -508,6 +520,50 @@ impl Rule {
                     .collect(),
             },
             "ly-hyphen" => Kind::LyHyphen,
+            "existence" | "substitution" => {
+                let ignorecase = t
+                    .get("ignorecase")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(false);
+                let nonword = t.get("nonword").and_then(Value::as_bool).unwrap_or(false);
+                let wrap = |p: &str| {
+                    let p = if nonword {
+                        format!("(?:{p})")
+                    } else {
+                        format!(r"(?<![\w-])(?:{p})(?![\w-])")
+                    };
+                    if ignorecase { format!("(?i){p}") } else { p }
+                };
+                if kind_name == "existence" {
+                    let tokens = get_list(t, "tokens");
+                    if tokens.is_empty() {
+                        return Err(err("existence rule needs `tokens`"));
+                    }
+                    let pat = wrap(&tokens.join("|"));
+                    Kind::Existence {
+                        re: Regex::new(&pat).map_err(|e| err(&format!("bad tokens: {e}")))?,
+                        exceptions: get_list(t, "exceptions"),
+                    }
+                } else {
+                    let table = t
+                        .get("swap")
+                        .and_then(Value::as_table)
+                        .ok_or_else(|| err("substitution rule needs `swap`"))?;
+                    let mut swaps = Vec::new();
+                    for (k, v) in table {
+                        let rep = v
+                            .as_str()
+                            .ok_or_else(|| err("`swap` values must be strings"))?;
+                        let re = Regex::new(&wrap(k))
+                            .map_err(|e| err(&format!("bad swap pattern {k:?}: {e}")))?;
+                        swaps.push((re, rep.split('|').map(|r| r.trim().to_string()).collect()));
+                    }
+                    Kind::Substitution {
+                        swaps,
+                        fix: t.get("fix").and_then(Value::as_bool).unwrap_or(false),
+                    }
+                }
+            }
             "noun-stack" => Kind::NounStack {
                 min: num("min").unwrap_or(3.0) as usize,
                 max: num("max").unwrap_or(f64::INFINITY).min(1e6) as usize,
@@ -626,6 +682,50 @@ impl Rule {
         }
         match &self.kind {
             Kind::Words { items, on, replace } => self.run_words(a, items, *on, replace, out),
+            Kind::Existence { re, exceptions } => {
+                for (si, s) in a.sentences.iter().enumerate() {
+                    // Match on the text with inline code masked.
+                    for m in re.find_iter(&s.text).flatten() {
+                        let text = &s.original[m.start()..m.end()];
+                        if exceptions.iter().any(|e| e.eq_ignore_ascii_case(text)) {
+                            continue;
+                        }
+                        let from = s.text[..m.start()].chars().count();
+                        let to = from + m.as_str().chars().count();
+                        out.push(self.diag(a, si, from, to, text));
+                    }
+                }
+            }
+            Kind::Substitution { swaps, fix } => {
+                for (si, s) in a.sentences.iter().enumerate() {
+                    let mut taken: Vec<(usize, usize)> = Vec::new();
+                    for (re, reps) in swaps {
+                        for m in re.find_iter(&s.text).flatten() {
+                            if taken.iter().any(|&(f, t)| m.start() < t && f < m.end()) {
+                                continue;
+                            }
+                            let text = &s.original[m.start()..m.end()];
+                            // The pattern may match its own replacement.
+                            if reps.iter().any(|r| r == text) {
+                                continue;
+                            }
+                            taken.push((m.start(), m.end()));
+                            let from = s.text[..m.start()].chars().count();
+                            let to = from + m.as_str().chars().count();
+                            let reps: Vec<String> =
+                                reps.iter().map(|r| match_case(text, r)).collect();
+                            let mut d = self.diag(a, si, from, to, text);
+                            d.message = d.message.replace("{replacement}", &reps.join("' or '"));
+                            if *fix && reps.len() == 1 {
+                                d.replacement = Some(reps[0].clone());
+                            } else {
+                                d.suggestions = reps;
+                            }
+                            out.push(d);
+                        }
+                    }
+                }
+            }
             Kind::Regex {
                 re,
                 replace,

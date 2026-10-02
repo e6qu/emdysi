@@ -19,6 +19,22 @@ const BUILTIN_PACKS: &[(&str, &str)] = &[
     ("substance", include_str!("../../../packs/substance.toml")),
     ("structure", include_str!("../../../packs/structure.toml")),
     ("terms", include_str!("../../../packs/terms.toml")),
+    // Opt-in packs generated from other linters' rule data
+    // (scripts/import-rules.py).
+    ("microsoft", include_str!("../../../packs/microsoft.toml")),
+    ("google", include_str!("../../../packs/google.toml")),
+    ("elastic", include_str!("../../../packs/elastic.toml")),
+    ("wordlists", include_str!("../../../packs/wordlists.toml")),
+];
+
+/// Packs used when no `--pack` is given.
+const DEFAULT_PACKS: &[&str] = &[
+    "core",
+    "ai-tells",
+    "plain-style",
+    "substance",
+    "structure",
+    "terms",
 ];
 
 const USAGE: &str = "\
@@ -32,11 +48,13 @@ USAGE:
                                    spelling corrections and (with --model) a
                                    local model's rewrites, each kept only if
                                    the grammar accepts it and its meaning holds
-    en packs                       list built-in rule packs and rules
+    en packs                       list rule packs and rules (default packs, or
+                                   those given with --pack)
 
 OPTIONS:
     --pack NAME|FILE       rule pack to use (repeatable; default: core, ai-tells,
-                           plain-style, substance, structure, terms)
+                           plain-style, substance, structure, terms; also
+                           built in: microsoft, google, elastic, wordlists)
     --glossary FILE        project glossary: [[concept]] tables of preferred,
                            admitted and deprecated terms (repeatable)
     --disable RULE         skip a rule id, or a prefix ending in '*' (repeatable)
@@ -160,7 +178,7 @@ fn parse_args() -> Result<Args, String> {
 
 fn load_packs(names: &[String]) -> Result<Vec<Pack>, String> {
     let names: Vec<String> = if names.is_empty() {
-        BUILTIN_PACKS.iter().map(|(n, _)| n.to_string()).collect()
+        DEFAULT_PACKS.iter().map(|n| n.to_string()).collect()
     } else {
         names.to_vec()
     };
