@@ -1,4 +1,5 @@
 3:1 warning structure.throat-clearing "In today's fast-paced world"
+3:1 suggestion structure.vague-lead "In today's fast-paced world, the way we work is changing. It is important to note that remote work is not just a trend, but a fundamental shift in how teams operate."
 3:59 suggestion ai-tells.signposting "It is important to note"
 3:103 suggestion ai-tells.not-x-but-y "not just a trend, but"
 5:1 warning substance.weasel "Studies show"

@@ -230,3 +230,17 @@ before a nested list, now recognized. The first version, which used only
 the best analysis, flagged 21, several of them noun-phrase headings read as
 imperatives.
 
+### Opening paragraphs and procedures
+
+On the same documents, `structure.vague-lead` flags no opening paragraph,
+and on the AI-style samples in `corpora/ai-prose` it flags the one generic
+opening (*In today's fast-paced world, the way we work is changing. ...*)
+and not the plainly written control. `structure.procedure-steps` first
+flagged two items of a numbered list of open questions: the grammar gives
+unknown words (*Apache*, *Tagger*) a default verb entry, so *Apache-2.0
+dependencies.* read as a command. A command reading now counts as an
+instruction only when the clause starts with a verb the grammar knows or
+with a fronted condition or phrase (*If prompted, enter your password.*).
+The one remaining flag was a genuine statement among numbered
+instructions in `corpora/README.md`, since rewritten.
+

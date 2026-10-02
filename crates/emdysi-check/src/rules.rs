@@ -190,12 +190,8 @@ pub enum Kind {
     /// Document structure: heading hierarchy, section and paragraph size.
     Structure(StructureCheck),
     /// Sibling headings or list items whose grammatical form differs from
-    /// the majority.
-    Parallel {
-        of: ParallelOf,
-        min_items: usize,
-        majority: f64,
-    },
+    /// the majority (or from a fixed `form`).
+    Parallel(crate::structure::Parallel),
     /// Acronyms and initialisms defined on first use. Word-list entries at
     /// least as common as `known_tier` (and `known`) need no definition.
     Acronyms {
@@ -461,10 +457,28 @@ impl Rule {
                                 .map_err(|e| err(&format!("bad pattern: {e}")))?,
                         }
                     }
+                    "vague-lead" => {
+                        let pat = get_str(t, "pattern").unwrap_or_else(|| {
+                            r"(?i)\b(?:today|nowadays|ever(?:-changing|-evolving)?|increasingly|landscape|world|era|age|journey|realm|more than ever|in recent years|rapidly|fast-paced|digital|businesses|organizations|organisations|companies|individuals|everyone|people)\b".to_string()
+                        });
+                        StructureCheck::VagueLead {
+                            pattern: Regex::new(&pat)
+                                .map_err(|e| err(&format!("bad pattern: {e}")))?,
+                        }
+                    }
+                    "unnumbered-steps" => {
+                        let pat = get_str(t, "pattern").unwrap_or_else(|| {
+                            r"(?i)\b(?:then|next|first|second|third|finally|afterwards?|after that|once|when (?:done|finished)|steps?|in order)\b".to_string()
+                        });
+                        StructureCheck::UnnumberedSteps {
+                            pattern: Regex::new(&pat)
+                                .map_err(|e| err(&format!("bad pattern: {e}")))?,
+                        }
+                    }
                     o => return Err(err(&format!("unknown structure check {o:?}"))),
                 })
             }
-            "parallel" => Kind::Parallel {
+            "parallel" => Kind::Parallel(crate::structure::Parallel {
                 of: match get_str(t, "of").as_deref() {
                     Some("headings") => ParallelOf::Headings,
                     Some("list-items") => ParallelOf::ListItems,
@@ -476,7 +490,15 @@ impl Rule {
                 },
                 min_items: num("min_items").unwrap_or(3.0) as usize,
                 majority: num("majority").unwrap_or(0.75),
-            },
+                ordered: t.get("ordered").and_then(Value::as_bool).unwrap_or(false),
+                form: match get_str(t, "form") {
+                    None => None,
+                    Some(f) => Some(
+                        crate::structure::Form::parse(&f)
+                            .ok_or_else(|| err(&format!("unknown form {f:?}")))?,
+                    ),
+                },
+            }),
             "acronyms" => {
                 let c = get_str(t, "check").ok_or_else(|| err("acronyms rule needs `check`"))?;
                 Kind::Acronyms {
@@ -650,14 +672,8 @@ impl Rule {
 
     fn run_all(&self, erg: &Erg, a: &Analysis, g: &Glossary, out: &mut Vec<Diagnostic>) {
         let hits = match &self.kind {
-            Kind::Structure(c) => Some(crate::structure::run_structure(c, a)),
-            Kind::Parallel {
-                of,
-                min_items,
-                majority,
-            } => Some(crate::structure::run_parallel(
-                erg, a, *of, *min_items, *majority,
-            )),
+            Kind::Structure(c) => Some(crate::structure::run_structure(c, erg, a)),
+            Kind::Parallel(p) => Some(crate::structure::run_parallel(erg, a, p)),
             Kind::Acronyms {
                 check,
                 known_tier,

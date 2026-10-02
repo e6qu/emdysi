@@ -26,6 +26,7 @@ with the ERG port (decision D4) as the parsing core.
 | M13 | Rules engine and DSL; AI-prose and style-guide packs | 23 rule kinds, 6 default and 4 opt-in packs; rule scopes (heading, lead, body, ...) and per-rule examples run as tests |
 | M13b | Document structure and terminology (research: `reports/AI corpora and style guide rules.md`, not in the repository): heading hierarchy, bottom line up front, paragraph and section size, parallel headings and lists; acronym definitions (Schwartz–Hearst), a TBX-style glossary, one spelling per term, coined words and concept names, hyphen chains, -ly hyphens, noun stacks | done (`structure` and `terms` packs) |
 | M13c | Rule data imported from other linters under permissive licenses: Vale's Microsoft, Google and Elastic packages and the words/* lists, converted by `scripts/import-rules.py` into opt-in packs (`existence` and `substitution` kinds) | done; proselint, Red Hat, GitLab and LanguageTool data excluded for licensing reasons (see rules.md) |
+| M13d | Opening paragraphs and procedures: `vague-lead` (no concrete claim in the semantics of the opening), numbered steps that are not instructions (`parallel` with a fixed form), bulleted steps in sequence | done |
 | M14 | CLI | `check`, `fix`, `parse`, `packs` |
 
 Validation: the gold derivations in `corpora/erg-gold/` (ERG `mrs` and `csli`
