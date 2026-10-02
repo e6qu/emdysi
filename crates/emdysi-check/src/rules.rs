@@ -127,6 +127,8 @@ pub enum Kind {
     /// Specific grammatical errors, named by the grammar-error variant of
     /// the ERG (mal-rules and robust lexical entries).
     GrammarErrors,
+    /// A check on the semantics (MRS) of the best analysis.
+    Semantics(SemCheck),
     /// American and British spellings (and British -ise and -ize) mixed in
     /// one document. The variety used most (or `prefer`) wins; the others
     /// are fixed to it.
@@ -289,6 +291,17 @@ impl Rule {
             },
             "grammar" => Kind::Grammar,
             "grammar-errors" => Kind::GrammarErrors,
+            "semantics" => {
+                let c = get_str(t, "check").ok_or_else(|| err("semantics rule needs `check`"))?;
+                Kind::Semantics(match c.as_str() {
+                    "missing-comparand" => SemCheck::MissingComparand,
+                    "agentless-passive" => SemCheck::AgentlessPassive,
+                    "stacked-negation" => SemCheck::StackedNegation,
+                    "bare-demonstrative" => SemCheck::BareDemonstrative,
+                    "tense-shift" => SemCheck::TenseShift,
+                    other => return Err(err(&format!("unknown semantics check {other:?}"))),
+                })
+            }
             "consistency" => {
                 let variety = |k: &str, allowed: [&str; 2]| -> Result<Option<Variety>, PackError> {
                     match get_str(t, k) {
@@ -567,6 +580,13 @@ impl Rule {
                 prefer,
                 prefer_suffix,
             } => self.run_consistency(a, *prefer, *prefer_suffix, out),
+            Kind::Semantics(check) => {
+                for f in crate::semantics::run(*check, a) {
+                    let mut d = self.diag(a, f.sentence, f.from, f.to, &f.text);
+                    d.message = d.message.replace("{detail}", &f.detail);
+                    out.push(d);
+                }
+            }
             Kind::GrammarErrors => {
                 for (si, s) in a.sentences.iter().enumerate() {
                     for e in grammar_errors(s) {
@@ -777,6 +797,8 @@ impl Rule {
         }
     }
 }
+
+pub use crate::semantics::SemCheck;
 
 /// A grammatical error found by the grammar-error variant of the ERG.
 #[derive(Debug, Clone, PartialEq)]

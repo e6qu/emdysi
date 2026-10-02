@@ -92,4 +92,29 @@ fn checks_and_fixes() {
         !rules_at(src4, &d4, "dog").contains(&"core.grammar-errors"),
         "{d4:?}"
     );
+
+    // Checks on the semantics.
+    let src5 = "This approach is better. The report was written. We did not see nothing. This shows that it works. The kitchen is larger than before.\n";
+    let a5 = analyze(&erg, src5, Format::Plain, &opts);
+    let d5 = checker.check(&erg, &a5);
+    assert!(
+        rules_at(src5, &d5, "better").contains(&"substance.missing-comparand"),
+        "{d5:?}"
+    );
+    assert!(
+        !rules_at(src5, &d5, "larger").contains(&"substance.missing-comparand"),
+        "{d5:?}"
+    );
+    assert!(
+        rules_at(src5, &d5, "written").contains(&"substance.agentless-passive"),
+        "{d5:?}"
+    );
+    assert!(
+        rules_at(src5, &d5, "not see").contains(&"plain-style.stacked-negation"),
+        "{d5:?}"
+    );
+    assert!(
+        rules_at(src5, &d5, "This shows").contains(&"substance.bare-demonstrative"),
+        "{d5:?}"
+    );
 }

@@ -72,3 +72,19 @@ severity = "suggestion"
 message = "Several spaces in a row."
 pattern = "(?<=\\S)  +(?=\\S)"
 replace = " "
+
+[[rule]]
+id = "plain-style.stacked-negation"
+kind = "semantics"
+check = "stacked-negation"
+severity = "suggestion"
+message = "Stacked negation ({detail}): say it positively if you can."
+description = "Two or more negations in one sentence ('not ... nothing', 'never ... no one'), counted in the grammar's semantics."
+
+[[rule]]
+id = "plain-style.tense-shift"
+kind = "semantics"
+check = "tense-shift"
+severity = "suggestion"
+message = "Tense shift: {detail}."
+description = "In a paragraph of at least three declarative sentences, a sentence whose main verb is in the past (or present) tense while at least two thirds of the others are in the present (or past). Reported speech and real changes of time are legitimate; check the sentence."

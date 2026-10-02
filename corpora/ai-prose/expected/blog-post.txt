@@ -13,6 +13,7 @@
 9:12 suggestion plain-style.expletive-there "there"
 9:43 suggestion substance.hedge-verb "seem"
 9:123 suggestion plain-style.passive "addressed"
+9:123 suggestion plain-style.tense-shift "addressed"
 11:1 suggestion ai-tells.signposting "In conclusion"
 11:31 warning ai-tells.stock-phrases "a testament to"
 11:33 warning ai-tells.vocabulary "testament"

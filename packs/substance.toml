@@ -62,3 +62,27 @@ words = [
   "undoubtedly", "without a doubt", "it goes without saying", "of course",
   "needless to say",
 ]
+
+[[rule]]
+id = "substance.missing-comparand"
+kind = "semantics"
+check = "missing-comparand"
+severity = "warning"
+message = "Comparison without a comparand ('{match}'): better, faster or more than what?"
+description = "A comparative whose standard of comparison is not expressed, found in the grammar's semantics (a comparison predicate with no second argument): 'this approach is better'."
+
+[[rule]]
+id = "substance.agentless-passive"
+kind = "semantics"
+check = "agentless-passive"
+severity = "suggestion"
+message = "Passive without an actor ('{match}'): who did it?"
+description = "A passive verb whose actor is not expressed anywhere in the sentence, from the grammar's semantics: 'the report was written', but not 'the report was written by Kim'."
+
+[[rule]]
+id = "substance.bare-demonstrative"
+kind = "semantics"
+check = "bare-demonstrative"
+severity = "suggestion"
+message = "'{match}' on its own: say what it refers to ('this result', 'this change')."
+description = "A sentence that opens with 'this' or 'that' as a whole noun phrase, from the grammar's semantics; the reader must work out what it points to."
