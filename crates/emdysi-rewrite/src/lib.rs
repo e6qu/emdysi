@@ -25,6 +25,8 @@ use emdysi_check::{Analysis, Checker, Diagnostic, Format, Options, analyze};
 use emdysi_parse::Erg;
 use emdysi_parse::mrs::Mrs;
 
+#[cfg(feature = "http")]
+pub mod http;
 #[cfg(feature = "llama")]
 pub mod llama;
 

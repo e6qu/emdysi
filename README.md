@@ -52,9 +52,11 @@ TOML files; see [`docs/rules.md`](docs/rules.md). The built-in packs are:
   *clearly*).
 
 `en rewrite` prints the text with guarded rewrites: the automatic fixes,
-spelling corrections and, with `--model FILE.gguf` (a build with
-`--features llama`), a small local language model's rewrites of sentences
-the rules cannot fix. A candidate is kept only if the grammar gives it a
+spelling corrections and a small local language model's rewrites of
+sentences the rules cannot fix: a GGUF file with `--model FILE.gguf` (a
+build with `--features llama`), or any model served over the
+OpenAI-compatible API with `--server URL`, such as an MLX model on Apple
+silicon (`mlx_lm.server --model mlx-community/...`), LM Studio or Ollama. A candidate is kept only if the grammar gives it a
 strict analysis, its semantics keeps the original's content, and it
 introduces no new problem; the model's likelihood then picks among the
 survivors. Model weights are never bundled.

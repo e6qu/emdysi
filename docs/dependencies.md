@@ -27,6 +27,29 @@ LGPL and GPL) requires a new decision.
 | bitflags | 2.13.2 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-MIT`, `LICENSE-APACHE` | 2026-10-01 |
 | unicase | 2.9.0 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-MIT`, `LICENSE-APACHE` | 2026-10-01 |
 
+## The `http` feature (on by default)
+
+`en rewrite --server URL` talks to a model served with the
+OpenAI-compatible API: MLX's `mlx_lm.server` on Apple silicon, LM Studio,
+Ollama, llama.cpp's `llama-server` and others. Pure Rust; plain HTTP only
+(no TLS), meant for a server on the same machine.
+
+| Crate | Version | License | Verified from | Date |
+|---|---|---|---|---|
+| base64 | 0.23.1 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-MIT`, `LICENSE-APACHE` | 2026-10-02 |
+| bytes | 1.12.1 | MIT | crate `Cargo.toml` + `LICENSE` | 2026-10-02 |
+| http | 1.5.0 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-MIT`, `LICENSE-APACHE` | 2026-10-02 |
+| httparse | 1.10.1 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-MIT`, `LICENSE-APACHE` | 2026-10-02 |
+| itoa | 1.0.18 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-MIT`, `LICENSE-APACHE` | 2026-10-02 |
+| log | 0.4.34 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-MIT`, `LICENSE-APACHE` | 2026-10-02 |
+| percent-encoding | 2.3.2 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-MIT`, `LICENSE-APACHE` | 2026-10-02 |
+| serde_core | 1.0.229 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-MIT`, `LICENSE-APACHE` | 2026-10-02 |
+| serde_json | 1.0.151 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-MIT`, `LICENSE-APACHE` | 2026-10-02 |
+| ureq | 3.4.2 (default features off: no TLS) | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-MIT`, `LICENSE-APACHE` | 2026-10-02 |
+| ureq-proto | 0.6.4 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-MIT.txt`, `LICENSE-APACHE.txt` | 2026-10-02 |
+| utf8-zero | 0.8.1 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-MIT`, `LICENSE-APACHE` | 2026-10-02 |
+| zmij | 1.0.23 | MIT | crate `Cargo.toml` + `LICENSE-MIT` | 2026-10-02 |
+
 ## Optional: the `llama` feature
 
 `en rewrite --model` needs a build with `--features llama`, which adds
