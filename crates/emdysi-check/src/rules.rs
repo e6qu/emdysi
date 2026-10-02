@@ -12,7 +12,8 @@
 //!                           # | structure | parallel | acronyms | glossary
 //!                           # | variants | coined-words | concept-names
 //!                           # | hyphen-chain | ly-hyphen | noun-stack
-//!                           # | existence | substitution
+//!                           # | existence | substitution | adjective-stack
+//!                           # | modifier-density
 //! scope = "body"            # optional: all | heading | body | paragraph
 //!                           # | list-item | lead
 //! words = ["delve", "tapestry"]
@@ -217,6 +218,11 @@ pub enum Kind {
     LyHyphen,
     /// Noun-noun compounds of `min` to `max` nouns.
     NounStack { min: usize, max: usize },
+    /// Nouns that carry `min` or more adjectives.
+    AdjectiveStack { min: usize },
+    /// Sentences in which adjectives and descriptive adverbs make up at
+    /// least `ratio` of the words (and number at least `min`).
+    ModifierDensity { min: usize, ratio: f64 },
     /// Any of a list of patterns (Vale's `existence`): `tokens` are joined
     /// into one pattern, between word boundaries unless `nonword`.
     Existence { re: Regex, exceptions: Vec<String> },
@@ -542,6 +548,13 @@ impl Rule {
                     .collect(),
             },
             "ly-hyphen" => Kind::LyHyphen,
+            "adjective-stack" => Kind::AdjectiveStack {
+                min: num("min").unwrap_or(3.0) as usize,
+            },
+            "modifier-density" => Kind::ModifierDensity {
+                min: num("min").unwrap_or(5.0) as usize,
+                ratio: num("ratio").unwrap_or(0.3),
+            },
             "existence" | "substitution" => {
                 let ignorecase = t
                     .get("ignorecase")
@@ -687,6 +700,10 @@ impl Rule {
             }
             Kind::HyphenChain { except } => Some(crate::compounds::run_kebab(a, except)),
             Kind::LyHyphen => Some(crate::compounds::run_ly_hyphen(a)),
+            Kind::AdjectiveStack { min } => Some(crate::modifiers::run_adjective_stacks(a, *min)),
+            Kind::ModifierDensity { min, ratio } => {
+                Some(crate::modifiers::run_modifier_density(a, *min, *ratio))
+            }
             Kind::NounStack { min, max } => {
                 Some(crate::compounds::run_noun_stacks(a, *min, *max, g))
             }
