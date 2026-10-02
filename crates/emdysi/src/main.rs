@@ -44,6 +44,10 @@ OPTIONS:
     --mrs                  with `parse`, also print the semantics (MRS)
     --model FILE.gguf      with `rewrite`, a local language model (needs a
                            build with the `llama` feature)
+    --server URL           with `rewrite`, a model served over the
+                           OpenAI-compatible API, e.g. MLX's `mlx_lm.server`
+                           or LM Studio (http://127.0.0.1:8080)
+    --server-model NAME    the model name to request from --server
     --samples N            with `rewrite`, model rewrites per sentence (default 3)
     --grammar DIR          grammar directory (default: the bundled ERG)
     --fail-on error|warning|suggestion  exit with status 1 if a diagnostic this
@@ -60,6 +64,8 @@ struct Args {
     opts: Options,
     show: ParseDetails,
     model: Option<PathBuf>,
+    server: Option<String>,
+    server_model: Option<String>,
     samples: usize,
     grammar: PathBuf,
     fail_on: Severity,
@@ -81,6 +87,8 @@ fn parse_args() -> Result<Args, String> {
         opts: Options::default(),
         show: ParseDetails::default(),
         model: None,
+        server: None,
+        server_model: None,
         samples: 3,
         grammar: default_grammar_dir(),
         fail_on: Severity::Error,
@@ -122,6 +130,8 @@ fn parse_args() -> Result<Args, String> {
             "--derivations" => a.show.derivations = true,
             "--mrs" => a.show.mrs = true,
             "--model" => a.model = Some(PathBuf::from(need(&mut it, &arg)?)),
+            "--server" => a.server = Some(need(&mut it, &arg)?),
+            "--server-model" => a.server_model = Some(need(&mut it, &arg)?),
             "--samples" => {
                 a.samples = need(&mut it, &arg)?
                     .parse()
@@ -258,24 +268,36 @@ fn run() -> Result<bool, String> {
     Ok(ok)
 }
 
-#[cfg(feature = "llama")]
 fn load_model(args: &Args) -> Result<Option<Box<dyn emdysi_rewrite::LanguageModel>>, String> {
+    if args.model.is_some() && args.server.is_some() {
+        return Err("use either --model or --server, not both".into());
+    }
+    if let Some(url) = &args.server {
+        return Ok(Some(Box::new(emdysi_rewrite::http::HttpLm::new(
+            url,
+            args.server_model.clone(),
+        ))));
+    }
     match &args.model {
         None => Ok(None),
-        Some(p) => emdysi_rewrite::llama::LlamaLm::load(p, 2048)
-            .map(|m| Some(Box::new(m) as Box<dyn emdysi_rewrite::LanguageModel>))
-            .map_err(|e| format!("loading model: {e}")),
+        Some(p) => load_gguf(p),
     }
 }
 
+#[cfg(feature = "llama")]
+fn load_gguf(
+    p: &std::path::Path,
+) -> Result<Option<Box<dyn emdysi_rewrite::LanguageModel>>, String> {
+    emdysi_rewrite::llama::LlamaLm::load(p, 2048)
+        .map(|m| Some(Box::new(m) as Box<dyn emdysi_rewrite::LanguageModel>))
+        .map_err(|e| format!("loading model: {e}"))
+}
+
 #[cfg(not(feature = "llama"))]
-fn load_model(args: &Args) -> Result<Option<Box<dyn emdysi_rewrite::LanguageModel>>, String> {
-    match &args.model {
-        None => Ok(None),
-        Some(_) => Err(
-            "--model needs a build with the `llama` feature: cargo install --features llama".into(),
-        ),
-    }
+fn load_gguf(
+    _: &std::path::Path,
+) -> Result<Option<Box<dyn emdysi_rewrite::LanguageModel>>, String> {
+    Err("--model needs a build with the `llama` feature: cargo install --features llama (or serve the model, e.g. with MLX, and use --server)".into())
 }
 
 fn main() -> ExitCode {
