@@ -63,7 +63,8 @@ TOML files; see [`docs/rules.md`](docs/rules.md). The built-in packs are:
 Opt-in packs converted from other linters' rule data (see
 [`docs/rules.md`](docs/rules.md#imported-packs)): `microsoft`, `google` and
 `elastic` (word choice from those companies' style guides, via their Vale
-packages) and `wordlists` (hedges, weasel words and fillers). Load them with
+packages), `wordlists` (hedges, weasel words and fillers) and `equality`
+(insensitive wording, from the data behind alex). Load them with
 `--pack microsoft` and so on.
 
 `en rewrite` prints the text with guarded rewrites: the automatic fixes,

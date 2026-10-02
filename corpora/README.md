@@ -38,3 +38,15 @@ Rules for adding a corpus:
 | [`beemo/`](beemo/SOURCE.md) | MIT | Sample of Beemo (200 outputs of zephyr-7b-beta, Mistral-7B and Mixtral-8x7B with expert edits; No Robots prompts and human texts excluded) |
 | [`cheat/`](cheat/SOURCE.md) | MIT | Sample of CHEAT (200 ChatGPT-written abstracts; IEEE titles, keywords and abstracts excluded) |
 | [`hh-rlhf/`](hh-rlhf/SOURCE.md) | MIT | Sample of Anthropic HH-RLHF helpful-base (200 final assistant turns; human turns excluded) |
+
+## Considered and not vendored
+
+- **LAMP** (Salesforce `creativity_eval`, Chakrabarty et al., CHI 2025):
+  LLM-written paragraphs with professional writers' edits. The repository's
+  LICENSE is BSD-3-Clause, but its `AI_ETHICS.md` says the release "is for
+  research purposes only", which leaves the data's terms unclear (rule 1).
+  Its writing instructions are derived from New Yorker paragraphs, and
+  some rows come from Llama models whose licenses attach terms to outputs.
+  Checked at commit `3d029879df6878f611363db88cc02d465699bc51`.
+- **UltraFeedback** (MIT): the responses are on Hugging Face only, which
+  could not be reached to verify them.
