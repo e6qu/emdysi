@@ -244,3 +244,92 @@ with a fronted condition or phrase (*If prompted, enter your password.*).
 The one remaining flag was a genuine statement among numbered
 instructions in `corpora/README.md`, since rewritten.
 
+## Grammar errors on real documents
+
+On the first 120 rows of the Beemo sample, `core.grammar-errors` first
+fired about 45 times per 1,000 words on the models' output and 39 times on
+the experts' edits: roughly once every three sentences, mostly false.
+Checking the diagnostics on 25 edited texts by hand showed two causes:
+
+- capitals reported as wrong after a colon (*Keep going: Staying
+  motivated ...*), at the start of a sentence after a line break, and in
+  titles (*Your Majesty*);
+- long sentences the grammar could not analyse, for which the grammar-error
+  variant chose a reading with several made-up corrections (*Add an article
+  before 'our beloved kingdom'*).
+
+Capitals in those positions are no longer reported, and no named error is
+reported when the best reading needs more than two corrections. On the 25
+edited texts the diagnostics fell from 287 to 83; most of those left are
+real (*On perfectly clear afternoon*, *Can you could start*). On the ERG's
+`csli` test suite nothing changed: 104 of 388 ungrammatical items still
+get a named error, and 17 of 965 grammatical ones a false one. Sentences
+that lose their named errors fall back to the generic `core.grammar`
+suggestion (*possibly ungrammatical*), which says only that the grammar
+found no strict analysis.
+
+### Beemo: rule rates after the change
+
+The same 120 rows, with the default packs and `wordlists`; count (per
+1,000 words):
+
+| Rule | model_output | expert_edited |
+|---|---|---|
+| words | 31112 | 27281 |
+| `ai-tells.chatbot` | 1 (0.0) | 0 (0.0) |
+| `ai-tells.em-dash` | 0 (0.0) | 6 (0.2) |
+| `ai-tells.not-x-but-y` | 17 (0.5) | 15 (0.5) |
+| `ai-tells.participial-tail` | 76 (2.4) | 68 (2.5) |
+| `ai-tells.rule-of-three` | 94 (3.0) | 86 (3.2) |
+| `ai-tells.signposting` | 5 (0.2) | 2 (0.1) |
+| `ai-tells.stock-phrases` | 1 (0.0) | 1 (0.0) |
+| `ai-tells.vocabulary` | 25 (0.8) | 24 (0.9) |
+| `core.consistency` | 5 (0.2) | 3 (0.1) |
+| `core.grammar` | 734 (23.6) | 622 (22.8) |
+| `core.grammar-errors` | 349 (11.2) | 277 (10.2) |
+| `core.spelling` | 43 (1.4) | 38 (1.4) |
+| `plain-style.double-space` | 0 (0.0) | 10 (0.4) |
+| `plain-style.expletive-there` | 37 (1.2) | 29 (1.1) |
+| `plain-style.intensifiers` | 36 (1.2) | 44 (1.6) |
+| `plain-style.passive` | 107 (3.4) | 108 (4.0) |
+| `plain-style.repeated-word` | 8 (0.3) | 3 (0.1) |
+| `plain-style.sentence-length` | 42 (1.3) | 31 (1.1) |
+| `plain-style.stacked-negation` | 5 (0.2) | 8 (0.3) |
+| `plain-style.tense-shift` | 8 (0.3) | 5 (0.2) |
+| `plain-style.wordy` | 4 (0.1) | 4 (0.1) |
+| `structure.long-paragraph` | 3 (0.1) | 6 (0.2) |
+| `structure.parallel-list` | 14 (0.4) | 11 (0.4) |
+| `structure.procedure-steps` | 4 (0.1) | 2 (0.1) |
+| `structure.vague-lead` | 1 (0.0) | 1 (0.0) |
+| `structure.wall-of-text` | 55 (1.8) | 50 (1.8) |
+| `substance.agentless-passive` | 50 (1.6) | 47 (1.7) |
+| `substance.bare-demonstrative` | 7 (0.2) | 7 (0.3) |
+| `substance.certainty` | 7 (0.2) | 5 (0.2) |
+| `substance.hedge-adverb` | 2 (0.1) | 1 (0.0) |
+| `substance.hedge-verb` | 12 (0.4) | 5 (0.2) |
+| `substance.stacked-hedge` | 1 (0.0) | 0 (0.0) |
+| `substance.vague-quantity` | 9 (0.3) | 6 (0.2) |
+| `terms.acronym-used-once` | 1 (0.0) | 2 (0.1) |
+| `terms.coined-word` | 9 (0.3) | 4 (0.1) |
+| `terms.hyphen-chain` | 4 (0.1) | 5 (0.2) |
+| `terms.ly-hyphen` | 1 (0.0) | 1 (0.0) |
+| `terms.noun-stack` | 45 (1.4) | 28 (1.0) |
+| `terms.noun-string` | 44 (1.4) | 45 (1.6) |
+| `terms.undefined-acronym` | 5 (0.2) | 6 (0.2) |
+| `terms.variant-spelling` | 1 (0.0) | 1 (0.0) |
+| `wordlists.fillers` | 493 (15.8) | 469 (17.2) |
+| `wordlists.hedges` | 1079 (34.7) | 952 (34.9) |
+| `wordlists.weasels` | 1641 (52.7) | 1417 (51.9) |
+
+- Rules that fire more on the models' output than on the edits point at
+  what editors fix: noun stacks of four or more nouns (1.5 against 1.0 per
+  1,000 words), coined words (0.3 against 0.1), hedging verbs (0.4 against
+  0.2), long sentences, repeated words and vague quantities.
+- Rules with the same rate on both sides (wall of text, rule of three,
+  participial tails, three-noun strings, `ai-tells.vocabulary`) describe
+  the genre or the prompt, not the machine; passives and intensifiers are
+  even more frequent in the edits.
+- The imported word lists (`wordlists`: weasels, hedges, fillers) fire
+  16 to 53 times per 1,000 words on both sides alike. Bare word lists do
+  not tell edited from unedited text; they stay opt-in.
+

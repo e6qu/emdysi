@@ -141,6 +141,15 @@ whole-sentence analysis that assumes the fewest errors is used.
 `{feedback}` (the ERG's own message) and `{code}` (the rule or entry that
 names the error) are available in messages.
 
+Two filters keep the rule precise on real documents. When the best
+analysis needs more than two corrections, nothing is reported: that is the
+grammar-error variant making the best of a sentence the grammar could not
+analyse (long sentences, constructions it lacks), not a list of real
+errors. And a capital letter is not reported as wrong at the start of a
+sentence, after a colon or a line break (list labels, verse), or next to
+another capitalized word (titles such as *Your Majesty*). See
+[evaluation.md](evaluation.md#grammar-errors-on-real-documents).
+
 ### `grammar`
 
 Sentences for which the grammar finds no analysis, or only a fragment or
