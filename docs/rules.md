@@ -179,7 +179,16 @@ one of:
   block between them, over `max_words` words (default 450) or
   `max_paragraphs` paragraphs (default 5); `{count}`, `{paragraphs}`;
 - `conclusion-at-end`: the last of two or more H2 sections is a conclusion
-  or summary (heading matching `pattern`), so the main point comes last.
+  or summary (heading matching `pattern`), so the main point comes last;
+- `vague-lead`: an opening paragraph (of the document or of an H1 or H2
+  section) in which no sentence states anything a reader can check or act
+  on (a name, number, date or time in the semantics of its analysis, a
+  digit, link, quotation or inline code, or an instruction) and which sets
+  a generic scene (`pattern`: *today*, *landscape*, *businesses*, *more than
+  ever*, ...);
+- `unnumbered-steps`: a bulleted list of three or more instructions with
+  words of sequence (`pattern`: *then*, *next*, *finally*, *steps*, ...) in
+  its items or the paragraph before it; `{count}`.
 
 ### `parallel`
 
@@ -194,8 +203,14 @@ instruction when the grammar's lexicon has such an entry for its first word
 (a noun reading only when no determiner follows: *Start the service* is
 not a noun phrase). Groups of fewer than `min_items` (default 3) are
 skipped; the most common form must fit at least `majority` (default 0.75)
-of the group. `{form}` (the item's best reading) and `{majority}` are
-available in messages. See [evaluation.md](evaluation.md#headings-and-list-items)
+of the group. With `form` (`imperative`, `gerund`, `infinitive`,
+`question`, `statement`, `noun-phrase` or `labelled`), items are checked
+against that form instead of the most common one, provided it fits at
+least `majority` of the group; `ordered = true` restricts the rule to
+numbered lists. An instruction is recognized from the semantics, so a
+fronted condition does not hide it (*If prompted, enter your password*).
+`{form}` (the item's best reading) and `{majority}` are available in
+messages. See [evaluation.md](evaluation.md#headings-and-list-items)
 for how this behaves on real documents.
 
 ### `acronyms`

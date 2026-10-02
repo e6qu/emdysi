@@ -7,7 +7,7 @@ published crates.
 
 Rules for adding a corpus:
 
-1. The license must permit redistribution (public domain, MIT/BSD/Apache, CC0,
+1. Check that the license permits redistribution (public domain, MIT/BSD/Apache, CC0,
    CC BY). CC BY-SA material may be added only in its own subdirectory with the
    license text, and must never be used to train shipped data.
    NonCommercial (NC) or no-derivatives (ND) material, LDC data and text of

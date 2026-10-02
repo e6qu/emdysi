@@ -50,10 +50,11 @@ TOML files; see [`docs/rules.md`](docs/rules.md). The built-in packs are:
 - `substance`: hedged, vague and unsupported claims (*seems to*, *may
   potentially*, *studies show* without a citation, *a number of*,
   *clearly*).
-- `structure`: the main point first (no throat-clearing openings, no
-  conclusion held back to the end), a clean heading hierarchy (no skipped
-  levels, empty or lone sections), short paragraphs, specific headings, and
-  parallel headings and list items;
+- `structure`: the main point first (no throat-clearing or vague
+  openings, no conclusion held back to the end), a clean heading hierarchy
+  (no skipped levels, empty or lone sections), short paragraphs, specific
+  headings, parallel headings and list items, and procedures written as
+  numbered instructions;
 - `terms`: acronyms defined at first use, one spelling per term, glossary
   terms (`--glossary FILE`) instead of deprecated ones, no coined words or
   concept names, no hyphen chains (*decision-making-framework*), no hyphen

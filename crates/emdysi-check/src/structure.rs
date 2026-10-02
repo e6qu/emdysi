@@ -91,11 +91,19 @@ pub enum StructureCheck {
     /// The last second-level heading is a conclusion or summary: the main
     /// point is held back to the end.
     ConclusionAtEnd { pattern: Regex },
+    /// An opening paragraph (of the document or a top-level section) with
+    /// nothing a reader can check or act on, no name, number, date, link,
+    /// code or instruction, that sets a generic scene (`pattern`).
+    VagueLead { pattern: Regex },
+    /// A bulleted list whose items are all instructions, with words of
+    /// sequence (`pattern`) in its items or lead-in: steps to number.
+    UnnumberedSteps { pattern: Regex },
 }
 
 /// Grammatical form of a heading or list item.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Form {
+    /// An instruction: an imperative main clause.
     Imperative,
     Gerund,
     Infinitive,
@@ -107,6 +115,19 @@ pub enum Form {
 }
 
 impl Form {
+    pub fn parse(s: &str) -> Option<Form> {
+        match s {
+            "imperative" => Some(Form::Imperative),
+            "gerund" => Some(Form::Gerund),
+            "infinitive" => Some(Form::Infinitive),
+            "question" => Some(Form::Question),
+            "statement" => Some(Form::Statement),
+            "noun-phrase" => Some(Form::NounPhrase),
+            "labelled" => Some(Form::Labelled),
+            _ => None,
+        }
+    }
+
     pub fn name(self) -> &'static str {
         match self {
             Form::Imperative => "an instruction (imperative)",
@@ -182,7 +203,52 @@ pub fn lead_blocks(a: &Analysis) -> HashSet<usize> {
     out
 }
 
-pub fn run_structure(check: &StructureCheck, a: &Analysis) -> Vec<Hit> {
+/// Predicates of concrete content in the semantics: names, numbers,
+/// dates and times.
+const CONCRETE: &[&str] = &[
+    "named",
+    "card",
+    "ord",
+    "fraction",
+    "yofc",
+    "mofy",
+    "dofm",
+    "dofw",
+    "numbered_hour",
+    "basic_numbered_hour",
+    "season",
+    "holiday",
+    "timezone_p",
+    "_percent_n_1",
+];
+
+/// Whether a sentence states something concrete: a name, number, date or
+/// time (from the semantics of its best analysis), a digit, link, quotation
+/// or inline code, or an instruction.
+fn concrete(a: &Analysis, si: usize) -> bool {
+    let s = &a.sentences[si];
+    let b = &a.blocks[s.block];
+    if s.original.chars().any(|c| c.is_ascii_digit())
+        || s.original.contains("http")
+        || s.original.contains('"')
+        || s.original.contains('“')
+        || b.opaque
+            .iter()
+            .any(|o| o.start < s.range.end && s.range.start < o.end)
+    {
+        return true;
+    }
+    let Some(r) = s.best() else { return true };
+    let Some(m) = &r.mrs else { return true };
+    let comm = m
+        .index
+        .as_ref()
+        .and_then(|i| m.props.get(i))
+        .is_some_and(|p| p.iter().any(|(k, v)| k == "SF" && v == "comm"));
+    comm || m.eps.iter().any(|e| CONCRETE.contains(&e.pred.as_str()))
+}
+
+pub fn run_structure(check: &StructureCheck, erg: &emdysi_parse::Erg, a: &Analysis) -> Vec<Hit> {
     let mut out = Vec::new();
     let headings: Vec<(usize, u8)> = a
         .blocks
@@ -293,6 +359,49 @@ pub fn run_structure(check: &StructureCheck, a: &Analysis) -> Vec<Hit> {
                 }
             }
         }
+        StructureCheck::VagueLead { pattern } => {
+            for b in lead_blocks(a) {
+                let sents: Vec<usize> = (0..a.sentences.len())
+                    .filter(|&i| a.sentences[i].block == b)
+                    .collect();
+                if sents.is_empty() || sents.iter().any(|&i| concrete(a, i)) {
+                    continue;
+                }
+                let generic = sents
+                    .iter()
+                    .any(|&i| pattern.is_match(&a.sentences[i].original).unwrap_or(false));
+                if generic {
+                    out.push(block_hit(a, b));
+                }
+            }
+            out.sort_by_key(|h| h.range.start);
+        }
+        StructureCheck::UnnumberedSteps { pattern } => {
+            for g in groups(a, ParallelOf::ListItems) {
+                if g.len() < 3 || g.iter().any(|&b| a.blocks[b].ordered) {
+                    continue;
+                }
+                let sents: Vec<usize> = g.iter().filter_map(|&b| block_sentence(a, b)).collect();
+                let steps = sents
+                    .iter()
+                    .all(|&s| forms_of(erg, a, s).is_some_and(|f| f.best == Form::Imperative));
+                if !steps {
+                    continue;
+                }
+                // Words of sequence in the items, or in the paragraph just
+                // before the list.
+                let lead_in = g[0]
+                    .checked_sub(1)
+                    .filter(|&p| a.blocks[p].kind == BlockKind::Paragraph);
+                let seq = g
+                    .iter()
+                    .chain(lead_in.iter())
+                    .any(|&b| pattern.is_match(&a.blocks[b].text).unwrap_or(false));
+                if seq {
+                    out.push(block_hit(a, g[0]).var("count", g.len()));
+                }
+            }
+        }
         StructureCheck::ConclusionAtEnd { pattern } => {
             let h2: Vec<usize> = headings.iter().filter(|h| h.1 == 2).map(|h| h.0).collect();
             if let Some(&last) = h2.last() {
@@ -334,11 +443,56 @@ fn reading_form(s: &crate::Sentence, r: &emdysi_parse::Reading) -> Option<Form> 
             .and_then(|p| p.iter().find(|(n, _)| n == k).map(|(_, v)| v.clone()))
     };
     let first = w0.surface.to_lowercase();
+    // The main clause is a command, also after a fronted clause or phrase
+    // ("If prompted, enter your password").
+    // Only when the clause starts with its verb or with a fronted
+    // condition or phrase: a command reading of "Tagger training data." is
+    // the grammar making the best of a noun phrase.
+    const FRONT: &[&str] = &[
+        "if",
+        "when",
+        "whenever",
+        "once",
+        "after",
+        "before",
+        "until",
+        "unless",
+        "while",
+        "in",
+        "on",
+        "at",
+        "for",
+        "from",
+        "to",
+        "with",
+        "by",
+        "during",
+        "under",
+        "within",
+        "optionally",
+        "first",
+        "then",
+        "next",
+        "finally",
+        "now",
+        "again",
+        "always",
+        "never",
+        "also",
+    ];
+    if prop("SF").as_deref() == Some("comm") && emdysi_parse::is_strict(&r.root) {
+        // Unknown words get a default verb entry ("Apache-2.0
+        // dependencies."): those are not verbs.
+        if (w0.le_type.starts_with("v_") && !w0.generic) || FRONT.contains(&first.as_str()) {
+            return Some(Form::Imperative);
+        }
+        return Some(Form::NounPhrase);
+    }
     let tensed = matches!(prop("TENSE").as_deref(), Some("pres" | "past" | "fut"));
     if emdysi_parse::is_strict(&r.root) && tensed && prop("SF").as_deref() == Some("prop") {
         return Some(Form::Statement);
     }
-    if w0.le_type.starts_with("v_") {
+    if w0.le_type.starts_with("v_") && !w0.generic {
         if first.ends_with("ing") {
             return Some(Form::Gerund);
         }
@@ -522,16 +676,23 @@ fn groups(a: &Analysis, of: ParallelOf) -> Vec<Vec<usize>> {
 /// Members of a sibling group that cannot be read in the form most of the
 /// group shares. An item counts for every form it can be read as; a group
 /// is checked when one form fits at least `majority` of its items.
-pub fn run_parallel(
-    erg: &emdysi_parse::Erg,
-    a: &Analysis,
-    of: ParallelOf,
-    min_items: usize,
-    majority: f64,
-) -> Vec<Hit> {
+/// Options of the `parallel` kind.
+#[derive(Debug, Clone)]
+pub struct Parallel {
+    pub of: ParallelOf,
+    pub min_items: usize,
+    pub majority: f64,
+    /// Only numbered lists.
+    pub ordered: bool,
+    /// The form every item should have, instead of the most common one.
+    pub form: Option<Form>,
+}
+
+pub fn run_parallel(erg: &emdysi_parse::Erg, a: &Analysis, p: &Parallel) -> Vec<Hit> {
+    let (min_items, majority) = (p.min_items, p.majority);
     let mut out = Vec::new();
-    for g in groups(a, of) {
-        if g.len() < min_items {
+    for g in groups(a, p.of) {
+        if g.len() < min_items || (p.ordered && !g.iter().all(|&b| a.blocks[b].ordered)) {
             continue;
         }
         let forms: Vec<(usize, Forms)> = g
@@ -560,7 +721,10 @@ pub fn run_parallel(
                 .count()
         };
         let best_of = |f: Form| forms.iter().filter(|(_, x)| x.best == f).count();
-        let Some(top) = all.iter().copied().max_by_key(|&f| (fits(f), best_of(f))) else {
+        let Some(top) = p
+            .form
+            .or_else(|| all.iter().copied().max_by_key(|&f| (fits(f), best_of(f))))
+        else {
             continue;
         };
         let n = fits(top);

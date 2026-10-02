@@ -187,3 +187,40 @@ description = "A list item whose grammatical form differs from most items of its
 source = "Microsoft Writing Style Guide, Lists; plainlanguage.gov, Use lists"
 examples = ["To deploy:\n\n1. Build the image.\n2. Push the image.\n3. Update the service.\n4. The logs should be checked.\n"]
 acceptable = ["To deploy:\n\n1. Build the image.\n2. Push the image.\n3. Update the service.\n4. Check the logs.\n"]
+
+[[rule]]
+id = "structure.vague-lead"
+kind = "structure"
+check = "vague-lead"
+severity = "suggestion"
+message = "The opening makes no specific claim (no name, number, date, link or instruction); start with what the reader should know or do."
+description = "An opening paragraph, of the document or of an H1 or H2 section, in which no sentence has anything a reader can check or act on (a name, number, date or time from the grammar's semantics, a link, quotation or code, or an instruction) and which sets a generic scene ('today', 'landscape', 'businesses', 'more than ever')."
+source = "plainlanguage.gov, Organize (put the most important information first); Microsoft Writing Style Guide (start with the key takeaway)"
+examples = ["# Code review\n\nSoftware quality matters more than ever. Businesses face growing pressure to ship faster.\n\n## Results\n\nText.\n"]
+acceptable = ["# Code review\n\nTeams that adopted the linter in March cut review time by a third.\n\n## Results\n\nText.\n", "# Setup\n\nInstall the package before you configure the server.\n"]
+
+[[rule]]
+id = "structure.procedure-steps"
+kind = "parallel"
+of = "list-items"
+ordered = true
+form = "imperative"
+min_items = 2
+majority = 0.5
+severity = "warning"
+message = "Step '{match}' is {form}; write each step as an instruction ('Check the logs')."
+description = "In a numbered list where most items are instructions (a procedure), a step whose main clause is not an instruction. A fronted condition or phrase is fine ('If prompted, enter your password'). The grammar's analysis decides."
+source = "Microsoft Writing Style Guide, Procedures and instructions (use imperative verb forms)"
+examples = ["To deploy:\n\n1. Build the image.\n2. Push the image.\n3. The service is then updated.\n"]
+acceptable = ["To deploy:\n\n1. Build the image.\n2. If prompted, enter your password.\n3. Update the service.\n"]
+
+[[rule]]
+id = "structure.unnumbered-steps"
+kind = "structure"
+check = "unnumbered-steps"
+severity = "suggestion"
+message = "These {count} items are steps in order; use a numbered list."
+description = "A bulleted list of three or more instructions whose items or lead-in use words of sequence ('then', 'next', 'finally', 'steps'): readers follow numbered steps more easily."
+source = "Microsoft Writing Style Guide, Procedures and instructions; Diátaxis, How-to guides"
+examples = ["Follow these steps:\n\n- Build the image.\n- Push the image.\n- Then update the service.\n"]
+acceptable = ["Follow these steps:\n\n1. Build the image.\n2. Push the image.\n3. Then update the service.\n", "Before you start:\n\n- Install Docker.\n- Create an account.\n- Read the license.\n"]
