@@ -1,0 +1,7 @@
+extends: existence
+message: "Avoid editing mapped_pages unless you are preserving an existing URL mapping. Talk with your local technical writer before changing this key."
+level: warning
+nonword: true
+scope: raw
+tokens:
+  - '(?m)^[ \t]*mapped_pages:'

@@ -23,8 +23,9 @@ with the ERG port (decision D4) as the parsing core.
 | M10 | Parse selection and robust fallback for fragments | averaged-perceptron ranker on clean gold: 81.7% exact match held out on 2,626 items of all lengths (77.9% when trained on the earlier, short-only set); the ERG's fragment/informal roots act as fallback, then a cover of the input by the fewest partial analyses |
 | M11 | Sentence segmentation and Markdown input with span mapping | done (46/47 Golden Rules) |
 | M12 | Spelling: SCOWL-based lexicon, suggestions, confident auto-fix | done |
-| M13 | Rules engine and DSL; AI-prose and style-guide packs | 21 rule kinds, 6 packs; rule scopes (heading, lead, body, ...) and per-rule examples run as tests |
+| M13 | Rules engine and DSL; AI-prose and style-guide packs | 23 rule kinds, 6 default and 4 opt-in packs; rule scopes (heading, lead, body, ...) and per-rule examples run as tests |
 | M13b | Document structure and terminology (research: `reports/AI corpora and style guide rules.md`, not in the repository): heading hierarchy, bottom line up front, paragraph and section size, parallel headings and lists; acronym definitions (Schwartz–Hearst), a TBX-style glossary, one spelling per term, coined words and concept names, hyphen chains, -ly hyphens, noun stacks | done (`structure` and `terms` packs) |
+| M13c | Rule data imported from other linters under permissive licenses: Vale's Microsoft, Google and Elastic packages and the words/* lists, converted by `scripts/import-rules.py` into opt-in packs (`existence` and `substitution` kinds) | done; proselint, Red Hat, GitLab and LanguageTool data excluded for licensing reasons (see rules.md) |
 | M14 | CLI | `check`, `fix`, `parse`, `packs` |
 
 Validation: the gold derivations in `corpora/erg-gold/` (ERG `mrs` and `csli`

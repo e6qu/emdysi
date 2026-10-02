@@ -59,6 +59,12 @@ TOML files; see [`docs/rules.md`](docs/rules.md). The built-in packs are:
   concept names, no hyphen chains (*decision-making-framework*), no hyphen
   after *-ly* adverbs and no noun stacks.
 
+Opt-in packs converted from other linters' rule data (see
+[`docs/rules.md`](docs/rules.md#imported-packs)): `microsoft`, `google` and
+`elastic` (word choice from those companies' style guides, via their Vale
+packages) and `wordlists` (hedges, weasel words and fillers). Load them with
+`--pack microsoft` and so on.
+
 `en rewrite` prints the text with guarded rewrites: the automatic fixes,
 spelling corrections and a small local language model's rewrites of
 sentences the rules cannot fix: a GGUF file with `--model FILE.gguf` (a
