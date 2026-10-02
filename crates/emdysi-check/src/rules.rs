@@ -1225,6 +1225,10 @@ fn is_error_item(name: &str) -> bool {
 /// The errors named by the best analysis of the grammar-error variant of
 /// the ERG: the reading with the fewest error items (none if some reading
 /// has none).
+/// More error items than this in the best reading of the grammar-error
+/// variant: no named error is reported.
+const MAX_ERRORS: usize = 2;
+
 pub fn grammar_errors(s: &crate::Sentence) -> Vec<GrammarError> {
     let Some(p) = &s.mal_parse else {
         return Vec::new();
@@ -1261,9 +1265,36 @@ pub fn grammar_errors(s: &crate::Sentence) -> Vec<GrammarError> {
     let Some(best) = pick(true).or_else(|| pick(false)) else {
         return Vec::new();
     };
+    // A reading that needs many corrections is the grammar-error variant
+    // making the best of a sentence the grammar could not analyse (long,
+    // or with a construction it lacks), not a list of real errors.
+    if best.len() > MAX_ERRORS {
+        return Vec::new();
+    }
     let chars: Vec<char> = s.original.chars().collect();
+    // Capitals that are not errors: at the start of the sentence, after a
+    // colon or a line break (list labels, verse), and in runs of
+    // capitalized words (titles such as "Your Majesty").
+    let licensed_capital = |from: usize| {
+        let before: String = chars[..from.min(chars.len())].iter().collect();
+        let before = before.trim_end_matches([' ', '\t']);
+        let prev_word = before
+            .rsplit(|c: char| c.is_whitespace())
+            .next()
+            .unwrap_or("");
+        before.trim().is_empty()
+            || before.ends_with(':')
+            || before.ends_with('\n')
+            || prev_word.chars().next().is_some_and(char::is_uppercase)
+    };
     let mut out: Vec<GrammarError> = Vec::new();
     for (code, from, to) in best {
+        // A capital where none is expected (not the `nocap` errors, a
+        // missing capital).
+        let wrong_capital = code.contains("cap") && !code.contains("nocap");
+        if wrong_capital && licensed_capital(from) {
+            continue;
+        }
         let text: String = chars
             .get(from..to)
             .map(|c| c.iter().collect())

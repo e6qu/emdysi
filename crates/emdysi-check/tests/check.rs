@@ -237,3 +237,22 @@ message = "Use '{replacement}' instead of '{match}'."
     assert_eq!(wordy[1].replacement, None);
     assert_eq!(wordy[1].suggestions, vec!["use", "employ"]);
 }
+
+#[test]
+fn grammar_errors_precision() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let checker = Checker::new(packs());
+    let opts = Options {
+        threads: 2,
+        ..Options::default()
+    };
+    // Before: "Staying" and "Majesty" were reported as wrongly capitalized,
+    // and the first item drew three made-up corrections.
+    let src = "1. Keep going: Staying motivated and disciplined can be difficult, \
+               especially if your dreams take a while.\n\n\
+               Your Majesty, I write to you with a sense of urgency, as our \
+               beloved kingdom is in danger.\n";
+    let a = analyze(&erg, src, Format::Markdown, &opts);
+    let d = checker.check(&erg, &a);
+    assert!(!d.iter().any(|x| x.rule == "core.grammar-errors"), "{d:?}");
+}
