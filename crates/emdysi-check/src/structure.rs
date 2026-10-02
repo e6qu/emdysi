@@ -102,6 +102,8 @@ pub enum Form {
     Question,
     Statement,
     NounPhrase,
+    /// "Label: description" (a definition list written as a list).
+    Labelled,
 }
 
 impl Form {
@@ -113,6 +115,7 @@ impl Form {
             Form::Question => "a question",
             Form::Statement => "a full sentence",
             Form::NounPhrase => "a noun phrase",
+            Form::Labelled => "a 'label: description' item",
         }
     }
 
@@ -124,6 +127,7 @@ impl Form {
             Form::Question => "questions",
             Form::Statement => "full sentences",
             Form::NounPhrase => "noun phrases",
+            Form::Labelled => "'label: description' items",
         }
     }
 }
@@ -305,32 +309,16 @@ pub fn run_structure(check: &StructureCheck, a: &Analysis) -> Vec<Hit> {
     out
 }
 
-/// The grammatical form of a heading or list item, from the best analysis
-/// of its first sentence (or from its words if it has none).
-pub fn form_of(a: &Analysis, si: usize) -> Option<Form> {
-    let s = &a.sentences[si];
-    let text = s.original.trim();
-    if text.is_empty() {
-        return None;
-    }
-    if text.ends_with('?') {
-        return Some(Form::Question);
-    }
-    let first_token = s
-        .tokens
-        .iter()
-        .find(|t| t.form.chars().any(char::is_alphabetic))?;
-    let first = first_token.form.to_lowercase();
-    if first == "to" {
-        return Some(Form::Infinitive);
-    }
-    let Some(r) = s.best() else {
-        return Some(if first.ends_with("ing") && first.len() > 4 {
-            Form::Gerund
-        } else {
-            Form::NounPhrase
-        });
-    };
+/// The forms a heading or list item can be read as, and the one its best
+/// analysis gives.
+#[derive(Debug, Clone)]
+pub struct Forms {
+    pub best: Form,
+    pub possible: Vec<Form>,
+}
+
+/// The form of one analysis.
+fn reading_form(s: &crate::Sentence, r: &emdysi_parse::Reading) -> Option<Form> {
     let mut ws: Vec<&emdysi_parse::Word> = r.words.iter().collect();
     ws.sort_by_key(|w| w.from);
     let w0 = ws
@@ -345,19 +333,150 @@ pub fn form_of(a: &Analysis, si: usize) -> Option<Form> {
             .as_ref()
             .and_then(|p| p.iter().find(|(n, _)| n == k).map(|(_, v)| v.clone()))
     };
+    let first = w0.surface.to_lowercase();
+    let tensed = matches!(prop("TENSE").as_deref(), Some("pres" | "past" | "fut"));
+    if emdysi_parse::is_strict(&r.root) && tensed && prop("SF").as_deref() == Some("prop") {
+        return Some(Form::Statement);
+    }
     if w0.le_type.starts_with("v_") {
         if first.ends_with("ing") {
             return Some(Form::Gerund);
         }
-        if prop("SF").as_deref() == Some("comm") || w0.surface.to_lowercase() == w0.lemma {
+        if prop("SF").as_deref() == Some("comm") || first == w0.lemma {
             return Some(Form::Imperative);
         }
     }
-    let tensed = matches!(prop("TENSE").as_deref(), Some("pres" | "past" | "fut"));
-    if crate::Sentence::strict(s) && tensed && prop("SF").as_deref() == Some("prop") {
-        return Some(Form::Statement);
-    }
+    let _ = s;
     Some(Form::NounPhrase)
+}
+
+/// The forms of a heading or list item: from every analysis of its first
+/// sentence, and from the parts of speech its first word can have, so
+/// that "Test corpora" counts as both an instruction and a noun phrase.
+pub fn forms_of(erg: &emdysi_parse::Erg, a: &Analysis, si: usize) -> Option<Forms> {
+    static LABEL: std::sync::OnceLock<Regex> = std::sync::OnceLock::new();
+    // "Label: text", or "Label:" before a nested list; the label may hold
+    // a parenthetical.
+    let label = LABEL.get_or_init(|| Regex::new(r"^(?:[^:.!?]|\.\S){1,80}:(?:\s|$)").unwrap());
+    let s = &a.sentences[si];
+    let text = s.original.trim();
+    let only = |f: Form| {
+        Some(Forms {
+            best: f,
+            possible: vec![f],
+        })
+    };
+    if text.is_empty() {
+        return None;
+    }
+    // An item that ends with a colon introduces a nested list: a label.
+    if text.ends_with(':') {
+        return only(Form::Labelled);
+    }
+    if label.is_match(text).unwrap_or(false)
+        && text.split(':').next().is_some_and(|l| {
+            let mut depth = 0i32;
+            let bare: String = l
+                .chars()
+                .filter(|&c| {
+                    depth += match c {
+                        '(' => 1,
+                        ')' => -1,
+                        _ => 0,
+                    };
+                    depth == 0 && c != ')'
+                })
+                .collect();
+            bare.split_whitespace().count() <= 5
+        })
+    {
+        return only(Form::Labelled);
+    }
+    if text.ends_with('?') {
+        return only(Form::Question);
+    }
+    // The first word, skipping numbering ("1.", "(a)") and inline code.
+    let masked: Vec<char> = s.text.chars().collect();
+    let first = s.tokens.iter().find(|t| {
+        t.form.chars().any(char::is_alphabetic)
+            && !(t.form.chars().count() == 1 && text.starts_with('(') && t.from <= 1)
+    })?;
+    let code = masked
+        .get(first.from..first.to)
+        .is_some_and(|c| c.iter().all(|&c| c == 'x'))
+        && !first.form.chars().all(|c| c == 'x');
+    let word = first.form.to_lowercase();
+    if word == "to" {
+        return only(Form::Infinitive);
+    }
+    let mut possible = Vec::new();
+    let add = |f: Form, p: &mut Vec<Form>| {
+        if !p.contains(&f) {
+            p.push(f);
+        }
+    };
+    let mut best = None;
+    if let Some(p) = &s.parse {
+        // The best analysis only: further down, a fragment reading of
+        // almost anything turns up. Lexical ambiguity ("Test corpora") is
+        // added from the first word's entries below.
+        for r in p.readings.iter().take(1) {
+            if let Some(f) = reading_form(s, r) {
+                best.get_or_insert(f);
+                add(f, &mut possible);
+            }
+        }
+    }
+    let types = erg.word_types(&word);
+    // A noun reading of the first word counts unless a determiner follows
+    // it ("Start the service" is not a noun phrase).
+    let next = s
+        .tokens
+        .iter()
+        .skip_while(|t| t.from < first.to)
+        .find(|t| t.form.chars().any(char::is_alphabetic))
+        .map(|t| t.form.to_lowercase());
+    let determiner = next.as_deref().is_some_and(|n| {
+        matches!(
+            n,
+            "the"
+                | "a"
+                | "an"
+                | "your"
+                | "my"
+                | "our"
+                | "their"
+                | "this"
+                | "that"
+                | "these"
+                | "those"
+                | "each"
+                | "every"
+                | "all"
+                | "some"
+                | "any"
+                | "it"
+                | "them"
+        )
+    });
+    if code || types.is_empty() || (!determiner && types.iter().any(|t| !t.starts_with("v_"))) {
+        add(Form::NounPhrase, &mut possible);
+    }
+    if word.ends_with("ing") && word.chars().count() > 4 {
+        add(Form::Gerund, &mut possible);
+        add(Form::NounPhrase, &mut possible);
+    } else if !code
+        && erg
+            .lexicon
+            .entries_starting(&word)
+            .iter()
+            .any(|&e| erg.le_types[erg.lexicon.entries[e].inst].starts_with("v_"))
+    {
+        add(Form::Imperative, &mut possible);
+    }
+    let best = best.or_else(|| possible.first().copied())?;
+    add(best, &mut possible);
+    Some(Forms { best, possible })
 }
 
 /// Sibling groups: headings of one level under the same parent, or the
@@ -400,38 +519,60 @@ fn groups(a: &Analysis, of: ParallelOf) -> Vec<Vec<usize>> {
     out
 }
 
-/// Members of a sibling group whose form differs from a clear majority.
-pub fn run_parallel(a: &Analysis, of: ParallelOf, min_items: usize, majority: f64) -> Vec<Hit> {
+/// Members of a sibling group that cannot be read in the form most of the
+/// group shares. An item counts for every form it can be read as; a group
+/// is checked when one form fits at least `majority` of its items.
+pub fn run_parallel(
+    erg: &emdysi_parse::Erg,
+    a: &Analysis,
+    of: ParallelOf,
+    min_items: usize,
+    majority: f64,
+) -> Vec<Hit> {
     let mut out = Vec::new();
     for g in groups(a, of) {
         if g.len() < min_items {
             continue;
         }
-        let forms: Vec<(usize, Option<Form>)> = g
+        let forms: Vec<(usize, Forms)> = g
             .iter()
             .filter_map(|&b| block_sentence(a, b))
-            .map(|s| (s, form_of(a, s)))
+            .filter_map(|s| forms_of(erg, a, s).map(|f| (s, f)))
             .collect();
-        let mut counts: Vec<(Form, usize)> = Vec::new();
-        for f in forms.iter().filter_map(|f| f.1) {
-            match counts.iter_mut().find(|c| c.0 == f) {
-                Some(c) => c.1 += 1,
-                None => counts.push((f, 1)),
-            }
+        if forms.len() < min_items {
+            continue;
         }
-        let Some(&(top, n)) = counts.iter().max_by_key(|c| c.1) else {
+        // The form that fits the most items; ties go to the form that is
+        // the best reading of more items.
+        let all = [
+            Form::Imperative,
+            Form::Gerund,
+            Form::Infinitive,
+            Form::Question,
+            Form::Statement,
+            Form::NounPhrase,
+            Form::Labelled,
+        ];
+        let fits = |f: Form| {
+            forms
+                .iter()
+                .filter(|(_, x)| x.possible.contains(&f))
+                .count()
+        };
+        let best_of = |f: Form| forms.iter().filter(|(_, x)| x.best == f).count();
+        let Some(top) = all.iter().copied().max_by_key(|&f| (fits(f), best_of(f))) else {
             continue;
         };
+        let n = fits(top);
         if (n as f64) < majority * forms.len() as f64 || n == forms.len() {
             continue;
         }
-        for &(s, f) in &forms {
-            let Some(f) = f else { continue };
-            if f != top {
-                let len = a.sentences[s].original.chars().count();
+        for (s, f) in &forms {
+            if !f.possible.contains(&top) {
+                let len = a.sentences[*s].original.chars().count();
                 out.push(
-                    Hit::at(a, s, 0, len)
-                        .var("form", f.name())
+                    Hit::at(a, *s, 0, len)
+                        .var("form", f.best.name())
                         .var("majority", top.plural()),
                 );
             }

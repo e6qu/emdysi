@@ -645,6 +645,36 @@ impl Erg {
             })
     }
 
+    /// Lexical types of the one-word entries for a word form: its own
+    /// entries and those of its stems under inflection (not derivation),
+    /// e.g. `n_-_c_le` and `v_np_le` for *test* or *tests*.
+    pub fn word_types(&self, word: &str) -> Vec<&str> {
+        let w = word.to_lowercase();
+        let mut stems = vec![w.clone()];
+        for a in self
+            .lexicon
+            .morph
+            .analyze(&w, &|s| self.lexicon.is_stem(s), 2)
+        {
+            if !a.rules.iter().any(|r| r.ends_with("_dlr")) && !stems.contains(&a.stem) {
+                stems.push(a.stem);
+            }
+        }
+        let mut out = Vec::new();
+        for st in &stems {
+            for &e in self.lexicon.entries_starting(st) {
+                let entry = &self.lexicon.entries[e];
+                if entry.orth.len() == 1 {
+                    let t = self.le_types[entry.inst].as_str();
+                    if !out.contains(&t) {
+                        out.push(t);
+                    }
+                }
+            }
+        }
+        out
+    }
+
     /// Spelling suggestions for an unknown word: known words within edit
     /// distance 1, or 2 if there are none, best first.
     pub fn spelling_suggestions(&self, word: &str, max: usize) -> Vec<String> {
