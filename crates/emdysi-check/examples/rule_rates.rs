@@ -5,9 +5,10 @@
 //! `cargo run --release -p emdysi-check --example rule_rates -- corpora/beemo/sample.tsv 3,4 60`
 //!
 //! Arguments: the TSV file (a `#` header line; cells escaped as `\\`, `\t`,
-//! `\n`, `\r`), the 0-based text columns (comma-separated), and the number
-//! of rows to use (default: all). Texts are read as Markdown and checked
-//! with the built-in packs in `packs/`. Prints a Markdown table.
+//! `\n`, `\r`), the 0-based text columns (comma-separated), the number of
+//! rows to use (default: all), and the packs in `packs/` to use
+//! (comma-separated; default: the six default packs). Texts are read as
+//! Markdown. Prints a Markdown table.
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -66,19 +67,20 @@ fn main() {
         .collect();
 
     let packs_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packs");
-    let packs: Vec<Pack> = [
-        "core",
-        "ai-tells",
-        "plain-style",
-        "substance",
-        "structure",
-        "terms",
-    ]
-    .iter()
-    .map(|p| {
-        Pack::parse(&std::fs::read_to_string(packs_dir.join(format!("{p}.toml"))).unwrap()).unwrap()
-    })
-    .collect();
+    let default = "core,ai-tells,plain-style,substance,structure,terms".to_string();
+    let names: Vec<String> = args
+        .get(3)
+        .unwrap_or(&default)
+        .split(',')
+        .map(String::from)
+        .collect();
+    let packs: Vec<Pack> = names
+        .iter()
+        .map(|p| {
+            Pack::parse(&std::fs::read_to_string(packs_dir.join(format!("{p}.toml"))).unwrap())
+                .unwrap()
+        })
+        .collect();
     let checker = Checker::new(packs);
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     let opts = Options {

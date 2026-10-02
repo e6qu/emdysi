@@ -25,6 +25,7 @@ const BUILTIN_PACKS: &[(&str, &str)] = &[
     ("google", include_str!("../../../packs/google.toml")),
     ("elastic", include_str!("../../../packs/elastic.toml")),
     ("wordlists", include_str!("../../../packs/wordlists.toml")),
+    ("equality", include_str!("../../../packs/equality.toml")),
 ];
 
 /// Packs used when no `--pack` is given.
@@ -54,7 +55,8 @@ USAGE:
 OPTIONS:
     --pack NAME|FILE       rule pack to use (repeatable; default: core, ai-tells,
                            plain-style, substance, structure, terms; also
-                           built in: microsoft, google, elastic, wordlists)
+                           built in: microsoft, google, elastic, wordlists,
+                           equality)
     --glossary FILE        project glossary: [[concept]] tables of preferred,
                            admitted and deprecated terms (repeatable)
     --disable RULE         skip a rule id, or a prefix ending in '*' (repeatable)
