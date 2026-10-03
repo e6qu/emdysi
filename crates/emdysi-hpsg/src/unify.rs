@@ -11,7 +11,7 @@ use std::hash::{BuildHasherDefault, Hasher};
 use std::sync::Arc;
 
 use crate::dag::{Dag, Node};
-use crate::types::TypeId;
+use crate::types::{TOP, TypeId};
 use crate::typesys::{FeatId, TypeSystem};
 
 const NONE: u32 = u32::MAX;
@@ -29,6 +29,13 @@ pub enum Failure {
     NeedConstraint(TypeId),
 }
 
+/// A state of a [`Unifier`] to return to.
+pub struct Checkpoint {
+    srcs: usize,
+    total: u32,
+    comp_arcs: usize,
+}
+
 #[derive(Default)]
 pub struct Unifier {
     srcs: Vec<(Arc<Dag>, u32)>,
@@ -44,6 +51,16 @@ pub struct Unifier {
     /// Added arcs: (feature, target handle, next arc in the node's list).
     comp_arcs: Vec<(FeatId, u32, u32)>,
     pub failure: Option<Failure>,
+    /// Scratch space for copying: the queue of nodes, and the sizes of the
+    /// last copy (to size the next one).
+    order: Vec<u32>,
+    last_copy: (usize, usize),
+    cycle_state: Vec<u8>,
+    cycle_stack: Vec<(u32, u32)>,
+    /// Changes since the last checkpoint: (node, stamp, forward, type,
+    /// added arcs) before the change.
+    trail: Vec<(u32, u32, u32, TypeId, u32)>,
+    logging: bool,
     /// GLBs of incomparable types already computed by this unifier, so the
     /// hot path avoids the type system's shared cache.
     glb_cache: HashMap<(TypeId, TypeId), Option<TypeId>, BuildHasherDefault<FxHasher>>,
@@ -86,6 +103,8 @@ impl Unifier {
 
     /// Start a new unification, forgetting all sources and changes.
     pub fn begin(&mut self) {
+        self.logging = false;
+        self.trail.clear();
         self.srcs.clear();
         self.comp_arcs.clear();
         self.total = 0;
@@ -115,8 +134,41 @@ impl Unifier {
         base
     }
 
+    /// Remember the current state so that [`Unifier::rollback`] can return
+    /// to it: e.g. a rule unified with one daughter, before trying each
+    /// candidate for the other.
+    pub fn checkpoint(&mut self) -> Checkpoint {
+        self.logging = true;
+        self.trail.clear();
+        Checkpoint {
+            srcs: self.srcs.len(),
+            total: self.total,
+            comp_arcs: self.comp_arcs.len(),
+        }
+    }
+
+    /// Undo every change since `c`, the last checkpoint taken.
+    pub fn rollback(&mut self, c: &Checkpoint) {
+        while let Some((h, stamp, fwd, ty, comp)) = self.trail.pop() {
+            let i = h as usize;
+            self.stamp[i] = stamp;
+            self.fwd[i] = fwd;
+            self.ty[i] = ty;
+            self.comp[i] = comp;
+        }
+        self.srcs.truncate(c.srcs);
+        self.total = c.total;
+        self.comp_arcs.truncate(c.comp_arcs);
+        self.failure = None;
+    }
+
+    /// Called before any change to a node.
     fn touch(&mut self, h: u32) {
         let i = h as usize;
+        if self.logging {
+            self.trail
+                .push((h, self.stamp[i], self.fwd[i], self.ty[i], self.comp[i]));
+        }
         if self.stamp[i] != self.generation {
             self.stamp[i] = self.generation;
             self.fwd[i] = NONE;
@@ -297,6 +349,14 @@ impl Unifier {
         true
     }
 
+    /// Whether two quick-check vectors are compatible: every pair of types
+    /// has a GLB. Uses this unifier's GLB cache.
+    pub fn compatible(&mut self, ts: &TypeSystem, a: &[TypeId], b: &[TypeId]) -> bool {
+        a.iter()
+            .zip(b)
+            .all(|(&x, &y)| x == TOP || y == TOP || self.glb(ts, x, y).is_some())
+    }
+
     fn glb(&mut self, ts: &TypeSystem, a: TypeId, b: TypeId) -> Option<TypeId> {
         if a == b {
             return Some(a);
@@ -341,7 +401,9 @@ impl Unifier {
     /// the root features in `drop`. Returns `None` if the result is cyclic.
     pub fn copy(&mut self, root: u32, drop: &[FeatId]) -> Option<Dag> {
         let root = self.find(root);
-        let mut order = vec![root];
+        let mut order = std::mem::take(&mut self.order);
+        order.clear();
+        order.push(root);
         // Each copy gets its own stamp so several copies can be taken from
         // one unification state.
         self.copy_generation = self.copy_generation.wrapping_add(1);
@@ -353,43 +415,88 @@ impl Unifier {
         self.copy_stamp[root as usize] = cg;
         self.copy[root as usize] = 0;
         let mut dag = Dag {
-            nodes: Vec::new(),
-            arcs: Vec::new(),
+            nodes: Vec::with_capacity(self.last_copy.0),
+            arcs: Vec::with_capacity(self.last_copy.1),
         };
-        let mut buf = Vec::new();
         let mut i = 0;
         while i < order.len() {
             let h = order[i];
-            self.arcs_into(h, &mut buf);
-            let start = dag.arcs.len() as u32;
-            for &(f, v) in &buf {
-                if i == 0 && drop.contains(&f) {
-                    continue;
+            let start = dag.arcs.len();
+            // Gather the arcs with their handles, sorted by feature, then
+            // number the targets in that order.
+            let (s, node) = self.src_node(h);
+            let base = self.srcs[s].1;
+            let src_arcs = node.arc_start as usize..(node.arc_start + node.arc_len) as usize;
+            dag.arcs.extend(
+                self.srcs[s].0.arcs[src_arcs]
+                    .iter()
+                    .map(|&(f, v)| (f, base + v)),
+            );
+            if self.fresh(h) && self.comp[h as usize] != NONE {
+                let mut c = self.comp[h as usize];
+                while c != NONE {
+                    let (f, v, next) = self.comp_arcs[c as usize];
+                    dag.arcs.push((f, v));
+                    c = next;
                 }
-                let v = self.find(v);
-                if self.copy_stamp[v as usize] != cg {
-                    self.copy_stamp[v as usize] = cg;
-                    self.copy[v as usize] = order.len() as u32;
-                    order.push(v);
+                dag.arcs[start..].sort_unstable_by_key(|a| a.0);
+            }
+            if i == 0 && !drop.is_empty() {
+                let mut k = start;
+                for j in start..dag.arcs.len() {
+                    if !drop.contains(&dag.arcs[j].0) {
+                        dag.arcs[k] = dag.arcs[j];
+                        k += 1;
+                    }
                 }
-                dag.arcs.push((f, self.copy[v as usize]));
+                dag.arcs.truncate(k);
+            }
+            for j in start..dag.arcs.len() {
+                let target = self.copy_target(dag.arcs[j].1, cg, &mut order);
+                dag.arcs[j].1 = target;
             }
             dag.nodes.push(Node {
-                ty: self.node_type(h),
-                arc_start: start,
-                arc_len: dag.arcs.len() as u32 - start,
+                ty: self.rep_type(h),
+                arc_start: start as u32,
+                arc_len: (dag.arcs.len() - start) as u32,
             });
             i += 1;
         }
-        if is_cyclic(&dag) { None } else { Some(dag) }
+        self.order = order;
+        self.last_copy = (dag.nodes.len(), dag.arcs.len());
+        if is_cyclic_with(&dag, &mut self.cycle_state, &mut self.cycle_stack) {
+            None
+        } else {
+            Some(dag)
+        }
+    }
+
+    /// The index in the copy of the node `v` stands for, queueing it if it
+    /// is new.
+    #[inline]
+    fn copy_target(&mut self, v: u32, cg: u32, order: &mut Vec<u32>) -> u32 {
+        let v = self.find(v);
+        if self.copy_stamp[v as usize] != cg {
+            self.copy_stamp[v as usize] = cg;
+            self.copy[v as usize] = order.len() as u32;
+            order.push(v);
+        }
+        self.copy[v as usize]
     }
 }
 
 /// Whether a DAG contains a cycle.
 pub fn is_cyclic(dag: &Dag) -> bool {
+    is_cyclic_with(dag, &mut Vec::new(), &mut Vec::new())
+}
+
+/// [`is_cyclic`] with caller-provided scratch space.
+fn is_cyclic_with(dag: &Dag, state: &mut Vec<u8>, stack: &mut Vec<(u32, u32)>) -> bool {
     // 0 = unvisited, 1 = on the current path, 2 = done.
-    let mut state = vec![0u8; dag.nodes.len()];
-    let mut stack: Vec<(u32, u32)> = vec![(0, 0)];
+    state.clear();
+    state.resize(dag.nodes.len(), 0);
+    stack.clear();
+    stack.push((0, 0));
     state[0] = 1;
     while let Some(&mut (n, ref mut i)) = stack.last_mut() {
         let arcs = dag.arcs(n);

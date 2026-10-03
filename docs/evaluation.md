@@ -394,5 +394,37 @@ analyses:
   sentences need 28,000 to 37,000 edges, so three sentences of
   `corpora/ai-prose` lost their strict analysis.
 
-Making the parser itself faster is the remaining route.
+Making the parser itself faster is the remaining route. A first round of
+changes does less work per edge and keeps every analysis: the readings of
+38 sentences from `corpora/ai-prose` (without a time limit) are identical,
+and so are the `sh-spec` results.
+
+- **Packing without restricted copies.** Edges are compared for packing
+  directly, skipping the restricted features on the fly, instead of
+  through a restricted copy of each edge.
+- **Released edges.** Packed and frozen edges drop their feature
+  structures: unpacking rebuilds what it needs from the daughters, and an
+  edge that is reactivated is rebuilt the same way. Peak memory for one
+  16-word sentence fell from 1.2 GB to 0.6 GB.
+- **Shared first daughter.** A binary rule is unified with one daughter
+  once; each candidate for the other daughter is tried from a checkpoint,
+  and the unifier rolls back after it.
+- **Smaller costs.** The candidate's quick-check vector is computed only as
+  far as the check needs, quick-check types use the unifier's GLB cache,
+  and copying reuses its buffers.
+
+| | Before | After |
+|---|---|---|
+| `sh-spec`: parse time (sum over items) | 1,052 s | 851 s |
+| `sh-spec`: parsed / gold tree found / ranked first | 510 / 345 / 310 | 510 / 345 / 310 |
+| 40 `ai-prose` sentences, 5 s limit (sum) | 29.5 s | 24.0 s |
+| *First, employees save time on commuting, allowing them to focus on meaningful work.* | 8.9 s | 4.5 s |
+| Beemo texts 215 / 236 / 240, `en check` wall time | 23 / 21 / 14 s | 21 / 13 / 11 s |
+
+Two sentences of the 40 needed 8 to 9 seconds before and did not finish
+within the 5-second limit; both now get their strict analyses, the second
+(*It is widely believed that dashboards are hard to set up, but Flowboard
+changes that.*) only just. The grammar-error parse is time-limited, so a
+faster parser can find a diagnosis it used to miss: text 215 gets one more
+`core.grammar-errors` warning.
 
