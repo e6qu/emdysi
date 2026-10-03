@@ -97,14 +97,29 @@ impl Morphology {
     ) -> Vec<Analysis> {
         let mut out = Vec::new();
         let mut seen = HashSet::new();
-        self.analyze_into(form, Vec::new(), is_stem, max_rules, &mut out, &mut seen);
+        self.analyze_into(
+            form,
+            Vec::new(),
+            false,
+            is_stem,
+            max_rules,
+            &mut out,
+            &mut seen,
+        );
         out
     }
 
+    /// `identity`: an irregular form equal to its stem (*set*, past of
+    /// *set*) was already undone. Such steps leave the form unchanged, so
+    /// they could stack without end (*set* as the past of the past of
+    /// *set*); one per analysis is enough, as two inflections never
+    /// combine.
+    #[allow(clippy::too_many_arguments)]
     fn analyze_into(
         &self,
         form: &str,
         outer: Vec<String>,
+        identity: bool,
         is_stem: &dyn Fn(&str) -> bool,
         budget: usize,
         out: &mut Vec<Analysis>,
@@ -125,10 +140,15 @@ impl Morphology {
             return;
         }
         if let Some(irr) = self.irregs.get(&form.to_lowercase()) {
+            let lower = form.to_lowercase();
             for (rule, stem) in irr {
+                let same = *stem == lower;
+                if same && identity {
+                    continue;
+                }
                 let mut o = outer.clone();
                 o.push(rule.clone());
-                self.analyze_into(stem, o, is_stem, budget - 1, out, seen);
+                self.analyze_into(stem, o, identity || same, is_stem, budget - 1, out, seen);
             }
         }
         for rule in &self.rules {
@@ -143,7 +163,7 @@ impl Morphology {
                     }
                     let mut o = outer.clone();
                     o.push(rule.name.clone());
-                    self.analyze_into(&base, o, is_stem, budget - 1, out, seen);
+                    self.analyze_into(&base, o, identity, is_stem, budget - 1, out, seen);
                 }
             }
         }
