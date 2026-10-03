@@ -333,3 +333,25 @@ The same 120 rows, with the default packs and `wordlists`; count (per
   16 to 53 times per 1,000 words on both sides alike. Bare word lists do
   not tell edited from unedited text; they stay opt-in.
 
+## Modifiers (purple prose)
+
+Professional editors of machine-written paragraphs often cut piled-up
+adjectives and ornate description (*purple prose* in the LAMP study,
+Chakrabarty et al. 2025). Two rule kinds measure it from the grammar's
+analysis: adjectives on one noun (`adjective-stack`) and the share of
+adjectives and descriptive adverbs in a sentence (`modifier-density`). On
+the first 120 rows of the Beemo sample; count (per 1,000 words):
+
+| Probe | model_output | expert_edited |
+|---|---|---|
+| 2 or more adjectives on a noun | 192 (6.2) | 171 (6.3) |
+| 3 or more adjectives on a noun | 33 (1.1) | 27 (1.0) |
+| modifiers at least 25% of a sentence (4 or more) | 71 (2.3) | 70 (2.6) |
+| modifiers at least 33% of a sentence (5 or more) | 11 (0.4) | 14 (0.5) |
+
+None of them separates the models' output from the edits, so no built-in
+pack uses them; the kinds remain for house styles that limit modifiers.
+Beemo's editors corrected facts, structure and phrasing more than
+adjectives, and its prompts are mostly creative writing, so a corpus of
+edited explanatory prose could still show a difference.
+

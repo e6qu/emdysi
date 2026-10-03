@@ -256,3 +256,55 @@ fn grammar_errors_precision() {
     let d = checker.check(&erg, &a);
     assert!(!d.iter().any(|x| x.rule == "core.grammar-errors"), "{d:?}");
 }
+
+#[test]
+fn modifier_kinds() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let pack = Pack::parse(
+        r#"
+[pack]
+name = "t"
+
+[[rule]]
+id = "t.stack"
+kind = "adjective-stack"
+min = 3
+message = "{count} adjectives"
+
+[[rule]]
+id = "t.density"
+kind = "modifier-density"
+min = 4
+ratio = 0.25
+"#,
+    )
+    .unwrap();
+    let checker = Checker::new(vec![pack]);
+    let opts = Options {
+        threads: 2,
+        ..Options::default()
+    };
+    let src = "The vibrant, confident, and independent women of today stand out. \
+               The cat sat on the mat. \
+               The gleaming silver moon cast an ethereal, shimmering glow over the tranquil, sleepy village.\n";
+    let a = analyze(&erg, src, Format::Plain, &opts);
+    let d = checker.check(&erg, &a);
+    let stack: Vec<&str> = d
+        .iter()
+        .filter(|x| x.rule == "t.stack")
+        .map(|x| &src[x.range.clone()])
+        .collect();
+    assert_eq!(
+        stack,
+        vec!["vibrant, confident, and independent women"],
+        "{d:?}"
+    );
+    assert!(
+        rules_at(src, &d, "gleaming").contains(&"t.density"),
+        "{d:?}"
+    );
+    assert!(
+        !rules_at(src, &d, "The cat").contains(&"t.density"),
+        "{d:?}"
+    );
+}

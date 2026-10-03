@@ -6,8 +6,9 @@
 //!
 //! Arguments: the TSV file (a `#` header line; cells escaped as `\\`, `\t`,
 //! `\n`, `\r`), the 0-based text columns (comma-separated), the number of
-//! rows to use (default: all), and the packs in `packs/` to use
-//! (comma-separated; default: the six default packs). Texts are read as
+//! rows to use (default: all), and the packs to use (names in `packs/`
+//! or paths to `.toml` files, comma-separated; default: the six default
+//! packs). Texts are read as
 //! Markdown. Prints a Markdown table.
 
 use std::collections::BTreeMap;
@@ -77,8 +78,15 @@ fn main() {
     let packs: Vec<Pack> = names
         .iter()
         .map(|p| {
-            Pack::parse(&std::fs::read_to_string(packs_dir.join(format!("{p}.toml"))).unwrap())
-                .unwrap()
+            Pack::parse(
+                &std::fs::read_to_string(if p.ends_with(".toml") {
+                    std::path::PathBuf::from(p)
+                } else {
+                    packs_dir.join(format!("{p}.toml"))
+                })
+                .unwrap(),
+            )
+            .unwrap()
         })
         .collect();
     let checker = Checker::new(packs);
