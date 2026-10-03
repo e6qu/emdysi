@@ -39,6 +39,8 @@ pub struct Checkpoint {
 #[derive(Default)]
 pub struct Unifier {
     srcs: Vec<(Arc<Dag>, u32)>,
+    /// The source each handle belongs to.
+    owner: Vec<u32>,
     total: u32,
     generation: u32,
     stamp: Vec<u32>,
@@ -129,7 +131,9 @@ impl Unifier {
             self.comp.resize(n, NONE);
             self.copy.resize(n, NONE);
             self.copy_stamp.resize(n, 0);
+            self.owner.resize(n, 0);
         }
+        self.owner[base as usize..need].fill(self.srcs.len() as u32);
         self.srcs.push((dag, base));
         base
     }
@@ -184,11 +188,7 @@ impl Unifier {
 
     #[inline]
     fn src(&self, h: u32) -> (usize, u32) {
-        // Few sources: a linear scan from the end beats a binary search.
-        let mut s = self.srcs.len() - 1;
-        while self.srcs[s].1 > h {
-            s -= 1;
-        }
+        let s = self.owner[h as usize] as usize;
         (s, h - self.srcs[s].1)
     }
 
