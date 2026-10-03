@@ -1,6 +1,13 @@
 //! Train the parse-ranking model on the vendored gold profiles:
 //! `cargo run --release --example train -- <cache-file> [profile dirs...]`.
 //!
+//! A source `treebank:FILE` reads a hand-judged treebank instead
+//! (`corpora/ai-treebank/treebank.tsv`: id, source, sentence, gold
+//! skeleton or `-`). With `TREEBANK_FOLDS=k`, the treebank items are also
+//! evaluated by k-fold cross-validation: each fold is scored by a model
+//! trained on everything else, and by a model trained without any treebank
+//! item.
+//!
 //! Parses every grammatical item that has a gold derivation, records the
 //! features of all readings (cached in `<cache-file>`, reused if present),
 //! reports held-out accuracy on a 10% split, then trains on everything and
@@ -47,6 +54,26 @@ fn load_cache(path: &str) -> Vec<Cached> {
     out
 }
 
+/// Items of a hand-judged treebank with a gold skeleton.
+fn treebank_items(path: &str) -> Vec<Item> {
+    std::fs::read_to_string(path)
+        .unwrap_or_else(|e| panic!("{path}: {e}"))
+        .lines()
+        .filter(|l| !l.starts_with('#'))
+        .filter_map(|l| {
+            let f: Vec<&str> = l.split('\t').collect();
+            let (id, text, gold) = (*f.first()?, *f.get(2)?, *f.get(3)?);
+            (gold != "-").then(|| Item {
+                id: id.to_string(),
+                text: text.to_string(),
+                wf: true,
+                gold: Some(gold.to_string()),
+                mrs: None,
+            })
+        })
+        .collect()
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     let cache_path = args.get(1).expect("cache file").clone();
@@ -79,10 +106,19 @@ fn main() {
         for d in &dirs {
             let name = std::path::Path::new(d)
                 .file_name()
-                .unwrap()
-                .to_string_lossy()
-                .to_string();
-            for it in items(d) {
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_default();
+            let source = if let Some(path) = d.strip_prefix("treebank:") {
+                treebank_items(path)
+            } else {
+                items(d)
+            };
+            let name = if d.starts_with("treebank:") {
+                "ai-treebank".to_string()
+            } else {
+                name
+            };
+            for it in source {
                 let key = format!("{name}:{}", it.id);
                 // MAX_WORDS skips long items, which are slow and
                 // memory-hungry (long inputs are parsed with chart pruning).
@@ -209,6 +245,60 @@ fn main() {
         "held-out exact match: {hit}/{n} ({:.1}%); unranked first reading: {base}/{n}; {ambiguous} test items ambiguous",
         100.0 * hit as f64 / n.max(1) as f64
     );
+
+    if let Some(k) = std::env::var("TREEBANK_FOLDS")
+        .ok()
+        .and_then(|k| k.parse::<usize>().ok())
+    {
+        let tb: Vec<&Cached> = cached
+            .iter()
+            .filter(|c| c.key.starts_with("ai-treebank:"))
+            .collect();
+        let rest: Vec<Example> = cached
+            .iter()
+            .filter(|c| !c.key.starts_with("ai-treebank:"))
+            .map(to_example)
+            .collect();
+        let best_is_gold = |m: &Model, c: &Cached| {
+            let best = (0..c.readings.len())
+                .max_by(|&a, &b| m.score(&c.readings[a]).total_cmp(&m.score(&c.readings[b])))
+                .unwrap_or(0);
+            best == c.gold || c.readings[best] == c.readings[c.gold]
+        };
+        let without = train(&rest, 10);
+        let base: usize = tb.iter().filter(|c| best_is_gold(&without, c)).count();
+        let mut with = 0;
+        for f in 0..k {
+            let mut set: Vec<Example> = cached
+                .iter()
+                .filter(|c| !c.key.starts_with("ai-treebank:"))
+                .map(to_example)
+                .collect();
+            // TREEBANK_WEIGHT=n repeats each treebank item n times.
+            let weight: usize = std::env::var("TREEBANK_WEIGHT")
+                .ok()
+                .and_then(|w| w.parse().ok())
+                .unwrap_or(1);
+            for _ in 0..weight {
+                set.extend(
+                    tb.iter()
+                        .enumerate()
+                        .filter(|(i, _)| i % k != f)
+                        .map(|(_, c)| to_example(c)),
+                );
+            }
+            let m = train(&set, 10);
+            with += tb
+                .iter()
+                .enumerate()
+                .filter(|(i, c)| i % k == f && best_is_gold(&m, c))
+                .count();
+        }
+        println!(
+            "treebank ({} items, {k}-fold): best reading right {base} without the treebank, {with} with it",
+            tb.len()
+        );
+    }
 
     let all: Vec<Example> = cached.iter().map(to_example).collect();
     let full = train(&all, 10);

@@ -355,6 +355,39 @@ Beemo's editors corrected facts, structure and phrasing more than
 adjectives, and its prompts are mostly creative writing, so a corpus of
 edited explanatory prose could still show a difference.
 
+## Parse readings of machine-written prose
+
+[`corpora/ai-treebank`](../corpora/ai-treebank/README.md) has 160 sentences
+from `corpora/ai-prose` and Beemo's model outputs, with the right reading
+of the ERG chosen by hand (judged as English, not by agreement with another
+parser) for the 97 that have one among their six best readings.
+`cargo run --release -p emdysi-check --example treebank_eval` analyses each
+sentence in its document, as `en check` does, and counts how often the best
+reading is the right one (2026-10-03):
+
+| | Best reading right (of 97) |
+|---|---|
+| Ranker alone | 57 |
+| Phrases the document uses elsewhere, margin 1, 2 or 4 | 58 (one fixed, none broken) |
+| Same, any margin | 57 (one fixed, one broken) |
+
+The phrase preference only counts phrases of two or more content words;
+with all phrases, common ones such as *of them* broke two right readings.
+It changes the best reading of 14 sentences of these documents at the
+default margin (2), mostly in sentences that were not judged. Most of the
+40 wrong best readings differ from the right one in ways nothing else in
+the document can speak to: the rule for a fronted adverb (*First,
+employees save time ...*), a past participle read as a past tense, or an
+attachment the document never repeats.
+
+Training the ranker on the treebank as well does not help: in 5-fold cross
+validation, the ranker trained on the gold profiles gets 38 of 96 right on
+held-out folds, and 39, 35 and 38 with the other folds added once, three
+times and ten times (`TREEBANK_FOLDS=5 TREEBANK_WEIGHT=n cargo run --release
+-p emdysi-parse --example train -- ... treebank:corpora/ai-treebank/treebank.tsv`;
+these figures parse sentences alone with the trainer's settings, so they are
+lower than in-document ones). The treebank is kept for evaluation.
+
 ## Speed
 
 Checking a few hundred words of machine-written prose takes 14 to 38

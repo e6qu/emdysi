@@ -94,6 +94,11 @@ OPTIONS:
     --decide-readings      with a model and `check`, `fix` or `parse`: when the
                            two best readings of a sentence are close, ask the
                            model which grouping of words is meant
+    --no-context-readings  with `check`, `fix` or `parse`: do not let the rest of
+                           the document settle close calls between readings
+                           (by default, of readings that score about the same,
+                           the one grouping words as the document does elsewhere
+                           is preferred)
     --no-debias            with `decide`, ask once instead of also with the
                            options reversed
     --temperature T        with `decide`, calibration temperature (default 1)
@@ -127,6 +132,7 @@ struct Args {
     debias: bool,
     temperature: f64,
     decide_readings: bool,
+    context_readings: bool,
     samples: usize,
     grammar: PathBuf,
     fail_on: Severity,
@@ -162,6 +168,7 @@ fn parse_args() -> Result<Args, String> {
         debias: true,
         temperature: 1.0,
         decide_readings: false,
+        context_readings: true,
         samples: 3,
         grammar: default_grammar_dir(),
         fail_on: Severity::Error,
@@ -222,6 +229,7 @@ fn parse_args() -> Result<Args, String> {
             "--eval" => a.eval = Some(PathBuf::from(need(&mut it, &arg)?)),
             "--no-debias" => a.debias = false,
             "--decide-readings" => a.decide_readings = true,
+            "--no-context-readings" => a.context_readings = false,
             "--temperature" => {
                 a.temperature = need(&mut it, &arg)?
                     .parse()
@@ -374,6 +382,9 @@ fn run() -> Result<bool, String> {
     }
     for (name, src, format) in docs {
         let mut a = analyze(&erg, &src, format, &args.opts);
+        if args.context_readings {
+            emdysi_check::decisions::prefer_document_phrases(&mut a, READING_MARGIN);
+        }
         if let (true, Some(m)) = (args.decide_readings, model.as_mut()) {
             let mut ask = ModelAsk::new(&mut **m, &args);
             let n = emdysi_check::decisions::disambiguate(&mut a, &mut ask, READING_MARGIN, 0.6);
@@ -456,7 +467,7 @@ fn load_model(args: &Args) -> Result<Option<Box<dyn emdysi_lm::LanguageModel>>, 
 }
 
 /// Readings whose ranker scores differ by at most this much are close
-/// enough to ask the model about (`--decide-readings`).
+/// enough for the rest of the document or the model to decide between.
 const READING_MARGIN: f64 = 2.0;
 
 /// A decision model as the checker's [`emdysi_check::decisions::Ask`].
