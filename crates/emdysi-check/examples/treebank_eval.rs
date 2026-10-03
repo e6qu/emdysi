@@ -129,6 +129,7 @@ fn main() {
     };
     let mut total = 0;
     let mut base = 0;
+    let mut oracle = 0;
     let mut after = vec![0; margins.len()];
     let mut changed = vec![0; margins.len()];
     let mut sources: Vec<&String> = by_source.keys().collect();
@@ -168,6 +169,17 @@ fn main() {
                 }
             }
         }
+        oracle += by_source[src]
+            .iter()
+            .filter(|(sent, gold)| {
+                a.sentences.iter().any(|s| {
+                    s.original.trim() == sent
+                        && s.parse.as_ref().is_some_and(|p| {
+                            p.readings.iter().any(|r| skeleton(&r.derivation) == *gold)
+                        })
+                })
+            })
+            .count();
         total += by_source[src].len();
         base += right(&a);
         for (k, &m) in margins.iter().enumerate() {
@@ -198,7 +210,9 @@ fn main() {
             after[k] += right(&b);
         }
     }
-    println!("{total} judged sentences in their documents; best reading right: {base}");
+    println!(
+        "{total} judged sentences in their documents; best reading right: {base}; right reading among the readings: {oracle}"
+    );
     for (k, m) in margins.iter().enumerate() {
         println!(
             "  document phrases, margin {m}: {} right ({} sentences changed)",
