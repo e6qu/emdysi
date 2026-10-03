@@ -53,8 +53,20 @@ pub fn tag(form: &str, initial: bool) -> Vec<Tag> {
         vec![("RB", 0.6), ("JJ", 0.4)]
     } else if lower.ends_with("ing") {
         vec![("VBG", 0.6), ("NN", 0.3), ("JJ", 0.1)]
+    } else if lower.ends_with("ed")
+        && [
+            "multi", "well-", "ill-", "self-", "full-", "high-", "low-", "long-", "short-",
+        ]
+        .iter()
+        .any(|p| lower.starts_with(p))
+    {
+        // Compound adjectives in -ed: multifaceted, well-designed.
+        vec![("JJ", 0.6), ("VBN", 0.4)]
     } else if lower.ends_with("ed") {
         vec![("VBD", 0.4), ("VBN", 0.4), ("JJ", 0.2)]
+    } else if lower.ends_with("ous") {
+        // Before the -us nouns (bonus, virus): meticulous, multifarious.
+        vec![("JJ", 0.8), ("NN", 0.2)]
     } else if lower.ends_with("ss") || lower.ends_with("us") || lower.ends_with("is") {
         vec![("NN", 0.8), ("JJ", 0.2)]
     } else if lower.ends_with('s') {
@@ -79,4 +91,26 @@ pub fn tag(form: &str, initial: bool) -> Vec<Tag> {
         out.push(("NNP", 0.3));
     }
     tags(&out)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::tag;
+
+    fn best(form: &str) -> String {
+        tag(form, false)
+            .into_iter()
+            .max_by(|a, b| a.prob.total_cmp(&b.prob))
+            .map(|t| t.tag)
+            .unwrap_or_default()
+    }
+
+    #[test]
+    fn suffixes() {
+        assert_eq!(best("meticulous"), "JJ");
+        assert_eq!(best("bonus"), "NN");
+        assert_eq!(best("multifaceted"), "JJ");
+        assert_eq!(best("well-designed"), "JJ");
+        assert!(matches!(best("refactored").as_str(), "VBD" | "VBN"));
+    }
 }

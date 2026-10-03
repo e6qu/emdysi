@@ -122,7 +122,13 @@ calibrated model.
   sees the sentence bracketed both ways (*The [relationship between sleep]
   and memory* against *The relationship between [sleep and memory]*) and the
   second reading becomes the best one if the model prefers it with
-  probability 0.6 or more. Every rule that reads the analysis benefits.
+  probability 0.6 or more. The model also sees the sentences before and
+  after, so the context can settle what the sentence alone cannot. Every
+  rule that reads the analysis benefits. Before any model is asked, emdysi
+  already prefers, among readings that score about the same, the one that
+  groups words as the document does elsewhere (a heading "Sleep and
+  Memory" supports *between [sleep and memory]*); `--no-context-readings`
+  turns that off.
 
 - **Rewriting**: when the server cannot score text, the model chooses among
   the candidates that passed every check.

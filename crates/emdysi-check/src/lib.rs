@@ -172,6 +172,37 @@ fn mask_label(text: &str) -> Option<String> {
     Some(" ".repeat(label.chars().count() + 1) + rest)
 }
 
+/// Citations: author and year in parentheses ("(Walker, 2017)", "(see
+/// Smith and Jones 2020, p. 4)") or numbers in brackets ("[3]", "[1, 4-6]").
+static CITATION: std::sync::LazyLock<fancy_regex::Regex> = std::sync::LazyLock::new(|| {
+    fancy_regex::Regex::new(
+        r"\((?:see |e\.g\.,? |cf\. )?[A-Z][^()]{0,80}?\b(?:1[6-9]|20)\d\d[a-z]?(?:,\s*pp?\.\s*[\d–-]+)?\)|\[\d+(?:\s*[,–-]\s*\d+)*\]",
+    )
+    .expect("citation pattern")
+});
+
+/// The text the parser sees: citations, and labels of list items (see
+/// [`mask_label`]), replaced by spaces. Citations are not part of the
+/// sentence's grammar, and the parser would otherwise build them into a
+/// noun phrase. Character positions are unchanged. `None` if nothing is
+/// masked.
+fn parser_text(text: &str, in_list: bool) -> Option<String> {
+    let labelled = mask_label(text).filter(|_| in_list);
+    let base = labelled.as_deref().unwrap_or(text);
+    let mut out = String::with_capacity(base.len());
+    let mut last = 0;
+    for m in CITATION.find_iter(base).flatten() {
+        out.push_str(&base[last..m.start()]);
+        out.extend(std::iter::repeat_n(' ', m.as_str().chars().count()));
+        last = m.end();
+    }
+    if last == 0 {
+        return labelled;
+    }
+    out.push_str(&base[last..]);
+    Some(out)
+}
+
 /// A sentence's parse outcome: index, parse, tokens, reason for skipping.
 type Parsed = (
     usize,
@@ -254,8 +285,8 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                             )),
                         )
                     } else {
-                        let unlabelled = mask_label(text).filter(|_| in_list);
-                        let text = unlabelled.as_deref().unwrap_or(text);
+                        let masked = parser_text(text, in_list);
+                        let text = masked.as_deref().unwrap_or(text);
                         match erg.parse_limited(text, opts.timeout, opts.max_readings) {
                             Ok(p) => (Some(p), None),
                             Err(e) => (None, Some(e.to_string())),
@@ -275,8 +306,8 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                     // with few corrections (see `rules::grammar_errors`), so
                     // a short search suffices.
                     let mal_parse = if opts.diagnose && parse.is_some() && (!strict || generic) {
-                        let unlabelled = mask_label(text).filter(|_| in_list);
-                        let text = unlabelled.as_deref().unwrap_or(text);
+                        let masked = parser_text(text, in_list);
+                        let text = masked.as_deref().unwrap_or(text);
                         erg.mal().and_then(|m| {
                             m.parse_limited(
                                 text,
@@ -440,4 +471,31 @@ pub fn apply_fixes(source: &str, diags: &[Diagnostic]) -> (String, usize) {
     }
     out.push_str(&source[pos..]);
     (out, applied)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parser_text;
+
+    #[test]
+    fn citations_are_masked() {
+        let t = "People who sleep remember more (Walker, 2017).";
+        let m = parser_text(t, false).unwrap();
+        assert_eq!(m.chars().count(), t.chars().count());
+        let blank = |c: &str| " ".repeat(c.chars().count());
+        assert_eq!(m, t.replace("(Walker, 2017)", &blank("(Walker, 2017)")));
+        let t = "Others report none [3, 5-7].";
+        assert_eq!(
+            parser_text(t, false).unwrap(),
+            t.replace("[3, 5-7]", &blank("[3, 5-7]"))
+        );
+        let t = "Results (see Smith and Jones 2020, p. 4) vary.";
+        assert!(parser_text(t, false).unwrap().starts_with("Results    "));
+        // Not citations.
+        assert!(parser_text("It costs $5 (about 4 euros).", false).is_none());
+        assert!(parser_text("Version 2 (released in March) is out.", false).is_none());
+        // Labels only in list items.
+        assert!(parser_text("Keep going: stay motivated and keep pushing.", false).is_none());
+        assert!(parser_text("Keep going: stay motivated and keep pushing.", true).is_some());
+    }
 }

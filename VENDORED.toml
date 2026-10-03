@@ -120,6 +120,23 @@ ai_generated = false
 generator = "written for this project in the style of machine-written prose (not sampled from a model's output corpus); covered by the repository's MIT license"
 
 [[item]]
+id = "ai-treebank"
+paths = ["corpora/ai-treebank"]
+name = "AI-prose treebank: sentences with the right ERG reading chosen by hand"
+upstream = "this repository (sentences from corpora/ai-prose and corpora/beemo)"
+version = "judged 2026-10-03"
+retrieved = "2026-10-03"
+license = "MIT"
+license_files = ["LICENSE", "corpora/beemo/LICENSE"]
+copyright = "Annotations and ai-prose sentences: Copyright (c) 2026 emdysi contributors; Beemo sentences: Copyright (c) 2024 Toloka"
+provenance = "160 sentences (36 from corpora/ai-prose, 124 from the model outputs in corpora/beemo); for each, the derivation skeleton of the reading judged right among the six best, by crates/emdysi-parse/examples/judge.rs and hand judgement."
+modifications = "Sentences copied unchanged; derivation skeletons and notes added."
+use = "test"
+source_doc = "corpora/ai-treebank/README.md"
+ai_generated = true
+generator = "Beemo sentences: HuggingFaceH4/zephyr-7b-beta (MIT), mistralai/Mistral-7B-Instruct-v0.1 (Apache-2.0), mistralai/Mixtral-8x7B-Instruct-v0.1 (Apache-2.0); ai-prose sentences written for this project; judgements made for this project"
+
+[[item]]
 id = "corpora-readme"
 paths = ["corpora/README.md"]
 name = "Corpus policy"

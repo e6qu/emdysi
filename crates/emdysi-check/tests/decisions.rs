@@ -1,6 +1,6 @@
 //! Rules and steps answered by a decision model, with a stand-in model.
 
-use emdysi_check::decisions::{Ask, disambiguate};
+use emdysi_check::decisions::{Ask, disambiguate, prefer_document_phrases};
 use emdysi_check::*;
 use emdysi_parse::{Erg, default_grammar_dir};
 
@@ -107,4 +107,33 @@ fn readings_settled_by_the_model() {
         assert_eq!(readings[0].derivation, before);
     }
     assert_eq!(oracle.asked, 1);
+}
+
+#[test]
+fn document_phrases_settle_close_calls() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let src = "# Sleep and Memory\n\nThe relationship between sleep and memory is intricate and multifaceted.\n";
+    let opts = Options {
+        threads: 1,
+        ..Options::default()
+    };
+    let mut a = analyze(&erg, src, Format::Markdown, &opts);
+    let groups = |a: &Analysis| {
+        let s = a
+            .sentences
+            .iter()
+            .find(|s| s.original.contains("relationship"))
+            .unwrap();
+        s.best().unwrap().derivation.contains("n-n_crd-t_c 3 6")
+    };
+    assert!(
+        !groups(&a),
+        "the ranker alone now groups [sleep and memory]"
+    );
+    // The heading names "sleep and memory" as a unit.
+    assert_eq!(prefer_document_phrases(&mut a, 2.0), 1);
+    assert!(groups(&a));
+    // Without the heading nothing supports either reading.
+    let mut b = analyze(&erg, &src[19..], Format::Markdown, &opts);
+    assert_eq!(prefer_document_phrases(&mut b, 2.0), 0);
 }
