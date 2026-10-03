@@ -441,3 +441,13 @@ leaving 7 analyses of *set*. Readings and charts are unchanged (the 38
 *They set it.* parses in 41 ms instead of 152 ms, and `sh-spec` in 794 s
 instead of 851 s.
 
+**Source lookup and unpacking.** A node handle in the unifier belongs to
+one of the structures being unified (the rule, the daughters, and type
+constraints added on the way). Finding which one was a scan over them,
+13% of all instructions on a long sentence; a table filled as structures
+are added makes it a lookup. Unpacking now unifies a binary rule with each
+distinct first daughter once and tries the second daughters from a
+checkpoint, as parsing does. The same combinations are tried in the same
+order, so the readings are identical; `sh-spec` takes 714 s instead of
+794 s, and the instructions for the 16-word sentence above fall by 14%.
+

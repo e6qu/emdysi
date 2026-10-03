@@ -1050,23 +1050,18 @@ impl<'g> Parser<'g> {
                 }
                 combos.sort_by(|a, b| b.0.total_cmp(&a.0));
             }
+            // Combinations are tried best first until `beam` succeed: as many
+            // at a time as are still needed, so that the ones sharing a
+            // first daughter can share its unification with the rule.
             let mut found = 0;
-            for (score, c) in combos {
-                if found >= beam || Instant::now() > self.deadline {
-                    break;
-                }
-                let dags: Vec<Arc<Dag>> = c
-                    .iter()
-                    .enumerate()
-                    .map(|(k, &j)| kid_insts[k][j].dag.clone())
-                    .collect();
-                let dag_refs: Vec<&Arc<Dag>> = dags.iter().collect();
-                let qcs: Vec<Vec<TypeId>> = dags.iter().map(|d| self.qc.vector(d, 0)).collect();
-                let qc_refs: Vec<&Vec<TypeId>> = qcs.iter().collect();
-                self.stats.unpack_attempts += 1;
-                let m = self.apply(ri, &dag_refs, &qc_refs).map(Arc::new);
-                self.stats.unpack_failed += m.is_none() as usize;
-                if let Some(m) = m {
+            let mut next = 0;
+            while found < beam && next < combos.len() && Instant::now() <= self.deadline {
+                let take = (beam - found).min(combos.len() - next);
+                let chunk = &combos[next..next + take];
+                next += take;
+                let results = self.apply_combos(ri, &kid_insts, chunk);
+                for ((score, c), m) in chunk.iter().zip(results) {
+                    let Some(m) = m else { continue };
                     found += 1;
                     out.push(Inst {
                         dag: m.clone(),
@@ -1081,7 +1076,7 @@ impl<'g> Parser<'g> {
                                 .collect(),
                             dag: m,
                         }),
-                        score,
+                        score: *score,
                     });
                 }
             }
@@ -1089,6 +1084,95 @@ impl<'g> Parser<'g> {
         out.sort_by(|a, b| b.score.total_cmp(&a.score));
         out.truncate(beam);
         memo.insert(id, out.clone());
+        out
+    }
+
+    /// The mothers of rule `ri` over combinations of daughter
+    /// instantiations (indices into `kids`), in the order given. For a
+    /// binary rule, the rule is unified with each distinct first daughter
+    /// once, and each second daughter is tried from there.
+    fn apply_combos(
+        &mut self,
+        ri: usize,
+        kids: &[Vec<Inst>],
+        combos: &[(f64, Vec<usize>)],
+    ) -> Vec<Option<Arc<Dag>>> {
+        let mut out: Vec<Option<Arc<Dag>>> = vec![None; combos.len()];
+        self.stats.unpack_attempts += combos.len();
+        if self.rules[ri].dtrs.len() != 2 || kids.len() != 2 {
+            for (k, (_, c)) in combos.iter().enumerate() {
+                let dags: Vec<Arc<Dag>> = c
+                    .iter()
+                    .enumerate()
+                    .map(|(d, &j)| kids[d][j].dag.clone())
+                    .collect();
+                let dag_refs: Vec<&Arc<Dag>> = dags.iter().collect();
+                let qcs: Vec<Vec<TypeId>> = dags.iter().map(|d| self.qc.vector(d, 0)).collect();
+                let qc_refs: Vec<&Vec<TypeId>> = qcs.iter().collect();
+                out[k] = self.apply(ri, &dag_refs, &qc_refs).map(Arc::new);
+            }
+        } else {
+            let mut firsts: Vec<usize> = combos.iter().map(|(_, c)| c[0]).collect();
+            firsts.sort_unstable();
+            firsts.dedup();
+            for first in firsts {
+                if Instant::now() > self.deadline {
+                    break;
+                }
+                let group: Vec<usize> = (0..combos.len())
+                    .filter(|&k| combos[k].1[0] == first)
+                    .collect();
+                let rule = &self.rules[ri];
+                let d0 = kids[0][first].dag.clone();
+                if !self
+                    .u
+                    .compatible(&self.g.ts, &rule.dtr_qc[0], &self.qc.vector(&d0, 0))
+                {
+                    self.stats.qc_filtered += group.len();
+                    continue;
+                }
+                let t = Instant::now();
+                let cons = self.g.constraint_fn();
+                self.u.begin();
+                let r = self.u.add(rule.dag.clone());
+                let h = self.u.add(d0);
+                let ok = self.u.unify(r + rule.dtrs[0], h, &self.g.ts, &cons);
+                self.stats.unify_time += t.elapsed();
+                if !ok {
+                    self.stats.unify_failed += group.len();
+                    continue;
+                }
+                let cp = self.u.checkpoint();
+                for k in group {
+                    let d1 = kids[1][combos[k].1[1]].dag.clone();
+                    let rule = &self.rules[ri];
+                    if !self
+                        .u
+                        .compatible(&self.g.ts, &rule.dtr_qc[1], &self.qc.vector(&d1, 0))
+                    {
+                        self.stats.qc_filtered += 1;
+                        continue;
+                    }
+                    let t = Instant::now();
+                    let h = self.u.add(d1);
+                    let ok = self.u.unify(r + rule.dtrs[1], h, &self.g.ts, &cons);
+                    self.stats.unify_time += t.elapsed();
+                    if ok {
+                        let t = Instant::now();
+                        let m = self.u.copy(r, &self.config.deleted_daughters);
+                        self.stats.copy_time += t.elapsed();
+                        if m.is_none() {
+                            self.stats.cyclic += 1;
+                        }
+                        out[k] = m.map(Arc::new);
+                    } else {
+                        self.stats.unify_failed += 1;
+                    }
+                    self.u.rollback(&cp);
+                }
+            }
+        }
+        self.stats.unpack_failed += out.iter().filter(|m| m.is_none()).count();
         out
     }
 
