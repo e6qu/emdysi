@@ -203,3 +203,97 @@ pub fn train(examples: &[Example], epochs: usize) -> Model {
         .collect();
     Model { weights }
 }
+
+/// Train a conditional log-linear model (maximum entropy, as for the
+/// Redwoods rankers): maximise the log-probability of the gold reading
+/// among each item's readings, with a Gaussian prior (L2 penalty `l2`) on
+/// the weights, by full-batch gradient ascent with Adam for `iterations`
+/// steps. Readings with the same features as the gold one count as gold.
+/// More stable than the perceptron when the training items change.
+pub fn train_maxent(examples: &[Example], l2: f64, iterations: usize) -> Model {
+    let mut ids: HashMap<&str, u32> = HashMap::new();
+    let mut names: Vec<&str> = Vec::new();
+    // Each item: readings as feature ids (repeats kept), and which are gold.
+    let mut items: Vec<(Vec<Vec<u32>>, Vec<bool>)> = Vec::new();
+    for ex in examples {
+        if ex.readings.len() < 2 {
+            continue;
+        }
+        let mut gold_set = ex.readings[ex.gold].clone();
+        gold_set.sort();
+        let readings: Vec<Vec<u32>> = ex
+            .readings
+            .iter()
+            .map(|r| {
+                r.iter()
+                    .map(|f| {
+                        *ids.entry(f.as_str()).or_insert_with(|| {
+                            names.push(f.as_str());
+                            (names.len() - 1) as u32
+                        })
+                    })
+                    .collect()
+            })
+            .collect();
+        let gold: Vec<bool> = ex
+            .readings
+            .iter()
+            .map(|r| {
+                let mut s = r.clone();
+                s.sort();
+                s == gold_set
+            })
+            .collect();
+        if gold.iter().all(|&g| g) {
+            continue;
+        }
+        items.push((readings, gold));
+    }
+    let n = names.len();
+    let mut w = vec![0.0f64; n];
+    let (mut m, mut v) = (vec![0.0f64; n], vec![0.0f64; n]);
+    let (b1, b2, rate, eps) = (0.9f64, 0.999f64, 0.05f64, 1e-8f64);
+    let mut grad = vec![0.0f64; n];
+    for step in 1..=iterations {
+        grad.iter_mut().zip(&w).for_each(|(g, wi)| *g = -l2 * wi);
+        for (readings, gold) in &items {
+            let scores: Vec<f64> = readings
+                .iter()
+                .map(|r| r.iter().map(|&f| w[f as usize]).sum())
+                .collect();
+            let top = scores.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+            let e: Vec<f64> = scores.iter().map(|s| (s - top).exp()).collect();
+            let z: f64 = e.iter().sum();
+            let zg: f64 = e
+                .iter()
+                .zip(gold)
+                .filter(|(_, g)| **g)
+                .map(|(x, _)| x)
+                .sum();
+            // d/dw log(Zgold/Z) = E_gold[f] - E_all[f]
+            for (k, r) in readings.iter().enumerate() {
+                let c = if gold[k] { e[k] / zg } else { 0.0 } - e[k] / z;
+                if c.abs() < 1e-12 {
+                    continue;
+                }
+                for &f in r {
+                    grad[f as usize] += c;
+                }
+            }
+        }
+        for i in 0..n {
+            m[i] = b1 * m[i] + (1.0 - b1) * grad[i];
+            v[i] = b2 * v[i] + (1.0 - b2) * grad[i] * grad[i];
+            let mh = m[i] / (1.0 - b1.powi(step as i32));
+            let vh = v[i] / (1.0 - b2.powi(step as i32));
+            w[i] += rate * mh / (vh.sqrt() + eps);
+        }
+    }
+    let weights = names
+        .iter()
+        .zip(&w)
+        .filter(|(_, wi)| wi.abs() > 1e-6)
+        .map(|(f, wi)| (f.to_string(), *wi))
+        .collect();
+    Model { weights }
+}
