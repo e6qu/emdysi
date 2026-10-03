@@ -426,5 +426,18 @@ within the 5-second limit; both now get their strict analyses, the second
 (*It is widely believed that dashboards are hard to set up, but Flowboard
 changes that.*) only just. The grammar-error parse is time-limited, so a
 faster parser can find a diagnosis it used to miss: text 215 gets one more
-`core.grammar-errors` warning.
+`core.grammar-errors` warning, and one more grammatical `csli` item gets a
+named error (18 instead of 17).
+
+**Irregular forms equal to their stem.** *Set*, *put*, *cut* and the like
+are listed as their own past tense, past participle and passive forms.
+Undoing such a step leaves the form unchanged, so morphological analysis
+stacked them up to its limit of three rules: 259 analyses of *set*
+(*set* as the past of the past of *set*, ...), each instantiated for
+every lexical entry of *set* and then rejected by the grammar, since
+inflections do not combine. An analysis now undoes at most one such step,
+leaving 7 analyses of *set*. Readings and charts are unchanged (the 38
+`ai-prose` sentences, `sh-spec`, and the `csli` grammar-error counts);
+*They set it.* parses in 41 ms instead of 152 ms, and `sh-spec` in 794 s
+instead of 851 s.
 
