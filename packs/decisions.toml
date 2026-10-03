@@ -1,0 +1,65 @@
+[pack]
+name = "decisions"
+description = "Checks answered by a local decision model (en check --model/--server/--lm): questions about each sentence, heading or paragraph that patterns cannot settle. Without a model these rules do nothing. Opt-in."
+
+# Each rule asks a question with fixed options about each unit (a sentence,
+# or a block: a paragraph, heading or list item) and reports the unit when
+# the flagged answer has at least `threshold` probability after
+# calibration. The options are asked in both orders (see `en decide`).
+# Fit the model's temperature with `en decide --eval` on questions with
+# known answers before trusting a threshold.
+
+[[rule]]
+id = "decisions.unverifiable"
+kind = "decide"
+unit = "sentence"
+min_words = 8
+question = "Does this sentence state something specific that a reader could check, such as a fact, number, name or example?"
+options = ["yes", "no"]
+flag = "no"
+threshold = 0.85
+scope = "body"
+severity = "suggestion"
+message = "Nothing in this sentence can be checked ({percent}% by the model); add the fact, number or example behind it, or cut it."
+description = "A sentence that makes no specific, checkable claim: the generic praise and filler of machine-written prose."
+
+[[rule]]
+id = "decisions.deletable"
+kind = "decide"
+unit = "sentence"
+min_words = 6
+question = "Could this sentence be deleted from its paragraph without losing any information?"
+options = ["yes", "no"]
+flag = "yes"
+threshold = 0.9
+scope = "body"
+severity = "suggestion"
+message = "This sentence adds no information ({percent}% by the model); consider cutting it."
+description = "Throat-clearing, restatement and summary sentences."
+
+[[rule]]
+id = "decisions.vague-heading"
+kind = "decide"
+unit = "block"
+question = "Does this heading tell the reader what the section says, not just its topic?"
+options = ["yes", "no"]
+flag = "no"
+threshold = 0.85
+scope = "heading"
+severity = "suggestion"
+message = "This heading names a topic without saying anything about it ({percent}% by the model)."
+description = "Headings such as 'Overview' or 'Key considerations' instead of a statement of what the section establishes."
+
+[[rule]]
+id = "decisions.unexplained-jargon"
+kind = "decide"
+unit = "sentence"
+min_words = 5
+question = "Does this sentence use a technical term or acronym that a general reader would not know, without explaining it?"
+options = ["yes", "no"]
+flag = "yes"
+threshold = 0.85
+scope = "body"
+severity = "suggestion"
+message = "This sentence may use jargon a general reader would not know ({percent}% by the model); explain the term or use a plainer one."
+description = "Terms of art used without a definition; complements terms.undefined-acronym, which needs no model."

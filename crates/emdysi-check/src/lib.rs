@@ -15,6 +15,7 @@ use emdysi_text::blocks::{Block, BlockKind, markdown_blocks, plain_blocks};
 use emdysi_text::segment::sentences;
 
 pub mod compounds;
+pub mod decisions;
 pub mod dict;
 pub mod glossary;
 pub mod modifiers;
@@ -385,12 +386,24 @@ impl Checker {
     }
 
     pub fn check(&self, erg: &Erg, a: &Analysis) -> Vec<Diagnostic> {
+        self.check_with(erg, a, None)
+    }
+
+    /// [`Checker::check`], with a decision model for `decide` rules
+    /// (without one they are skipped).
+    pub fn check_with(
+        &self,
+        erg: &Erg,
+        a: &Analysis,
+        mut ask: Option<&mut (dyn decisions::Ask + '_)>,
+    ) -> Vec<Diagnostic> {
         let mut out = Vec::new();
         let glossary = self.glossary();
         for pack in &self.packs {
             for rule in &pack.rules {
                 if self.enabled(&rule.id) {
-                    rule.run(erg, a, &glossary, &mut out);
+                    let ask = ask.as_mut().map(|x| &mut **x as &mut dyn decisions::Ask);
+                    rule.run_with(erg, a, &glossary, ask, &mut out);
                 }
             }
         }

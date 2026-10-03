@@ -26,6 +26,8 @@ const BUILTIN_PACKS: &[(&str, &str)] = &[
     ("elastic", include_str!("../../../packs/elastic.toml")),
     ("wordlists", include_str!("../../../packs/wordlists.toml")),
     ("equality", include_str!("../../../packs/equality.toml")),
+    // Questions for a local decision model; nothing without one.
+    ("decisions", include_str!("../../../packs/decisions.toml")),
 ];
 
 /// Packs used when no `--pack` is given.
@@ -49,6 +51,16 @@ USAGE:
                                    spelling corrections and (with --model) a
                                    local model's rewrites, each kept only if
                                    the grammar accepts it and its meaning holds
+    en decide [MODEL] --question Q --option X --option Y ... [--context TEXT]
+    en decide [MODEL] --statement S [--context TEXT]
+    en decide [MODEL] --question Q --scale LOW..HIGH [--context TEXT]
+    en decide [MODEL] --eval FILE.tsv
+                                   ask a local model a question with fixed
+                                   answers and print their probabilities;
+                                   --eval measures accuracy and calibration on
+                                   questions with known answers (TSV: question,
+                                   context, options separated by '|', index of
+                                   the right one) and fits a temperature
     en glossary [--to toml|tbx] FILE...
                                    convert glossaries (TOML, TBX, Vale
                                    vocabularies) and print them
@@ -59,7 +71,7 @@ OPTIONS:
     --pack NAME|FILE       rule pack to use (repeatable; default: core, ai-tells,
                            plain-style, substance, structure, terms; also
                            built in: microsoft, google, elastic, wordlists,
-                           equality)
+                           equality, and decisions, which needs a model)
     --glossary FILE        project glossary (repeatable): TOML ([[concept]]
                            tables), TBX (.tbx, .xml) or a Vale vocabulary
                            (a directory with accept.txt and reject.txt)
@@ -77,6 +89,14 @@ OPTIONS:
                            OpenAI-compatible API, e.g. MLX's `mlx_lm.server`
                            or LM Studio (http://127.0.0.1:8080)
     --server-model NAME    the model name to request from --server
+    --lm SPEC              any model: FILE.gguf, http://HOST:PORT[#MODEL] or
+                           script:FILE (a scripted stand-in)
+    --decide-readings      with a model and `check`, `fix` or `parse`: when the
+                           two best readings of a sentence are close, ask the
+                           model which grouping of words is meant
+    --no-debias            with `decide`, ask once instead of also with the
+                           options reversed
+    --temperature T        with `decide`, calibration temperature (default 1)
     --samples N            with `rewrite`, model rewrites per sentence (default 3)
     --grammar DIR          grammar directory (default: the bundled ERG)
     --fail-on error|warning|suggestion  exit with status 1 if a diagnostic this
@@ -97,6 +117,16 @@ struct Args {
     model: Option<PathBuf>,
     server: Option<String>,
     server_model: Option<String>,
+    lm: Option<String>,
+    question: Option<String>,
+    context: String,
+    options: Vec<String>,
+    statement: Option<String>,
+    scale: Option<(i32, i32)>,
+    eval: Option<PathBuf>,
+    debias: bool,
+    temperature: f64,
+    decide_readings: bool,
     samples: usize,
     grammar: PathBuf,
     fail_on: Severity,
@@ -122,6 +152,16 @@ fn parse_args() -> Result<Args, String> {
         model: None,
         server: None,
         server_model: None,
+        lm: None,
+        question: None,
+        context: String::new(),
+        options: Vec::new(),
+        statement: None,
+        scale: None,
+        eval: None,
+        debias: true,
+        temperature: 1.0,
+        decide_readings: false,
         samples: 3,
         grammar: default_grammar_dir(),
         fail_on: Severity::Error,
@@ -166,6 +206,27 @@ fn parse_args() -> Result<Args, String> {
             "--model" => a.model = Some(PathBuf::from(need(&mut it, &arg)?)),
             "--server" => a.server = Some(need(&mut it, &arg)?),
             "--server-model" => a.server_model = Some(need(&mut it, &arg)?),
+            "--lm" => a.lm = Some(need(&mut it, &arg)?),
+            "--question" => a.question = Some(need(&mut it, &arg)?),
+            "--context" => a.context = need(&mut it, &arg)?,
+            "--option" => a.options.push(need(&mut it, &arg)?),
+            "--statement" => a.statement = Some(need(&mut it, &arg)?),
+            "--scale" => {
+                let v = need(&mut it, &arg)?;
+                let (lo, hi) = v
+                    .split_once("..")
+                    .and_then(|(l, h)| Some((l.parse().ok()?, h.parse().ok()?)))
+                    .ok_or("--scale needs LOW..HIGH, e.g. 1..5")?;
+                a.scale = Some((lo, hi));
+            }
+            "--eval" => a.eval = Some(PathBuf::from(need(&mut it, &arg)?)),
+            "--no-debias" => a.debias = false,
+            "--decide-readings" => a.decide_readings = true,
+            "--temperature" => {
+                a.temperature = need(&mut it, &arg)?
+                    .parse()
+                    .map_err(|_| "--temperature needs a number")?
+            }
             "--to" => a.to = Some(need(&mut it, &arg)?),
             "--samples" => {
                 a.samples = need(&mut it, &arg)?
@@ -292,6 +353,9 @@ fn run() -> Result<bool, String> {
         }
         return Ok(true);
     }
+    if args.command == "decide" {
+        return decide(&args);
+    }
     if !matches!(args.command.as_str(), "check" | "fix" | "parse" | "rewrite") {
         return Err(format!("unknown command {:?}\n\n{USAGE}", args.command));
     }
@@ -305,8 +369,17 @@ fn run() -> Result<bool, String> {
     checker.disabled = args.disabled.clone();
     let mut model = load_model(&args)?;
     let mut ok = true;
+    if args.decide_readings && model.is_none() {
+        return Err("--decide-readings needs a model (--model, --server or --lm)".into());
+    }
     for (name, src, format) in docs {
-        let a = analyze(&erg, &src, format, &args.opts);
+        let mut a = analyze(&erg, &src, format, &args.opts);
+        if let (true, Some(m)) = (args.decide_readings, model.as_mut()) {
+            let mut ask = ModelAsk::new(&mut **m, &args);
+            let n = emdysi_check::decisions::disambiguate(&mut a, &mut ask, READING_MARGIN, 0.6);
+            eprintln!("{name}: the model changed the best reading of {n} sentence(s)");
+        }
+        let a = a;
         match args.command.as_str() {
             "parse" => print!("{}", render_parses(&a, args.output, &args.show)),
             "rewrite" => {
@@ -320,7 +393,7 @@ fn run() -> Result<bool, String> {
                         ..Default::default()
                     },
                     model: match model.as_mut() {
-                        Some(m) => Some(&mut **m as &mut dyn emdysi_rewrite::LanguageModel),
+                        Some(m) => Some(&mut **m as &mut dyn emdysi_lm::LanguageModel),
                         None => None,
                     },
                 };
@@ -343,13 +416,13 @@ fn run() -> Result<bool, String> {
                 eprintln!("{name}: {n} sentences rewritten");
             }
             "fix" => {
-                let diags = checker.check(&erg, &a);
+                let diags = check(&checker, &erg, &a, model.as_mut(), &args);
                 let (fixed, n) = apply_fixes(&src, &diags);
                 print!("{fixed}");
                 eprintln!("{name}: {n} fixes applied");
             }
             _ => {
-                let diags = checker.check(&erg, &a);
+                let diags = check(&checker, &erg, &a, model.as_mut(), &args);
                 if diags.iter().any(|d| d.severity <= args.fail_on) {
                     ok = false;
                 }
@@ -360,36 +433,138 @@ fn run() -> Result<bool, String> {
     Ok(ok)
 }
 
-fn load_model(args: &Args) -> Result<Option<Box<dyn emdysi_rewrite::LanguageModel>>, String> {
-    if args.model.is_some() && args.server.is_some() {
-        return Err("use either --model or --server, not both".into());
+fn load_model(args: &Args) -> Result<Option<Box<dyn emdysi_lm::LanguageModel>>, String> {
+    let given = [
+        args.model.is_some(),
+        args.server.is_some(),
+        args.lm.is_some(),
+    ];
+    if given.iter().filter(|&&g| g).count() > 1 {
+        return Err("give one of --model, --server and --lm".into());
     }
     if let Some(url) = &args.server {
-        return Ok(Some(Box::new(emdysi_rewrite::http::HttpLm::new(
-            url,
-            args.server_model.clone(),
-        ))));
+        let spec = match &args.server_model {
+            Some(m) => format!("{url}#{m}"),
+            None => url.clone(),
+        };
+        return emdysi_lm::open(&spec).map(Some);
     }
-    match &args.model {
-        None => Ok(None),
-        Some(p) => load_gguf(p),
+    if let Some(p) = &args.model {
+        return emdysi_lm::open(&format!("gguf:{}", p.display())).map(Some);
+    }
+    args.lm.as_deref().map(emdysi_lm::open).transpose()
+}
+
+/// Readings whose ranker scores differ by at most this much are close
+/// enough to ask the model about (`--decide-readings`).
+const READING_MARGIN: f64 = 2.0;
+
+/// A decision model as the checker's [`emdysi_check::decisions::Ask`].
+struct ModelAsk<'a> {
+    d: emdysi_lm::decide::Decider<'a>,
+}
+
+impl<'a> ModelAsk<'a> {
+    fn new(lm: &'a mut dyn emdysi_lm::LanguageModel, args: &Args) -> ModelAsk<'a> {
+        let mut d = emdysi_lm::decide::Decider::new(lm);
+        d.debias = args.debias;
+        d.temperature = args.temperature;
+        ModelAsk { d }
     }
 }
 
-#[cfg(feature = "llama")]
-fn load_gguf(
-    p: &std::path::Path,
-) -> Result<Option<Box<dyn emdysi_rewrite::LanguageModel>>, String> {
-    emdysi_rewrite::llama::LlamaLm::load(p, 2048)
-        .map(|m| Some(Box::new(m) as Box<dyn emdysi_rewrite::LanguageModel>))
-        .map_err(|e| format!("loading model: {e}"))
+impl emdysi_check::decisions::Ask for ModelAsk<'_> {
+    fn ask(&mut self, context: &str, question: &str, options: &[&str]) -> Option<Vec<f64>> {
+        self.d.choose(context, question, options).ok()
+    }
 }
 
-#[cfg(not(feature = "llama"))]
-fn load_gguf(
-    _: &std::path::Path,
-) -> Result<Option<Box<dyn emdysi_rewrite::LanguageModel>>, String> {
-    Err("--model needs a build with the `llama` feature: cargo install --features llama (or serve the model, e.g. with MLX, and use --server)".into())
+/// Check, with the model for `decide` rules when there is one.
+fn check(
+    checker: &Checker,
+    erg: &Erg,
+    a: &emdysi_check::Analysis,
+    model: Option<&mut Box<dyn emdysi_lm::LanguageModel>>,
+    args: &Args,
+) -> Vec<emdysi_check::Diagnostic> {
+    match model {
+        Some(m) => {
+            let mut ask = ModelAsk::new(&mut **m, args);
+            checker.check_with(erg, a, Some(&mut ask))
+        }
+        None => checker.check(erg, a),
+    }
+}
+
+/// `en decide`: one question, or an evaluation file.
+fn decide(args: &Args) -> Result<bool, String> {
+    use emdysi_lm::decide::{Decider, Sample, fit_temperature, report};
+    let mut lm = load_model(args)?
+        .ok_or("decide needs a model: --model FILE.gguf, --server URL or --lm SPEC")?;
+    let mut d = Decider::new(&mut *lm);
+    d.debias = args.debias;
+    d.temperature = args.temperature;
+    if let Some(path) = &args.eval {
+        let src = std::fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
+        let mut samples = Vec::new();
+        for (i, line) in src.lines().enumerate() {
+            if line.starts_with('#') || line.trim().is_empty() {
+                continue;
+            }
+            let f: Vec<&str> = line.split('\t').collect();
+            let [question, context, options, right] = f[..] else {
+                return Err(format!(
+                    "{}:{}: expected 4 tab-separated fields",
+                    path.display(),
+                    i + 1
+                ));
+            };
+            let options: Vec<&str> = options.split('|').collect();
+            let right: usize = right
+                .trim()
+                .parse()
+                .map_err(|_| format!("{}:{}: bad answer index", path.display(), i + 1))?;
+            let raw = d
+                .raw(context, question, &options)
+                .map_err(|e| e.to_string())?;
+            samples.push(Sample { raw, right });
+        }
+        let t = fit_temperature(&samples);
+        for (name, temp) in [("given", args.temperature), ("fitted", t)] {
+            let r = report(&samples, temp);
+            println!(
+                "{name} temperature {temp:.3}: {} questions, accuracy {:.3}, log loss {:.3}, Brier {:.3}, calibration error {:.3}",
+                r.n, r.accuracy, r.nll, r.brier, r.ece
+            );
+        }
+        return Ok(true);
+    }
+    let rows: Vec<(String, f64)> = if let Some(s) = &args.statement {
+        let p = d.holds(&args.context, s).map_err(|e| e.to_string())?;
+        vec![("true".into(), p), ("false".into(), 1.0 - p)]
+    } else {
+        let q = args
+            .question
+            .as_deref()
+            .ok_or("decide needs --question or --statement")?;
+        if let Some((lo, hi)) = args.scale {
+            d.score(&args.context, q, lo, hi)
+                .map_err(|e| e.to_string())?
+                .into_iter()
+                .map(|(k, p)| (k.to_string(), p))
+                .collect()
+        } else {
+            let opts: Vec<&str> = args.options.iter().map(String::as_str).collect();
+            let p = d
+                .choose(&args.context, q, &opts)
+                .map_err(|e| e.to_string())?;
+            args.options.iter().cloned().zip(p).collect()
+        }
+    };
+    for (o, p) in rows {
+        println!("{p:.4}\t{o}");
+    }
+    Ok(true)
 }
 
 fn main() -> ExitCode {

@@ -11,17 +11,15 @@ rust-version.workspace = true
 default = ["http"]
 # A local model through llama.cpp (builds llama.cpp from source; needs
 # cmake and a C++ compiler).
-llama = ["dep:llama-cpp-2"]
+llama = ["emdysi-lm/llama"]
 # A model served over HTTP with the OpenAI-compatible API: MLX
 # (`mlx_lm.server`), LM Studio, Ollama, llama.cpp's `llama-server`, ...
-http = ["dep:ureq", "dep:serde_json"]
+http = ["emdysi-lm/http"]
 
 [dependencies]
 emdysi-check = { path = "../emdysi-check", version = "0.1.0" }
 emdysi-parse = { path = "../emdysi-parse", version = "0.1.0" }
-llama-cpp-2 = { version = "0.1.158", default-features = false, optional = true }
-serde_json = { version = "1", optional = true }
-ureq = { version = "3", default-features = false, optional = true }
+emdysi-lm = { path = "../emdysi-lm", version = "0.1.0", default-features = false }
 
 [lints]
 workspace = true

@@ -35,12 +35,19 @@ impl std::fmt::Display for LoadError {
 impl std::error::Error for LoadError {}
 
 impl LlamaLm {
-    /// Load a GGUF model. `n_ctx` bounds prompt plus output length.
+    /// Load a GGUF model. `n_ctx` bounds prompt plus output length (at most
+    /// the length the model was trained with).
     pub fn load(path: &Path, n_ctx: u32) -> Result<LlamaLm, LoadError> {
         let backend = LlamaBackend::init().map_err(|e| LoadError(e.to_string()))?;
         let model = LlamaModel::load_from_file(&backend, path, &LlamaModelParams::default())
             .map_err(|e| LoadError(format!("{}: {e}", path.display())))?;
         let threads = std::thread::available_parallelism().map_or(4, |n| n.get() as i32);
+        let trained = model.n_ctx_train();
+        let n_ctx = if trained > 0 {
+            n_ctx.min(trained)
+        } else {
+            n_ctx
+        };
         Ok(LlamaLm {
             backend,
             model,
@@ -87,6 +94,47 @@ fn log_softmax_at(logits: &[f32], i: usize) -> f64 {
 }
 
 impl LanguageModel for LlamaLm {
+    fn first_token(
+        &mut self,
+        system: &str,
+        user: &str,
+        labels: &[&str],
+    ) -> Option<Vec<Option<f64>>> {
+        let prompt = self.chat(system, user);
+        let tokens = self.tokenize(&prompt, true);
+        if tokens.is_empty() || tokens.len() as u32 >= self.n_ctx {
+            return None;
+        }
+        let mut ctx = self.context()?;
+        let mut batch = LlamaBatch::new(tokens.len(), 1);
+        let last = tokens.len() - 1;
+        for (i, &t) in tokens.iter().enumerate() {
+            batch.add(t, i as i32, &[0], i == last).ok()?;
+        }
+        ctx.decode(&mut batch).ok()?;
+        let logits = ctx.get_logits_ith(last as i32);
+        // A label is the first token of its spelling, with or without a
+        // leading space; both count.
+        Some(
+            labels
+                .iter()
+                .map(|l| {
+                    let mut ids: Vec<LlamaToken> = Vec::new();
+                    for form in [l.to_string(), format!(" {l}")] {
+                        if let Some(&t) = self.tokenize(&form, false).first() {
+                            if self.piece(t).trim() == *l && !ids.contains(&t) {
+                                ids.push(t);
+                            }
+                        }
+                    }
+                    ids.iter()
+                        .map(|t| log_softmax_at(logits, t.0 as usize))
+                        .reduce(crate::log_add)
+                })
+                .collect(),
+        )
+    }
+
     fn logprob(&mut self, prefix: &str, text: &str) -> Option<(f64, usize)> {
         let head = self.tokenize(prefix, true);
         let all = self.tokenize(&format!("{prefix}{text}"), true);

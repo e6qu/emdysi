@@ -21,7 +21,22 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
-      - run: cargo clippy -p emdysi-rewrite -p emdysi --features emdysi-rewrite/llama,emdysi/llama -- -D warnings
+      - run: cargo clippy -p emdysi-lm -p emdysi-rewrite -p emdysi --features emdysi-lm/llama,emdysi-rewrite/llama,emdysi/llama -- -D warnings
+      # The decision engine end to end: a tiny model trained here, as GGUF
+      # in-process and as MLX behind mlx_lm.server (docs/models.md).
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --quiet "jax[cpu]" optax safetensors tokenizers gguf numpy "mlx[cpu]" mlx-lm
+      - run: python scripts/tiny-model/build.py --steps 30 --out /tmp/tiny
+      - run: |
+          python -m mlx_lm server --model /tmp/tiny/mlx --port 8091 > /tmp/mlx.log 2>&1 &
+          for i in $(seq 60); do curl -sf http://127.0.0.1:8091/v1/models > /dev/null && break; sleep 2; done
+          # Warm up: the first completion loads the model.
+          curl -s http://127.0.0.1:8091/v1/chat/completions -H 'Content-Type: application/json' \
+            -d '{"messages":[{"role":"user","content":"Hi"}],"max_tokens":1}' > /dev/null
+          EMDYSI_TEST_GGUF=/tmp/tiny/tiny.gguf EMDYSI_TEST_SERVERS=http://127.0.0.1:8091 EMDYSI_TEST_SAME_WEIGHTS=1 \
+            cargo test -p emdysi-lm --features llama --test backends
   licenses:
     runs-on: ubuntu-latest
     steps:
