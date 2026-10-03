@@ -78,6 +78,15 @@ strict analysis, its semantics keeps the original's content, and it
 introduces no new problem; the model's likelihood then picks among the
 survivors. Model weights are never bundled.
 
+`en decide` asks a local model a question with fixed answers and prints
+the probability of each, in the manner of decision-only models such as Jev;
+the opt-in `decisions` pack uses it for checks that patterns cannot settle
+(sentences with nothing a reader could check, headings that say nothing),
+and `--decide-readings` uses it to settle close calls between parses. Any
+model works: GGUF through llama.cpp, or anything served over the
+OpenAI-compatible API (`llama-server`, `mlx_lm.server`, Ollama, LM Studio).
+See [`docs/models.md`](docs/models.md).
+
 The first run compiles the grammar (about five seconds) and caches the
 result in `$EMDYSI_CACHE_DIR`, `$XDG_CACHE_HOME/emdysi` or `~/.cache/emdysi`
 (never in the repository); later runs load in about a second. The cache is

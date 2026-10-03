@@ -15,7 +15,8 @@
 //!    for model rewrites).
 //!
 //! Among the candidates that pass, the model's likelihood (mean token
-//! log-probability, when a model is loaded) decides, then the order of the
+//! log-probability, when a model is loaded) decides (or, when the model
+//! cannot score text, its answer to which candidate is best), then the order of the
 //! candidates (the diagnostics' own fixes, then spelling suggestions in
 //! their ranked order, then model rewrites). Candidates that fail are never shown.
 
@@ -25,28 +26,13 @@ use emdysi_check::{Analysis, Checker, Diagnostic, Format, Options, analyze};
 use emdysi_parse::Erg;
 use emdysi_parse::mrs::Mrs;
 
+// The model backends live in `emdysi-lm`; re-exported here for callers
+// of the rewriting API.
+pub use emdysi_lm::LanguageModel;
 #[cfg(feature = "http")]
-pub mod http;
+pub use emdysi_lm::http;
 #[cfg(feature = "llama")]
-pub mod llama;
-
-/// A language model: scores text and generates continuations.
-pub trait LanguageModel {
-    /// Log-probability (natural log) of `text` following `prefix`, and the
-    /// number of tokens of `text`.
-    fn logprob(&mut self, prefix: &str, text: &str) -> Option<(f64, usize)>;
-    /// Generate a continuation of a chat prompt: `system` instructions and
-    /// a `user` message. `temperature` 0 is greedy; `seed` makes sampling
-    /// reproducible. Generation stops at the end of a line.
-    fn generate(
-        &mut self,
-        system: &str,
-        user: &str,
-        max_tokens: usize,
-        temperature: f32,
-        seed: u32,
-    ) -> Option<String>;
-}
+pub use emdysi_lm::llama;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Source {
@@ -364,6 +350,24 @@ impl Rewriter<'_> {
                     c.lm_score = model
                         .logprob("", &c.text)
                         .map(|(lp, n)| lp / n.max(1) as f64);
+                }
+                // Servers that cannot score text (no prompt log-probabilities)
+                // can still choose: ask which candidate is best.
+                let open: Vec<usize> = (0..candidates.len())
+                    .filter(|&i| candidates[i].rejected.is_none())
+                    .take(emdysi_lm::decide::LETTERS.len())
+                    .collect();
+                if open.len() >= 2 && open.iter().all(|&i| candidates[i].lm_score.is_none()) {
+                    let texts: Vec<&str> =
+                        open.iter().map(|&i| candidates[i].text.as_str()).collect();
+                    let mut d = emdysi_lm::decide::Decider::new(&mut **model);
+                    let context = format!("Original: {sentence}");
+                    let q = "Which version is the best English: correct, clear, and with the same meaning as the original?";
+                    if let Ok(p) = d.choose(&context, q, &texts) {
+                        for (&i, p) in open.iter().zip(p) {
+                            candidates[i].lm_score = Some(p.max(1e-12).ln());
+                        }
+                    }
                 }
             }
             // The model's likelihood decides; without a model, or on a

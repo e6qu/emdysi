@@ -127,6 +127,9 @@ pub enum MatchOn {
 
 #[derive(Debug, Clone)]
 pub enum Kind {
+    /// A question for a decision model about each sentence or block
+    /// (skipped without a model; see [`crate::decisions`]).
+    Decide(crate::decisions::Decide),
     /// Words or phrases, matched on lemmas (from the parse) or surface
     /// forms. `replace` maps a listed item to an automatic fix.
     Words {
@@ -609,6 +612,28 @@ impl Rule {
                     }
                 }
             }
+            "decide" => {
+                let options = get_list(t, "options");
+                if options.len() < 2 {
+                    return Err(err("`options` needs at least two answers"));
+                }
+                let flag = get_str(t, "flag").ok_or_else(|| err("`flag` is required"))?;
+                let flag = options
+                    .iter()
+                    .position(|o| *o == flag)
+                    .ok_or_else(|| err("`flag` must be one of `options`"))?;
+                let unit = get_str(t, "unit").unwrap_or_else(|| "sentence".into());
+                Kind::Decide(crate::decisions::Decide {
+                    question: get_str(t, "question")
+                        .ok_or_else(|| err("`question` is required"))?,
+                    options,
+                    flag,
+                    threshold: num("threshold").unwrap_or(0.8),
+                    unit: crate::decisions::Unit::parse(&unit)
+                        .ok_or_else(|| err(&format!("unknown unit {unit:?}")))?,
+                    min_words: num("min_words").unwrap_or(1.0) as usize,
+                })
+            }
             "noun-stack" => Kind::NounStack {
                 min: num("min").unwrap_or(3.0) as usize,
                 max: num("max").unwrap_or(f64::INFINITY).min(1e6) as usize,
@@ -684,8 +709,27 @@ impl Rule {
 
     /// Run the rule over an analysis, with the glossary of all loaded packs.
     pub fn run(&self, erg: &Erg, a: &Analysis, g: &Glossary, out: &mut Vec<Diagnostic>) {
+        self.run_with(erg, a, g, None, out);
+    }
+
+    /// [`Rule::run`], with a decision model for `decide` rules.
+    pub fn run_with(
+        &self,
+        erg: &Erg,
+        a: &Analysis,
+        g: &Glossary,
+        ask: Option<&mut (dyn crate::decisions::Ask + '_)>,
+        out: &mut Vec<Diagnostic>,
+    ) {
         let mut found = Vec::new();
-        self.run_all(erg, a, g, &mut found);
+        if let Kind::Decide(d) = &self.kind {
+            if let Some(ask) = ask {
+                let hits = crate::decisions::run_decide(d, a, ask);
+                found.extend(hits.into_iter().map(|h| self.hit_diag(h)));
+            }
+        } else {
+            self.run_all(erg, a, g, &mut found);
+        }
         if self.scope != Scope::All {
             let lead = crate::structure::lead_blocks(a);
             found.retain(|d| d.sentence.is_none_or(|s| self.in_scope(a, s, &lead)));

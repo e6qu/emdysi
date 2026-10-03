@@ -28,6 +28,7 @@ with the ERG port (decision D4) as the parsing core.
 | M13c | Rule data imported from other linters under permissive licenses: Vale's Microsoft, Google and Elastic packages and the words/* lists, converted by `scripts/import-rules.py` into opt-in packs (`existence` and `substitution` kinds) | done; proselint, Red Hat, GitLab and LanguageTool data excluded for licensing reasons (see rules.md) |
 | M13d | Opening paragraphs and procedures: `vague-lead` (no concrete claim in the semantics of the opening), numbered steps that are not instructions (`parallel` with a fixed form), bulleted steps in sequence | done |
 | M14 | CLI | `check`, `fix`, `parse`, `packs` |
+| M15 | Decision engine (decision D12): pluggable local models (`emdysi-lm`: GGUF via llama.cpp, OpenAI-compatible servers, scripted stand-in), typed-probability decisions with debiasing and calibration, `en decide`, `decide` rules (`decisions` pack), parse disambiguation, rewrite choice; a tiny CPU-trained test model in GGUF and MLX | done; tested end to end against llama.cpp in-process, `llama-server` and `mlx_lm.server` with the tiny model. Next: a hand-judged set of AI-prose parses to measure `--decide-readings`, and real models (Gemma 4 E2B/E4B) once they can be downloaded |
 
 Validation: the gold derivations in `corpora/erg-gold/` (ERG `mrs` and `csli`
 test suites) are the reference for M3–M9. The engine should reproduce the

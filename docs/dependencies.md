@@ -30,9 +30,10 @@ LGPL and GPL) requires a new decision.
 
 ## The `http` feature (on by default)
 
-`en rewrite --server URL` talks to a model served with the
-OpenAI-compatible API: MLX's `mlx_lm.server` on Apple silicon, LM Studio,
-Ollama, llama.cpp's `llama-server` and others. Pure Rust; plain HTTP only
+`en rewrite --server URL` and `en decide --server URL` (crate
+`emdysi-lm`) talk to a model served with the OpenAI-compatible API: MLX's
+`mlx_lm.server` on Apple silicon, LM Studio, Ollama, llama.cpp's
+`llama-server` and others. Pure Rust; plain HTTP only
 (no TLS), meant for a server on the same machine.
 
 | Crate | Version | License | Verified from | Date |
@@ -53,8 +54,9 @@ Ollama, llama.cpp's `llama-server` and others. Pure Rust; plain HTTP only
 
 ## Optional: the `llama` feature
 
-`en rewrite --model` needs a build with `--features llama`, which adds
-`llama-cpp-2` and builds llama.cpp from source. Not part of the default
+`en rewrite --model` and `en decide --model` need a build with
+`--features llama`, which adds `llama-cpp-2` (to `emdysi-lm`) and builds
+llama.cpp from source. Not part of the default
 build. llama.cpp (`llama-cpp-sys-2`, `llama.cpp/LICENSE`) is MIT, Copyright
 (c) 2023-2026 The ggml authors; the code it vendors is permissive:
 cpp-httplib (MIT), nlohmann/json (MIT), sheredom/subprocess.h (Unlicense),
@@ -109,3 +111,13 @@ Model weights are never bundled; the user supplies a GGUF file.
 
 Bundled data is listed in [`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md).
 Test-only data is in [`corpora/`](../corpora/README.md).
+
+## Not dependencies: the tiny test model
+
+`scripts/tiny-model/build.py` trains a throwaway test model (see
+[models.md](models.md#a-tiny-model-for-testing)) with Python packages
+installed by whoever runs it: JAX, Optax, safetensors and Hugging Face
+`tokenizers` (Apache-2.0), `gguf` (MIT), NumPy (BSD-3-Clause and other
+permissive licenses), and MLX and `mlx-lm` (MIT) to serve it (licenses
+from the packages' metadata, 2026-10-03). None of them is part of a build of emdysi, and nothing
+the script writes is committed.

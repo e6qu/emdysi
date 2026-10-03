@@ -10,11 +10,12 @@ rust-version.workspace = true
 [dependencies]
 emdysi-check = { path = "../emdysi-check", version = "0.1.0" }
 emdysi-parse = { path = "../emdysi-parse", version = "0.1.0" }
+emdysi-lm = { path = "../emdysi-lm", version = "0.1.0" }
 emdysi-rewrite = { path = "../emdysi-rewrite", version = "0.1.0" }
 
 [features]
 # `en rewrite --model FILE.gguf`: a local language model through llama.cpp.
-llama = ["emdysi-rewrite/llama"]
+llama = ["emdysi-rewrite/llama", "emdysi-lm/llama"]
 
 [lints]
 workspace = true

@@ -122,6 +122,7 @@ name = "emdysi"
 version = "0.1.0"
 dependencies = [
  "emdysi-check",
+ "emdysi-lm",
  "emdysi-parse",
  "emdysi-rewrite",
 ]
@@ -145,6 +146,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "emdysi-lm"
+version = "0.1.0"
+dependencies = [
+ "llama-cpp-2",
+ "serde_json",
+ "ureq",
+]
+
+[[package]]
 name = "emdysi-parse"
 version = "0.1.0"
 dependencies = [
@@ -165,10 +175,8 @@ name = "emdysi-rewrite"
 version = "0.1.0"
 dependencies = [
  "emdysi-check",
+ "emdysi-lm",
  "emdysi-parse",
- "llama-cpp-2",
- "serde_json",
- "ureq",
 ]
 
 [[package]]
