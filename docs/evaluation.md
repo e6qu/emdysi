@@ -355,3 +355,44 @@ Beemo's editors corrected facts, structure and phrasing more than
 adjectives, and its prompts are mostly creative writing, so a corpus of
 edited explanatory prose could still show a difference.
 
+## Speed
+
+Checking a few hundred words of machine-written prose takes 14 to 38
+seconds on four cores, almost all of it parsing: the strict parse of each
+sentence, and a second parse with the grammar-error variant for sentences
+without a strict analysis. Two changes cut time without changing any
+analysis the rules use:
+
+- **Labels in list items.** In items such as *Keep going: Staying motivated
+  ...*, the label is not part of the clause and slows the parse. The parser
+  now sees a short label (up to five words) as spaces, with character
+  positions unchanged as for inline code; rules still see it. Only list
+  items are treated this way: elsewhere a colon usually follows a clause
+  (*There are three new commands: ...*).
+- **The grammar-error parse.** Only readings with at most two corrections
+  are used (see [rules.md](rules.md#grammar-errors)), so its search is
+  limited to 3 seconds and 20 readings.
+
+| | Before | After |
+|---|---|---|
+| Beemo texts 215 / 236 / 240 (454 / 297 / 373 words), `en check` wall time | 38 / 21 / 14 s | 22 / 20 / 14 s |
+| `csli`: named errors on ungrammatical / grammatical items | 104 / 17 | 104 / 17 |
+| `corpora/ai-prose` expected diagnostics | | unchanged |
+
+The rest of the time is the strict parse itself, at roughly 6,000 chart
+edges a second: ordinary sentences of 15 to 20 words build charts of 28,000
+to 38,000 edges before pruning applies (from 21 chart positions). Three
+ways of pruning sooner were measured and rejected, because each loses
+analyses:
+
+- pruning from 14 positions: 13% faster on `sh-spec`, but the gold tree
+  found for 299 items instead of 345;
+- a time budget for the unpruned parse (2.5 or 4 seconds, then pruning):
+  2 to 5 fewer gold trees on `sh-spec`, and results that depend on the
+  machine's speed;
+- an edge budget (20,000 edges, then pruning): deterministic, but ordinary
+  sentences need 28,000 to 37,000 edges, so three sentences of
+  `corpora/ai-prose` lost their strict analysis.
+
+Making the parser itself faster is the remaining route.
+
