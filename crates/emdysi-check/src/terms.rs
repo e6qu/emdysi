@@ -29,7 +29,16 @@ pub enum Status {
 }
 
 impl Status {
-    fn parse(s: &str) -> Option<Status> {
+    pub fn name(self) -> &'static str {
+        match self {
+            Status::Preferred => "preferred",
+            Status::Admitted => "admitted",
+            Status::Deprecated => "deprecated",
+            Status::Superseded => "superseded",
+        }
+    }
+
+    pub fn parse(s: &str) -> Option<Status> {
         match s {
             "preferred" => Some(Status::Preferred),
             "admitted" => Some(Status::Admitted),
@@ -54,7 +63,16 @@ pub enum Pos {
 }
 
 impl Pos {
-    fn parse(s: &str) -> Option<Pos> {
+    pub fn name(self) -> &'static str {
+        match self {
+            Pos::Noun => "noun",
+            Pos::Verb => "verb",
+            Pos::Adjective => "adjective",
+            Pos::Adverb => "adverb",
+        }
+    }
+
+    pub fn parse(s: &str) -> Option<Pos> {
         match s {
             "noun" => Some(Pos::Noun),
             "verb" => Some(Pos::Verb),
@@ -86,6 +104,19 @@ pub struct Term {
     /// Must be written exactly as `text` (default: when `text` has a
     /// capital letter).
     pub exact_case: bool,
+}
+
+impl Term {
+    /// A term; `exact_case` defaults to whether `text` has a capital.
+    pub fn new(text: &str, status: Status, pos: Option<Pos>, exact_case: Option<bool>) -> Term {
+        Term {
+            words: split_words(text),
+            text: text.to_string(),
+            status,
+            pos,
+            exact_case: exact_case.unwrap_or_else(|| text.chars().any(char::is_uppercase)),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -307,7 +338,9 @@ pub fn run_glossary(check: GlossaryCheck, g: &Glossary, a: &Analysis) -> Vec<Hit
             for t in &c.terms {
                 match check {
                     GlossaryCheck::Deprecated if !t.status.allowed() => {
-                        let Some(pref) = c.preferred() else { continue };
+                        // A concept may list only terms to avoid (a Vale
+                        // reject list): flagged without a fix.
+                        let pref = c.preferred();
                         let mut found = find_seq(&toks, &t.words);
                         for m in find_seq(&lemmas, &t.words) {
                             if !found.iter().any(|f| f.0 == m.0) {
@@ -321,15 +354,22 @@ pub fn run_glossary(check: GlossaryCheck, g: &Glossary, a: &Analysis) -> Vec<Hit
                                     continue;
                                 }
                             }
+                            let advice = match pref {
+                                Some(p) => format!("use '{}' instead", p.text),
+                                None => "use another term".to_string(),
+                            };
                             let mut h = Hit::at(a, si, from, to)
-                                .var("preferred", &pref.text)
+                                .var("preferred", pref.map_or("", |p| p.text.as_str()))
+                                .var("advice", advice)
                                 .var("concept", &c.id);
                             // Fix only the uninflected form; inflected
                             // forms get a suggestion.
-                            if h.text.to_lowercase() == t.words.join(" ") {
-                                h.replacement = Some(match_initial(&h.text, &pref.text));
-                            } else {
-                                h.suggestions = vec![pref.text.clone()];
+                            if let Some(pref) = pref {
+                                if h.text.to_lowercase() == t.words.join(" ") {
+                                    h.replacement = Some(match_initial(&h.text, &pref.text));
+                                } else {
+                                    h.suggestions = vec![pref.text.clone()];
+                                }
                             }
                             out.push(h);
                         }

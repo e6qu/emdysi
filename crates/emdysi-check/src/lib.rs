@@ -16,6 +16,7 @@ use emdysi_text::segment::sentences;
 
 pub mod compounds;
 pub mod dict;
+pub mod glossary;
 pub mod modifiers;
 pub mod report;
 pub mod rules;

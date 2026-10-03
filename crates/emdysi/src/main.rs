@@ -49,6 +49,9 @@ USAGE:
                                    spelling corrections and (with --model) a
                                    local model's rewrites, each kept only if
                                    the grammar accepts it and its meaning holds
+    en glossary [--to toml|tbx] FILE...
+                                   convert glossaries (TOML, TBX, Vale
+                                   vocabularies) and print them
     en packs                       list rule packs and rules (default packs, or
                                    those given with --pack)
 
@@ -57,8 +60,9 @@ OPTIONS:
                            plain-style, substance, structure, terms; also
                            built in: microsoft, google, elastic, wordlists,
                            equality)
-    --glossary FILE        project glossary: [[concept]] tables of preferred,
-                           admitted and deprecated terms (repeatable)
+    --glossary FILE        project glossary (repeatable): TOML ([[concept]]
+                           tables), TBX (.tbx, .xml) or a Vale vocabulary
+                           (a directory with accept.txt and reject.txt)
     --disable RULE         skip a rule id, or a prefix ending in '*' (repeatable)
     --input plain|markdown input format (default: from the file extension; stdin is plain)
     --format plain|markdown  output format (default: plain)
@@ -84,6 +88,7 @@ struct Args {
     files: Vec<PathBuf>,
     packs: Vec<String>,
     glossaries: Vec<PathBuf>,
+    to: Option<String>,
     disabled: Vec<String>,
     input: Option<Format>,
     output: OutputFormat,
@@ -108,6 +113,7 @@ fn parse_args() -> Result<Args, String> {
         files: Vec::new(),
         packs: Vec::new(),
         glossaries: Vec::new(),
+        to: None,
         disabled: Vec::new(),
         input: None,
         output: OutputFormat::Plain,
@@ -160,6 +166,7 @@ fn parse_args() -> Result<Args, String> {
             "--model" => a.model = Some(PathBuf::from(need(&mut it, &arg)?)),
             "--server" => a.server = Some(need(&mut it, &arg)?),
             "--server-model" => a.server_model = Some(need(&mut it, &arg)?),
+            "--to" => a.to = Some(need(&mut it, &arg)?),
             "--samples" => {
                 a.samples = need(&mut it, &arg)?
                     .parse()
@@ -176,6 +183,45 @@ fn parse_args() -> Result<Args, String> {
         }
     }
     Ok(a)
+}
+
+/// A glossary from a TOML file, a TBX file (`.tbx`, `.xml`), or a Vale
+/// vocabulary (a directory with `accept.txt` and `reject.txt`, or one of
+/// those files).
+fn load_glossary(path: &std::path::Path) -> Result<Pack, String> {
+    let err = |e: String| format!("{}: {e}", path.display());
+    let read = |p: &std::path::Path| std::fs::read_to_string(p).unwrap_or_default();
+    let name = path.file_name().and_then(|n| n.to_str()).unwrap_or("");
+    let vale = |accept: &str, reject: &str| {
+        let (concepts, skipped) = emdysi_check::glossary::from_vale_vocab(accept, reject);
+        if !skipped.is_empty() {
+            eprintln!(
+                "{}: {} regular-expression entries not converted: {}",
+                path.display(),
+                skipped.len(),
+                skipped.join(", ")
+            );
+        }
+        Pack::from_concepts(concepts)
+    };
+    if path.is_dir() {
+        return Ok(vale(
+            &read(&path.join("accept.txt")),
+            &read(&path.join("reject.txt")),
+        ));
+    }
+    match name {
+        "accept.txt" => return Ok(vale(&read(path), "")),
+        "reject.txt" => return Ok(vale("", &read(path))),
+        _ => {}
+    }
+    let src = std::fs::read_to_string(path).map_err(|e| err(e.to_string()))?;
+    match path.extension().and_then(|e| e.to_str()) {
+        Some("tbx" | "xml") => emdysi_check::glossary::from_tbx(&src)
+            .map(Pack::from_concepts)
+            .map_err(err),
+        _ => Pack::parse_glossary(&src).map_err(|e| err(e.to_string())),
+    }
 }
 
 fn load_packs(names: &[String]) -> Result<Vec<Pack>, String> {
@@ -234,13 +280,24 @@ fn run() -> Result<bool, String> {
         }
         return Ok(true);
     }
+    if args.command == "glossary" {
+        let mut concepts = Vec::new();
+        for f in &args.files {
+            concepts.extend(load_glossary(f)?.concepts);
+        }
+        match args.to.as_deref() {
+            None | Some("toml") => print!("{}", emdysi_check::glossary::to_toml(&concepts)),
+            Some("tbx") => print!("{}", emdysi_check::glossary::to_tbx(&concepts)),
+            Some(o) => return Err(format!("--to must be toml or tbx, not {o:?}")),
+        }
+        return Ok(true);
+    }
     if !matches!(args.command.as_str(), "check" | "fix" | "parse" | "rewrite") {
         return Err(format!("unknown command {:?}\n\n{USAGE}", args.command));
     }
     let mut packs = load_packs(&args.packs)?;
     for g in &args.glossaries {
-        let src = std::fs::read_to_string(g).map_err(|e| format!("{}: {e}", g.display()))?;
-        packs.push(Pack::parse_glossary(&src).map_err(|e| format!("{}: {e}", g.display()))?);
+        packs.push(load_glossary(g)?);
     }
     let docs = inputs(&args.files, args.input)?;
     let erg = Erg::load(&args.grammar).map_err(|e| format!("loading grammar: {e}"))?;

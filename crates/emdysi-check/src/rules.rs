@@ -249,6 +249,16 @@ fn globs(t: &Table, k: &str) -> Vec<Glob> {
 }
 
 impl Pack {
+    /// A pack holding only glossary concepts.
+    pub fn from_concepts(concepts: Vec<Concept>) -> Pack {
+        Pack {
+            name: "glossary".into(),
+            description: String::new(),
+            rules: Vec::new(),
+            concepts,
+        }
+    }
+
     /// A glossary file: `[[concept]]` tables only, as a pack without rules.
     pub fn parse_glossary(src: &str) -> Result<Pack, PackError> {
         let t = crate::toml::parse(src).map_err(|e| PackError(e.to_string()))?;
