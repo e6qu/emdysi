@@ -15,8 +15,8 @@ use crate::dag::{Dag, Subsumer};
 use crate::grammar::Grammar;
 use crate::lexicon::LexItem;
 use crate::types::{TOP, TypeId};
-use crate::typesys::FeatId;
-use crate::unify::Unifier;
+use crate::typesys::{FeatId, TypeSystem};
+use crate::unify::{Checkpoint, Unifier};
 
 /// Quick-check: types at a few paths that most often cause unification
 /// failures, compared before attempting a full unification.
@@ -55,12 +55,6 @@ impl QuickCheck {
             .iter()
             .map(|p| dag.follow(node, p).map_or(TOP, |n| dag.ty(n)))
             .collect()
-    }
-
-    pub fn compatible(g: &Grammar, a: &[TypeId], b: &[TypeId]) -> bool {
-        a.iter()
-            .zip(b)
-            .all(|(&x, &y)| x == TOP || y == TOP || g.ts.glb(x, y).is_some())
     }
 }
 
@@ -160,7 +154,6 @@ pub struct Edge {
     pub packed: Vec<usize>,
     /// Edges built with this edge as a daughter.
     parents: Vec<usize>,
-    restricted: Option<Arc<Dag>>,
     /// Model score of the best derivation found for this edge.
     pub score: f64,
 }
@@ -206,6 +199,34 @@ struct Inst {
     dag: Arc<Dag>,
     deriv: Arc<Deriv>,
     score: f64,
+}
+
+/// A quick-check slot not computed yet.
+const UNSET: TypeId = TypeId::MAX;
+
+/// Whether a candidate daughter's quick-check vector is compatible with
+/// the slot `slot` of the structure in the unifier, filling in the slot's
+/// vector `have` as needed.
+fn other_compatible(
+    u: &mut Unifier,
+    ts: &TypeSystem,
+    qc: &QuickCheck,
+    slot: u32,
+    have: &mut [TypeId],
+    cand: &[TypeId],
+) -> bool {
+    for (i, &y) in cand.iter().enumerate() {
+        if y == TOP {
+            continue;
+        }
+        if have[i] == UNSET {
+            have[i] = u.follow(slot, &qc.paths[i]).map_or(TOP, |n| u.node_type(n));
+        }
+        if have[i] != TOP && !u.compatible(ts, &have[i..=i], &[y]) {
+            return false;
+        }
+    }
+    true
 }
 
 fn bit(set: &[u64], i: usize) -> bool {
@@ -260,11 +281,13 @@ pub struct Stats {
     pub unpack_time: Duration,
     pub lexical_time: Duration,
     pub subsumption_checks: usize,
-    pub restrict_time: Duration,
     pub pruned: usize,
     pub packed_proactive: usize,
     pub packed_retroactive: usize,
     pub frozen: usize,
+    /// Unifications tried while unpacking, and how many failed.
+    pub unpack_attempts: usize,
+    pub unpack_failed: usize,
 }
 
 pub struct ParseResult {
@@ -316,6 +339,8 @@ pub struct Parser<'g> {
     qc_groups: Vec<QcGroup>,
     /// Quick-check slots that pass through features ignored by packing.
     qc_restricted: Vec<bool>,
+    /// Features ignored when packing, by feature id.
+    restrict_mask: Vec<bool>,
     subsumer: Subsumer,
     u: Unifier,
     chart: Vec<Edge>,
@@ -326,6 +351,8 @@ pub struct Parser<'g> {
     stats: Stats,
     nodes: usize,
     scorer: Option<&'g dyn Scorer>,
+    /// Stands in for the structure of a released edge.
+    released: Arc<Dag>,
 }
 
 impl<'g> Parser<'g> {
@@ -367,6 +394,12 @@ impl<'g> Parser<'g> {
             }
         }
         let restrictor = config.packing_restrictor.clone().unwrap_or_default();
+        let mut restrict_mask = vec![false; g.feats.len()];
+        for &f in &restrictor {
+            if let Some(m) = restrict_mask.get_mut(f as usize) {
+                *m = true;
+            }
+        }
         let qc_restricted = qc
             .paths
             .iter()
@@ -380,6 +413,7 @@ impl<'g> Parser<'g> {
             lexical_filter,
             qc_groups: groups.into_iter().collect(),
             qc_restricted,
+            restrict_mask,
             subsumer: Subsumer::default(),
             u: Unifier::new(),
             chart: Vec::new(),
@@ -390,6 +424,7 @@ impl<'g> Parser<'g> {
             stats: Stats::default(),
             nodes: 0,
             scorer: None,
+            released: Arc::new(Dag::atomic(TOP)),
         }
     }
 
@@ -451,7 +486,6 @@ impl<'g> Parser<'g> {
                     state: EdgeState::Active,
                     packed: Vec::new(),
                     parents: Vec::new(),
-                    restricted: None,
                     score,
                 }
             })
@@ -504,7 +538,6 @@ impl<'g> Parser<'g> {
                         state: EdgeState::Active,
                         packed: Vec::new(),
                         parents: Vec::new(),
-                        restricted: None,
                         score: e.score + self.scorer.map_or(0.0, |s| s.rule(ri, &[e_dtr])),
                     });
                 }
@@ -581,6 +614,7 @@ impl<'g> Parser<'g> {
                     && cell_count.get(&key).copied().unwrap_or(0) >= beam
                 {
                     self.chart[id].state = EdgeState::Frozen;
+                    self.release(id);
                     self.stats.pruned += 1;
                     continue;
                 }
@@ -647,19 +681,30 @@ impl<'g> Parser<'g> {
                             // Unify the rule with this daughter once, then
                             // quick-check the other daughters against the
                             // combined structure.
-                            let Some(qc_other) = self.partial_qc(ri, pos, id) else {
+                            let Some(mut qc_other) = self.partial_qc(ri, pos, id) else {
                                 continue;
                             };
+                            // The unifier now holds the rule with this
+                            // daughter: each candidate is tried from there.
+                            let cp = self.u.checkpoint();
                             for c in cands {
                                 if self.chart[id].state != EdgeState::Active {
                                     break;
                                 }
-                                if !QuickCheck::compatible(self.g, &qc_other, &self.chart[c].qc) {
+                                let slot = self.rules[ri].dtrs[other];
+                                if !other_compatible(
+                                    &mut self.u,
+                                    &self.g.ts,
+                                    self.qc,
+                                    slot,
+                                    &mut qc_other,
+                                    &self.chart[c].qc,
+                                ) {
                                     self.stats.qc_filtered += 1;
                                     continue;
                                 }
                                 let pair = if pos == 0 { [id, c] } else { [c, id] };
-                                self.try_rule(ri, &pair, &mut agenda);
+                                self.try_other(ri, &pair, other, &cp, &mut agenda);
                             }
                         }
                     }
@@ -839,15 +884,6 @@ impl<'g> Parser<'g> {
         by_span: &HashMap<(usize, usize), Vec<usize>>,
         agenda: &mut Agenda,
     ) -> bool {
-        let restrictor = self.config.packing_restrictor.as_deref().unwrap_or(&[]);
-        let t = Instant::now();
-        let mut r = self.chart[id].dag.restrict(restrictor);
-        if let Some(top) = self.config.packing_top_type {
-            r.nodes[0].ty = top;
-        }
-        let r = Arc::new(r);
-        self.stats.restrict_time += t.elapsed();
-        self.chart[id].restricted = Some(r.clone());
         let key = (self.chart[id].start, self.chart[id].end);
         let Some(others) = by_span.get(&key) else {
             return false;
@@ -860,25 +896,63 @@ impl<'g> Parser<'g> {
             if !qf && !qb {
                 continue;
             }
-            let Some(or) = self.chart[o].restricted.clone() else {
-                continue;
-            };
             self.stats.subsumption_checks += 1;
-            let (o_subsumes, id_subsumes) = self.subsumer.check(&self.g.ts, &or, &r);
+            let (o_subsumes, id_subsumes) = self.subsumer.check_restricted(
+                &self.g.ts,
+                &self.chart[o].dag,
+                &self.chart[id].dag,
+                &self.restrict_mask,
+                self.config.packing_top_type.is_some(),
+            );
             if o_subsumes {
                 self.chart[id].state = EdgeState::Packed(o);
                 self.chart[o].packed.push(id);
+                self.release(id);
                 self.stats.packed_proactive += 1;
                 return true;
             }
             if id_subsumes {
                 self.chart[o].state = EdgeState::Packed(id);
                 self.chart[id].packed.push(o);
+                self.release(o);
                 self.stats.packed_retroactive += 1;
                 self.freeze_parents(o, agenda);
             }
         }
         false
+    }
+
+    /// Drop the structure of a syntactic edge that is packed or frozen: it
+    /// is only needed again if the edge is reactivated, and unpacking
+    /// rebuilds what it needs from the daughters.
+    fn release(&mut self, id: usize) {
+        if !self.chart[id].lexical {
+            self.chart[id].dag = self.released.clone();
+        }
+    }
+
+    /// Rebuild the structure of a released edge from its daughters, which
+    /// are active (otherwise the edge would be frozen). Returns false if
+    /// that fails, which should not happen.
+    fn restore(&mut self, id: usize) -> bool {
+        if !Arc::ptr_eq(&self.chart[id].dag, &self.released) {
+            return true;
+        }
+        let EdgeKind::Rule(ri) = self.chart[id].kind else {
+            return false;
+        };
+        let dags: Vec<Arc<Dag>> = self.chart[id]
+            .daughters
+            .iter()
+            .map(|&d| self.chart[d].dag.clone())
+            .collect();
+        match self.unify_rule(ri, &dags) {
+            Some(dag) => {
+                self.chart[id].dag = Arc::new(dag);
+                true
+            }
+            None => false,
+        }
     }
 
     /// Invalidate everything built from an edge that was packed
@@ -892,11 +966,16 @@ impl<'g> Parser<'g> {
                 EdgeState::Active => {}
             }
             self.chart[p].state = EdgeState::Frozen;
+            self.release(p);
             self.stats.frozen += 1;
             stack.extend(self.chart[p].parents.iter().copied());
             for q in std::mem::take(&mut self.chart[p].packed) {
-                self.chart[q].state = EdgeState::Active;
-                agenda.push(q, self.chart[q].start, self.chart[q].end);
+                if self.restore(q) {
+                    self.chart[q].state = EdgeState::Active;
+                    agenda.push(q, self.chart[q].start, self.chart[q].end);
+                } else {
+                    self.chart[q].state = EdgeState::Frozen;
+                }
             }
         }
     }
@@ -984,9 +1063,11 @@ impl<'g> Parser<'g> {
                 let dag_refs: Vec<&Arc<Dag>> = dags.iter().collect();
                 let qcs: Vec<Vec<TypeId>> = dags.iter().map(|d| self.qc.vector(d, 0)).collect();
                 let qc_refs: Vec<&Vec<TypeId>> = qcs.iter().collect();
-                if let Some(m) = self.apply(ri, &dag_refs, &qc_refs) {
+                self.stats.unpack_attempts += 1;
+                let m = self.apply(ri, &dag_refs, &qc_refs).map(Arc::new);
+                self.stats.unpack_failed += m.is_none() as usize;
+                if let Some(m) = m {
                     found += 1;
-                    let m = Arc::new(m);
                     out.push(Inst {
                         dag: m.clone(),
                         deriv: Arc::new(Deriv {
@@ -1032,7 +1113,7 @@ impl<'g> Parser<'g> {
         let mut fits = [vec![0u64; words], vec![0u64; words]];
         let qc = &self.chart[id].qc;
         for (dqc, slots) in &self.qc_groups {
-            if QuickCheck::compatible(self.g, dqc, qc) {
+            if self.u.compatible(&self.g.ts, dqc, qc) {
                 for &(ri, pos) in slots {
                     fits[pos][ri / 64] |= 1 << (ri % 64);
                 }
@@ -1041,9 +1122,10 @@ impl<'g> Parser<'g> {
         self.chart[id].fits = fits;
     }
 
-    /// Unify rule `ri` with edge `id` as daughter `pos` and return the
-    /// quick-check vector of the other daughter slot, or `None` if the
-    /// edge does not fit the rule at all.
+    /// Unify rule `ri` with edge `id` as daughter `pos` and return an empty
+    /// quick-check vector for the other daughter slot (see
+    /// [`other_compatible`]), or `None` if the edge does not fit the rule
+    /// at all.
     fn partial_qc(&mut self, ri: usize, pos: usize, id: usize) -> Option<Vec<TypeId>> {
         let rule = &self.rules[ri];
         let cons = self.g.constraint_fn();
@@ -1057,14 +1139,9 @@ impl<'g> Parser<'g> {
             self.stats.unify_failed += 1;
             return None;
         }
-        let slot = r + rule.dtrs[1 - pos];
-        Some(
-            self.qc
-                .paths
-                .iter()
-                .map(|p| self.u.follow(slot, p).map_or(TOP, |n| self.u.node_type(n)))
-                .collect(),
-        )
+        // Filled in as candidates are checked: most fail on the first few
+        // paths.
+        Some(vec![UNSET; self.qc.paths.len()])
     }
 
     /// Whether quick-check vectors allow `a` to subsume `b` and vice versa,
@@ -1107,30 +1184,77 @@ impl<'g> Parser<'g> {
         self.stats.attempts += 1;
         let dags: Vec<Arc<Dag>> = dtrs.iter().map(|&d| self.chart[d].dag.clone()).collect();
         if let Some(dag) = self.unify_rule(ri, &dags) {
-            self.nodes += dag.nodes.len();
-            let score = self.rule_score(ri, dtrs);
-            let id = self.chart.len();
-            self.chart.push(Edge {
-                start,
-                end,
-                qc: self.qc.vector(&dag, 0),
-                dag: Arc::new(dag),
-                kind: EdgeKind::Rule(ri),
-                daughters: dtrs.to_vec(),
-                pending: Vec::new(),
-                lexical: false,
-                fits: Default::default(),
-                state: EdgeState::Active,
-                packed: Vec::new(),
-                parents: Vec::new(),
-                restricted: None,
-                score,
-            });
-            for &d in dtrs {
-                self.chart[d].parents.push(id);
-            }
-            agenda.push(id, start, end);
+            self.add_edge(ri, dtrs, dag, agenda);
         }
+    }
+
+    /// Try a binary rule whose daughter other than `other` is already
+    /// unified into the unifier (see [`Parser::partial_qc`]), then return
+    /// to checkpoint `cp`.
+    fn try_other(
+        &mut self,
+        ri: usize,
+        dtrs: &[usize; 2],
+        other: usize,
+        cp: &Checkpoint,
+        agenda: &mut Agenda,
+    ) {
+        let rule = &self.rules[ri];
+        let (start, end) = (self.chart[dtrs[0]].start, self.chart[dtrs[1]].end);
+        if rule.spanning_only && !(start == 0 && end == self.n) {
+            return;
+        }
+        self.stats.attempts += 1;
+        let t = Instant::now();
+        let cons = self.g.constraint_fn();
+        let h = self.u.add(self.chart[dtrs[other]].dag.clone());
+        // The rule was the first structure added.
+        let ok = self.u.unify(rule.dtrs[other], h, &self.g.ts, &cons);
+        self.stats.unify_time += t.elapsed();
+        let dag = if ok {
+            let t = Instant::now();
+            let out = self.u.copy(0, &self.config.deleted_daughters);
+            self.stats.copy_time += t.elapsed();
+            if out.is_none() {
+                self.stats.cyclic += 1;
+            }
+            out
+        } else {
+            self.stats.unify_failed += 1;
+            None
+        };
+        self.u.rollback(cp);
+        if let Some(dag) = dag {
+            self.add_edge(ri, dtrs, dag, agenda);
+        }
+    }
+
+    /// Add the mother of a rule to the chart and the agenda.
+    fn add_edge(&mut self, ri: usize, dtrs: &[usize], dag: Dag, agenda: &mut Agenda) {
+        let start = self.chart[dtrs[0]].start;
+        let end = self.chart[*dtrs.last().unwrap()].end;
+        self.nodes += dag.nodes.len();
+        let score = self.rule_score(ri, dtrs);
+        let id = self.chart.len();
+        self.chart.push(Edge {
+            start,
+            end,
+            qc: self.qc.vector(&dag, 0),
+            dag: Arc::new(dag),
+            kind: EdgeKind::Rule(ri),
+            daughters: dtrs.to_vec(),
+            pending: Vec::new(),
+            lexical: false,
+            fits: Default::default(),
+            state: EdgeState::Active,
+            packed: Vec::new(),
+            parents: Vec::new(),
+            score,
+        });
+        for &d in dtrs {
+            self.chart[d].parents.push(id);
+        }
+        agenda.push(id, start, end);
     }
 
     /// Unify a rule with its daughters and copy out the mother, after a
@@ -1139,7 +1263,7 @@ impl<'g> Parser<'g> {
         self.stats.attempts += 1;
         let rule = &self.rules[ri];
         for (i, qc) in qcs.iter().enumerate() {
-            if !QuickCheck::compatible(self.g, &rule.dtr_qc[i], qc) {
+            if !self.u.compatible(&self.g.ts, &rule.dtr_qc[i], qc) {
                 self.stats.qc_filtered += 1;
                 return None;
             }

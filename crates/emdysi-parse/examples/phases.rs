@@ -4,7 +4,13 @@ use emdysi_parse::*;
 use std::time::Instant;
 
 fn main() {
-    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let mut erg = Erg::load(&default_grammar_dir()).unwrap();
+    if let Some(n) = std::env::var("MAX_READINGS")
+        .ok()
+        .and_then(|n| n.parse().ok())
+    {
+        erg.config.max_readings = n;
+    }
     for line in std::io::stdin().lines() {
         let line = line.unwrap();
         let t = Instant::now();

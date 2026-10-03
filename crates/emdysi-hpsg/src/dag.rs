@@ -197,6 +197,22 @@ impl Subsumer {
 
     /// `(a subsumes b, b subsumes a)`.
     pub fn check(&mut self, ts: &TypeSystem, a: &Dag, b: &Dag) -> (bool, bool) {
+        self.check_restricted(ts, a, b, &[], false)
+    }
+
+    /// [`Subsumer::check`] as if both structures had been restricted
+    /// ([`Dag::restrict`]): arcs whose feature is marked in `skip` are
+    /// ignored at any depth, and with `any_root` the root types are not
+    /// compared.
+    pub fn check_restricted(
+        &mut self,
+        ts: &TypeSystem,
+        a: &Dag,
+        b: &Dag,
+        skip: &[bool],
+        any_root: bool,
+    ) -> (bool, bool) {
+        let skipped = |f: FeatId| skip.get(f as usize).copied().unwrap_or(false);
         self.prepare(a.nodes.len(), b.nodes.len());
         let g = self.generation;
         let mut fwd = true;
@@ -224,7 +240,7 @@ impl Subsumer {
                 bwd = false;
             }
             let (tx, ty) = (a.ty(x), b.ty(y));
-            if tx != ty {
+            if tx != ty && !(any_root && x == 0 && y == 0) {
                 if !ts.subsumed_by(ty, tx) {
                     fwd = false;
                 }
@@ -237,7 +253,16 @@ impl Subsumer {
             }
             let (ax, by) = (a.arcs(x), b.arcs(y));
             let (mut i, mut j) = (0, 0);
-            while i < ax.len() || j < by.len() {
+            loop {
+                while i < ax.len() && skipped(ax[i].0) {
+                    i += 1;
+                }
+                while j < by.len() && skipped(by[j].0) {
+                    j += 1;
+                }
+                if i >= ax.len() && j >= by.len() {
+                    break;
+                }
                 match (ax.get(i), by.get(j)) {
                     (Some(&(f, v)), Some(&(h, w))) if f == h => {
                         self.stack.push((v, w));
