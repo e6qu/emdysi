@@ -150,6 +150,27 @@ impl Default for Options {
     }
 }
 
+/// Time limit and readings for the grammar-error variant of the grammar.
+const MAL_TIMEOUT: Duration = Duration::from_secs(3);
+const MAL_READINGS: usize = 20;
+
+/// The text of a list item's sentence that starts with a short label ("Set
+/// goals: The terms ..."), with the label and its colon replaced by spaces, for the
+/// parser: the label is not part of the clause and only slows the parse
+/// down. Character positions are unchanged. `None` if there is no label.
+fn mask_label(text: &str) -> Option<String> {
+    let i = text.find(": ")?;
+    let label = &text[..i];
+    let rest = &text[i + 1..];
+    if label.split_whitespace().count() > 5
+        || label.contains(['.', '!', '?', '"', '“'])
+        || rest.split_whitespace().count() < 3
+    {
+        return None;
+    }
+    Some(" ".repeat(label.chars().count() + 1) + rest)
+}
+
 /// A sentence's parse outcome: index, parse, tokens, reason for skipping.
 type Parsed = (
     usize,
@@ -215,6 +236,10 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                     };
                     let Some(&i) = order.get(k) else { break };
                     let text = &sents[i].text;
+                    // Labels ("Keep going: ...") are a list-item convention;
+                    // elsewhere a colon usually follows a clause ("There
+                    // are three new commands: ...").
+                    let in_list = blocks[sents[i].block].kind == BlockKind::ListItem;
                     let tokens = erg.tokens(text);
                     let (parse, skipped) = if !opts.parse {
                         (None, Some("parsing disabled".to_string()))
@@ -228,6 +253,8 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                             )),
                         )
                     } else {
+                        let unlabelled = mask_label(text).filter(|_| in_list);
+                        let text = unlabelled.as_deref().unwrap_or(text);
                         match erg.parse_limited(text, opts.timeout, opts.max_readings) {
                             Ok(p) => (Some(p), None),
                             Err(e) => (None, Some(e.to_string())),
@@ -243,9 +270,19 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                             .first()
                             .is_some_and(|r| r.words.iter().any(|w| w.generic))
                     });
+                    // The grammar-error variant is only asked for readings
+                    // with few corrections (see `rules::grammar_errors`), so
+                    // a short search suffices.
                     let mal_parse = if opts.diagnose && parse.is_some() && (!strict || generic) {
+                        let unlabelled = mask_label(text).filter(|_| in_list);
+                        let text = unlabelled.as_deref().unwrap_or(text);
                         erg.mal().and_then(|m| {
-                            m.parse_limited(text, opts.timeout, opts.max_readings).ok()
+                            m.parse_limited(
+                                text,
+                                opts.timeout.min(MAL_TIMEOUT),
+                                opts.max_readings.min(MAL_READINGS),
+                            )
+                            .ok()
                         })
                     } else {
                         None
