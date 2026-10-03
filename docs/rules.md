@@ -390,6 +390,19 @@ definition as acronyms, and decide which spelling `variants` keeps. This is
 how a project declares its established jargon: once *customer data platform*
 is in the glossary, it is no longer a noun stack.
 
+Glossaries can also come from other tools. `--glossary` reads TBX files
+(`.tbx` or `.xml`, the ISO 30042 TermBase eXchange format of terminology
+tools, in both the TBX v3 and the older TBX-Basic layout; English language
+sections only, with the administrative status and part of speech mapped as
+above) and Vale vocabularies (a directory with `accept.txt` and
+`reject.txt`, or one of those files: accepted entries become preferred
+terms with Vale's case-sensitive matching, rejected entries deprecated
+terms with no replacement; entries that are regular expressions, other than
+a first letter in both cases such as `[Pp]ython`, are reported and
+skipped). `en glossary --to toml FILE...` and `en glossary --to tbx
+FILE...` convert any of these and print the result; the case policy is not
+part of TBX and is lost in that direction.
+
 ## Disabling rules
 
 `--disable RULE` skips a rule. `--disable 'plain-style.*'` skips a whole

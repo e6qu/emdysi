@@ -56,7 +56,8 @@ TOML files; see [`docs/rules.md`](docs/rules.md). The built-in packs are:
   headings, parallel headings and list items, and procedures written as
   numbered instructions;
 - `terms`: acronyms defined at first use, one spelling per term, glossary
-  terms (`--glossary FILE`) instead of deprecated ones, no coined words or
+  terms (`--glossary FILE`: TOML, TBX or a Vale vocabulary) instead of
+  deprecated ones, no coined words or
   concept names, no hyphen chains (*decision-making-framework*), no hyphen
   after *-ly* adverbs and no noun stacks.
 

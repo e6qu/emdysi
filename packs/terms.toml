@@ -90,8 +90,8 @@ id = "terms.deprecated"
 kind = "glossary"
 check = "deprecated"
 severity = "warning"
-message = "Use '{preferred}' instead of '{match}' (glossary: {concept})."
-description = "A term the glossary marks as deprecated or superseded; the fix is the concept's preferred term. Inflected forms are matched through the grammar's lemmas and get a suggestion instead of a fix."
+message = "'{match}' is a deprecated term ({concept}): {advice}."
+description = "A term the glossary marks as deprecated or superseded; the fix is the concept's preferred term, if it has one. Inflected forms are matched through the grammar's lemmas and get a suggestion instead of a fix."
 source = "TBX-Basic administrative status; Vale substitution rules"
 
 [[rule]]

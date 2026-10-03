@@ -11,6 +11,7 @@ rust-version.workspace = true
 emdysi-parse = { path = "../emdysi-parse", version = "0.1.0" }
 emdysi-text = { path = "../emdysi-text", version = "0.1.0" }
 fancy-regex = "0.19"
+quick-xml = { version = "0.41.0", default-features = false }
 
 [lints]
 workspace = true

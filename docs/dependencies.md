@@ -26,6 +26,7 @@ LGPL and GPL) requires a new decision.
 | pulldown-cmark | 0.13.4 (default features off) | MIT | crate `Cargo.toml` + `LICENSE` (Copyright 2015 Google Inc.) | 2026-10-01 |
 | bitflags | 2.13.2 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-MIT`, `LICENSE-APACHE` | 2026-10-01 |
 | unicase | 2.9.0 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-MIT`, `LICENSE-APACHE` | 2026-10-01 |
+| quick-xml | 0.41.0 (default features off; reads TBX glossaries) | MIT | crate `Cargo.toml` + `LICENSE-MIT.md` (Copyright (c) 2016 Johann Tuffe) | 2026-10-03 |
 
 ## The `http` feature (on by default)
 
