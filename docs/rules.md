@@ -102,9 +102,13 @@ reported. `{count}`, `{per}` and `{max}` are available in messages.
 ### `spelling`
 
 Lower-case words that neither the bundled word list (ESDB/SCOWL, size 60,
-American and British spellings, both *-ise* and *-ize*)
-nor the grammar's lexicon and inflection rules know. Names, acronyms, numbers
-and inline code are skipped. Options are `min_length` (default 3) and
+American and British spellings, both *-ise* and *-ize*), nor the rarer
+words of size 70 and the software terms of the cspell dictionaries
+(accepted, never suggested), nor the grammar's lexicon and inflection rules
+know. Names, acronyms, numbers and inline code are skipped. A word is
+reported only when it looks like a typo: a known word is one edit away,
+and the word occurs once in the document (a word used twice or more is one
+of the document's terms, such as *kubelet*). Options are `min_length` (default 3) and
 `ignore` (a list of words). `{suggestion}` is available in messages. A
 suggestion is applied automatically only when it is clearly the most likely
 correction: a transposed or doubled letter, or the only known word one edit
@@ -137,11 +141,23 @@ wrong verb forms (*buyed*), missing determiners (*went to house*), *a*/*an*,
 plural first nouns in compounds and others, about 800 error codes in all.
 Sentences without a strict analysis, or whose analysis relies on an
 unknown word, are re-parsed with that variant (loaded on first use); the
-whole-sentence analysis that assumes the fewest errors is used.
+whole-sentence analyses that assume the fewest errors are used.
 `{feedback}` (the ERG's own message) and `{code}` (the rule or entry that
 names the error) are available in messages.
 
-Two filters keep the rule precise on real documents. When the best
+An error is a claim, so it is reported only when the grammar can show it
+(decision D13): a complete search (no pruning, no time limit) found no
+strict or informal analysis of the sentence; every best analysis of the
+grammar-error variant names the same error; and correcting it the way its
+kind suggests (another inflection of the word, an added or removed
+article, another case of a pronoun, *a*/*an*, *fewer*/*less*, deleting a
+doubled word, ...) gives a sentence the grammar analyses strictly. That
+correction is the suggestion. Errors of other kinds, and errors in names
+and numbers, are not reported. A correct sentence the grammar does not
+cover stays unanalysable after such a small change, so it is not flagged.
+See [evaluation.md](evaluation.md#false-flags-on-edited-text).
+
+Two further filters apply. When the best
 analysis needs more than two corrections, nothing is reported: that is the
 grammar-error variant making the best of a sentence the grammar could not
 analyse (long sentences, constructions it lacks), not a list of real
@@ -154,7 +170,10 @@ another capitalized word (titles such as *Your Majesty*). See
 
 Sentences for which the grammar finds no analysis, or only a fragment or
 informal one, and for which `grammar-errors` names no specific error. `{reason}` is available in messages. Headings and table cells
-are exempt.
+are exempt. Not a claim of error: most such sentences are correct English
+the grammar does not cover. Used by the opt-in `coverage` pack
+(`coverage.grammar`) to show which sentences no grammar-based rule could
+check.
 
 ### `consistency`
 

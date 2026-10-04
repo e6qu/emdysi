@@ -355,6 +355,49 @@ Beemo's editors corrected facts, structure and phrasing more than
 adjectives, and its prompts are mostly creative writing, so a corpus of
 edited explanatory prose could still show a difference.
 
+## False flags on edited text
+
+The checker's error claims (the `core` pack: spelling, named grammar
+errors, spelling consistency) should be right. The target is at most one
+false flag per 1,000 sentences of edited English, whatever the genre.
+[`corpora/edited`](../corpora/edited/SOURCE.md) and
+[`corpora/edited-by-sa`](../corpora/edited-by-sa/SOURCE.md) hold published,
+edited text in five genres: a novel (Austen, public domain), US government
+guidance (plainlanguage.gov, CC0), technical documentation and blog posts
+(the Rust book and blog, MIT/Apache; Kubernetes, CC BY 4.0), and news and
+encyclopedia sentences (UD English PUD, CC BY-SA 3.0). Every claim of an
+error in them is counted:
+`cargo run --release -p emdysi-check --example false_flags -- OUT.tsv`
+(2026-10-04, 2,498 sentences; flags per 1,000 sentences):
+
+| Step | Blog | Fiction | Government | News and wiki | Technical | All |
+|---|---|---|---|---|---|---|
+| Before (with `core.grammar`, "possibly ungrammatical") | 463 | 375 | 276 | 302 | 437 | 374 |
+| `core.grammar` moved to the opt-in `coverage` pack; named errors only after a complete search proved the sentence outside the grammar, and only those every best analysis names; unknown words only with a known word one edit away and used once | 53 | 27 | 30 | 46 | 41 | 39 |
+| Named errors only with a correction the grammar accepts | 16 | 10 | 9 | 16 | 15 | 14 |
+| Rare words (ESDB size 70) and software terms (cspell) accepted; code-like tokens masked before parsing; no corrections of names or numbers | 4 | 10 | 9 | 6 | 3 | 6.0 |
+
+Of the 15 flags left, at least six are right: *neices* (a typo in the
+novel's text), *offense* among British spellings, *labour* and *centered*
+against the rest of their documents, "Its police includes" and "Literal
+include things like 1". The others are an archaic construction ("there was
+no enduring him"), "Affectation of candour", a list of bare noun phrases
+read as sentences once an article is added ("Remote moderated usability
+testing"), "Google open sourced", a sentence-initial name ("Pod is ..."),
+and two words outside every list (*permittee*, *async*). About 3.6 false
+flags per 1,000 sentences remain.
+
+The price is recall. On the `csli` test suite, named errors now catch 33
+of 388 ungrammatical sentences (104 before) and wrongly flag 3 of 965
+grammatical ones (17 before): the checker names fewer errors, and nearly
+all it names are real. A grammatical error is reported only when the
+grammar can show it: the sentence is outside the grammar after a complete
+search, every best analysis of the grammar-error variant names the same
+error, and correcting it the way the error's kind suggests (another form
+of the word, an added or removed article, another case of a pronoun, a/an,
+fewer/less, ...) gives a sentence the grammar accepts. The verified
+correction is offered as the suggestion.
+
 ## Parse readings of machine-written prose
 
 [`corpora/ai-treebank`](../corpora/ai-treebank/README.md) has 160 sentences

@@ -40,8 +40,12 @@ Input is plain text or Markdown (chosen from the file extension, or with
 `--input`); output is plain text or Markdown (`--format`). Rule packs are
 TOML files; see [`docs/rules.md`](docs/rules.md). The built-in packs are:
 
-- `core`: spelling (with safe automatic fixes), named grammatical errors,
-  grammaticality and US/GB spelling consistency;
+- `core`: spelling (with safe automatic fixes), named grammatical errors
+  and US/GB spelling consistency. Every rule here claims an error, so each
+  reports only what it can show: an error the grammar names in every best
+  analysis, with a correction the grammar accepts; a typo one edit from a
+  known word. On edited text in five genres it flags about 6 sentences in
+  1,000 ([evaluation](docs/evaluation.md#false-flags-on-edited-text));
 - `ai-tells`: vocabulary, stock phrases and constructions over-represented
   in machine-written prose (contrast frames, trailing participial clauses,
   three-part lists, em-dash density, chat-assistant residue);
@@ -66,7 +70,9 @@ Opt-in packs converted from other linters' rule data (see
 `elastic` (word choice from those companies' style guides, via their Vale
 packages), `wordlists` (hedges, weasel words and fillers) and `equality`
 (insensitive wording, from the data behind alex). Load them with
-`--pack microsoft` and so on.
+`--pack microsoft` and so on. `--pack coverage` shows the sentences the
+grammar could not analyse fully (not errors: mostly English it does not
+cover).
 
 `en rewrite` prints the text with guarded rewrites: the automatic fixes,
 spelling corrections and a small local language model's rewrites of
