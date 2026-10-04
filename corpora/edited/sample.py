@@ -168,6 +168,14 @@ def clean_markdown(s):
     return s.strip() + "\n"
 
 
+# A second, larger development set (dev2-*.tsv): yet other documents of
+# the same sources, chosen by rule from what is left (see `dev2` below).
+DEV2_FICTION_CHAPTERS = range(31, 62)
+DEV2_BOOK_CHAPTERS = ("ch10-", "ch11-", "ch12-", "ch13-", "ch15-", "ch16-")
+DEV2_K8S_PAGES = 30
+DEV2_BLOG_POSTS = 25
+
+
 def fiction(up, chapters=FICTION_CHAPTERS, prefix="fiction"):
     text = (up / "Pride-and-Prejudice_1342" / "1342-0.txt").read_text(encoding="utf-8-sig")
     text = text.replace("\r\n", "\n")
@@ -274,6 +282,41 @@ def main():
             here.parent / "edited-by-sa" / "heldout-pud.tsv",
             conllu(up, "UD_English-PUD", "en_pud-ud-test.conllu", "news-wiki", "hpud", 500, skip=MAX_SENTENCES),
         ),
+    ]
+    # dev2: what neither set uses, chosen by rule (sorted, the first N).
+    used_k8s = set(K8S_PAGES) | set(HELDOUT_K8S_PAGES)
+    k8s_all = sorted(
+        str(p.relative_to(up / "website"))
+        for p in (up / "website" / "content" / "en" / "docs" / "concepts").rglob("*.md")
+    )
+    dev2_k8s = [p for p in k8s_all if p not in used_k8s][:DEV2_K8S_PAGES]
+    dev2_book = sorted(
+        f"src/{p.name}"
+        for p in (up / "book" / "src").glob("ch*.md")
+        if p.name.startswith(DEV2_BOOK_CHAPTERS)
+    )
+    used_blog = set(BLOG_POSTS) | set(HELDOUT_BLOG_POSTS)
+    release = re.compile(r"(?i)release|^Rust-1\.|^1\.\d|survey|results")
+    dev2_blog = [
+        p
+        for p in sorted(
+            f"content/{q.name}" for q in (up / "blog" / "content").glob("*.md") if not release.search(q.name)
+        )
+        if p not in used_blog
+    ][:DEV2_BLOG_POSTS]
+    dev2_gov = sorted(
+        str(p.relative_to(up / "plainlanguage.gov"))
+        for p in (up / "plainlanguage.gov" / "_pages" / "guidelines" / "words").glob("*.md")
+        if p.name != "index.md"
+    )
+    outputs += [
+        (here / "dev2-fiction.tsv", fiction(up, DEV2_FICTION_CHAPTERS, "dfiction")),
+        (here / "dev2-government.tsv", pages(up, "plainlanguage.gov", dev2_gov, "government", "dgov")),
+        (
+            here / "dev2-rust.tsv",
+            pages(up, "book", dev2_book, "technical", "drust") + pages(up, "blog", dev2_blog, "blog", "dblog"),
+        ),
+        (here / "dev2-kubernetes.tsv", pages(up, "website", dev2_k8s, "technical", "dk8s")),
     ]
     for out, rows in outputs:
         out.parent.mkdir(exist_ok=True)
