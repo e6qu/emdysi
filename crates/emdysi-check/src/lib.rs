@@ -181,23 +181,52 @@ static CITATION: std::sync::LazyLock<fancy_regex::Regex> = std::sync::LazyLock::
     .expect("citation pattern")
 });
 
+/// Code-like tokens in prose: URLs, email addresses, paths
+/// (`src/main.rs`) and names with a file or domain extension (`cmd.exe`,
+/// `crates.io`).
+static CODE_LIKE: std::sync::LazyLock<fancy_regex::Regex> = std::sync::LazyLock::new(|| {
+    fancy_regex::Regex::new(
+        r"\bhttps?://[^\s<>()]+[^\s<>().,;:!?]|\b[\w.+-]+@[\w-]+(?:\.[\w-]+)+|(?<![\w/])(?:[\w.-]+/)+[\w-]*\.[A-Za-z0-9]+\b|(?<![\w/])/[\w.-]+(?:/[\w.-]+)+|\b[A-Za-z][\w-]*\.(?:io|com|org|net|dev|gov|edu|rs|exe|py|js|ts|md|toml|json|ya?ml|txt|html?|sh|go|c|h)\b",
+    )
+    .expect("code-like pattern")
+});
+
 /// The text the parser sees: citations, and labels of list items (see
-/// [`mask_label`]), replaced by spaces. Citations are not part of the
+/// [`mask_label`]), replaced by spaces; code-like tokens ([`CODE_LIKE`])
+/// replaced by a capitalized placeholder of the same length, which the
+/// grammar reads as a name. Citations are not part of the
 /// sentence's grammar, and the parser would otherwise build them into a
 /// noun phrase. Character positions are unchanged. `None` if nothing is
 /// masked.
 fn parser_text(text: &str, in_list: bool) -> Option<String> {
     let labelled = mask_label(text).filter(|_| in_list);
     let base = labelled.as_deref().unwrap_or(text);
+    let mut spans: Vec<(usize, usize, bool)> = CITATION
+        .find_iter(base)
+        .flatten()
+        .map(|m| (m.start(), m.end(), false))
+        .collect();
+    for m in CODE_LIKE.find_iter(base).flatten() {
+        if !spans.iter().any(|&(a, b, _)| m.start() < b && a < m.end()) {
+            spans.push((m.start(), m.end(), true));
+        }
+    }
+    if spans.is_empty() {
+        return labelled;
+    }
+    spans.sort_unstable();
     let mut out = String::with_capacity(base.len());
     let mut last = 0;
-    for m in CITATION.find_iter(base).flatten() {
-        out.push_str(&base[last..m.start()]);
-        out.extend(std::iter::repeat_n(' ', m.as_str().chars().count()));
-        last = m.end();
-    }
-    if last == 0 {
-        return labelled;
+    for (start, end, code) in spans {
+        out.push_str(&base[last..start]);
+        let n = base[start..end].chars().count();
+        if code {
+            out.push('X');
+            out.extend(std::iter::repeat_n('x', n - 1));
+        } else {
+            out.extend(std::iter::repeat_n(' ', n));
+        }
+        last = end;
     }
     out.push_str(&base[last..]);
     Some(out)
@@ -476,6 +505,29 @@ pub fn apply_fixes(source: &str, diags: &[Diagnostic]) -> (String, usize) {
 #[cfg(test)]
 mod tests {
     use super::parser_text;
+
+    #[test]
+    fn code_like_tokens_are_masked() {
+        let t = "Open src/main.rs and see crates.io or mail security@rust-lang.org.";
+        let m = parser_text(t, false).unwrap();
+        assert_eq!(m.chars().count(), t.chars().count());
+        let mask = |w: &str| format!("X{}", "x".repeat(w.chars().count() - 1));
+        assert_eq!(
+            m,
+            format!(
+                "Open {} and see {} or mail {}.",
+                mask("src/main.rs"),
+                mask("crates.io"),
+                mask("security@rust-lang.org")
+            )
+        );
+        // Ordinary words with a slash or dots are left alone.
+        assert_eq!(parser_text("We met at 5 p.m. and/or later.", false), None);
+        assert_eq!(
+            parser_text("The U.S. economy grew, e.g. in May.", false),
+            None
+        );
+    }
 
     #[test]
     fn citations_are_masked() {

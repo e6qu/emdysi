@@ -1017,7 +1017,11 @@ impl Rule {
                         {
                             continue;
                         }
-                        let known = |p: &str| crate::dict::tier(p).is_some() || erg.known_word(p);
+                        let known = |p: &str| {
+                            crate::dict::tier(p).is_some()
+                                || crate::dict::accepted(p)
+                                || erg.known_word(p)
+                        };
                         let parts: Vec<&str> = w
                             .split(['-', '\'', '’'])
                             .filter(|p| !p.is_empty())
@@ -1495,6 +1499,19 @@ fn candidate_fixes(
     let mut out: Vec<(usize, usize, String)> = Vec::new();
     let has = |k: &[&str]| k.iter().any(|x| f.contains(x));
     if word.contains(char::is_whitespace) {
+        return out;
+    }
+    // A capitalized word after the start of the sentence is a name
+    // ("Rust", "Pod"), and a number is not a word to inflect: the grammar
+    // knows too little about either to name an error in them.
+    let pronoun = PRONOUN_CASES
+        .iter()
+        .any(|set| set.contains(&lower.as_str()));
+    let sentence_start = prev
+        .trim_start_matches(|c: char| !c.is_alphanumeric())
+        .is_empty();
+    let name_like = word.chars().next().is_some_and(char::is_uppercase) && !sentence_start;
+    if !pronoun && (name_like || word.chars().any(|c| c.is_ascii_digit())) {
         return out;
     }
     if has(&["doubled word"]) {

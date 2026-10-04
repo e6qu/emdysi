@@ -24,6 +24,42 @@ pub fn words() -> &'static HashMap<String, u8> {
     })
 }
 
+const RARE_WORDS: &str = include_str!("../../../data/scowl/en-70-extra.txt");
+const TECH_WORDS: &[&str] = &[
+    include_str!("../../../data/cspell/software-terms.txt"),
+    include_str!("../../../data/cspell/software-tools.txt"),
+    include_str!("../../../data/cspell/coding-terms.txt"),
+    include_str!("../../../data/cspell/rust.txt"),
+    include_str!("../../../data/cspell/k8s.txt"),
+    include_str!("../../../data/cspell/fullstack.txt"),
+];
+
+/// Correct words outside the main list, accepted by the spelling check but
+/// never suggested: rarer English words (ESDB size 70) and software terms
+/// (cspell dictionaries). Lower-case keys.
+fn accepted_words() -> &'static std::collections::HashSet<String> {
+    static SET: OnceLock<std::collections::HashSet<String>> = OnceLock::new();
+    SET.get_or_init(|| {
+        RARE_WORDS
+            .lines()
+            .chain(TECH_WORDS.iter().flat_map(|t| t.lines()))
+            .map(|l| l.split('#').next().unwrap_or("").trim())
+            .filter(|w| {
+                !w.is_empty()
+                    && w.chars()
+                        .all(|c| c.is_alphanumeric() || matches!(c, '\'' | '-' | '.'))
+            })
+            .map(str::to_lowercase)
+            .collect()
+    })
+}
+
+/// Whether a word is correct though not in the main list (see
+/// [`accepted_words`]).
+pub fn accepted(word: &str) -> bool {
+    accepted_words().contains(&word.to_lowercase())
+}
+
 /// Commonness tier of a word form, if listed.
 pub fn tier(word: &str) -> Option<u8> {
     let m = words();

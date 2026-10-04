@@ -153,8 +153,8 @@ source_doc = "corpora/README.md"
 
 [[item]]
 id = "scowl"
-paths = ["data/scowl/en-60.tsv", "data/scowl/variants.tsv", "data/scowl/Copyright", "data/scowl/SOURCE.md"]
-name = "English Speller Database (ESDB/SCOWL) word list, size 60, and US/GB variant pairs"
+paths = ["data/scowl/en-60.tsv", "data/scowl/en-70-extra.txt", "data/scowl/variants.tsv", "data/scowl/Copyright", "data/scowl/SOURCE.md"]
+name = "English Speller Database (ESDB/SCOWL) word list, size 60 (and the size-70 additions), and US/GB variant pairs"
 upstream = "https://github.com/en-wl/wordlist"
 version = "1e5b7d3a72f47a71da5d28686c1dd4b397178485"
 retrieved = "2026-10-01"
@@ -162,7 +162,7 @@ license = "LicenseRef-SCOWL"
 license_files = ["data/scowl/Copyright"]
 copyright = "Copyright 2000-2026 by Kevin Atkinson (ESDB); see data/scowl/Copyright for the sources ESDB is derived from"
 provenance = "Generated with the upstream tools (word-list 60 A,B,Z 1; no Australian spellings, which carry an additional notice). Per the Copyright file, for a generated list of size 80 or below that is not Australian English, no additional copyright applies beyond the notice before the ===."
-modifications = "Generated lists, not upstream files: en-60.tsv adds each word's smallest ESDB size; variants.tsv is produced by data/scowl/gen-variants.py from the same database."
+modifications = "Generated lists, not upstream files: en-60.tsv adds each word's smallest ESDB size; en-70-extra.txt lists the size-70 words not in en-60.tsv; variants.tsv is produced by data/scowl/gen-variants.py from the same database."
 use = "shipped"
 source_doc = "data/scowl/SOURCE.md"
 
@@ -330,6 +330,21 @@ provenance = "Randomly selected Wikipedia sentences, which Google makes availabl
 modifications = "The '# text' lines of the first 500 sentences, grouped by '# newdoc', converted to escaped TSV by corpora/edited/sample.py; no text changed."
 use = "test"
 source_doc = "corpora/edited-by-sa/SOURCE.md"
+
+[[item]]
+id = "cspell-software-terms"
+paths = ["data/cspell"]
+name = "Software-term word lists from the cspell dictionaries (software-terms, rust, k8s, fullstack)"
+upstream = "https://github.com/streetsidesoftware/cspell-dicts (dictionaries/*/src)"
+version = "a69283e74295a9fed0ca16648266f4decfd95573"
+retrieved = "2026-10-04"
+license = "MIT"
+license_files = ["data/cspell/LICENSE-software-terms", "data/cspell/LICENSE-rust", "data/cspell/LICENSE-k8s", "data/cspell/LICENSE-fullstack"]
+copyright = "Copyright (c) 2017-2025 Street Side Software; Rust dictionary also Copyright (c) 2017-2020 Alexander Andreev"
+provenance = "Word lists compiled by the cspell maintainers and contributors. Each dictionary package declares MIT in its LICENSE and package.json (the repository root is GPL-3.0; only these MIT packages' word lists are copied)."
+modifications = "none (six src/*.txt files copied verbatim; SOURCE.md and the four LICENSE files added)"
+use = "shipped"
+source_doc = "data/cspell/SOURCE.md"
 
 [[item]]
 id = "pair-sample-tools"
