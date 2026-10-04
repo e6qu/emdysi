@@ -1080,11 +1080,44 @@ impl Rule {
                 }
             }
             Kind::GrammarErrors => {
+                // Words the document capitalizes after the start of a
+                // sentence are names, at the start of one too ("Pod is ...").
+                let names: std::collections::HashSet<String> = a
+                    .sentences
+                    .iter()
+                    .flat_map(|s| s.tokens.iter().skip(1))
+                    .filter(|t| t.form.chars().next().is_some_and(char::is_uppercase))
+                    .map(|t| t.form.clone())
+                    .collect();
                 for (si, s) in a.sentences.iter().enumerate() {
+                    // A sentence that is all bold or underlined is a label
+                    // ("**Remote moderated usability testing**."), not a
+                    // clause.
+                    let r = a.source_range(si, 0, s.original.chars().count());
+                    // The opening marker may lie just before the sentence.
+                    let start = a.source[..r.start]
+                        .char_indices()
+                        .rev()
+                        .nth(1)
+                        .map_or(0, |(i, _)| i);
+                    let src = &a.source[start..r.end];
+                    let body = src.trim().trim_end_matches(['.', ':', '!', '?']);
+                    let body = ["- ", "* ", "+ "]
+                        .iter()
+                        .find_map(|b| body.strip_prefix(b))
+                        .unwrap_or(body)
+                        .trim_start();
+                    let label = |m: &str| {
+                        let inner = body.strip_prefix(m).and_then(|b| b.strip_suffix(m));
+                        inner.is_some_and(|i| !i.is_empty() && !i.contains(m))
+                    };
+                    if label("**") || label("__") {
+                        continue;
+                    }
                     for e in grammar_errors(s) {
                         // Reported only with a correction the grammar
                         // accepts: see `verified_fix`.
-                        let Some(fix) = verified_fix(erg, s, &e) else {
+                        let Some(fix) = verified_fix(erg, s, &e, &names) else {
                             continue;
                         };
                         let mut d = self.diag(a, si, e.from, e.to, &e.text);
@@ -1481,6 +1514,7 @@ fn candidate_fixes(
     erg: &Erg,
     s: &crate::Sentence,
     e: &GrammarError,
+    names: &std::collections::HashSet<String>,
 ) -> Vec<(usize, usize, String)> {
     let f = e.feedback.to_lowercase();
     let word = e.text.as_str();
@@ -1510,7 +1544,8 @@ fn candidate_fixes(
     let sentence_start = prev
         .trim_start_matches(|c: char| !c.is_alphanumeric())
         .is_empty();
-    let name_like = word.chars().next().is_some_and(char::is_uppercase) && !sentence_start;
+    let name_like = word.chars().next().is_some_and(char::is_uppercase)
+        && (!sentence_start || names.contains(word));
     if !pronoun && (name_like || word.chars().any(|c| c.is_ascii_digit())) {
         return out;
     }
@@ -1602,9 +1637,14 @@ fn candidate_fixes(
 /// correct English outside the grammar's coverage stays unanalysable
 /// after such a small change, so it is not reported. Returns the
 /// replacement text for the error's span.
-fn verified_fix(erg: &Erg, s: &crate::Sentence, e: &GrammarError) -> Option<String> {
+fn verified_fix(
+    erg: &Erg,
+    s: &crate::Sentence,
+    e: &GrammarError,
+    names: &std::collections::HashSet<String>,
+) -> Option<String> {
     let chars: Vec<char> = s.original.chars().collect();
-    for (from, to, rep) in candidate_fixes(erg, s, e) {
+    for (from, to, rep) in candidate_fixes(erg, s, e, names) {
         if from > to || to > chars.len() {
             continue;
         }

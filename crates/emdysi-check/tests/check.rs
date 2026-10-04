@@ -308,3 +308,19 @@ ratio = 0.25
         "{d:?}"
     );
 }
+
+#[test]
+fn no_grammar_claims_on_labels_or_names() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let checker = Checker::new(packs());
+    let opts = Options {
+        threads: 2,
+        ..Options::default()
+    };
+    // A bold label that ends with a period is split off as a sentence of
+    // its own; it is a label, not a clause missing its article.
+    let src = "Testing comes in several forms.\n\n- **Remote moderated usability testing**. With web-based tools, you do not have to be in the same place as the participant.\n";
+    let a = analyze(&erg, src, Format::Markdown, &opts);
+    let d = checker.check(&erg, &a);
+    assert!(!d.iter().any(|x| x.rule == "core.grammar-errors"), "{d:?}");
+}

@@ -57,6 +57,71 @@ K8S_PAGES = [
 ]
 FICTION_CHAPTERS = range(1, 7)
 
+# The held-out test set (heldout-*.tsv): other documents from the same
+# sources, never looked at while developing the checks; see SOURCE.md.
+HELDOUT_FICTION_CHAPTERS = range(7, 31)
+HELDOUT_GOV_DIRS = ["concise", "web", "design", "test", "conversational", "audience", "organize"]
+HELDOUT_RUST_PAGES = [
+    "src/ch01-02-hello-world.md",
+    "src/ch01-03-hello-cargo.md",
+    "src/ch03-02-data-types.md",
+    "src/ch03-03-how-functions-work.md",
+    "src/ch04-02-references-and-borrowing.md",
+    "src/ch05-01-defining-structs.md",
+    "src/ch06-01-defining-an-enum.md",
+    "src/ch07-01-packages-and-crates.md",
+    "src/ch08-01-vectors.md",
+    "src/ch09-02-recoverable-errors-with-result.md",
+]
+HELDOUT_K8S_PAGES = [
+    "content/en/docs/concepts/overview/kubernetes-api.md",
+    "content/en/docs/concepts/overview/working-with-objects/_index.md",
+    "content/en/docs/concepts/overview/working-with-objects/labels.md",
+    "content/en/docs/concepts/overview/working-with-objects/annotations.md",
+    "content/en/docs/concepts/overview/working-with-objects/names.md",
+    "content/en/docs/concepts/overview/working-with-objects/namespaces.md",
+    "content/en/docs/concepts/overview/working-with-objects/finalizers.md",
+    "content/en/docs/concepts/overview/working-with-objects/owners-dependents.md",
+    "content/en/docs/concepts/overview/working-with-objects/field-selectors.md",
+    "content/en/docs/concepts/extend-kubernetes/_index.md",
+    "content/en/docs/concepts/extend-kubernetes/operator.md",
+    "content/en/docs/concepts/extend-kubernetes/api-extension/custom-resources.md",
+    "content/en/docs/concepts/containers/_index.md",
+    "content/en/docs/concepts/containers/images.md",
+    "content/en/docs/concepts/containers/container-environment.md",
+    "content/en/docs/concepts/containers/runtime-class.md",
+    "content/en/docs/concepts/policy/resource-quotas.md",
+    "content/en/docs/concepts/policy/limit-range.md",
+    "content/en/docs/concepts/workloads/_index.md",
+    "content/en/docs/concepts/workloads/controllers/replicaset.md",
+    "content/en/docs/concepts/workloads/controllers/job.md",
+    "content/en/docs/concepts/workloads/controllers/cron-jobs.md",
+    "content/en/docs/concepts/architecture/_index.md",
+    "content/en/docs/concepts/architecture/controller.md",
+]
+HELDOUT_BLOG_POSTS = [
+    "content/Async-await-hits-beta.md",
+    "content/Async-await-stable.md",
+    "content/Cargo.md",
+    "content/Fearless-Concurrency.md",
+    "content/Fearless-Concurrency-In-Firefox-Quantum.md",
+    "content/Increasing-Apple-Version-Requirements.md",
+    "content/Increasing-glibc-kernel-requirements.md",
+    "content/Mozilla-IRC-Sunset-and-the-Rust-Channel.md",
+    "content/Next-year.md",
+    "content/Planning-2021-Roadmap.md",
+    "content/Rust-2018-dev-tools.md",
+    "content/Rust-2021-public-testing.md",
+    "content/Rust-2024-public-testing.md",
+    "content/Rust-Once-Run-Everywhere.md",
+    "content/Rust-Roadmap-Update.md",
+    "content/RustConf.md",
+    "content/Scheduling-2021-Roadmap.md",
+    "content/Security-advisory-for-std.md",
+    "content/Core-Team.md",
+    "content/Enums-match-mutation-and-moves.md",
+]
+
 
 def esc(s):
     return (
@@ -103,7 +168,7 @@ def clean_markdown(s):
     return s.strip() + "\n"
 
 
-def fiction(up):
+def fiction(up, chapters=FICTION_CHAPTERS, prefix="fiction"):
     text = (up / "Pride-and-Prejudice_1342" / "1342-0.txt").read_text(encoding="utf-8-sig")
     text = text.replace("\r\n", "\n")
     body = text.split("*** START OF THIS PROJECT GUTENBERG EBOOK PRIDE AND PREJUDICE ***", 1)[1]
@@ -112,10 +177,10 @@ def fiction(up):
     rows = []
     for i in range(1, len(parts) - 1, 2):
         n = int(parts[i].split()[1])
-        if n not in FICTION_CHAPTERS:
+        if n not in chapters:
             continue
         paras = [" ".join(p.split()) for p in parts[i + 1].split("\n\n") if p.strip()]
-        rows.append((f"fiction-{n:02}", "fiction", "1342-0.txt", "plain", "\n\n".join(paras) + "\n", ""))
+        rows.append((f"{prefix}-{n:02}", "fiction", "1342-0.txt", "plain", "\n\n".join(paras) + "\n", ""))
     return rows
 
 
@@ -127,8 +192,9 @@ def pages(up, repo, paths, genre, prefix):
     return rows
 
 
-def conllu(up, repo, name, genre, prefix, limit):
+def conllu(up, repo, name, genre, prefix, limit, skip=0):
     rows = []
+    seen = 0
     doc, para, errors, n = [], [], [], 0
     doc_id = None
 
@@ -155,6 +221,9 @@ def conllu(up, repo, name, genre, prefix, limit):
         elif line.startswith("# newpar"):
             flush_para()
         elif line.startswith("# text = "):
+            seen += 1
+            if seen <= skip:
+                continue
             para.append(line[len("# text = ") :])
             n += 1
         elif line and line[0].isdigit():
@@ -183,6 +252,27 @@ def main():
         (
             here.parent / "edited-by-sa" / "pud.tsv",
             conllu(up, "UD_English-PUD", "en_pud-ud-test.conllu", "news-wiki", "pud", MAX_SENTENCES),
+        ),
+    ]
+    gov_dev = set(GOV_PAGES)
+    gov_heldout = sorted(
+        str(p.relative_to(up / "plainlanguage.gov"))
+        for d in HELDOUT_GOV_DIRS
+        for p in (up / "plainlanguage.gov" / "_pages" / "guidelines" / d).glob("*.md")
+        if str(p.relative_to(up / "plainlanguage.gov")) not in gov_dev and p.name != "index.md"
+    )
+    outputs += [
+        (here / "heldout-fiction.tsv", fiction(up, HELDOUT_FICTION_CHAPTERS, "hfiction")),
+        (here / "heldout-government.tsv", pages(up, "plainlanguage.gov", gov_heldout, "government", "hgov")),
+        (
+            here / "heldout-rust.tsv",
+            pages(up, "book", HELDOUT_RUST_PAGES, "technical", "hrust")
+            + pages(up, "blog", HELDOUT_BLOG_POSTS, "blog", "hblog"),
+        ),
+        (here / "heldout-kubernetes.tsv", pages(up, "website", HELDOUT_K8S_PAGES, "technical", "hk8s")),
+        (
+            here.parent / "edited-by-sa" / "heldout-pud.tsv",
+            conllu(up, "UD_English-PUD", "en_pud-ud-test.conllu", "news-wiki", "hpud", 500, skip=MAX_SENTENCES),
         ),
     ]
     for out, rows in outputs:
