@@ -62,6 +62,18 @@ fn main() {
     erg.config.timeout = Duration::from_secs(30);
     erg.config.max_readings = 100;
     erg.trees_for = 1;
+    // CELL_BEAM=n (0: none) and FIRST_BEAM=n|none override chart pruning;
+    // TIMEOUT=seconds the time limit.
+    let env = |k: &str| std::env::var(k).ok();
+    if let Some(b) = env("CELL_BEAM").and_then(|b| b.parse::<usize>().ok()) {
+        erg.config.cell_beam = (b > 0).then_some(b);
+    }
+    if let Some(b) = env("FIRST_BEAM") {
+        erg.first_beam = b.parse().ok();
+    }
+    if let Some(t) = env("TIMEOUT").and_then(|t| t.parse().ok()) {
+        erg.config.timeout = Duration::from_secs(t);
+    }
     let show_skeletons = std::env::var("SKELETONS").is_ok();
     for (n, line) in std::io::stdin().lines().map_while(Result::ok).enumerate() {
         let line = line.trim().to_string();
