@@ -1,8 +1,9 @@
 //! How often the checker claims an error in edited text, per genre: the
 //! false-flag rate of the `core` pack (spelling, grammar, consistency) on
 //! the samples in `corpora/edited/` and `corpora/edited-by-sa/`, per 1,000
-//! sentences (the development set; with `SET=heldout`, the held-out test
-//! set, `heldout-*.tsv`). The target is at most
+//! sentences: the development sets by default; `SET=heldout` for the
+//! held-out test set (`heldout-*.tsv`), `SET=dev2` for the second
+//! development set only. The target is at most
 //! one per 1,000 (99.9% precision on clean text).
 //!
 //! `cargo run --release -p emdysi-check --example false_flags -- [OUT.tsv] [GENRE,...]`
@@ -62,17 +63,21 @@ fn main() {
     // The development set by default; `SET=heldout` measures the held-out
     // test set instead (heldout-*.tsv), which is not used while
     // developing the checks.
-    let heldout = std::env::var("SET").as_deref() == Ok("heldout");
+    let set = std::env::var("SET").ok();
     let mut files: Vec<std::path::PathBuf> = ["corpora/edited", "corpora/edited-by-sa"]
         .iter()
         .flat_map(|d| std::fs::read_dir(root.join(d)).unwrap())
         .map(|e| e.unwrap().path())
         .filter(|p| p.extension().is_some_and(|x| x == "tsv"))
         .filter(|p| {
-            let held = p
+            let name = p
                 .file_name()
-                .is_some_and(|n| n.to_string_lossy().starts_with("heldout-"));
-            held == heldout
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_default();
+            match set.as_deref() {
+                Some(prefix) => name.starts_with(&format!("{prefix}-")),
+                None => !name.starts_with("heldout-"),
+            }
         })
         .collect();
     files.sort();
