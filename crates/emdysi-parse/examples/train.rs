@@ -54,19 +54,19 @@ fn load_cache(path: &str) -> Vec<Cached> {
     out
 }
 
-/// The ranker's trainer: the averaged perceptron with `RANKER=perceptron`;
-/// otherwise the log-linear model, with `L2` (default 1) and `ITERATIONS`
-/// (default 300).
+/// The ranker's trainer: the averaged perceptron (which made the shipped
+/// model), or with `RANKER=maxent` the log-linear model, with `L2` (default
+/// 1) and `ITERATIONS` (default 300).
 fn train(examples: &[Example], epochs: usize) -> Model {
     let env = |k: &str| std::env::var(k).ok().and_then(|v| v.parse().ok());
-    if std::env::var("RANKER").as_deref() == Ok("perceptron") {
-        return emdysi_parse::rank::train(examples, epochs);
+    if std::env::var("RANKER").as_deref() == Ok("maxent") {
+        return train_maxent(
+            examples,
+            env("L2").unwrap_or(1.0),
+            env("ITERATIONS").map_or(300, |i: f64| i as usize),
+        );
     }
-    train_maxent(
-        examples,
-        env("L2").unwrap_or(1.0),
-        env("ITERATIONS").map_or(300, |i: f64| i as usize),
-    )
+    emdysi_parse::rank::train(examples, epochs)
 }
 
 /// Items of a hand-judged treebank with a gold skeleton.

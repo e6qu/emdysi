@@ -297,3 +297,31 @@ pub fn train_maxent(examples: &[Example], l2: f64, iterations: usize) -> Model {
         .collect();
     Model { weights }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn maxent_prefers_gold_features() {
+        let f = |v: &[&str]| v.iter().map(|s| s.to_string()).collect::<Vec<_>>();
+        let examples = vec![
+            Example {
+                readings: vec![f(&["a", "x"]), f(&["b", "x"])],
+                gold: 0,
+            },
+            Example {
+                readings: vec![f(&["b", "y"]), f(&["a", "y"]), f(&["b", "z"])],
+                gold: 1,
+            },
+            // Every reading is gold: nothing to learn.
+            Example {
+                readings: vec![f(&["c"]), f(&["c"])],
+                gold: 0,
+            },
+        ];
+        let m = train_maxent(&examples, 1.0, 200);
+        assert!(m.score(&f(&["a"])) > m.score(&f(&["b"])));
+        assert!(!m.weights.contains_key("c"));
+    }
+}
