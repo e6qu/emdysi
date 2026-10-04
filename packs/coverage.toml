@@ -1,0 +1,10 @@
+[pack]
+name = "coverage"
+description = "Opt-in: which sentences the grammar could not analyse fully, and so no grammar-based rule checked. Not a claim of error."
+
+[[rule]]
+id = "coverage.grammar"
+kind = "grammar"
+severity = "suggestion"
+message = "Not analysed as a full sentence: {reason}."
+description = "Sentences for which the grammar finds no analysis, or only a fragment or informal one, or which are too long to analyse in time. Not a claim of error: most such sentences are correct English the grammar does not cover. Useful to see which sentences no grammar-based rule could check."

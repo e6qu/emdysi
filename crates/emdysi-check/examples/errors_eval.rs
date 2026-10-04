@@ -20,7 +20,8 @@ fn main() {
         .collect();
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     let pack = Pack::parse(include_str!("../../../packs/core.toml")).unwrap();
-    let mut checker = Checker::new(vec![pack]);
+    let coverage = Pack::parse(include_str!("../../../packs/coverage.toml")).unwrap();
+    let mut checker = Checker::new(vec![pack, coverage]);
     checker.disabled = vec!["core.spelling".into(), "core.consistency".into()];
     let opts = Options::default();
     let texts: Vec<&str> = items.iter().map(|(t, _)| t.as_str()).collect();
@@ -42,7 +43,7 @@ fn main() {
             .collect();
         let k = if rules.contains(&"core.grammar-errors") {
             0
-        } else if rules.contains(&"core.grammar") {
+        } else if rules.contains(&"coverage.grammar") {
             1
         } else {
             2

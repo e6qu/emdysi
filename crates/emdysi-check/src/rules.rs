@@ -991,6 +991,14 @@ impl Rule {
                 }
             }
             Kind::Spelling { min_length, ignore } => {
+                // A word the document uses more than once is one of its
+                // terms ("kubelet"), not a typo.
+                let mut uses: HashMap<String, usize> = HashMap::new();
+                for s in &a.sentences {
+                    for t in &s.tokens {
+                        *uses.entry(t.form.to_lowercase()).or_default() += 1;
+                    }
+                }
                 for (si, s) in a.sentences.iter().enumerate() {
                     for t in &s.tokens {
                         let w = &t.form;
@@ -1024,7 +1032,16 @@ impl Rule {
                         {
                             continue;
                         }
+                        if uses.get(&w.to_lowercase()).copied().unwrap_or(0) > 1 {
+                            continue;
+                        }
                         let (sugg, confident) = suggestions(erg, w, 5);
+                        // A typo is one edit away from the word meant: an
+                        // unknown word with no known word that close is a
+                        // rare word, not evidence of an error.
+                        if !sugg.first().is_some_and(|x| edit_distance(w, x) == 1) {
+                            continue;
+                        }
                         let mut d = self.diag(a, si, t.from, t.to, w);
                         d.message = d.message.replace(
                             "{suggestion}",
@@ -1326,12 +1343,37 @@ pub fn grammar_errors(s: &crate::Sentence) -> Vec<GrammarError> {
             "root_decl" | "root_question" | "root_command" | "root_robust_s" | "root_robust_ques"
         ) || emdysi_parse::is_strict(r)
     };
-    let pick = |whole: bool| {
-        p.readings
+    // An error is reported only when the grammar has proved that the
+    // sentence is outside it (a complete search found no strict or
+    // informal analysis), and only when every analysis of the
+    // grammar-error variant that assumes the fewest errors names it: a
+    // coverage gap or an ambiguity is not an error.
+    if !s.strict() {
+        let proved = s
+            .parse
+            .as_ref()
+            .is_some_and(|q| q.complete && q.readings.iter().all(|r| r.root == "fragment"));
+        if !proved {
+            return Vec::new();
+        }
+    }
+    let pick = |whole: bool| -> Option<Vec<(String, usize, usize)>> {
+        let sets: Vec<Vec<(String, usize, usize)>> = p
+            .readings
             .iter()
             .filter(|r| !whole || sentence_root(&r.root))
             .map(items)
-            .min_by_key(|e| e.len())
+            .collect();
+        let fewest = sets.iter().map(Vec::len).min()?;
+        let mut best: Vec<&Vec<(String, usize, usize)>> =
+            sets.iter().filter(|e| e.len() == fewest).collect();
+        let first = best.remove(0).clone();
+        Some(
+            first
+                .into_iter()
+                .filter(|e| best.iter().all(|o| o.contains(e)))
+                .collect(),
+        )
     };
     let Some(best) = pick(true).or_else(|| pick(false)) else {
         return Vec::new();

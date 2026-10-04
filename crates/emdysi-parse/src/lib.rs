@@ -206,6 +206,10 @@ pub struct Parse {
     pub edges: usize,
     pub lexical_items: usize,
     pub exhausted: bool,
+    /// Whether the search was complete: no chart pruning and no time or
+    /// size limit cut it short, so no analysis was missed. A sentence
+    /// without an analysis after a complete search is outside the grammar.
+    pub complete: bool,
     pub elapsed: Duration,
 }
 
@@ -640,6 +644,7 @@ impl Erg {
             edges: result.chart.len(),
             lexical_items: n_items,
             exhausted: result.exhausted,
+            complete: !result.exhausted && result.stats.pruned == 0,
             elapsed: t0.elapsed(),
         })
     }
