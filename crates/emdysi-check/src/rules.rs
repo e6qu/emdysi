@@ -1093,12 +1093,25 @@ impl Rule {
                     // A sentence that is all bold or underlined is a label
                     // ("**Remote moderated usability testing**."), not a
                     // clause.
-                    let src = &a.source[a.source_range(si, 0, s.original.chars().count())];
+                    let r = a.source_range(si, 0, s.original.chars().count());
+                    // The opening marker may lie just before the sentence.
+                    let start = a.source[..r.start]
+                        .char_indices()
+                        .rev()
+                        .nth(1)
+                        .map_or(0, |(i, _)| i);
+                    let src = &a.source[start..r.end];
                     let body = src.trim().trim_end_matches(['.', ':', '!', '?']);
-                    if ["**", "__"]
+                    let body = ["- ", "* ", "+ "]
                         .iter()
-                        .any(|m| body.starts_with(m) && body.ends_with(m) && body.len() > 4)
-                    {
+                        .find_map(|b| body.strip_prefix(b))
+                        .unwrap_or(body)
+                        .trim_start();
+                    let label = |m: &str| {
+                        let inner = body.strip_prefix(m).and_then(|b| b.strip_suffix(m));
+                        inner.is_some_and(|i| !i.is_empty() && !i.contains(m))
+                    };
+                    if label("**") || label("__") {
                         continue;
                     }
                     for e in grammar_errors(s) {
