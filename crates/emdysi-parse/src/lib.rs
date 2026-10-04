@@ -699,6 +699,62 @@ impl Erg {
         out
     }
 
+    /// Other inflected forms of the word's known stems (not derivations):
+    /// regular ones (-s, -es, -ed, -d, -ing) that the grammar knows, and
+    /// irregular ones from its table. *buyed* gives *buy*, *buys*,
+    /// *bought*, *buying*; *go* gives *goes*, *went*, *gone*, ...
+    pub fn inflections(&self, word: &str) -> Vec<String> {
+        let w = word.to_lowercase();
+        let mut stems: Vec<String> = Vec::new();
+        if self.lexicon.is_stem(&w) {
+            stems.push(w.clone());
+        }
+        for a in self
+            .lexicon
+            .morph
+            .analyze(&w, &|s| self.lexicon.is_stem(s), 2)
+        {
+            if !a.rules.iter().any(|r| r.ends_with("_dlr")) && !stems.contains(&a.stem) {
+                stems.push(a.stem);
+            }
+        }
+        // A regular past of an irregular verb (*buyed*): the stem by its
+        // spelling.
+        for suffix in ["ed", "d"] {
+            if let Some(st) = w.strip_suffix(suffix) {
+                if self.lexicon.is_stem(st) && !stems.iter().any(|s| s == st) {
+                    stems.push(st.to_string());
+                }
+            }
+        }
+        let mut out: Vec<String> = Vec::new();
+        for st in &stems {
+            let regular = [
+                st.clone(),
+                format!("{st}s"),
+                format!("{st}es"),
+                format!("{st}ed"),
+                format!("{st}d"),
+                format!("{st}ing"),
+                st.strip_suffix('e')
+                    .map(|b| format!("{b}ing"))
+                    .unwrap_or_default(),
+                st.strip_suffix('y')
+                    .map(|b| format!("{b}ies"))
+                    .unwrap_or_default(),
+            ];
+            for f in regular
+                .into_iter()
+                .chain(self.lexicon.morph.irregular_forms(st))
+            {
+                if !f.is_empty() && f != w && !out.contains(&f) && (self.known_word(&f)) {
+                    out.push(f);
+                }
+            }
+        }
+        out
+    }
+
     /// Spelling suggestions for an unknown word: known words within edit
     /// distance 1, or 2 if there are none, best first.
     pub fn spelling_suggestions(&self, word: &str, max: usize) -> Vec<String> {

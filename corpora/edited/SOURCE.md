@@ -7,7 +7,8 @@ The samples (`fiction.tsv`, `government.tsv`, `rust.tsv` and
 `sample.py`) are built by `sample.py` from the upstream repositories below,
 checked out at the commits given, retrieved 2026-10-04. Text is copied as
 is; only markup is removed (front matter, template tags, HTML tags and
-comments) and, for the novel, line breaks within paragraphs are joined and
+comments; Hugo glossary tooltips are replaced by their text, version
+parameters by "v1.34", and Markdown autolinks by their address) and, for the novel, line breaks within paragraphs are joined and
 the Project Gutenberg header and footer are dropped. Licenses were read in
 each repository.
 

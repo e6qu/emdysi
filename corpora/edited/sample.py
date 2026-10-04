@@ -80,7 +80,20 @@ def clean_markdown(s):
     s = strip_front_matter(s)
     # Jekyll/Liquid and Hugo template tags, HTML comments and tags.
     s = re.sub(r"\{%.*?%\}", "", s, flags=re.S)
+    # Hugo shortcodes that stand for words: a glossary tooltip is its text
+    # (or its term), the version parameters a version number.
+    def tooltip(m):
+        t = re.search(r'text="([^"]*)"', m.group(0))
+        if t:
+            return t.group(1)
+        t = re.search(r'term_id="([^"]*)"', m.group(0))
+        return t.group(1).replace("-", " ") if t else ""
+
+    s = re.sub(r"\{\{<\s*glossary_tooltip[^>]*>\}\}", tooltip, s)
+    s = re.sub(r'\{\{<\s*(?:param "version"|skew currentVersion)\s*>\}\}', "v1.34", s)
     s = re.sub(r"\{\{[<%].*?[>%]\}\}", "", s, flags=re.S)
+    # Markdown autolinks keep their address.
+    s = re.sub(r"<((?:https?://|mailto:)?[^<>\s]+@[^<>\s]+|https?://[^<>\s]+)>", r"\1", s)
     s = re.sub(r"\{\{.*?\}\}", "", s, flags=re.S)
     s = re.sub(r"<!--.*?-->", "", s, flags=re.S)
     s = re.sub(r"</?[a-zA-Z][^>]*>", "", s)
