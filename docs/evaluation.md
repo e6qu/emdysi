@@ -388,99 +388,27 @@ times and ten times (`TREEBANK_FOLDS=5 TREEBANK_WEIGHT=n cargo run --release
 these figures parse sentences alone with the trainer's settings, so they are
 lower than in-document ones). The treebank is kept for evaluation.
 
-## Speed
+Other rankers, compared in documents (`treebank_eval` also counts the
+sentences whose right reading is among the readings at all):
 
-Checking a few hundred words of machine-written prose takes 14 to 38
-seconds on four cores, almost all of it parsing: the strict parse of each
-sentence, and a second parse with the grammar-error variant for sentences
-without a strict analysis. Two changes cut time without changing any
-analysis the rules use:
+| Ranker | Held out (gold profiles) | Best reading right | Right reading among the readings |
+|---|---|---|---|
+| Shipped: averaged perceptron, training parses of 2026-10-01 | 81.7% | 57 | 96 |
+| Log-linear (`RANKER=maxent`, L2 = 1), same parses | 84.8% | 48 | 84 |
+| Averaged perceptron, the items parsed again with today's parser | 82.6% | 40 | |
+| Log-linear, the items parsed again | 83.7% | 38 | 84 |
+| Perceptron with head-word features (head lexical entries of each headed phrase, one side backed off to a lexical type) | 84.3% | 35 of 96 (5-fold) | |
 
-- **Labels in list items.** In items such as *Keep going: Staying motivated
-  ...*, the label is not part of the clause and slows the parse. The parser
-  now sees a short label (up to five words) as spaces, with character
-  positions unchanged as for inline code; rules still see it. Only list
-  items are treated this way: elsewhere a colon usually follows a clause
-  (*There are three new commands: ...*).
-- **The grammar-error parse.** Only readings with at most two corrections
-  are used (see [rules.md](rules.md#grammar-errors)), so its search is
-  limited to 3 seconds and 20 readings.
-
-| | Before | After |
-|---|---|---|
-| Beemo texts 215 / 236 / 240 (454 / 297 / 373 words), `en check` wall time | 38 / 21 / 14 s | 22 / 20 / 14 s |
-| `csli`: named errors on ungrammatical / grammatical items | 104 / 17 | 104 / 17 |
-| `corpora/ai-prose` expected diagnostics | | unchanged |
-
-The rest of the time is the strict parse itself, at roughly 6,000 chart
-edges a second: ordinary sentences of 15 to 20 words build charts of 28,000
-to 38,000 edges before pruning applies (from 21 chart positions). Three
-ways of pruning sooner were measured and rejected, because each loses
-analyses:
-
-- pruning from 14 positions: 13% faster on `sh-spec`, but the gold tree
-  found for 299 items instead of 345;
-- a time budget for the unpruned parse (2.5 or 4 seconds, then pruning):
-  2 to 5 fewer gold trees on `sh-spec`, and results that depend on the
-  machine's speed;
-- an edge budget (20,000 edges, then pruning): deterministic, but ordinary
-  sentences need 28,000 to 37,000 edges, so three sentences of
-  `corpora/ai-prose` lost their strict analysis.
-
-Making the parser itself faster is the remaining route. A first round of
-changes does less work per edge and keeps every analysis: the readings of
-38 sentences from `corpora/ai-prose` (without a time limit) are identical,
-and so are the `sh-spec` results.
-
-- **Packing without restricted copies.** Edges are compared for packing
-  directly, skipping the restricted features on the fly, instead of
-  through a restricted copy of each edge.
-- **Released edges.** Packed and frozen edges drop their feature
-  structures: unpacking rebuilds what it needs from the daughters, and an
-  edge that is reactivated is rebuilt the same way. Peak memory for one
-  16-word sentence fell from 1.2 GB to 0.6 GB.
-- **Shared first daughter.** A binary rule is unified with one daughter
-  once; each candidate for the other daughter is tried from a checkpoint,
-  and the unifier rolls back after it.
-- **Smaller costs.** The candidate's quick-check vector is computed only as
-  far as the check needs, quick-check types use the unifier's GLB cache,
-  and copying reuses its buffers.
-
-| | Before | After |
-|---|---|---|
-| `sh-spec`: parse time (sum over items) | 1,052 s | 851 s |
-| `sh-spec`: parsed / gold tree found / ranked first | 510 / 345 / 310 | 510 / 345 / 310 |
-| 40 `ai-prose` sentences, 5 s limit (sum) | 29.5 s | 24.0 s |
-| *First, employees save time on commuting, allowing them to focus on meaningful work.* | 8.9 s | 4.5 s |
-| Beemo texts 215 / 236 / 240, `en check` wall time | 23 / 21 / 14 s | 21 / 13 / 11 s |
-
-Two sentences of the 40 needed 8 to 9 seconds before and did not finish
-within the 5-second limit; both now get their strict analyses, the second
-(*It is widely believed that dashboards are hard to set up, but Flowboard
-changes that.*) only just. The grammar-error parse is time-limited, so a
-faster parser can find a diagnosis it used to miss: text 215 gets one more
-`core.grammar-errors` warning, and one more grammatical `csli` item gets a
-named error (18 instead of 17).
-
-**Irregular forms equal to their stem.** *Set*, *put*, *cut* and the like
-are listed as their own past tense, past participle and passive forms.
-Undoing such a step leaves the form unchanged, so morphological analysis
-stacked them up to its limit of three rules: 259 analyses of *set*
-(*set* as the past of the past of *set*, ...), each instantiated for
-every lexical entry of *set* and then rejected by the grammar, since
-inflections do not combine. An analysis now undoes at most one such step,
-leaving 7 analyses of *set*. Readings and charts are unchanged (the 38
-`ai-prose` sentences, `sh-spec`, and the `csli` grammar-error counts);
-*They set it.* parses in 41 ms instead of 152 ms, and `sh-spec` in 794 s
-instead of 851 s.
-
-**Source lookup and unpacking.** A node handle in the unifier belongs to
-one of the structures being unified (the rule, the daughters, and type
-constraints added on the way). Finding which one was a scan over them,
-13% of all instructions on a long sentence; a table filled as structures
-are added makes it a lookup. Unpacking now unifies a binary rule with each
-distinct first daughter once and tries the second daughters from a
-checkpoint, as parsing does. The same combinations are tried in the same
-order, so the readings are identical; `sh-spec` takes 714 s instead of
-794 s, and the instructions for the 16-word sentence above fall by 14%.
+Better scores on the held-out gold profiles do not carry over to
+machine-written prose. Most of the loss is not in ranking: long sentences
+are parsed with chart pruning guided by the ranker's local weights, and
+with another model the right reading falls out of the chart for 12 of the
+97 sentences. Among the sentences that keep it, the log-linear ranker
+picks it about as often as the shipped one (57% against 59%). The
+comparison also favours the shipped model, because each right reading was
+chosen from its six best. Head-word features fit the short constructed
+sentences of the test suites and do worse on the treebank. The shipped
+model stays; a fair comparison needs right readings judged independently
+of any one ranker, and pruning that does not depend on the model being
+evaluated.
 
