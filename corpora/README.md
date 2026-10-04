@@ -39,6 +39,8 @@ Rules for adding a corpus:
 | [`beemo/`](beemo/SOURCE.md) | MIT | Sample of Beemo (200 outputs of zephyr-7b-beta, Mistral-7B and Mixtral-8x7B with expert edits; No Robots prompts and human texts excluded) |
 | [`cheat/`](cheat/SOURCE.md) | MIT | Sample of CHEAT (200 ChatGPT-written abstracts; IEEE titles, keywords and abstracts excluded) |
 | [`hh-rlhf/`](hh-rlhf/SOURCE.md) | MIT | Sample of Anthropic HH-RLHF helpful-base (200 final assistant turns; human turns excluded) |
+| [`edited/`](edited/SOURCE.md) | Public domain, CC0, MIT, CC BY 4.0 (one file each) | Edited text in several genres (a novel, US government guidance, the Rust book and blog, Kubernetes docs), for measuring false flags |
+| [`edited-by-sa/`](edited-by-sa/SOURCE.md) | CC BY-SA 3.0 | 500 Wikipedia sentences from UD English PUD (news and encyclopedia), for measuring false flags |
 
 ## Considered and not vendored
 
