@@ -25,3 +25,16 @@ Share-alike text (UD English PUD, news and Wikipedia) is kept apart in
 was considered and not used: only its annotations are CC BY-SA; its text
 comes from the LDC English Web Treebank (LDC2012T13), with portions
 copyright Google, Yahoo! and the University of Pennsylvania.
+
+## Development and held-out sets
+
+The files above are the **development set**: the flags they draw are read
+when changing the checks. The **held-out test set** (`heldout-fiction.tsv`:
+chapters 7 to 30; `heldout-government.tsv`: the other guideline pages of
+seven sections; `heldout-rust.tsv`: ten more book chapters and twenty more
+blog posts; `heldout-kubernetes.tsv`: 24 more concept pages; and
+`../edited-by-sa/heldout-pud.tsv`: the other 500 PUD sentences) comes from
+the same commits and licenses, shares no document with the development
+set, and is only measured (`SET=heldout`), never inspected while
+developing, so its rate is an honest estimate. Both are built by
+`sample.py`, which lists every file.

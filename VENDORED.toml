@@ -258,8 +258,8 @@ source_doc = "corpora/zorro/SOURCE.md"
 
 [[item]]
 id = "edited-fiction"
-paths = ["corpora/edited/fiction.tsv", "corpora/edited/SOURCE.md"]
-name = "Pride and Prejudice, chapters 1 to 6 (edited fiction sample)"
+paths = ["corpora/edited/fiction.tsv", "corpora/edited/heldout-fiction.tsv", "corpora/edited/SOURCE.md"]
+name = "Pride and Prejudice, chapters 1 to 6 (development) and 7 to 30 (held out) (edited fiction sample)"
 upstream = "https://github.com/GITenberg/Pride-and-Prejudice_1342 (1342-0.txt, Project Gutenberg eBook #1342)"
 version = "81db45c9c48c592f0b77f01fc59e677ad0a5634e"
 retrieved = "2026-10-04"
@@ -267,13 +267,13 @@ license = "LicenseRef-PublicDomain"
 license_files = ["corpora/edited/SOURCE.md"]
 copyright = "none (Jane Austen, 1813; public domain)"
 provenance = "Public-domain novel as transcribed by Project Gutenberg; the Project Gutenberg header and footer (and with them its trademark and license terms) are not included."
-modifications = "Chapters 1 to 6 only; line breaks within paragraphs joined; converted to escaped TSV by corpora/edited/sample.py."
+modifications = "Chapters 1 to 30 only; line breaks within paragraphs joined; converted to escaped TSV by corpora/edited/sample.py."
 use = "test"
 source_doc = "corpora/edited/SOURCE.md"
 
 [[item]]
 id = "edited-government"
-paths = ["corpora/edited/government.tsv", "corpora/edited/LICENSE-plainlanguage.md"]
+paths = ["corpora/edited/government.tsv", "corpora/edited/heldout-government.tsv", "corpora/edited/LICENSE-plainlanguage.md"]
 name = "plainlanguage.gov guideline pages (edited government text sample)"
 upstream = "https://github.com/GSA/plainlanguage.gov (_pages/guidelines/)"
 version = "fd7694740f19c0ed20ed71c2dd1dc92699e920fa"
@@ -282,13 +282,13 @@ license = "CC0-1.0"
 license_files = ["corpora/edited/LICENSE-plainlanguage.md"]
 copyright = "none (work of the United States Government, GSA; public domain in the US, CC0 1.0 worldwide)"
 provenance = "Plain-language guidelines written by the US federal Plain Language Action and Information Network, published by GSA."
-modifications = "Ten pages; YAML front matter, Liquid tags, HTML tags and comments removed by corpora/edited/sample.py; converted to escaped TSV."
+modifications = "33 pages (10 development, 23 held out); YAML front matter, Liquid tags, HTML tags and comments removed by corpora/edited/sample.py; converted to escaped TSV."
 use = "test"
 source_doc = "corpora/edited/SOURCE.md"
 
 [[item]]
 id = "edited-rust"
-paths = ["corpora/edited/rust.tsv", "corpora/edited/LICENSE-rust-book-MIT", "corpora/edited/LICENSE-rust-book-APACHE", "corpora/edited/LICENSE-rust-blog-MIT", "corpora/edited/LICENSE-rust-blog-APACHE"]
+paths = ["corpora/edited/rust.tsv", "corpora/edited/heldout-rust.tsv", "corpora/edited/LICENSE-rust-book-MIT", "corpora/edited/LICENSE-rust-book-APACHE", "corpora/edited/LICENSE-rust-blog-MIT", "corpora/edited/LICENSE-rust-blog-APACHE"]
 name = "The Rust Programming Language (four chapters) and six Rust blog posts (edited technical and blog sample)"
 upstream = "https://github.com/rust-lang/book (src/) and https://github.com/rust-lang/blog.rust-lang.org (content/, commit c7510dd334a8690c207a08e3e4b6a17a8b675bf2)"
 version = "1500248d8f230566e4ec9f27fcbb8fe9e2898ab1 (book); c7510dd334a8690c207a08e3e4b6a17a8b675bf2 (blog)"
@@ -297,13 +297,13 @@ license = "MIT"
 license_files = ["corpora/edited/LICENSE-rust-book-MIT", "corpora/edited/LICENSE-rust-blog-MIT"]
 copyright = "The Rust Project Developers (book by Steve Klabnik, Carol Nichols, Chris Krycho and contributors; blog posts by their named authors)"
 provenance = "Both repositories are dual-licensed MIT OR Apache-2.0 (book: COPYRIGHT; blog: README, 'the blog is licensed MIT/Apache 2.0'); used here under MIT, both license texts kept."
-modifications = "Four book chapters and six posts; front matter, template tags and HTML removed by corpora/edited/sample.py; converted to escaped TSV."
+modifications = "14 book chapters and 26 posts (4 and 6 development, the rest held out); front matter, template tags and HTML removed by corpora/edited/sample.py; converted to escaped TSV."
 use = "test"
 source_doc = "corpora/edited/SOURCE.md"
 
 [[item]]
 id = "edited-kubernetes"
-paths = ["corpora/edited/kubernetes.tsv", "corpora/edited/LICENSE-kubernetes-website"]
+paths = ["corpora/edited/kubernetes.tsv", "corpora/edited/heldout-kubernetes.tsv", "corpora/edited/LICENSE-kubernetes-website"]
 name = "Kubernetes concept documentation, four pages (edited technical sample)"
 upstream = "https://github.com/kubernetes/website (content/en/docs/concepts/)"
 version = "77db41e9c776b614fdb31de4cc6c8e9a70673817"
@@ -312,14 +312,14 @@ license = "CC-BY-4.0"
 license_files = ["corpora/edited/LICENSE-kubernetes-website"]
 copyright = "The Kubernetes Authors"
 provenance = "Documentation written by the Kubernetes contributors; the repository LICENSE is CC BY 4.0."
-modifications = "Four pages; front matter, Hugo shortcodes, HTML tags and comments removed by corpora/edited/sample.py; converted to escaped TSV."
+modifications = "28 pages (4 development, 24 held out); front matter, Hugo shortcodes, HTML tags and comments removed by corpora/edited/sample.py; converted to escaped TSV."
 use = "test"
 source_doc = "corpora/edited/SOURCE.md"
 
 [[item]]
 id = "edited-pud"
 paths = ["corpora/edited-by-sa"]
-name = "UD English PUD sentences, first 500 (edited news and Wikipedia sample, share-alike)"
+name = "UD English PUD sentences, all 1,000 (edited news and Wikipedia sample, share-alike; first 500 development, last 500 held out)"
 upstream = "https://github.com/UniversalDependencies/UD_English-PUD (en_pud-ud-test.conllu)"
 version = "f16eba4ae7f3d161870ed320676c5088b8fa476c"
 retrieved = "2026-10-04"
@@ -327,7 +327,7 @@ license = "CC-BY-SA-3.0"
 license_files = ["corpora/edited-by-sa/LICENSE-UD_English-PUD.txt"]
 copyright = "Wikipedia contributors (text); Google and the UD English PUD contributors (treebank)"
 provenance = "Randomly selected Wikipedia sentences, which Google makes available under CC BY-SA 3.0 (upstream README, 'Licenses and terms-of-use'). Only the sentence text is used, not the annotations."
-modifications = "The '# text' lines of the first 500 sentences, grouped by '# newdoc', converted to escaped TSV by corpora/edited/sample.py; no text changed."
+modifications = "The '# text' lines of the first 500 sentences (pud.tsv) and of the other 500 (heldout-pud.tsv), grouped by '# newdoc', converted to escaped TSV by corpora/edited/sample.py; no text changed."
 use = "test"
 source_doc = "corpora/edited-by-sa/SOURCE.md"
 

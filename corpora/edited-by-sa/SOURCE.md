@@ -14,6 +14,7 @@ to train shipped data.
 - Copyright: the Wikipedia contributors (text); treebank by Google and the
   contributors listed in the upstream README (Uszkoreit, Macketanz,
   Burchardt, Harris, Marheinecke, Petrov, and others).
-- Sample: `pud.tsv`. Selection (`../edited/sample.py`): the `# text` lines of the first 500
-  sentences, in upstream order, grouped into documents by `# newdoc`; no
+- Samples: `pud.tsv` (development) and `heldout-pud.tsv` (held-out test
+  set). Selection (`../edited/sample.py`): the `# text` lines of the first 500
+  sentences, and of the other 500,, in upstream order, grouped into documents by `# newdoc`; no
   text changed.
