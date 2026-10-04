@@ -386,7 +386,9 @@ impl Erg {
             deleted_daughters,
             roots,
             max_edges: 100_000,
-            max_nodes: 100_000_000,
+            // About 30 bytes a node: some 750 MB per parse, so that several
+            // threads parsing long sentences stay within a few gigabytes.
+            max_nodes: 25_000_000,
             timeout: Duration::from_secs(60),
             packing_restrictor,
             max_readings: 1000,
