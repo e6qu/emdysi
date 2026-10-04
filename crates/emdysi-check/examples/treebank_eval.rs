@@ -122,7 +122,17 @@ fn main() {
                 Some((f.first()?.to_string(), unescape(f.get(3)?)))
             })
             .collect();
-    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let mut erg = Erg::load(&default_grammar_dir()).unwrap();
+    // FIRST_BEAM=n|none and CELL_BEAM=n override chart pruning, for
+    // measuring what the beams cost in accuracy and time.
+    let env = |k: &str| std::env::var(k).ok();
+    if let Some(b) = env("FIRST_BEAM") {
+        erg.first_beam = b.parse().ok();
+    }
+    if let Some(b) = env("CELL_BEAM").and_then(|b| b.parse().ok()) {
+        erg.config.cell_beam = Some(b);
+    }
+    let t0 = std::time::Instant::now();
     let opts = Options {
         threads: 4,
         ..Options::default()
@@ -213,6 +223,7 @@ fn main() {
     println!(
         "{total} judged sentences in their documents; best reading right: {base}; right reading among the readings: {oracle}"
     );
+    eprintln!("{:.1}s", t0.elapsed().as_secs_f64());
     for (k, m) in margins.iter().enumerate() {
         println!(
             "  document phrases, margin {m}: {} right ({} sentences changed)",

@@ -543,7 +543,7 @@ impl Erg {
                         timeout: left,
                         ..config.clone()
                     };
-                    let r2 = run(&wide, items);
+                    let r2 = run(&wide, items.clone());
                     if strict(&r2) || (complete(&r2) && !complete(&r)) {
                         r2
                     } else {
@@ -551,7 +551,26 @@ impl Erg {
                     }
                 }
             }
-            _ => run(config, items),
+            _ => run(config, items.clone()),
+        };
+        // Pruning can make a full analysis of a long sentence impossible:
+        // with no complete analysis, try again without pruning in the time
+        // left (on the AI-prose treebank, 13 of 17 sentences that got only
+        // fragments then get a full analysis within 10 seconds).
+        let result = if !complete(&result)
+            && config.cell_beam.is_some()
+            && result.positions > config.cell_beam_from
+            && config.timeout.saturating_sub(t0.elapsed()) >= Duration::from_secs(1)
+        {
+            let exhaustive = ParserConfig {
+                cell_beam: None,
+                timeout: config.timeout.saturating_sub(t0.elapsed()),
+                ..config.clone()
+            };
+            let r = run(&exhaustive, items);
+            if complete(&r) { r } else { result }
+        } else {
+            result
         };
         let form_path = self.lexicon.paths.token_form.clone();
         let forms = |toks: &[usize]| -> String {
