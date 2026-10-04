@@ -20,3 +20,10 @@
   [`gen-variants.py`](gen-variants.py):
   `python3 gen-variants.py scowl.db en-60.tsv > variants.tsv`. Only words
   in `en-60.tsv` are kept. Use: the `consistency` rule kind.
+- `en-70-extra.txt`: the words of ESDB size 70 that are not in
+  `en-60.tsv`, from the same database:
+  `./scowl --db scowl.db word-list 70 A,B,Z 1`, minus the words of
+  `en-60.tsv` (60,081 words). Size 70 is still within the sizes for which
+  "no additional copyright applies". Use: words accepted as known by the
+  `spelling` rule kind (rare but correct words such as *burgesses* or
+  *meteoritic*); not used for suggestions.

@@ -26,6 +26,8 @@ const BUILTIN_PACKS: &[(&str, &str)] = &[
     ("elastic", include_str!("../../../packs/elastic.toml")),
     ("wordlists", include_str!("../../../packs/wordlists.toml")),
     ("equality", include_str!("../../../packs/equality.toml")),
+    // Sentences the grammar could not analyse fully (not errors).
+    ("coverage", include_str!("../../../packs/coverage.toml")),
     // Questions for a local decision model; nothing without one.
     ("decisions", include_str!("../../../packs/decisions.toml")),
 ];

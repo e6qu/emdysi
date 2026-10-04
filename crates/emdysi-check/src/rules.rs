@@ -991,6 +991,14 @@ impl Rule {
                 }
             }
             Kind::Spelling { min_length, ignore } => {
+                // A word the document uses more than once is one of its
+                // terms ("kubelet"), not a typo.
+                let mut uses: HashMap<String, usize> = HashMap::new();
+                for s in &a.sentences {
+                    for t in &s.tokens {
+                        *uses.entry(t.form.to_lowercase()).or_default() += 1;
+                    }
+                }
                 for (si, s) in a.sentences.iter().enumerate() {
                     for t in &s.tokens {
                         let w = &t.form;
@@ -1009,7 +1017,11 @@ impl Rule {
                         {
                             continue;
                         }
-                        let known = |p: &str| crate::dict::tier(p).is_some() || erg.known_word(p);
+                        let known = |p: &str| {
+                            crate::dict::tier(p).is_some()
+                                || crate::dict::accepted(p)
+                                || erg.known_word(p)
+                        };
                         let parts: Vec<&str> = w
                             .split(['-', '\'', '’'])
                             .filter(|p| !p.is_empty())
@@ -1024,7 +1036,16 @@ impl Rule {
                         {
                             continue;
                         }
+                        if uses.get(&w.to_lowercase()).copied().unwrap_or(0) > 1 {
+                            continue;
+                        }
                         let (sugg, confident) = suggestions(erg, w, 5);
+                        // A typo is one edit away from the word meant: an
+                        // unknown word with no known word that close is a
+                        // rare word, not evidence of an error.
+                        if !sugg.first().is_some_and(|x| edit_distance(w, x) == 1) {
+                            continue;
+                        }
                         let mut d = self.diag(a, si, t.from, t.to, w);
                         d.message = d.message.replace(
                             "{suggestion}",
@@ -1061,11 +1082,17 @@ impl Rule {
             Kind::GrammarErrors => {
                 for (si, s) in a.sentences.iter().enumerate() {
                     for e in grammar_errors(s) {
+                        // Reported only with a correction the grammar
+                        // accepts: see `verified_fix`.
+                        let Some(fix) = verified_fix(erg, s, &e) else {
+                            continue;
+                        };
                         let mut d = self.diag(a, si, e.from, e.to, &e.text);
                         d.message = d
                             .message
                             .replace("{feedback}", &e.feedback)
                             .replace("{code}", &e.code);
+                        d.suggestions = vec![fix];
                         out.push(d);
                     }
                 }
@@ -1326,12 +1353,37 @@ pub fn grammar_errors(s: &crate::Sentence) -> Vec<GrammarError> {
             "root_decl" | "root_question" | "root_command" | "root_robust_s" | "root_robust_ques"
         ) || emdysi_parse::is_strict(r)
     };
-    let pick = |whole: bool| {
-        p.readings
+    // An error is reported only when the grammar has proved that the
+    // sentence is outside it (a complete search found no strict or
+    // informal analysis), and only when every analysis of the
+    // grammar-error variant that assumes the fewest errors names it: a
+    // coverage gap or an ambiguity is not an error.
+    if !s.strict() {
+        let proved = s
+            .parse
+            .as_ref()
+            .is_some_and(|q| q.complete && q.readings.iter().all(|r| r.root == "fragment"));
+        if !proved {
+            return Vec::new();
+        }
+    }
+    let pick = |whole: bool| -> Option<Vec<(String, usize, usize)>> {
+        let sets: Vec<Vec<(String, usize, usize)>> = p
+            .readings
             .iter()
             .filter(|r| !whole || sentence_root(&r.root))
             .map(items)
-            .min_by_key(|e| e.len())
+            .collect();
+        let fewest = sets.iter().map(Vec::len).min()?;
+        let mut best: Vec<&Vec<(String, usize, usize)>> =
+            sets.iter().filter(|e| e.len() == fewest).collect();
+        let first = best.remove(0).clone();
+        Some(
+            first
+                .into_iter()
+                .filter(|e| best.iter().all(|o| o.contains(e)))
+                .collect(),
+        )
     };
     let Some(best) = pick(true).or_else(|| pick(false)) else {
         return Vec::new();
@@ -1408,6 +1460,172 @@ pub fn grammar_errors(s: &crate::Sentence) -> Vec<GrammarError> {
         out.retain(|e| unknown.iter().any(|&(f, t)| e.from < t && f < e.to));
     }
     out
+}
+
+/// Pronouns and their other cases, for errors of pronoun case.
+const PRONOUN_CASES: &[&[&str]] = &[
+    &["i", "me", "my", "mine", "myself"],
+    &["we", "us", "our", "ours", "ourselves"],
+    &["you", "your", "yours", "yourself", "yourselves"],
+    &["he", "him", "his", "himself"],
+    &["she", "her", "hers", "herself"],
+    &["it", "its", "itself"],
+    &["they", "them", "their", "theirs", "themselves"],
+    &["who", "whom", "whose"],
+];
+
+/// Corrections to try for a named error, from the kind of error its
+/// feedback describes: (start, end, replacement) in characters of the
+/// sentence. Errors of other kinds get none.
+fn candidate_fixes(
+    erg: &Erg,
+    s: &crate::Sentence,
+    e: &GrammarError,
+) -> Vec<(usize, usize, String)> {
+    let f = e.feedback.to_lowercase();
+    let word = e.text.as_str();
+    let lower = word.to_lowercase();
+    let (from, to) = (e.from, e.to);
+    let chars: Vec<char> = s.original.chars().collect();
+    // The word before the error, for articles.
+    let before: String = chars[..from.min(chars.len())].iter().collect();
+    let prev = before.trim_end();
+    let prev_word_start = prev
+        .char_indices()
+        .rev()
+        .find(|(_, c)| c.is_whitespace())
+        .map_or(0, |(i, _)| prev[..i].chars().count() + 1);
+    let prev_word: String = prev.chars().skip(prev_word_start).collect();
+    let mut out: Vec<(usize, usize, String)> = Vec::new();
+    let has = |k: &[&str]| k.iter().any(|x| f.contains(x));
+    if word.contains(char::is_whitespace) {
+        return out;
+    }
+    // A capitalized word after the start of the sentence is a name
+    // ("Rust", "Pod"), and a number is not a word to inflect: the grammar
+    // knows too little about either to name an error in them.
+    let pronoun = PRONOUN_CASES
+        .iter()
+        .any(|set| set.contains(&lower.as_str()));
+    let sentence_start = prev
+        .trim_start_matches(|c: char| !c.is_alphanumeric())
+        .is_empty();
+    let name_like = word.chars().next().is_some_and(char::is_uppercase) && !sentence_start;
+    if !pronoun && (name_like || word.chars().any(|c| c.is_ascii_digit())) {
+        return out;
+    }
+    if has(&["doubled word"]) {
+        // Delete the word and the space before it.
+        out.push((
+            prev_word_start + prev_word.chars().count(),
+            to,
+            String::new(),
+        ));
+    }
+    if has(&[
+        "agree",
+        "irregular",
+        "form of the verb",
+        "wrong form",
+        "plural form",
+        "singular form",
+        "correct form",
+    ]) {
+        for form in erg.inflections(word) {
+            out.push((from, to, match_case(word, &form)));
+        }
+    }
+    // No article after a possessive or another determiner ("Chiang's
+    // department", "every day").
+    let pl = prev_word.to_lowercase();
+    let determined = pl.ends_with("'s")
+        || pl.ends_with("’s")
+        || pl.ends_with("s'")
+        || pl.ends_with("s’")
+        || [
+            "the", "a", "an", "this", "that", "these", "those", "my", "your", "his", "her", "its",
+            "our", "their", "some", "any", "no", "every", "each", "either", "neither", "whose",
+            "which", "what",
+        ]
+        .contains(&pl.as_str());
+    if has(&["add an article", "add the article"]) && !determined {
+        for art in ["the ", "a ", "an "] {
+            out.push((from, from, match_case(word, art)));
+        }
+    }
+    if has(&["“a”", "\"a\"", "“an”", "\"an\"", "article"]) {
+        let pw_end = prev_word_start + prev_word.chars().count();
+        match pl.as_str() {
+            "a" => out.push((prev_word_start, pw_end, match_case(&prev_word, "an"))),
+            "an" => out.push((prev_word_start, pw_end, match_case(&prev_word, "a"))),
+            _ => {}
+        }
+        if ["a", "an", "the"].contains(&pl.as_str()) {
+            // Without the article: delete it and the space after it.
+            out.push((prev_word_start, from, String::new()));
+        }
+        if ["a", "an"].contains(&lower.as_str()) {
+            let other = if lower == "a" { "an" } else { "a" };
+            out.push((from, to, match_case(word, other)));
+        }
+    }
+    if has(&["pronoun", "“am”", "\"am\""]) {
+        for set in PRONOUN_CASES {
+            if set.contains(&lower.as_str()) {
+                for p in set.iter().filter(|p| **p != lower) {
+                    out.push((from, to, match_case(word, p)));
+                }
+            }
+        }
+        for v in ["am", "is", "are"] {
+            if lower != v && ["am", "is", "are"].contains(&lower.as_str()) {
+                out.push((from, to, match_case(word, v)));
+            }
+        }
+    }
+    for (a, b) in [
+        ("fewer", "less"),
+        ("less", "fewer"),
+        ("if", "whether"),
+        ("after", "afterward"),
+    ] {
+        if lower == a && f.contains(b) {
+            out.push((from, to, match_case(word, b)));
+        }
+    }
+    out
+}
+
+/// A correction of a named error that the strict grammar accepts: the
+/// error is real only if fixing it the way its kind suggests turns the
+/// sentence into one the grammar analyses strictly. A sentence that is
+/// correct English outside the grammar's coverage stays unanalysable
+/// after such a small change, so it is not reported. Returns the
+/// replacement text for the error's span.
+fn verified_fix(erg: &Erg, s: &crate::Sentence, e: &GrammarError) -> Option<String> {
+    let chars: Vec<char> = s.original.chars().collect();
+    for (from, to, rep) in candidate_fixes(erg, s, e) {
+        if from > to || to > chars.len() {
+            continue;
+        }
+        let fixed: String = chars[..from]
+            .iter()
+            .chain(rep.chars().collect::<Vec<_>>().iter())
+            .chain(chars[to..].iter())
+            .collect();
+        let Ok(p) = erg.parse_limited(fixed.trim(), std::time::Duration::from_secs(5), 1) else {
+            continue;
+        };
+        if p.readings.iter().any(|r| emdysi_parse::is_strict(&r.root)) {
+            let new: String = chars[from.min(e.from)..from]
+                .iter()
+                .chain(rep.chars().collect::<Vec<_>>().iter())
+                .chain(chars[to..to.max(e.to)].iter())
+                .collect();
+            return Some(new);
+        }
+    }
+    None
 }
 
 /// Give `rep` the capitalization pattern of `like`.

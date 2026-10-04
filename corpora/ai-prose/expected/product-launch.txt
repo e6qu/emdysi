@@ -13,6 +13,5 @@
 7:56 warning substance.weasel "It is widely believed"
 7:69 suggestion plain-style.passive "believed"
 7:69 suggestion substance.agentless-passive "believed"
-9:1 suggestion core.grammar "Certainly!"
 9:12 error ai-tells.chatbot "I hope this helps"
 9:42 error ai-tells.chatbot "Feel free to ask"

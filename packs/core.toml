@@ -1,6 +1,6 @@
 [pack]
 name = "core"
-description = "Spelling and grammaticality, from the English Resource Grammar's lexicon and rules."
+description = "Spelling and grammaticality, from the English Resource Grammar's lexicon and rules. Every rule here claims an error, so each reports only what the grammar can establish: a complete search that found no analysis, an error every best analysis of the grammar-error variant names, a word one edit from a known word."
 
 [[rule]]
 id = "core.spelling"
@@ -16,13 +16,6 @@ kind = "grammar-errors"
 severity = "warning"
 message = "{feedback}"
 description = "Grammatical errors named by the grammar-error variant of the English Resource Grammar (its mal-rules and robust lexical entries): subject-verb agreement, wrong verb forms, missing articles, a/an, plural compounds and more. Only sentences without a strict analysis are re-parsed."
-
-[[rule]]
-id = "core.grammar"
-kind = "grammar"
-severity = "suggestion"
-message = "Possibly ungrammatical: {reason}."
-description = "Sentences for which the grammar finds no analysis, or only a fragment or informal one. Long sentences may also time out."
 
 [[rule]]
 id = "core.consistency"
