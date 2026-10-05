@@ -720,9 +720,9 @@ impl Erg {
                 stems.push(a.stem);
             }
         }
-        // A regular past of an irregular verb (*buyed*): the stem by its
-        // spelling.
-        for suffix in ["ed", "d"] {
+        // The stem by spelling: a regular past of an irregular verb
+        // (*buyed*), or a misspelled inflection (*runing*).
+        for suffix in ["ed", "d", "ing", "s", "es"] {
             if let Some(st) = w.strip_suffix(suffix) {
                 if self.lexicon.is_stem(st) && !stems.iter().any(|s| s == st) {
                     stems.push(st.to_string());
@@ -743,6 +743,15 @@ impl Erg {
                     .unwrap_or_default(),
                 st.strip_suffix('y')
                     .map(|b| format!("{b}ies"))
+                    .unwrap_or_default(),
+                // Doubled final consonant: "running", "stopped".
+                st.chars()
+                    .last()
+                    .map(|c| format!("{st}{c}ing"))
+                    .unwrap_or_default(),
+                st.chars()
+                    .last()
+                    .map(|c| format!("{st}{c}ed"))
                     .unwrap_or_default(),
             ];
             for f in regular

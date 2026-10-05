@@ -1031,10 +1031,23 @@ impl Rule {
                         }
                         // A known word plus an affix ("promptability") is a
                         // coinage, not a misspelling: see `coined-words`.
-                        if crate::terms::novel_derivation(erg, w).is_some()
-                            && suggestions(erg, w, 1).0.is_empty()
+                        // A listed word of four or more letters plus an affix
+                        // is a misspelling only if a real inflection of
+                        // that base is one edit away ("runing" for
+                        // "running"); otherwise a coinage ("liveness",
+                        // "mortifications").
+                        if let Some((base, _)) =
+                            crate::terms::novel_derivation(erg, w).filter(|(b, _)| {
+                                b.chars().count() >= 4 && crate::dict::tier(b).is_some()
+                            })
                         {
-                            continue;
+                            let misspelled = erg
+                                .inflections(&base)
+                                .iter()
+                                .any(|f| edit_distance(w, f) == 1);
+                            if !misspelled {
+                                continue;
+                            }
                         }
                         if uses.get(&w.to_lowercase()).copied().unwrap_or(0) > 1 {
                             continue;
@@ -1263,9 +1276,12 @@ impl Rule {
         for (si, s) in a.sentences.iter().enumerate() {
             for (ti, t) in s.tokens.iter().enumerate() {
                 let w = &t.form;
-                // Skip acronyms and inline code.
+                // Skip acronyms, inline code and names: a capitalized word
+                // after the start of a sentence ("Matt") is not a spelling of
+                // a common word.
                 let upper = w.chars().filter(|c| c.is_uppercase()).count();
                 if upper > 1
+                    || (ti > 0 && w.chars().next().is_some_and(char::is_uppercase))
                     || s.text
                         .chars()
                         .skip(t.from)
@@ -1601,7 +1617,11 @@ fn candidate_fixes(
         "singular form",
         "correct form",
     ]) {
-        for form in erg.inflections(word) {
+        // The forms closest to what was written first: "running" before
+        // "runes" for "runing".
+        let mut forms = erg.inflections(word);
+        forms.sort_by_key(|f| (edit_distance(word, f), crate::dict::tier(f).is_none()));
+        for form in forms {
             out.push((from, to, match_case(word, &form)));
         }
     }
