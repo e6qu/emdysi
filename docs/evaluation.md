@@ -438,6 +438,35 @@ of the word, an added or removed article, another case of a pronoun, a/an,
 fewer/less, ...) gives a sentence the grammar accepts. The verified
 correction is offered as the suggestion.
 
+## Recall on real errors
+
+Precision alone is easy to get by flagging nothing.
+[`corpora/real-errors`](../corpora/real-errors/SOURCE.md) holds 377
+paragraphs from the Rust book and the Kubernetes documentation as they
+were before and after a commit that fixed a typo, a spelling or a grammar
+error. An error counts as caught when a `core` diagnostic overlaps the
+changed words; a diagnostic on the same place in the fixed paragraph is a
+false flag:
+`cargo run --release -p emdysi-check --example real_errors -- OUT.tsv`
+(2026-10-05):
+
+| Step | Spelling (178) | Function words (123) | Inflections (76) | Flagged after the fix |
+|---|---|---|---|---|
+| Gates of the previous section | 129 | 0 | 1 | 0 |
+| Listed words suggested first; a capitalized first word checked in lower case; a listed base plus an affix is a typo when another common word is one edit away; at most one inflection per word | 145 | 0 | 1 | 0 |
+| Deterministic a/an, repeated-word and double-article rules | 145 | 26 | 1 | 0 |
+
+The 33 spelling misses left are mostly words two edits from the intended
+one (*certicate*, *neccesary*, *admistrators*), capitalized words after
+the start of a sentence, which are taken as names (*Mananger*, *Servies*),
+words of three letters (*tha*, *wil*, *Nex*), abbreviations (*perf*,
+*langs*), and forms the grammar's morphology derives (*informations*,
+*stucked*, *returing*). Most of the grammar
+pairs are rewordings rather than errors (*a* to *the*, *use* to *we use*);
+the errors among them that no rule catches are mostly wrong verb forms in
+sentences the grammar still analyses (*adds* for *add*, *is granted* for
+*granted*) and missing words.
+
 ## Parse readings of machine-written prose
 
 [`corpora/ai-treebank`](../corpora/ai-treebank/README.md) has 160 sentences
