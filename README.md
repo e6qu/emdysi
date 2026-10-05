@@ -83,7 +83,7 @@ packages), `wordlists` (hedges, weasel words and fillers) and `equality`
 (insensitive wording, from the data behind alex). Load them with
 `--pack microsoft` and so on. `--pack coverage` shows the sentences the
 grammar could not analyse fully (not errors: mostly English it does not
-cover).
+cover) and the sentences with more than one likely meaning.
 
 `en rewrite` prints the text with guarded rewrites: the automatic fixes,
 spelling corrections and a small local language model's rewrites of

@@ -175,9 +175,47 @@ pub fn render_parses(a: &Analysis, format: OutputFormat, show: &ParseDetails) ->
 /// dependencies that set it apart from the most probable one. Empty when
 /// the sentence has one interpretation.
 pub fn ambiguity_lines(s: &crate::Sentence) -> Vec<String> {
-    let Some(p) = &s.parse else {
-        return Vec::new();
-    };
+    interpretations(s, emdysi_parse::ambiguity::MIN_SHARE)
+        .map(|kept| lines(&kept))
+        .unwrap_or_default()
+}
+
+/// The shares of a sentence's interpretations that keep at least
+/// `min_share` of the probability, and what sets the second one apart from
+/// the first (`with(man, telescope) instead of with(saw, telescope)`);
+/// `None` when the sentence has only one such interpretation.
+pub fn ambiguity(s: &crate::Sentence, min_share: f64) -> Option<(Vec<f64>, String)> {
+    let kept = interpretations(s, min_share)?;
+    let only = kept[1].differences(&kept[0]);
+    let instead = kept[0].differences(&kept[1]);
+    let alt = format!(
+        "{} instead of {}",
+        if only.is_empty() {
+            "-".into()
+        } else {
+            only.iter().take(3).cloned().collect::<Vec<_>>().join(", ")
+        },
+        if instead.is_empty() {
+            "-".into()
+        } else {
+            instead
+                .iter()
+                .take(3)
+                .cloned()
+                .collect::<Vec<_>>()
+                .join(", ")
+        }
+    );
+    Some((kept.iter().map(|i| i.probability).collect(), alt))
+}
+
+/// The interpretations of a sentence's full readings (all readings when it
+/// has none) that keep at least `min_share`, if there are two or more.
+fn interpretations(
+    s: &crate::Sentence,
+    min_share: f64,
+) -> Option<Vec<emdysi_parse::ambiguity::Interpretation>> {
+    let p = s.parse.as_ref()?;
     let strict = s.strict();
     let readings: Vec<emdysi_parse::Reading> = p
         .readings
@@ -187,12 +225,13 @@ pub fn ambiguity_lines(s: &crate::Sentence) -> Vec<String> {
         .collect();
     let all = emdysi_parse::ambiguity::interpretations(&readings, p.temperature, &s.original);
     let kept: Vec<_> = all
-        .iter()
-        .filter(|i| i.probability >= emdysi_parse::ambiguity::MIN_SHARE)
+        .into_iter()
+        .filter(|i| i.probability >= min_share)
         .collect();
-    if kept.len() < 2 {
-        return Vec::new();
-    }
+    (kept.len() >= 2).then_some(kept)
+}
+
+fn lines(kept: &[emdysi_parse::ambiguity::Interpretation]) -> Vec<String> {
     let pct = |x: f64| format!("{:.0}%", 100.0 * x);
     let mut out = vec![format!(
         "ambiguous: {} interpretations ({})",
@@ -202,7 +241,7 @@ pub fn ambiguity_lines(s: &crate::Sentence) -> Vec<String> {
             .collect::<Vec<_>>()
             .join(", ")
     )];
-    let first = kept[0];
+    let first = &kept[0];
     for (k, i) in kept.iter().enumerate().skip(1) {
         let mut only: Vec<String> = i.differences(first);
         let mut instead: Vec<String> = first.differences(i);

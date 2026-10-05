@@ -12,7 +12,7 @@
 //!                           # | structure | parallel | acronyms | glossary
 //!                           # | variants | coined-words | concept-names
 //!                           # | hyphen-chain | ly-hyphen | noun-stack
-//!                           # | articles | repeated-word
+//!                           # | articles | repeated-word | ambiguity
 //!                           # | existence | substitution | adjective-stack
 //!                           # | modifier-density
 //! scope = "body"            # optional: all | heading | body | paragraph
@@ -225,6 +225,9 @@ pub enum Kind {
     /// A function word written twice, or two different articles in a row
     /// (`articles`), in a sentence without a full analysis.
     RepeatedWord { articles: bool },
+    /// Sentences with more than one meaning: a second interpretation keeps
+    /// at least `min_share` of the probability.
+    Ambiguity { min_share: f64 },
     /// Noun-noun compounds of `min` to `max` nouns.
     NounStack { min: usize, max: usize },
     /// Nouns that carry `min` or more adjectives.
@@ -568,6 +571,9 @@ impl Rule {
             },
             "ly-hyphen" => Kind::LyHyphen,
             "articles" => Kind::Articles,
+            "ambiguity" => Kind::Ambiguity {
+                min_share: num("min_share").unwrap_or(0.25),
+            },
             "repeated-word" => Kind::RepeatedWord {
                 articles: matches!(t.get("articles"), Some(Value::Bool(true))),
             },
@@ -1189,6 +1195,34 @@ impl Rule {
                         d.suggestions = vec![fix];
                         out.push(d);
                     }
+                }
+            }
+            Kind::Ambiguity { min_share } => {
+                for (si, s) in a.sentences.iter().enumerate() {
+                    let block_kind = a.blocks[s.block].kind;
+                    if matches!(
+                        block_kind,
+                        emdysi_text::blocks::BlockKind::Heading(_)
+                            | emdysi_text::blocks::BlockKind::TableCell
+                    ) {
+                        continue;
+                    }
+                    let Some((shares, alternative)) = crate::report::ambiguity(s, *min_share)
+                    else {
+                        continue;
+                    };
+                    let len = s.original.chars().count();
+                    let mut d = self.diag(a, si, 0, len, &s.original);
+                    let pct: Vec<String> = shares
+                        .iter()
+                        .map(|x| format!("{:.0}%", 100.0 * x))
+                        .collect();
+                    d.message = d
+                        .message
+                        .replace("{count}", &shares.len().to_string())
+                        .replace("{shares}", &pct.join(", "))
+                        .replace("{alternative}", &alternative);
+                    out.push(d);
                 }
             }
             Kind::Grammar => {

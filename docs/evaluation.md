@@ -508,6 +508,27 @@ gets a spurious name reading; and the grammar-error check no longer counts
 an analysis built from fragments, or one with a generic entry for a word
 the lexicon knows, as a whole-sentence analysis.
 
+On the ERG's gold profiles (`examples/eval.rs`, the code before these
+changes against after, 2026-10-05), the extensions and the tagger change
+cost no gold analysis and reject more ungrammatical items:
+
+| Profile | Grammatical parsed | Ungrammatical parsed (lower is better) | Gold tree found | Gold ranked first |
+|---|---|---|---|---|
+| csli | 939 → 938 of 960 | 270 → 254 of 388 | 907 → 908 of 921 | 884 → 885 |
+| esd | 62 → 61 of 62 | | 58 → 58 of 59 | 57 → 57 |
+| control | 1,294 → 1,292 of 1,305 | 498 → 497 of 527 | 1,494 → 1,494 of 1,582 | 1,384 → 1,384 |
+| sh-spec | 525 → 522 of 599 | | 358 → 360 of 576 | 314 → 313 |
+| mrs, ccs | unchanged | | unchanged | unchanged |
+
+The 16 ungrammatical items no longer accepted (*We works*, *Her hired
+him*, *Him hired her*, *Whom hired Browne?*, *Every programmers were
+hired*, ...) had been "parsed" by reading the capitalized first word as a
+name. The grammatical items lost had the same kind of analysis: none of
+them had the gold tree among its readings before either (*Did or will
+Abrams interview Browne?*, *Because.*, three long sentences of the
+Sherlock Holmes story whose analyses began with a name reading of
+*From* or *The*). Parsing time is unchanged.
+
 The ranker's scores (an averaged perceptron) are not probabilities. A
 temperature fitted on the held-out 10% of the gold items (5.0, by
 maximum likelihood of the gold reading;

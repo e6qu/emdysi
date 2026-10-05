@@ -71,7 +71,9 @@ c_xp_the-ccv_le := basic_conj_word & norm_conj_word &
                           HCONS <! !>,
                           ICONS <! !> ] ] ].
 
-;; Two halves, the first ending in a comma or not.
+;; Two halves, the first ending in a comma or not. Each must be a marker
+;; phrase (RNAME hmka): phrases that leave CONJ unconstrained, such as
+;; gerunds, would otherwise pass for "the"-marked halves.
 basic_cmpcorr_rule := binary_rule_right_to_left & basic_binary_phrase &
   [ INFLECTD +,
     SYNSEM phr_synsem &
@@ -84,6 +86,7 @@ basic_cmpcorr_rule := binary_rule_right_to_left & basic_binary_phrase &
              PUNCT [ LPUNCT #lpunct,
                      RPUNCT #rpunct ] ],
     ARGS < [ INFLECTD +,
+             RNAME hmka,
              SYNSEM [ LOCAL [ CAT.VAL.COMPS < >,
                               CONJ thecc_any,
                               CONT.HOOK.LTOP #lltop ],
@@ -91,6 +94,7 @@ basic_cmpcorr_rule := binary_rule_right_to_left & basic_binary_phrase &
                       PUNCT [ LPUNCT #lpunct,
                               RPUNCT comma_or_no_punct ] ] ],
            [ INFLECTD +,
+             RNAME hmka,
              SYNSEM [ LOCAL [ CAT.VAL.COMPS < >,
                               CONJ thecc_any,
                               CONT.HOOK.LTOP #rltop ],

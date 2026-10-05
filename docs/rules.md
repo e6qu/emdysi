@@ -209,6 +209,20 @@ conjunctions, auxiliaries and pronouns that are never doubled in
 running text), and not in runs of three or more (*Can can can can can
 can*). The fix drops the second word.
 
+### `ambiguity`
+
+Sentences with more than one meaning. The readings of a sentence are
+grouped by meaning (their predicate-argument dependencies, from the
+semantics), and the parse ranker's scores are made probabilities with a
+temperature fitted on held-out gold analyses; a sentence is reported when
+a second meaning keeps at least `min_share` (default 0.25) of the
+probability: *I saw the man with the telescope* (*with(saw, telescope)*
+50%, *with(man, telescope)* 40%). `{count}`, `{shares}` and
+`{alternative}` (the dependencies of the second meaning that the first
+lacks, and the reverse) are available in messages. Not a claim of error;
+used by the opt-in `coverage` pack (`coverage.ambiguity`). `en parse`
+shows the same for every sentence whose second meaning keeps 5%.
+
 ### `consistency`
 
 American and British spellings mixed in one document, e.g. *color* and

@@ -8,3 +8,12 @@ kind = "grammar"
 severity = "suggestion"
 message = "Not analysed as a full sentence: {reason}."
 description = "Sentences for which the grammar finds no analysis, or only a fragment or informal one, or which are too long to analyse in time. Not a claim of error: most such sentences are correct English the grammar does not cover. Useful to see which sentences no grammar-based rule could check."
+
+[[rule]]
+id = "coverage.ambiguity"
+kind = "ambiguity"
+severity = "suggestion"
+min_share = 0.25
+message = "This sentence can be read {count} ways ({shares}); the second reading has {alternative}."
+description = "Sentences with more than one meaning, where a second meaning keeps at least `min_share` of the parse ranker's calibrated probability: |I saw the man with the telescope| (who has the telescope?). The difference is given as dependencies, head(arguments). Not a claim of error: English is often ambiguous, and context usually settles it."
+examples = ["The chicken is ready to eat.\n"]
