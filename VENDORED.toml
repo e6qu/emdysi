@@ -347,8 +347,38 @@ use = "shipped"
 source_doc = "data/cspell/SOURCE.md"
 
 [[item]]
+id = "real-errors-rust-book"
+paths = ["corpora/real-errors/rust-book.tsv", "corpora/real-errors/LICENSE-rust-book-MIT", "corpora/real-errors/LICENSE-rust-book-APACHE", "corpora/real-errors/SOURCE.md"]
+name = "Typo, spelling and grammar fixes from the commit history of The Rust Programming Language"
+upstream = "https://github.com/rust-lang/book (git history of src/)"
+version = "1500248d8f230566e4ec9f27fcbb8fe9e2898ab1"
+retrieved = "2026-10-05"
+license = "MIT"
+license_files = ["corpora/real-errors/LICENSE-rust-book-MIT"]
+copyright = "The Rust Project Developers and the book's contributors"
+provenance = "Paragraphs of the book before and after commits that fix typos, spelling or grammar; both versions are part of the MIT OR Apache-2.0 repository's history (used under MIT)."
+modifications = "Selected and aligned by corpora/real-errors/mine.py (122 paragraph pairs); no text changed."
+use = "test"
+source_doc = "corpora/real-errors/SOURCE.md"
+
+[[item]]
+id = "real-errors-kubernetes"
+paths = ["corpora/real-errors/kubernetes.tsv", "corpora/real-errors/LICENSE-kubernetes-website"]
+name = "Typo, spelling and grammar fixes from the commit history of the Kubernetes documentation"
+upstream = "https://github.com/kubernetes/website (git history of content/en/)"
+version = "27a415c72e2ca106a48145ea3ffa620486ccda14"
+retrieved = "2026-10-05"
+license = "CC-BY-4.0"
+license_files = ["corpora/real-errors/LICENSE-kubernetes-website"]
+copyright = "The Kubernetes Authors"
+provenance = "Paragraphs of the documentation before and after the 400 most recent commits that fix typos, spelling or grammar; both versions are part of the CC BY 4.0 repository's history."
+modifications = "Selected and aligned by corpora/real-errors/mine.py (255 paragraph pairs); no text changed."
+use = "test"
+source_doc = "corpora/real-errors/SOURCE.md"
+
+[[item]]
 id = "pair-sample-tools"
-paths = ["corpora/blimp/sample.py", "corpora/zorro/sample.py", "corpora/beemo/sample.py", "corpora/cheat/sample.py", "corpora/hh-rlhf/sample.py", "corpora/edited/sample.py"]
+paths = ["corpora/blimp/sample.py", "corpora/zorro/sample.py", "corpora/beemo/sample.py", "corpora/cheat/sample.py", "corpora/hh-rlhf/sample.py", "corpora/edited/sample.py", "corpora/real-errors/mine.py"]
 name = "Converters for the corpus samples (minimal pairs and machine-generated text)"
 upstream = "this repository"
 version = "n/a"
