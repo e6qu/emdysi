@@ -6,20 +6,8 @@ fn main() {
     let g = &erg.grammar;
     for line in std::io::stdin().lines() {
         let line = line.unwrap();
-        let toks: Vec<InputToken> = erg
-            .repp
-            .tokenize(&line)
-            .into_iter()
-            .map(|t| InputToken {
-                form: t.form,
-                from: t.from,
-                to: t.to,
-                tags: vec![Tag {
-                    tag: "NN".into(),
-                    prob: 1.0,
-                }],
-            })
-            .collect();
+        // The tokens and tags of the real pipeline (REPP and the tagger).
+        let toks: Vec<InputToken> = erg.tokens(&line);
         let t = std::time::Instant::now();
         let (lat, trace) = erg.map_tokens(&toks, true).unwrap();
         println!("{line}  ({:?})\n  fired: {}", t.elapsed(), trace.join(" "));

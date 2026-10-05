@@ -1,0 +1,162 @@
+;;; Comparative correlatives: |The more you read, the more you know.|,
+;;; |The bigger they are, the harder they fall.|
+;;;
+;;; An extension of the English Resource Grammar for emdysi, loaded after
+;;; the ERG (crates/emdysi-parse/src/lib.rs). The ERG has no analysis of
+;;; this construction; each half is a clause with a fronted comparative
+;;; (the ERG's non-wh filler-head phrase) marked by "the", and a binary
+;;; rule joins the two halves.
+;;;
+;;; - flr-hd_cmpcorr_c: a filler-head phrase whose filler is a comparative
+;;;   (|more you read|, |bigger they are|). Unlike the ERG's topicalization
+;;;   rules it is not marked informal, but its CONJ value `ccclause` keeps
+;;;   it from being a sentence (roots need CONJ cnil): it is only the
+;;;   complement of "the".
+;;; - the_cc: "the" as a paired marker (like "either"), attached by the
+;;;   ERG's mrk-nh_atom_c, with CONJ `thecc`.
+;;; - cl-cl_cmpcorr_c: two "the"-marked halves, the first ending in a
+;;;   comma or not, make a main clause. The semantics is a
+;;;   `comparative_correlative_rel` whose ARG1 is the first half (the
+;;;   condition) and ARG2 the second, each scoped by a qeq.
+
+:begin :type.
+
+thecc_any := atomic-conj.
+thecc := thecc_any.
+thecc_v := thecc_any.
+
+cmpcorr := flr-hd.
+clcmpcorr := cl-cl.
+
+;; A fronted noun phrase with a modifier (|more money|, |fewer cars|): the
+;; grammar does not mark comparative noun phrases, so only the frame of the
+;; construction ("the ..., the ...") restricts this one.
+filler_head_rule_cmpcorr_np := filler_head_rule_non_wh &
+  [ SYNSEM.LOCAL.CAT [ MC -,
+                       HS-LEX na ],
+    HD-DTR.SYNSEM.LEX -,
+    NH-DTR.SYNSEM [ LOCAL.CAT.HEAD basic_noun,
+                    MODIFD lmod,
+                    PUNCT.RPUNCT no_punct ] ].
+
+;; The fronted comparative: an adjective or adverb that takes a degree
+;; specifier like |much| (|much bigger|, |much more|, |much harder|).
+filler_head_rule_cmpcorr := filler_head_rule_non_wh &
+  [ SYNSEM.LOCAL.CAT [ MC -,
+                       HS-LEX na ],
+    HD-DTR.SYNSEM.LEX -,
+    NH-DTR.SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN much_deg_rel,
+                    PUNCT.RPUNCT no_punct ] ].
+
+c_xp_the-cc_le := basic_conj_word & norm_conj_word &
+  [ SYNSEM.LOCAL [ CAT.VAL.COMPS.FIRST.LOCAL [ CAT [ HEAD verb,
+                                                     MC -,
+                                                     HS-LEX na ],
+                                               CONT.HOOK #hook ],
+                   CONJ thecc,
+                   CONT [ HOOK #hook,
+                          RELS <! !>,
+                          HCONS <! !>,
+                          ICONS <! !> ] ] ].
+
+;; "the" with a bare comparative: |the better|, |the merrier|, |the sooner|.
+c_xp_the-ccv_le := basic_conj_word & norm_conj_word &
+  [ SYNSEM.LOCAL [ CAT.VAL.COMPS.FIRST [ LOCAL [ CAT.VAL [ SPR.FIRST.--MIN much_deg_rel,
+                                                         COMPS < > ],
+                                                 CONT.HOOK #hook ],
+                                         NONLOC.SLASH.LIST < > ],
+                   CONJ thecc_v,
+                   CONT [ HOOK #hook,
+                          RELS <! !>,
+                          HCONS <! !>,
+                          ICONS <! !> ] ] ].
+
+;; Two halves, the first ending in a comma or not.
+basic_cmpcorr_rule := binary_rule_right_to_left & basic_binary_phrase &
+  [ INFLECTD +,
+    SYNSEM phr_synsem &
+           [ LOCAL [ CAT [ MC +,
+                           --SLASHED.BOOL - ],
+                     CONJ cnil ],
+             NONLOC [ SLASH.LIST < >,
+                      REL.LIST < >,
+                      QUE.LIST < > ],
+             PUNCT [ LPUNCT #lpunct,
+                     RPUNCT #rpunct ] ],
+    ARGS < [ INFLECTD +,
+             SYNSEM [ LOCAL [ CAT.VAL.COMPS < >,
+                              CONJ thecc_any,
+                              CONT.HOOK.LTOP #lltop ],
+                      NONLOC.SLASH.LIST < >,
+                      PUNCT [ LPUNCT #lpunct,
+                              RPUNCT comma_or_no_punct ] ] ],
+           [ INFLECTD +,
+             SYNSEM [ LOCAL [ CAT.VAL.COMPS < >,
+                              CONJ thecc_any,
+                              CONT.HOOK.LTOP #rltop ],
+                      NONLOC.SLASH.LIST < >,
+                      PUNCT.RPUNCT #rpunct & [ PSF #sf ] ] ] >,
+    C-CONT [ HOOK [ LTOP #ltop,
+                    INDEX #ind & event & [ SF #sf ] ],
+             RELS <! relation &
+                   [ LBL #ltop,
+                     PRED "comparative_correlative_rel",
+                     ARG0 #ind,
+                     ARG1 #h1,
+                     ARG2 #h2 ] !>,
+             HCONS <! qeq & [ HARG #h1, LARG #lltop ],
+                      qeq & [ HARG #h2, LARG #rltop ] !>,
+             ICONS <! !> ] ].
+
+;; The second half is a clause: |..., the more you know.|
+cmpcorr_rule := basic_cmpcorr_rule &
+  [ SYNSEM.LOCAL [ CAT [ HEAD #head,
+                         VAL #val ],
+                   AGR #agr ],
+    ARGS < [ ], [ SYNSEM.LOCAL [ CAT [ HEAD #head & verb,
+                                       VAL #val ],
+                                 CONJ thecc,
+                                 AGR #agr ] ] > ].
+
+;; The second half is a bare comparative: |..., the better.|,
+;; |The more, the merrier.| It must end the sentence (clause punctuation),
+;; or the result would also combine with what follows as a clause.
+cmpcorr_v_rule := basic_cmpcorr_rule &
+  [ SYNSEM.LOCAL.CAT [ HEAD verb & [ VFORM fin,
+                                     TAM indic_tam ],
+                       VAL [ SUBJ < >,
+                             SPR < >,
+                             COMPS < >,
+                             SPCMPS < > ] ],
+    ARGS < [ ], [ SYNSEM [ LOCAL.CONJ thecc_v,
+                           PUNCT.RPUNCT basic_clause_punct ] ] > ].
+
+:end :type.
+
+:begin :instance :status lex-entry.
+
+the_cc := c_xp_the-cc_le &
+  [ ORTH < "the" >,
+    SYNSEM.PHON.ONSET con ].
+
+the_ccv := c_xp_the-ccv_le &
+  [ ORTH < "the" >,
+    SYNSEM.PHON.ONSET con ].
+
+:end :instance.
+
+:begin :instance :status rule.
+
+flr-hd_cmpcorr_c := filler_head_rule_cmpcorr &
+  [ RNAME cmpcorr ].
+
+flr-hd_cmpcorr-np_c := filler_head_rule_cmpcorr_np &
+  [ RNAME cmpcorr ].
+
+cl-cl_cmpcorr_c := cmpcorr_rule &
+  [ RNAME clcmpcorr ].
+
+cl-cl_cmpcorr-v_c := cmpcorr_v_rule &
+  [ RNAME clcmpcorr ].
+
+:end :instance.

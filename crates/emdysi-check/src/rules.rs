@@ -1444,11 +1444,15 @@ pub fn grammar_errors(s: &crate::Sentence) -> Vec<GrammarError> {
     };
     // Whole-sentence analyses are preferred to fragments; among them, the
     // one that assumes the fewest errors.
-    let sentence_root = |r: &str| {
-        matches!(
-            r,
+    // A reading glued together from fragments (|He| as a name, |go| as a
+    // command, |to school every day| as a verb-phrase fragment) is not a
+    // whole-sentence analysis, whatever its root.
+    let sentence_root = |r: &emdysi_parse::Reading| {
+        (matches!(
+            r.root.as_str(),
             "root_decl" | "root_question" | "root_command" | "root_robust_s" | "root_robust_ques"
-        ) || emdysi_parse::is_strict(r)
+        ) || emdysi_parse::is_strict(&r.root))
+            && !r.nodes.iter().any(|n| !n.leaf && n.name.contains("frg"))
     };
     // An error is reported only when the grammar has proved that the
     // sentence is outside it (a complete search found no strict or
@@ -1490,7 +1494,16 @@ pub fn grammar_errors(s: &crate::Sentence) -> Vec<GrammarError> {
         let sets: Vec<Vec<(String, usize, usize)>> = p
             .readings
             .iter()
-            .filter(|r| !whole || sentence_root(&r.root))
+            .filter(|r| !whole || sentence_root(r))
+            // A generic entry for a word the lexicon knows (|He| as a plural
+            // name, so that |He go| agrees) is not an analysis of the
+            // sentence.
+            .filter(|r| {
+                r.words
+                    .iter()
+                    .filter(|w| w.generic)
+                    .all(|w| generic_spans.contains(&(w.from, w.to)))
+            })
             .map(items)
             .collect();
         let fewest = sets.iter().map(Vec::len).min()?;

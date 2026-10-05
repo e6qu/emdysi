@@ -1,0 +1,189 @@
+;;; Adjectives used as plural nouns for people with the article "the":
+;;; |the brave|, |home of the free|, |the meek|. The ERG lists 94 such
+;;; nouns (type n_-_c-pl-def_le, e.g. |the poor|, |the rich|, |the old|);
+;;; these are common ones it lacks, in the same form. |prime| is the
+;;; garden-path sense (|The prime number few|: the best people are few).
+
+:begin :instance :status lex-entry.
+
+accused_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "accused" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_accused_n_1_rel",
+             PHON.ONSET voc ] ].
+
+bereaved_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "bereaved" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_bereaved_n_1_rel",
+             PHON.ONSET con ] ].
+
+blind_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "blind" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_blind_n_1_rel",
+             PHON.ONSET con ] ].
+
+blessed_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "blessed" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_blessed_n_1_rel",
+             PHON.ONSET con ] ].
+
+brave_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "brave" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_brave_n_1_rel",
+             PHON.ONSET con ] ].
+
+damned_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "damned" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_damned_n_1_rel",
+             PHON.ONSET con ] ].
+
+deaf_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "deaf" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_deaf_n_1_rel",
+             PHON.ONSET con ] ].
+
+destitute_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "destitute" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_destitute_n_1_rel",
+             PHON.ONSET con ] ].
+
+downtrodden_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "downtrodden" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_downtrodden_n_1_rel",
+             PHON.ONSET con ] ].
+
+dying_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "dying" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_dying_n_1_rel",
+             PHON.ONSET con ] ].
+
+free_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "free" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_free_n_1_rel",
+             PHON.ONSET con ] ].
+
+godly_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "godly" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_godly_n_1_rel",
+             PHON.ONSET con ] ].
+
+guilty_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "guilty" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_guilty_n_1_rel",
+             PHON.ONSET con ] ].
+
+helpless_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "helpless" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_helpless_n_1_rel",
+             PHON.ONSET con ] ].
+
+homeless_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "homeless" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_homeless_n_1_rel",
+             PHON.ONSET con ] ].
+
+humble_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "humble" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_humble_n_1_rel",
+             PHON.ONSET con ] ].
+
+illiterate_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "illiterate" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_illiterate_n_1_rel",
+             PHON.ONSET voc ] ].
+
+infirm_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "infirm" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_infirm_n_1_rel",
+             PHON.ONSET voc ] ].
+
+innocent_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "innocent" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_innocent_n_1_rel",
+             PHON.ONSET voc ] ].
+
+lame_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "lame" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_lame_n_1_rel",
+             PHON.ONSET con ] ].
+
+living_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "living" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_living_n_1_rel",
+             PHON.ONSET con ] ].
+
+lonely_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "lonely" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_lonely_n_1_rel",
+             PHON.ONSET con ] ].
+
+meek_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "meek" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_meek_n_1_rel",
+             PHON.ONSET con ] ].
+
+mighty_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "mighty" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_mighty_n_1_rel",
+             PHON.ONSET con ] ].
+
+oppressed_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "oppressed" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_oppressed_n_1_rel",
+             PHON.ONSET voc ] ].
+
+persecuted_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "persecuted" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_persecuted_n_1_rel",
+             PHON.ONSET con ] ].
+
+prime_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "prime" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_prime_n_1_rel",
+             PHON.ONSET con ] ].
+
+privileged_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "privileged" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_privileged_n_1_rel",
+             PHON.ONSET con ] ].
+
+righteous_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "righteous" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_righteous_n_1_rel",
+             PHON.ONSET con ] ].
+
+starving_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "starving" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_starving_n_1_rel",
+             PHON.ONSET con ] ].
+
+underprivileged_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "underprivileged" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_underprivileged_n_1_rel",
+             PHON.ONSET voc ] ].
+
+unwary_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "unwary" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_unwary_n_1_rel",
+             PHON.ONSET voc ] ].
+
+vulnerable_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "vulnerable" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_vulnerable_n_1_rel",
+             PHON.ONSET con ] ].
+
+wicked_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "wicked" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_wicked_n_1_rel",
+             PHON.ONSET con ] ].
+
+willing_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "willing" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_willing_n_1_rel",
+             PHON.ONSET con ] ].
+
+wretched_n_pldef := n_-_c-pl-def_le &
+  [ ORTH < "wretched" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_wretched_n_1_rel",
+             PHON.ONSET con ] ].
+
+:end :instance.

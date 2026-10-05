@@ -24,8 +24,11 @@ least 5% of the ranker's calibrated probability, reports the sentence as
 ambiguous and shows what differs (*I saw the man with the telescope*:
 *with(saw, telescope)* 50%, *with(man, telescope)* 40%). Famous stress
 sentences (*Buffalo buffalo Buffalo buffalo buffalo buffalo Buffalo
-buffalo*, *had had had*, garden paths) get full analyses and no error
-claims ([`corpora/stress`](corpora/stress/README.md)). Sentences the grammar rejects are
+buffalo*, *had had had*, garden paths, *The more you read, the more you
+know*) get full analyses and no error claims
+([`corpora/stress`](corpora/stress/README.md)); constructions the ERG
+lacks, such as comparative correlatives, are added in emdysi's own grammar
+files ([`grammar/emdysi`](grammar/emdysi/README.md)). Sentences the grammar rejects are
 re-parsed with the ERG's grammar-error ("mal-rule") variant, which names
 the error (agreement, verb forms, articles, ...).
 

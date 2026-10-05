@@ -469,16 +469,44 @@ sentences the grammar still analyses (*adds* for *add*, *is granted* for
 
 ## Stress sentences and ambiguity
 
-[`corpora/stress`](../corpora/stress/README.md) has 58 grammatical
+[`corpora/stress`](../corpora/stress/README.md) has 66 grammatical
 sentences that are hard for parsers and checkers: the buffalo and police
 sentences, *had had*, *That that is is ...*, *Will Will will Will Will's
 will?*, garden paths (*The horse raced past the barn fell*, *The old man
-the boat*), center embedding and famous ambiguities.
+the boat*, *The prime number few*), center embedding, famous ambiguities,
+and comparative correlatives (*The more you read, the more you know*,
+*The bigger they are, the harder they fall*, *The more, the merrier*).
 `crates/emdysi-check/tests/stress.rs` (2026-10-05): the `core` pack
-claims no error in any of them; 54 get a full analysis (*Can can can can
-can can*, *The prime number few*, and the comparative correlatives *The
-more you read, the more you know* and *The sooner, the better* get
-fragments only).
+claims no error in any of them, and all 66 get a full analysis.
+
+With the ERG alone, 54 of the first 58 did. The comparative correlatives
+had no analysis at all, and *The prime number few* (and *the brave*,
+*the free*, *the meek*) none with the adjective as a plural noun for
+people: both are now covered by emdysi's grammar extensions
+([`grammar/emdysi`](../grammar/emdysi/README.md), D14). *Can can can can
+can can* (a bare singular count noun as subject, not standard English)
+was replaced by *Cans can can cans* and *Cans cans can can can cans*,
+which the grammar analyses.
+
+Loading the grammar-error variant also showed that seven of its types
+(bare nouns, unknown proper names, partitive determiners, quasi-modals
+such as *ought to*, ...) had inconsistent constraints, leaving their
+lexical entries unusable: the variant redefines types of the standard
+grammar, and emdysi merged the two definitions where ACE lets the later
+one replace the earlier. A later definition now replaces the earlier one,
+and a test checks that both grammars load without an inconsistent type
+or a rule that cannot be built (`crates/emdysi-parse/tests/grammar_loads.rs`).
+
+With those types working, the grammar-error variant read a sentence-initial
+*He* as an unknown name (*He go* then agrees, as a plural name would): the
+tagger, which only guessed from suffixes, tagged closed-class words such as
+*He*, *The* and *to* as nouns, and the ERG makes a sentence-initial
+capitalized noun a candidate name. Closed-class words now get their own
+tags (pronouns, determiners, prepositions, modals, ...), as a statistical
+tagger would give them, so no sentence starting with *He*, *The* or *We*
+gets a spurious name reading; and the grammar-error check no longer counts
+an analysis built from fragments, or one with a generic entry for a word
+the lexicon knows, as a whole-sentence analysis.
 
 The ranker's scores (an averaged perceptron) are not probabilities. A
 temperature fitted on the held-out 10% of the gold items (5.0, by

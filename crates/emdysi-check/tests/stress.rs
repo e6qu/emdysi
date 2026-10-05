@@ -1,7 +1,7 @@
 //! Grammatical stress sentences (`corpora/stress/stress.tsv`: the buffalo
 //! sentence, *had had*, garden paths, center embedding, ambiguity): the
 //! `core` pack, whose rules claim errors, must claim none in any of them;
-//! nearly all get a full analysis; and the famous ambiguous ones are
+//! all get a full analysis; and the famous ambiguous ones are
 //! reported as ambiguous.
 
 use std::path::Path;
@@ -51,11 +51,11 @@ fn stress_sentences() {
         }
     }
     assert!(flagged.is_empty(), "{}", flagged.join("\n"));
-    // 54 of 58 as of 2026-10-05: "Can can can can can can.", "The prime
-    // number few.", "The more you read, the more you know." and "The
-    // sooner, the better." get fragments only.
+    // Every one, as of 2026-10-05: comparative correlatives (|The more you
+    // read, the more you know|) and adjectives as plural nouns (|the
+    // brave|) come from emdysi's grammar extensions (grammar/emdysi).
     assert!(
-        full >= 54,
+        full == rows.len(),
         "only {full} of {} with a full analysis",
         rows.len()
     );

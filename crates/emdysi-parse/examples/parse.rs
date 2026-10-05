@@ -43,7 +43,14 @@ fn main() {
             if p.exhausted { " (exhausted)" } else { "" },
             p.elapsed
         );
-        for r in p.readings.iter().take(3) {
+        // ROOT=<name> shows the readings under that root instead of the
+        // best three.
+        let root = std::env::var("ROOT").ok();
+        let shown: Vec<_> = match &root {
+            Some(n) => p.readings.iter().filter(|r| &r.root == n).take(3).collect(),
+            None => p.readings.iter().take(3).collect(),
+        };
+        for r in shown {
             println!(
                 "  [{}] {}\n      {}",
                 r.root,

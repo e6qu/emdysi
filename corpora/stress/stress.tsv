@@ -7,7 +7,8 @@ repetition	James, while John had had "had", had had "had had"; "had had" had had
 repetition	That that is is that that is not is not.	That which is, is; that which is not, is not.
 repetition	That that is is not that that is not.	
 repetition	Will Will will Will Will's will?	Will Will bequeath Will's will to Will?
-repetition	Can can can can can can.	Cans that cans can can can can.
+repetition	Cans can can cans.	Cans are able to put cans in cans.
+repetition	Cans cans can can can cans.	Cans that cans can can can cans.
 repetition	Fish fish fish.	Fish swim (fish) other fish.
 repetition	Dogs dogs dog dog dogs.	Dogs that dogs dog dog dogs.
 repetition	I said that that "that" that that student wrote was wrong.	
@@ -49,11 +50,18 @@ embedding	The dog that chased the cat that killed the rat that ate the malt bark
 other	The quick brown fox jumps over the lazy dog.	
 other	Jackdaws love my big sphinx of quartz.	
 other	Pack my box with five dozen liquor jugs.	
-other	The more you read, the more you know.	
 other	Had I known, I would have left.	
 other	Never have I seen such a mess.	
 other	It is a truth universally acknowledged, that a single man in possession of a good fortune, must be in want of a wife.	
 other	What I want is for you to leave.	
-other	The sooner, the better.	
 other	Him being late annoyed everyone.	
 other	More people have been to Russia than I have.	Comparative illusion: accepted by readers, arguably ill-formed; skip.
+correlative	The more you read, the more you know.	Comparative correlative.
+correlative	The bigger they are, the harder they fall.	
+correlative	The more money you make, the more you spend.	
+correlative	The more I read the more I know.	No comma.
+correlative	The sooner we start, the better.	Verbless second half.
+correlative	The sooner, the better.	
+correlative	The more, the merrier.	
+other	This is the land of the free and the home of the brave.	Adjectives as plural nouns for people.
+other	The meek shall inherit the earth.	

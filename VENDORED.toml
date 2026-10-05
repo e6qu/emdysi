@@ -43,6 +43,21 @@ use = "shipped"
 source_doc = "grammar/erg/SOURCE.md"
 
 [[item]]
+id = "erg-extensions"
+paths = ["grammar/emdysi"]
+name = "emdysi's extensions of the ERG (comparative correlatives, adjectives as plural nouns)"
+upstream = "this repository"
+version = "written 2026-10-05"
+retrieved = "2026-10-05"
+license = "MIT"
+license_files = ["LICENSE"]
+copyright = "Copyright (c) 2026 emdysi contributors"
+provenance = "Written for this project in TDL on the ERG's types; no ERG file is changed."
+modifications = "n/a"
+use = "shipped"
+source_doc = "grammar/emdysi/README.md"
+
+[[item]]
 id = "erg-gold-constructed"
 paths = ["corpora/erg-gold/mrs", "corpora/erg-gold/csli", "corpora/erg-gold/esd", "corpora/erg-gold/control", "corpora/erg-gold/ccs"]
 name = "ERG gold treebank profiles built from constructed test suites"

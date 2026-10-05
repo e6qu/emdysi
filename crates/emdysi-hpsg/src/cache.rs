@@ -18,7 +18,7 @@ use crate::types::Hierarchy;
 use crate::typesys::{Features, LiteralKind, Literals, TypeSystem};
 
 /// Bump when the serialized layout or the compilation algorithm changes.
-const VERSION: u32 = 1;
+const VERSION: u32 = 2;
 const MAGIC: &[u8; 8] = b"EMDYSIGC";
 
 /// `$EMDYSI_CACHE_DIR`, else `$XDG_CACHE_HOME/emdysi`, else

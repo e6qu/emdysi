@@ -72,11 +72,16 @@ impl Grammar {
             last: feats.intern("LAST"),
         };
 
-        // Local descriptions of types, merging addenda.
+        // Local descriptions of types, merging addenda; a later definition
+        // replaces an earlier one (see `type_declarations`).
         let mut bodies: HashMap<TypeId, Vec<&Conj>> = HashMap::new();
         for e in loaded.entries.iter().filter(|e| e.env == Env::Type) {
             let t = ts.hier.id(&e.def.name).expect("declared");
-            bodies.entry(t).or_default().push(&e.def.body);
+            let b = bodies.entry(t).or_default();
+            if e.def.op == emdysi_tdl::DefOp::Define {
+                b.clear();
+            }
+            b.push(&e.def.body);
         }
         let mut errors = Vec::new();
         let n = ts.hier.len();
@@ -172,6 +177,40 @@ impl Grammar {
 
     pub fn display(&self, dag: &Dag) -> String {
         dag.display(&self.ts, &self.feats)
+    }
+
+    /// Paths at which `a` and `b` have incompatible types, walking both
+    /// from the root along the features they share (re-entrancies are not
+    /// followed, so a clash they cause is not found). For grammar work:
+    /// why a rule or root does not unify with an edge.
+    pub fn clash_paths(&self, a: &Dag, b: &Dag) -> Vec<String> {
+        let mut out = Vec::new();
+        let mut seen = std::collections::HashSet::new();
+        let mut stack = vec![(0u32, 0u32, String::new())];
+        while let Some((x, y, path)) = stack.pop() {
+            if !seen.insert((x, y)) || out.len() >= 20 {
+                continue;
+            }
+            if self.ts.glb(a.ty(x), b.ty(y)).is_none() {
+                out.push(format!(
+                    "{}: {} vs {}",
+                    if path.is_empty() {
+                        "(root)"
+                    } else {
+                        path.trim()
+                    },
+                    self.ts.name(a.ty(x)),
+                    self.ts.name(b.ty(y))
+                ));
+                continue;
+            }
+            for &(f, xn) in a.arcs(x) {
+                if let Some(yn) = b.arc(y, f) {
+                    stack.push((xn, yn, format!("{path} {}", self.feats.name(f))));
+                }
+            }
+        }
+        out
     }
 
     fn expand_types(&mut self, descs: &[Arc<Dag>]) {
