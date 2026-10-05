@@ -6,7 +6,7 @@ description = "Spelling and grammaticality, from the English Resource Grammar's 
 id = "core.spelling"
 kind = "spelling"
 severity = "warning"
-min_length = 3
+min_length = 4
 message = "Unknown word '{match}'.{suggestion}"
 description = "Lower-case words that neither the grammar's lexicon nor its inflection rules account for. Names, acronyms, numbers and inline code are skipped. A fix is applied only when exactly one known word is one edit away."
 

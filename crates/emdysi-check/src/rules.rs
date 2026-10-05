@@ -1043,7 +1043,13 @@ impl Rule {
                         // A typo is one edit away from the word meant: an
                         // unknown word with no known word that close is a
                         // rare word, not evidence of an error.
-                        if !sugg.first().is_some_and(|x| edit_distance(w, x) == 1) {
+                        // ... and the word meant is a listed word, not one the
+                        // grammar's morphology derives ("re-" + "sugar" +
+                        // "-ing" for "desugaring").
+                        if !sugg.first().is_some_and(|x| {
+                            edit_distance(w, x) == 1
+                                && crate::dict::tier(&x.to_lowercase()).is_some()
+                        }) {
                             continue;
                         }
                         let mut d = self.diag(a, si, t.from, t.to, w);
@@ -1399,7 +1405,29 @@ pub fn grammar_errors(s: &crate::Sentence) -> Vec<GrammarError> {
         if !proved {
             return Vec::new();
         }
+        // The grammar can vouch for an error only among words it knows: an
+        // analysis that leans on a generic entry for an unknown word (a
+        // capitalized plural read as a name, a noun the lexicon has only
+        // as a verb) says more about the lexicon than about the sentence.
+        // (An error on the unknown word itself, such as "buyed", is let
+        // through below.)
     }
+    // Words no analysis knows: every analysis that covers them uses a
+    // generic entry (a capitalized first word may have a generic reading
+    // besides its known one; that does not count).
+    let words: Vec<&emdysi_parse::Word> = s
+        .parse
+        .iter()
+        .chain(std::iter::once(p))
+        .flat_map(|q| q.readings.iter())
+        .flat_map(|r| r.words.iter())
+        .collect();
+    let generic_spans: Vec<(usize, usize)> = words
+        .iter()
+        .filter(|w| w.generic)
+        .map(|w| (w.from, w.to))
+        .filter(|&(f, t)| !words.iter().any(|w| !w.generic && w.from == f && w.to == t))
+        .collect();
     let pick = |whole: bool| -> Option<Vec<(String, usize, usize)>> {
         let sets: Vec<Vec<(String, usize, usize)>> = p
             .readings
@@ -1475,6 +1503,13 @@ pub fn grammar_errors(s: &crate::Sentence) -> Vec<GrammarError> {
         {
             out.push(e);
         }
+    }
+    if !s.strict()
+        && generic_spans
+            .iter()
+            .any(|&(f, t)| !out.iter().any(|e| e.from < t && f < e.to))
+    {
+        return Vec::new();
     }
     // When the grammar has a strict analysis that treats some word as
     // unknown (re-parsed for wrong forms such as "buyed"), only errors on
