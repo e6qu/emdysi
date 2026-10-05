@@ -999,9 +999,31 @@ impl Rule {
                         *uses.entry(t.form.to_lowercase()).or_default() += 1;
                     }
                 }
+                // Words the document capitalizes after the start of a
+                // sentence are names.
+                let names: std::collections::HashSet<&str> = a
+                    .sentences
+                    .iter()
+                    .flat_map(|s| s.tokens.iter().skip(1))
+                    .filter(|t| t.form.chars().next().is_some_and(char::is_uppercase))
+                    .map(|t| t.form.as_str())
+                    .collect();
                 for (si, s) in a.sentences.iter().enumerate() {
-                    for t in &s.tokens {
-                        let w = &t.form;
+                    for (ti, t) in s.tokens.iter().enumerate() {
+                        // A capitalized first word is checked in lower case
+                        // ("Althought"), unless the document uses it as a
+                        // name.
+                        let lowered;
+                        let w: &String = if ti == 0
+                            && t.form.chars().next().is_some_and(char::is_uppercase)
+                            && t.form.chars().skip(1).all(char::is_lowercase)
+                            && !names.contains(t.form.as_str())
+                        {
+                            lowered = t.form.to_lowercase();
+                            &lowered
+                        } else {
+                            &t.form
+                        };
                         // Only plain lower-case words: names, acronyms, code
                         // and numbers are out of scope.
                         if w.chars().count() < *min_length
@@ -1041,10 +1063,18 @@ impl Rule {
                                 b.chars().count() >= 4 && crate::dict::tier(b).is_some()
                             })
                         {
-                            let misspelled = erg
-                                .inflections(&base)
-                                .iter()
-                                .any(|f| edit_distance(w, f) == 1);
+                            let inflections = erg.inflections(&base);
+                            let misspelled = inflections.iter().any(|f| edit_distance(w, f) == 1)
+                                // ... or a common listed word, not the base
+                                // or one of its forms, is one edit away
+                                // ("mangement": management).
+                                || suggestions(erg, w, 5).0.iter().any(|x| {
+                                    let x = x.to_lowercase();
+                                    edit_distance(w, &x) == 1
+                                        && x != base
+                                        && !inflections.contains(&x)
+                                        && crate::dict::tier(&x).is_some_and(|t| t <= 50)
+                                });
                             if !misspelled {
                                 continue;
                             }
@@ -1838,7 +1868,16 @@ fn suggestions(erg: &Erg, word: &str, max: usize) -> (Vec<String>, bool) {
             }
         }
     }
-    found.sort_by(|x, y| x.0.total_cmp(&y.0).then(x.1.cmp(&y.1)).then(x.2.cmp(&y.2)));
+    // Listed words first: the grammar's morphology also derives non-words
+    // ("doabled" for "diabled").
+    let listed = |w: &str| crate::dict::tier(w).is_some();
+    found.sort_by(|x, y| {
+        (!listed(&x.2))
+            .cmp(&!listed(&y.2))
+            .then(x.0.total_cmp(&y.0))
+            .then(x.1.cmp(&y.1))
+            .then(x.2.cmp(&y.2))
+    });
     // Confident: a cheap typo (transposition or doubled letter) with no
     // equally cheap rival of similar commonness.
     let confident = match found.as_slice() {

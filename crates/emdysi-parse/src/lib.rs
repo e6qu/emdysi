@@ -667,7 +667,10 @@ impl Erg {
             .iter()
             .any(|a| {
                 let derivational = a.rules.iter().filter(|r| r.ends_with("_dlr")).count();
-                derivational == 0 || derivational == 1 && a.stem.chars().count() >= 4
+                // One inflection at most: "chosing" is not "chose" + "-ing".
+                let inflectional = a.rules.iter().filter(|r| r.ends_with("_olr")).count();
+                inflectional <= 1
+                    && (derivational == 0 || derivational == 1 && a.stem.chars().count() >= 4)
             })
     }
 
