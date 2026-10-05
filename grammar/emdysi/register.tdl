@@ -1,0 +1,21 @@
+;;; Register: what counts as formal written English for emdysi.
+;;;
+;;; The ERG marks contracted auxiliaries (|we'll|, |it's|, |they're|) as
+;;; GENRE nonformal, so that a sentence with one has no strict analysis.
+;;; Its own comment (auxverbs/lextypes, contracted_aux_word, DPF 2015) says
+;;; why: to keep the generator from producing |*Here, Kim's|, "as long as
+;;; we use root_strict for generation". emdysi parses edited prose, where
+;;; contractions are standard (the Rust book, the Kubernetes docs), so this
+;;; redefinition drops the GENRE constraint; everything else is the ERG's.
+;;; (A later TDL definition of a type replaces the earlier one, as in ACE.)
+
+:begin :type.
+
+contracted_aux_word := word &
+  [ INFLECTD na,
+    ALTS [ VPELLIP -,
+           SQPNCT - ],
+    SYNSEM.LOCAL.CAT [ HEAD.CNTRCTD +,
+		       VAL.COMPS.FIRST expressed_synsem ] ].
+
+:end :type.

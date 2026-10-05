@@ -21,6 +21,10 @@ are not changed. Written for this project (MIT, see the repository's
   `settings.cfg`, which the loader reads in the syntax of ACE's
   configuration files). The conjunction's relation keeps its left
   argument unfilled.
+- `register.tdl`: contracted auxiliaries (*we'll*, *it's*, *they're*)
+  count as formal: the ERG marks them informal to steer its generator,
+  which leaves every sentence with a contraction without a strict
+  analysis; edited prose uses them throughout.
 - `lexicon.tdl`: adjectives used as plural nouns for people with "the"
   (*the brave*, *the free*, *the meek*), in the form of the ERG's 94 such
   entries (type `n_-_c-pl-def_le`, e.g. *the poor*).
