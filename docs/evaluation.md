@@ -541,6 +541,20 @@ Abrams interview Browne?*, *Because.*, three long sentences of the
 Sherlock Holmes story whose analyses began with a name reading of
 *From* or *The*). Parsing time is unchanged.
 
+Two more extensions followed from the sentences of the development set
+that get no full analysis (found with
+`cargo run --release -p emdysi-parse --example culprits`, which replaces
+each word of such a sentence in turn by a plain word and reports the words
+whose replacement gives a full analysis): contracted auxiliaries
+(*we'll*, *it's*), which the ERG marks informal to steer its generator,
+now count as formal, and a sentence may start with a coordinating
+conjunction (*And his sisters are charming women.*, *But I saw nothing.*),
+which the ERG analyses as a fragment (`cl_cnj-frg_c`; emdysi's rule, a
+strict counterpart, applies only to the whole input). On the gold profiles
+neither changes coverage, the gold trees found, or the gold trees ranked
+first (sh-spec: 360 found, 313 first, with or without them; the eval
+compares emdysi's rule under the name of the ERG rule it stands for).
+
 The ranker's scores (an averaged perceptron) are not probabilities. A
 temperature fitted on the held-out 10% of the gold items (5.0, by
 maximum likelihood of the gold reading;
