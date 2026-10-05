@@ -14,10 +14,10 @@ use emdysi_parse::{Erg, default_grammar_dir, is_strict};
 /// Plain words to stand in for `w`, tried in turn.
 fn stand_ins(w: &str) -> &'static [&'static str] {
     let lower = w.to_lowercase();
-    if w.chars().next().is_some_and(char::is_uppercase) && w.chars().skip(1).any(char::is_lowercase)
-    {
-        &["Kim"]
-    } else if w.chars().all(|c| c.is_uppercase() || c.is_ascii_digit()) {
+    let capitalized = w.chars().next().is_some_and(char::is_uppercase)
+        && w.chars().skip(1).any(char::is_lowercase);
+    let all_caps = w.chars().all(|c| c.is_uppercase() || c.is_ascii_digit());
+    if capitalized || all_caps {
         &["Kim"]
     } else if w.chars().any(|c| c.is_ascii_digit()) {
         &["ten"]
