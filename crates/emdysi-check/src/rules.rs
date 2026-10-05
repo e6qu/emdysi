@@ -1030,12 +1030,18 @@ impl Rule {
                     for (ti, t) in s.tokens.iter().enumerate() {
                         // A capitalized first word is checked in lower case
                         // ("Althought"), unless the document uses it as a
-                        // name.
+                        // name, or it reads like one: followed by a comma
+                        // (|Isner, who ...|, |Krug, Steve.|) or by another
+                        // capitalized word.
                         let lowered;
+                        let name_like = s.tokens.get(1).is_some_and(|n| {
+                            n.form == "," || n.form.chars().next().is_some_and(char::is_uppercase)
+                        });
                         let w: &String = if ti == 0
                             && t.form.chars().next().is_some_and(char::is_uppercase)
                             && t.form.chars().skip(1).all(char::is_lowercase)
                             && !names.contains(t.form.as_str())
+                            && !name_like
                         {
                             lowered = t.form.to_lowercase();
                             &lowered
