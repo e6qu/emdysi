@@ -1029,15 +1029,18 @@ impl Rule {
                 for (si, s) in a.sentences.iter().enumerate() {
                     for (ti, t) in s.tokens.iter().enumerate() {
                         // A capitalized first word is checked in lower case
-                        // ("Althought"), unless the document uses it as a
-                        // name, or it reads like one: followed by a comma
-                        // (|Isner, who ...|, |Krug, Steve.|) or by another
-                        // capitalized word.
+                        // ("Althought", "Insetad,"), unless the document uses
+                        // it as a name, or it reads like one: followed by
+                        // another capitalized word.
                         let lowered;
-                        let name_like = s.tokens.get(1).is_some_and(|n| {
-                            n.form == "," || n.form.chars().next().is_some_and(char::is_uppercase)
-                        });
+                        let name_like = s
+                            .tokens
+                            .get(1)
+                            .is_some_and(|n| n.form.chars().next().is_some_and(char::is_uppercase));
                         let w: &String = if ti == 0
+                            // Short capitalized words are often names
+                            // (|Tage has started|, |Nuage is a platform|).
+                            && t.form.chars().count() >= 7
                             && t.form.chars().next().is_some_and(char::is_uppercase)
                             && t.form.chars().skip(1).all(char::is_lowercase)
                             && !names.contains(t.form.as_str())
@@ -1087,18 +1090,11 @@ impl Rule {
                                 b.chars().count() >= 4 && crate::dict::tier(b).is_some()
                             })
                         {
+                            // (A common word one edit away is no proof of a
+                            // typo here: |destructures| is one edit from
+                            // |restructures|, |liveness| from |aliveness|.)
                             let inflections = erg.inflections(&base);
-                            let misspelled = inflections.iter().any(|f| edit_distance(w, f) == 1)
-                                // ... or a common listed word, not the base
-                                // or one of its forms, is one edit away
-                                // ("mangement": management).
-                                || suggestions(erg, w, 5).0.iter().any(|x| {
-                                    let x = x.to_lowercase();
-                                    edit_distance(w, &x) == 1
-                                        && x != base
-                                        && !inflections.contains(&x)
-                                        && crate::dict::tier(&x).is_some_and(|t| t <= 50)
-                                });
+                            let misspelled = inflections.iter().any(|f| edit_distance(w, f) == 1);
                             if !misspelled {
                                 continue;
                             }
@@ -1656,6 +1652,38 @@ const PRONOUN_CASES: &[&[&str]] = &[
 /// Corrections to try for a named error, from the kind of error its
 /// feedback describes: (start, end, replacement) in characters of the
 /// sentence. Errors of other kinds get none.
+/// Whether `a` and `b` are the two numbers of one present- or past-tense
+/// verb form: |borrow| and |borrows|, |try| and |tries|, |has| and |have|,
+/// |was| and |were|.
+fn number_pair(a: &str, b: &str) -> bool {
+    const IRREGULAR: &[(&str, &str)] = &[
+        ("is", "are"),
+        ("am", "are"),
+        ("was", "were"),
+        ("has", "have"),
+        ("does", "do"),
+        ("doesn't", "don't"),
+        ("isn't", "aren't"),
+        ("wasn't", "weren't"),
+        ("hasn't", "haven't"),
+    ];
+    let third = |base: &str, s: &str| {
+        s == format!("{base}s")
+            || s == format!("{base}es")
+            || base
+                .strip_suffix('y')
+                .is_some_and(|stem| s == format!("{stem}ies"))
+    };
+    let irregular = |w: &str| IRREGULAR.iter().any(|&(x, y)| w == x || w == y);
+    if irregular(a) || irregular(b) {
+        // |was| is not |wa| plus -s.
+        return IRREGULAR
+            .iter()
+            .any(|&(x, y)| (a, b) == (x, y) || (a, b) == (y, x));
+    }
+    third(a, b) || third(b, a)
+}
+
 fn candidate_fixes(
     erg: &Erg,
     s: &crate::Sentence,
@@ -1720,10 +1748,13 @@ fn candidate_fixes(
         // forms repair it ("aspiring" would not repair "to aspire" but
         // build another phrase), and the first word of a sentence has no
         // subject before it ("Ensure that ...", "Try ...").
+        // And it is repaired by the other number of the same tense (|borrow|
+        // and |borrows|, |has| and |have|), not by another tense (|borrowed|
+        // and |had| parse, but say something else).
         let agreement = f.contains("agree");
         if !(agreement && sentence_start) {
             for form in forms {
-                if agreement && form.ends_with("ing") {
+                if agreement && !number_pair(&lower, &form) {
                     continue;
                 }
                 out.push((from, to, match_case(word, &form)));
@@ -1960,4 +1991,19 @@ fn suggestions(erg: &Erg, word: &str, max: usize) -> (Vec<String>, bool) {
         .map(|(_, _, w)| match_case(word, &w))
         .collect();
     (out, confident)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::number_pair;
+
+    #[test]
+    fn number_pairs() {
+        assert!(number_pair("go", "goes"));
+        assert!(number_pair("tries", "try"));
+        assert!(number_pair("was", "were"));
+        assert!(!number_pair("was", "wa"));
+        assert!(!number_pair("borrow", "borrowed"));
+        assert!(!number_pair("has", "had"));
+    }
 }
