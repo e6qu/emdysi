@@ -397,10 +397,13 @@ extensions, the grammar-error variant's types and the tagger), the
 development set is at 3.6 flags per 1,000 sentences (9 flags). Three of
 them were sentence-initial names read as typos (*Krug, Steve.*, *Cuaron,
 whose ...*, *Isner, who ...*); a capitalized first word followed by a
-comma or by another capitalized word is now taken as a name, which leaves
-6 flags (2.4 per 1,000): *neices* (a real typo in the novel), *offense*
-and *centered* against the rest of their documents, *permittee*, *async*,
-and *an easy form of think aloud* (a named error on a term).
+comma or by another capitalized word was then taken as a name. With the
+later changes (a capitalized first word is a typo candidate only from
+seven letters, short ones being mostly names; agreement errors repaired
+only within the tense; contractions formal), the development set is at
+2.0 flags per 1,000 sentences (5 flags, measured): *neices* (a real typo
+in the novel), *offense* and *centered* against the rest of their
+documents, and two words outside every list, *permittee* and *async*.
 
 A held-out test set (`heldout-*.tsv`: other chapters, pages and posts of
 the same sources, 8,371 sentences, never inspected while developing) gives
