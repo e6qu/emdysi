@@ -23,3 +23,31 @@ kind = "consistency"
 severity = "warning"
 message = "'{match}' is {variety} spelling, but the text mostly uses {dominant} spelling: '{replacement}'."
 description = "American and British spellings (or British -ise and -ize) mixed in one document. Either variety is fine on its own; the one used most wins. Set `prefer` (\"us\" or \"gb\") and `prefer_suffix` (\"ise\" or \"ize\") in your own pack to fix the choice."
+
+[[rule]]
+id = "core.articles"
+kind = "articles"
+severity = "warning"
+message = "Use '{fix}' before '{word}'."
+description = "'a' before a vowel sound or 'an' before a consonant sound, where the spelling settles the sound: words starting with h, x or uni-, acronyms, letters and numbers are skipped, and the article must be a determiner in the best analysis."
+examples = ["The field is a alpha-level field.\n"]
+
+[[rule]]
+id = "core.repeated-word"
+kind = "regex"
+severity = "warning"
+message = "Repeated word: '{match}'."
+description = "A function word written twice in a row ('the the', 'to to', 'are are'). Only words that are never correctly doubled are checked: not 'that', 'had', 'in', 'on' or 'it' ('what it is is' is skipped)."
+pattern = "(?i)(?<![\\w`'/-])(the|a|an|to|of|for|with|from|into|and|or|but|are|be|been|can|will|would|should|could|we|they|this|is)[ \\t]+\\1(?![\\w`'/-])(?<!what it is is)(?<!what this is is)"
+replace = "$1"
+examples = ["We need to to stay secure.\n"]
+
+[[rule]]
+id = "core.double-article"
+kind = "regex"
+severity = "warning"
+message = "Two articles in a row: '{match}'."
+description = "Two different articles in a row ('a the', 'the an'), in lower case."
+pattern = "(?<![\\w`'/-])(a|an|the)[ \\t]+(?!\\1(?!\\w))(?:a|an|the)(?![\\w`'/-])"
+unless = "(?i)\\bthe (?:a|an)\\b(?: or | and |/)"
+examples = ["Events such as a the last process ending.\n"]

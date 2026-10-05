@@ -14,6 +14,7 @@ use emdysi_parse::{Erg, InputToken, Parse, Reading};
 use emdysi_text::blocks::{Block, BlockKind, markdown_blocks, plain_blocks};
 use emdysi_text::segment::sentences;
 
+pub mod articles;
 pub mod compounds;
 pub mod decisions;
 pub mod dict;

@@ -182,6 +182,21 @@ the grammar does not cover. Used by the opt-in `coverage` pack
 (`coverage.grammar`) to show which sentences no grammar-based rule could
 check.
 
+### `articles`
+
+*a* before a vowel sound or *an* before a consonant sound (*a alpha-level
+field*, *an cluster*). The sound is read from the spelling only where the
+spelling settles it: *a* and *e*, *i*, *o* words take *an*, except *one*,
+*once*, *eu-* and *ewe*; *u* words take *a* when they start with a
+*you* sound (*unique*, *unit*, *use*, *usual*, *utility*) and *an* when they
+start with *un-* (not *uni-*), *up-*, *um-*, *ul-*, *ug-*, *ut-* or *ur-*;
+*hour*, *honest*, *honor* and *heir* take *an*. Words starting with *h*, *x*
+or *uni-* otherwise, single letters, acronyms (also in lower case, *an
+mri*), numbers, names and function words (*options a and b*) are skipped;
+the next word must be in the word list, and the article must be a
+determiner in the best analysis. `{fix}` and `{word}` are available in
+messages. The fix is applied automatically.
+
 ### `consistency`
 
 American and British spellings mixed in one document, e.g. *color* and

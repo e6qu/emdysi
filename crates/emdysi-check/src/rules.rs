@@ -12,6 +12,7 @@
 //!                           # | structure | parallel | acronyms | glossary
 //!                           # | variants | coined-words | concept-names
 //!                           # | hyphen-chain | ly-hyphen | noun-stack
+//!                           # | articles
 //!                           # | existence | substitution | adjective-stack
 //!                           # | modifier-density
 //! scope = "body"            # optional: all | heading | body | paragraph
@@ -219,6 +220,8 @@ pub enum Kind {
     HyphenChain { except: Vec<String> },
     /// A hyphen after an -ly adverb.
     LyHyphen,
+    /// *a* before a vowel sound, *an* before a consonant sound.
+    Articles,
     /// Noun-noun compounds of `min` to `max` nouns.
     NounStack { min: usize, max: usize },
     /// Nouns that carry `min` or more adjectives.
@@ -561,6 +564,7 @@ impl Rule {
                     .collect(),
             },
             "ly-hyphen" => Kind::LyHyphen,
+            "articles" => Kind::Articles,
             "adjective-stack" => Kind::AdjectiveStack {
                 min: num("min").unwrap_or(3.0) as usize,
             },
@@ -754,6 +758,7 @@ impl Rule {
             }
             Kind::HyphenChain { except } => Some(crate::compounds::run_kebab(a, except)),
             Kind::LyHyphen => Some(crate::compounds::run_ly_hyphen(a)),
+            Kind::Articles => Some(crate::articles::run_articles(a)),
             Kind::AdjectiveStack { min } => Some(crate::modifiers::run_adjective_stacks(a, *min)),
             Kind::ModifierDensity { min, ratio } => {
                 Some(crate::modifiers::run_modifier_density(a, *min, *ratio))
