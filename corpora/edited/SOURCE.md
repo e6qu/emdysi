@@ -38,3 +38,10 @@ the same commits and licenses, shares no document with the development
 set, and is only measured (`SET=heldout`), never inspected while
 developing, so its rate is an honest estimate. Both are built by
 `sample.py`, which lists every file.
+
+A second, larger development set (`dev2-*.tsv`: chapters 31 to 61 of the
+novel, the guideline pages of the "words" section, book chapters 10 to 16
+and 25 more blog posts, 30 more concept pages) is chosen by rule from what
+neither other set uses (see `sample.py`), so that gaps the small first set
+cannot show (rare words, for one) are found without looking at the
+held-out set.

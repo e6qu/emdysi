@@ -1,8 +1,9 @@
 //! How often the checker claims an error in edited text, per genre: the
 //! false-flag rate of the `core` pack (spelling, grammar, consistency) on
 //! the samples in `corpora/edited/` and `corpora/edited-by-sa/`, per 1,000
-//! sentences (the development set; with `SET=heldout`, the held-out test
-//! set, `heldout-*.tsv`). The target is at most
+//! sentences: the development sets by default; `SET=heldout` for the
+//! held-out test set (`heldout-*.tsv`), `SET=dev2` for the second
+//! development set only. The target is at most
 //! one per 1,000 (99.9% precision on clean text).
 //!
 //! `cargo run --release -p emdysi-check --example false_flags -- [OUT.tsv] [GENRE,...]`
@@ -12,7 +13,9 @@
 //! reported as recall (none of the current sources has any). Every
 //! flag is written to OUT.tsv (default `false-flags.tsv` in the current
 //! directory) for inspection: genre, document, rule, flagged text, message,
-//! sentence.
+//! sentence. Finished documents are also appended to OUT.tsv.journal, so
+//! that a rerun with the same OUT resumes an interrupted run; `THREADS`
+//! caps the documents checked at once.
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -62,17 +65,21 @@ fn main() {
     // The development set by default; `SET=heldout` measures the held-out
     // test set instead (heldout-*.tsv), which is not used while
     // developing the checks.
-    let heldout = std::env::var("SET").as_deref() == Ok("heldout");
+    let set = std::env::var("SET").ok();
     let mut files: Vec<std::path::PathBuf> = ["corpora/edited", "corpora/edited-by-sa"]
         .iter()
         .flat_map(|d| std::fs::read_dir(root.join(d)).unwrap())
         .map(|e| e.unwrap().path())
         .filter(|p| p.extension().is_some_and(|x| x == "tsv"))
         .filter(|p| {
-            let held = p
+            let name = p
                 .file_name()
-                .is_some_and(|n| n.to_string_lossy().starts_with("heldout-"));
-            held == heldout
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_default();
+            match set.as_deref() {
+                Some(prefix) => name.starts_with(&format!("{prefix}-")),
+                None => !name.starts_with("heldout-"),
+            }
         })
         .collect();
     files.sort();
@@ -98,10 +105,53 @@ fn main() {
     };
     let tallies: Mutex<BTreeMap<String, Tally>> = Mutex::default();
     let lines: Mutex<Vec<String>> = Mutex::default();
+    // Each finished document is appended to OUT.tsv.journal, and a rerun
+    // with the same OUT skips the documents already there: a long run that
+    // is interrupted resumes where it stopped.
+    let journal_path = format!("{out_path}.journal");
+    let mut done: std::collections::HashSet<String> = Default::default();
+    if let Ok(j) = std::fs::read_to_string(&journal_path) {
+        let mut t = tallies.lock().unwrap();
+        let mut l = lines.lock().unwrap();
+        for line in j.lines() {
+            let f: Vec<&str> = line.splitn(2, '\t').collect();
+            match f.as_slice() {
+                ["D", rest] => {
+                    let g: Vec<&str> = rest.split('\t').collect();
+                    if let [genre, id, sentences, annotated, caught, rules] = g[..] {
+                        let e = t.entry(genre.to_string()).or_default();
+                        e.documents += 1;
+                        e.sentences += sentences.parse::<usize>().unwrap_or(0);
+                        e.annotated += annotated.parse::<usize>().unwrap_or(0);
+                        e.caught += caught.parse::<usize>().unwrap_or(0);
+                        for r in rules.split(',').filter(|r| !r.is_empty()) {
+                            *e.flags.entry(r.to_string()).or_default() += 1;
+                        }
+                        done.insert(id.to_string());
+                    }
+                }
+                ["F", rest] => l.push(rest.to_string()),
+                _ => {}
+            }
+        }
+        eprintln!("resuming: {} documents already done", done.len());
+    }
+    let journal = Mutex::new(
+        std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&journal_path)
+            .unwrap(),
+    );
+    let rows: Vec<&Vec<String>> = rows.iter().filter(|r| !done.contains(&r[0])).collect();
     let next = Mutex::new(0usize);
     let t0 = std::time::Instant::now();
     std::thread::scope(|s| {
-        let threads = std::thread::available_parallelism().map_or(2, |n| n.get());
+        // THREADS caps the documents checked at once (and so the memory).
+        let threads = std::env::var("THREADS")
+            .ok()
+            .and_then(|n| n.parse().ok())
+            .unwrap_or_else(|| std::thread::available_parallelism().map_or(2, |n| n.get()));
         for _ in 0..threads {
             s.spawn(|| {
                 loop {
@@ -154,6 +204,23 @@ fn main() {
                             d.message.replace(['\t', '\n'], " "),
                             sentence
                         ));
+                    }
+                    {
+                        use std::io::Write;
+                        let mut entry = String::new();
+                        for o in &out {
+                            entry.push_str(&format!("F\t{o}\n"));
+                        }
+                        entry.push_str(&format!(
+                            "D\t{genre}\t{id}\t{}\t{}\t{}\t{}\n",
+                            a.sentences.len(),
+                            annotated.len(),
+                            caught.min(annotated.len()),
+                            flags.join(",")
+                        ));
+                        let mut j = journal.lock().unwrap();
+                        j.write_all(entry.as_bytes()).unwrap();
+                        j.flush().unwrap();
                     }
                     lines.lock().unwrap().extend(out);
                     let mut t = tallies.lock().unwrap();

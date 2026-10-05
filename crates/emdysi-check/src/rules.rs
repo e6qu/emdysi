@@ -1031,10 +1031,23 @@ impl Rule {
                         }
                         // A known word plus an affix ("promptability") is a
                         // coinage, not a misspelling: see `coined-words`.
-                        if crate::terms::novel_derivation(erg, w).is_some()
-                            && suggestions(erg, w, 1).0.is_empty()
+                        // A listed word of four or more letters plus an affix
+                        // is a misspelling only if a real inflection of
+                        // that base is one edit away ("runing" for
+                        // "running"); otherwise a coinage ("liveness",
+                        // "mortifications").
+                        if let Some((base, _)) =
+                            crate::terms::novel_derivation(erg, w).filter(|(b, _)| {
+                                b.chars().count() >= 4 && crate::dict::tier(b).is_some()
+                            })
                         {
-                            continue;
+                            let misspelled = erg
+                                .inflections(&base)
+                                .iter()
+                                .any(|f| edit_distance(w, f) == 1);
+                            if !misspelled {
+                                continue;
+                            }
                         }
                         if uses.get(&w.to_lowercase()).copied().unwrap_or(0) > 1 {
                             continue;
@@ -1043,7 +1056,13 @@ impl Rule {
                         // A typo is one edit away from the word meant: an
                         // unknown word with no known word that close is a
                         // rare word, not evidence of an error.
-                        if !sugg.first().is_some_and(|x| edit_distance(w, x) == 1) {
+                        // ... and the word meant is a listed word, not one the
+                        // grammar's morphology derives ("re-" + "sugar" +
+                        // "-ing" for "desugaring").
+                        if !sugg.first().is_some_and(|x| {
+                            edit_distance(w, x) == 1
+                                && crate::dict::tier(&x.to_lowercase()).is_some()
+                        }) {
                             continue;
                         }
                         let mut d = self.diag(a, si, t.from, t.to, w);
@@ -1257,9 +1276,12 @@ impl Rule {
         for (si, s) in a.sentences.iter().enumerate() {
             for (ti, t) in s.tokens.iter().enumerate() {
                 let w = &t.form;
-                // Skip acronyms and inline code.
+                // Skip acronyms, inline code and names: a capitalized word
+                // after the start of a sentence ("Matt") is not a spelling of
+                // a common word.
                 let upper = w.chars().filter(|c| c.is_uppercase()).count();
                 if upper > 1
+                    || (ti > 0 && w.chars().next().is_some_and(char::is_uppercase))
                     || s.text
                         .chars()
                         .skip(t.from)
@@ -1399,7 +1421,29 @@ pub fn grammar_errors(s: &crate::Sentence) -> Vec<GrammarError> {
         if !proved {
             return Vec::new();
         }
+        // The grammar can vouch for an error only among words it knows: an
+        // analysis that leans on a generic entry for an unknown word (a
+        // capitalized plural read as a name, a noun the lexicon has only
+        // as a verb) says more about the lexicon than about the sentence.
+        // (An error on the unknown word itself, such as "buyed", is let
+        // through below.)
     }
+    // Words no analysis knows: every analysis that covers them uses a
+    // generic entry (a capitalized first word may have a generic reading
+    // besides its known one; that does not count).
+    let words: Vec<&emdysi_parse::Word> = s
+        .parse
+        .iter()
+        .chain(std::iter::once(p))
+        .flat_map(|q| q.readings.iter())
+        .flat_map(|r| r.words.iter())
+        .collect();
+    let generic_spans: Vec<(usize, usize)> = words
+        .iter()
+        .filter(|w| w.generic)
+        .map(|w| (w.from, w.to))
+        .filter(|&(f, t)| !words.iter().any(|w| !w.generic && w.from == f && w.to == t))
+        .collect();
     let pick = |whole: bool| -> Option<Vec<(String, usize, usize)>> {
         let sets: Vec<Vec<(String, usize, usize)>> = p
             .readings
@@ -1475,6 +1519,13 @@ pub fn grammar_errors(s: &crate::Sentence) -> Vec<GrammarError> {
         {
             out.push(e);
         }
+    }
+    if !s.strict()
+        && generic_spans
+            .iter()
+            .any(|&(f, t)| !out.iter().any(|e| e.from < t && f < e.to))
+    {
+        return Vec::new();
     }
     // When the grammar has a strict analysis that treats some word as
     // unknown (re-parsed for wrong forms such as "buyed"), only errors on
@@ -1566,28 +1617,28 @@ fn candidate_fixes(
         "singular form",
         "correct form",
     ]) {
-        for form in erg.inflections(word) {
-            out.push((from, to, match_case(word, &form)));
+        // The forms closest to what was written first: "running" before
+        // "runes" for "runing".
+        let mut forms = erg.inflections(word);
+        forms.sort_by_key(|f| (edit_distance(word, f), crate::dict::tier(f).is_none()));
+        // Agreement is between a subject and a finite verb: only finite
+        // forms repair it ("aspiring" would not repair "to aspire" but
+        // build another phrase), and the first word of a sentence has no
+        // subject before it ("Ensure that ...", "Try ...").
+        let agreement = f.contains("agree");
+        if !(agreement && sentence_start) {
+            for form in forms {
+                if agreement && form.ends_with("ing") {
+                    continue;
+                }
+                out.push((from, to, match_case(word, &form)));
+            }
         }
     }
-    // No article after a possessive or another determiner ("Chiang's
-    // department", "every day").
     let pl = prev_word.to_lowercase();
-    let determined = pl.ends_with("'s")
-        || pl.ends_with("’s")
-        || pl.ends_with("s'")
-        || pl.ends_with("s’")
-        || [
-            "the", "a", "an", "this", "that", "these", "those", "my", "your", "his", "her", "its",
-            "our", "their", "some", "any", "no", "every", "each", "either", "neither", "whose",
-            "which", "what",
-        ]
-        .contains(&pl.as_str());
-    if has(&["add an article", "add the article"]) && !determined {
-        for art in ["the ", "a ", "an "] {
-            out.push((from, from, match_case(word, art)));
-        }
-    }
+    // A missing article is not claimed: a bare noun is often right in
+    // edited text (a mass use, "hopeless of remedy"; headline style, "Goal
+    // is to ..."), and the grammar cannot tell these from an error.
     if has(&["“a”", "\"a\"", "“an”", "\"an\"", "article"]) {
         let pw_end = prev_word_start + prev_word.chars().count();
         match pl.as_str() {
@@ -1605,11 +1656,20 @@ fn candidate_fixes(
         }
     }
     if has(&["pronoun", "“am”", "\"am\""]) {
-        for set in PRONOUN_CASES {
-            if set.contains(&lower.as_str()) {
-                for p in set.iter().filter(|p| **p != lower) {
-                    out.push((from, to, match_case(word, p)));
-                }
+        // Subject and object forms only (he/him): a possessive in place of
+        // a pronoun builds another phrase rather than repairing one.
+        for (subject, object) in [
+            ("i", "me"),
+            ("we", "us"),
+            ("he", "him"),
+            ("she", "her"),
+            ("they", "them"),
+            ("who", "whom"),
+        ] {
+            if lower == subject {
+                out.push((from, to, match_case(word, object)));
+            } else if lower == object {
+                out.push((from, to, match_case(word, subject)));
             }
         }
         for v in ["am", "is", "are"] {

@@ -386,7 +386,9 @@ impl Erg {
             deleted_daughters,
             roots,
             max_edges: 100_000,
-            max_nodes: 100_000_000,
+            // About 30 bytes a node: some 750 MB per parse, so that several
+            // threads parsing long sentences stay within a few gigabytes.
+            max_nodes: 25_000_000,
             timeout: Duration::from_secs(60),
             packing_restrictor,
             max_readings: 1000,
@@ -718,9 +720,9 @@ impl Erg {
                 stems.push(a.stem);
             }
         }
-        // A regular past of an irregular verb (*buyed*): the stem by its
-        // spelling.
-        for suffix in ["ed", "d"] {
+        // The stem by spelling: a regular past of an irregular verb
+        // (*buyed*), or a misspelled inflection (*runing*).
+        for suffix in ["ed", "d", "ing", "s", "es"] {
             if let Some(st) = w.strip_suffix(suffix) {
                 if self.lexicon.is_stem(st) && !stems.iter().any(|s| s == st) {
                     stems.push(st.to_string());
@@ -741,6 +743,15 @@ impl Erg {
                     .unwrap_or_default(),
                 st.strip_suffix('y')
                     .map(|b| format!("{b}ies"))
+                    .unwrap_or_default(),
+                // Doubled final consonant: "running", "stopped".
+                st.chars()
+                    .last()
+                    .map(|c| format!("{st}{c}ing"))
+                    .unwrap_or_default(),
+                st.chars()
+                    .last()
+                    .map(|c| format!("{st}{c}ed"))
                     .unwrap_or_default(),
             ];
             for f in regular

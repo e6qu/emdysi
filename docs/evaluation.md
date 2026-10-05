@@ -387,6 +387,30 @@ testing"), "Google open sourced", a sentence-initial name ("Pod is ..."),
 and two words outside every list (*permittee*, *async*). About 3.6 false
 flags per 1,000 sentences remain.
 
+After two more gates (no grammar claims on bold labels, or on words the
+document uses as names), the development set is at 4.8 flags per 1,000
+sentences (12 flags, at least six of them real errors in the source).
+
+A held-out test set (`heldout-*.tsv`: other chapters, pages and posts of
+the same sources, 8,371 sentences, never inspected while developing) gives
+the honest estimate (`SET=heldout`, 2026-10-04):
+
+| Genre | Sentences | Flags per 1,000 | Consistency | Grammar errors | Spelling |
+|---|---|---|---|---|---|
+| Blog | 1,241 | 11.3 | 0.0 | 3.2 | 8.1 |
+| Fiction | 2,068 | 11.1 | 5.3 | 2.9 | 2.9 |
+| Government | 822 | 1.2 | 0.0 | 0.0 | 1.2 |
+| News and wiki | 500 | 18.0 | 0.0 | 6.0 | 12.0 |
+| Technical | 3,740 | 5.1 | 1.9 | 1.9 | 1.3 |
+| All | 8,371 | 7.9 | 2.2 | 2.4 | 3.3 |
+
+These are flags, not false flags: the held-out flags are not read, so how
+many are real errors in the source is not known. Spelling generalizes
+least (2 flags on the development set, 3.3 per 1,000 here): correct but
+rare words are an open set. The development set is too small to show such
+gaps; the next step is a larger development set from other documents of
+the same sources, keeping the held-out set untouched.
+
 The price is recall. On the `csli` test suite, named errors now catch 33
 of 388 ungrammatical sentences (104 before) and wrongly flag 3 of 965
 grammatical ones (17 before): the checker names fewer errors, and nearly
