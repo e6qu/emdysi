@@ -72,14 +72,32 @@ fn collect(g: &Grammar, rules: &[Rule], d: &Deriv, parent: &str, out: &mut Vec<S
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
 pub struct Model {
     pub weights: HashMap<String, f64>,
+    /// Scores divided by this give calibrated log-probabilities: the
+    /// probability of a reading among the readings found is proportional
+    /// to `exp(score / temperature)` (fitted on held-out items; see
+    /// [`fit_temperature`]).
+    pub temperature: f64,
+}
+
+impl Default for Model {
+    fn default() -> Model {
+        Model {
+            weights: HashMap::new(),
+            temperature: 1.0,
+        }
+    }
 }
 
 impl Model {
     /// Parse a model file: one `weight<TAB>feature` per line.
     pub fn parse(src: &str) -> Model {
+        let temperature = src
+            .lines()
+            .find_map(|l| l.strip_prefix("# temperature\t")?.trim().parse().ok())
+            .unwrap_or(1.0);
         let weights = src
             .lines()
             .filter_map(|l| {
@@ -87,7 +105,10 @@ impl Model {
                 Some((f.to_string(), w.parse().ok()?))
             })
             .collect();
-        Model { weights }
+        Model {
+            weights,
+            temperature,
+        }
     }
 
     pub fn to_tsv(&self) -> String {
@@ -97,7 +118,15 @@ impl Model {
             .filter(|(_, w)| w.abs() > 1e-9)
             .collect();
         v.sort_by(|a, b| a.0.cmp(b.0));
-        v.iter().map(|(f, w)| format!("{w:.6}\t{f}\n")).collect()
+        let head = if self.temperature == 1.0 {
+            String::new()
+        } else {
+            format!("# temperature\t{:.4}\n", self.temperature)
+        };
+        head + &v
+            .iter()
+            .map(|(f, w)| format!("{w:.6}\t{f}\n"))
+            .collect::<String>()
     }
 
     pub fn score(&self, feats: &[String]) -> f64 {
@@ -201,7 +230,10 @@ pub fn train(examples: &[Example], epochs: usize) -> Model {
         .into_iter()
         .map(|(f, s)| (f, s / t.max(1) as f64))
         .collect();
-    Model { weights }
+    Model {
+        weights,
+        temperature: 1.0,
+    }
 }
 
 /// Train a conditional log-linear model (maximum entropy, as for the
@@ -295,7 +327,49 @@ pub fn train_maxent(examples: &[Example], l2: f64, iterations: usize) -> Model {
         .filter(|(_, wi)| wi.abs() > 1e-6)
         .map(|(f, wi)| (f.to_string(), *wi))
         .collect();
-    Model { weights }
+    Model {
+        weights,
+        temperature: 1.0,
+    }
+}
+
+/// The temperature that makes `model`'s scores calibrated probabilities on
+/// `examples` (items not trained on): the one, on a log grid from 0.01 to
+/// 100, that maximizes the mean log-probability of the gold reading under
+/// `exp(score / t)`, normalized over each item's readings. Readings with
+/// the gold reading's features count as gold. Returns the temperature and
+/// the mean log-probability.
+pub fn fit_temperature(model: &Model, examples: &[Example]) -> (f64, f64) {
+    let scored: Vec<(Vec<f64>, Vec<bool>)> = examples
+        .iter()
+        .map(|e| {
+            let gold = &e.readings[e.gold];
+            (
+                e.readings.iter().map(|r| model.score(r)).collect(),
+                e.readings.iter().map(|r| r == gold).collect(),
+            )
+        })
+        .collect();
+    let loglik = |t: f64| -> f64 {
+        let mut sum = 0.0;
+        for (s, g) in &scored {
+            let max = s.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+            let z: f64 = s.iter().map(|x| ((x - max) / t).exp()).sum();
+            let gz: f64 = s
+                .iter()
+                .zip(g)
+                .filter(|(_, g)| **g)
+                .map(|(x, _)| ((x - max) / t).exp())
+                .sum();
+            sum += (gz / z).ln();
+        }
+        sum / scored.len().max(1) as f64
+    };
+    (0..=400)
+        .map(|k| 10f64.powf(-2.0 + k as f64 / 100.0))
+        .map(|t| (t, loglik(t)))
+        .max_by(|a, b| a.1.total_cmp(&b.1))
+        .unwrap_or((1.0, 0.0))
 }
 
 #[cfg(test)]

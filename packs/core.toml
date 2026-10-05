@@ -34,20 +34,17 @@ examples = ["The field is a alpha-level field.\n"]
 
 [[rule]]
 id = "core.repeated-word"
-kind = "regex"
+kind = "repeated-word"
 severity = "warning"
 message = "Repeated word: '{match}'."
-description = "A function word written twice in a row ('the the', 'to to', 'are are'). Only words that are never correctly doubled are checked: not 'that', 'had', 'in', 'on' or 'it' ('what it is is' is skipped)."
-pattern = "(?i)(?<![\\w`'/-])(the|a|an|to|of|for|with|from|into|and|or|but|are|be|been|can|will|would|should|could|we|they|this|is)[ \\t]+\\1(?![\\w`'/-])(?<!what it is is)(?<!what this is is)"
-replace = "$1"
-examples = ["We need to to stay secure.\n"]
+description = "A function word written twice in a row ('the the', 'to to', 'are are'), in a sentence the grammar has no full analysis for: English allows some doublings ('that that is is', 'Will Will will', 'had had'). A run of three or more is taken as deliberate ('can can can')."
+examples = ["It can be modified and and removed at any time.\n"]
 
 [[rule]]
 id = "core.double-article"
-kind = "regex"
+kind = "repeated-word"
+articles = true
 severity = "warning"
 message = "Two articles in a row: '{match}'."
-description = "Two different articles in a row ('a the', 'the an'), in lower case."
-pattern = "(?<![\\w`'/-])(a|an|the)[ \\t]+(?!\\1(?!\\w))(?:a|an|the)(?![\\w`'/-])"
-unless = "(?i)\\bthe (?:a|an)\\b(?: or | and |/)"
+description = "Two different articles in a row ('a the', 'the an'), in lower case, in a sentence the grammar has no full analysis for."
 examples = ["Events such as a the last process ending.\n"]

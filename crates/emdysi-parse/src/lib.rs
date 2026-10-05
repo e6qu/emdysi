@@ -17,6 +17,7 @@ use emdysi_hpsg::parser::{
 use emdysi_hpsg::{Dag, Grammar, Unifier};
 use emdysi_repp::Repp;
 
+pub mod ambiguity;
 pub mod rank;
 
 pub use emdysi_hpsg::mrs;
@@ -211,6 +212,9 @@ pub struct Parse {
     /// without an analysis after a complete search is outside the grammar.
     pub complete: bool,
     pub elapsed: Duration,
+    /// The ranking model's temperature: the probability of a reading among
+    /// `readings` is proportional to `exp(score / temperature)`.
+    pub temperature: f64,
 }
 
 /// A part-of-speech hypothesis for a token (Penn Treebank tag set).
@@ -648,6 +652,7 @@ impl Erg {
             exhausted: result.exhausted,
             complete: !result.exhausted && result.stats.pruned == 0,
             elapsed: t0.elapsed(),
+            temperature: self.model.temperature,
         })
     }
 

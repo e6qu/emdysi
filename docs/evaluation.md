@@ -467,6 +467,49 @@ the errors among them that no rule catches are mostly wrong verb forms in
 sentences the grammar still analyses (*adds* for *add*, *is granted* for
 *granted*) and missing words.
 
+## Stress sentences and ambiguity
+
+[`corpora/stress`](../corpora/stress/README.md) has 58 grammatical
+sentences that are hard for parsers and checkers: the buffalo and police
+sentences, *had had*, *That that is is ...*, *Will Will will Will Will's
+will?*, garden paths (*The horse raced past the barn fell*, *The old man
+the boat*), center embedding and famous ambiguities.
+`crates/emdysi-check/tests/stress.rs` (2026-10-05): the `core` pack
+claims no error in any of them; 54 get a full analysis (*Can can can can
+can can*, *The prime number few*, and the comparative correlatives *The
+more you read, the more you know* and *The sooner, the better* get
+fragments only).
+
+The ranker's scores (an averaged perceptron) are not probabilities. A
+temperature fitted on the held-out 10% of the gold items (5.0, by
+maximum likelihood of the gold reading;
+`NO_PARSE=1 CALIBRATE_ONLY=1 cargo run --release -p emdysi-parse --example train -- CACHE`)
+makes them calibrated: on those 273 items,
+
+| Probability of the best reading | Items | Mean probability | Best reading right |
+|---|---|---|---|
+| 0-20% | 9 | 17% | 22% |
+| 20-40% | 10 | 33% | 30% |
+| 40-60% | 37 | 52% | 54% |
+| 60-80% | 66 | 71% | 79% |
+| 80-100% | 151 | 96% | 97% |
+
+Readings with the same predicate-argument dependencies mean the same, so
+they are grouped into interpretations
+([`ambiguity.rs`](../crates/emdysi-parse/src/ambiguity.rs)), and a
+sentence is reported as ambiguous when a second interpretation keeps at
+least 5% of the probability (`cargo run --release -p emdysi-parse
+--example interpretations -- SENTENCE` shows them all):
+
+| Sentence | Interpretations (probability) |
+|---|---|
+| I saw the man with the telescope. | *with(saw, telescope)* 50%; *with(man, telescope)* 40%; *saw(I, man, with)* 10% |
+| The chicken is ready to eat. | the chicken eats 50%; the chicken is eaten 49% |
+| Time flies like an arrow. | *time flies* (insects) *like* an arrow 62%; time *flies* like an arrow 17%; a third reading 13% (the ranker prefers the joke reading) |
+| They are cooking apples. | *cooking(they, apples)* 70%; *are(they, apples)* with *cooking apples* 21% |
+| Visiting relatives can be boring. | the visiting is boring 92%; the relatives are boring 5% |
+| We painted the wall with cracks. | *with(painted, cracks)* 82%; *with(wall, cracks)* 16% (two readings) |
+
 ## Parse readings of machine-written prose
 
 [`corpora/ai-treebank`](../corpora/ai-treebank/README.md) has 160 sentences

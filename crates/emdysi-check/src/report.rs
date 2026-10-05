@@ -110,6 +110,7 @@ pub fn render_parses(a: &Analysis, format: OutputFormat, show: &ParseDetails) ->
         };
         let best = s.best();
         let tree = best.and_then(|r| r.tree.as_ref()).map(|t| t.bracketed());
+        let ambiguity = ambiguity_lines(s);
         match format {
             OutputFormat::Plain => {
                 let _ = writeln!(
@@ -121,6 +122,9 @@ pub fn render_parses(a: &Analysis, format: OutputFormat, show: &ParseDetails) ->
                 let _ = writeln!(out, "    {status}");
                 if let Some(t) = &tree {
                     let _ = writeln!(out, "    {t}");
+                }
+                for l in &ambiguity {
+                    let _ = writeln!(out, "    {l}");
                 }
                 if derivations {
                     if let Some(r) = best {
@@ -143,6 +147,12 @@ pub fn render_parses(a: &Analysis, format: OutputFormat, show: &ParseDetails) ->
                 if let Some(t) = &tree {
                     let _ = writeln!(out, "\n   ```\n   {t}\n   ```");
                 }
+                if !ambiguity.is_empty() {
+                    let _ = writeln!(out);
+                    for l in &ambiguity {
+                        let _ = writeln!(out, "   {l}");
+                    }
+                }
                 if derivations {
                     if let Some(r) = best {
                         let _ = writeln!(out, "\n   ```\n   {}\n   ```", r.derivation);
@@ -155,6 +165,64 @@ pub fn render_parses(a: &Analysis, format: OutputFormat, show: &ParseDetails) ->
                 }
             }
         }
+    }
+    out
+}
+
+/// Lines that say how a sentence is ambiguous: the interpretations (see
+/// [`emdysi_parse::ambiguity`]) of its full readings that keep at least
+/// [`emdysi_parse::ambiguity::MIN_SHARE`] of the probability, each with the
+/// dependencies that set it apart from the most probable one. Empty when
+/// the sentence has one interpretation.
+pub fn ambiguity_lines(s: &crate::Sentence) -> Vec<String> {
+    let Some(p) = &s.parse else {
+        return Vec::new();
+    };
+    let strict = s.strict();
+    let readings: Vec<emdysi_parse::Reading> = p
+        .readings
+        .iter()
+        .filter(|r| !strict || emdysi_parse::is_strict(&r.root))
+        .cloned()
+        .collect();
+    let all = emdysi_parse::ambiguity::interpretations(&readings, p.temperature, &s.original);
+    let kept: Vec<_> = all
+        .iter()
+        .filter(|i| i.probability >= emdysi_parse::ambiguity::MIN_SHARE)
+        .collect();
+    if kept.len() < 2 {
+        return Vec::new();
+    }
+    let pct = |x: f64| format!("{:.0}%", 100.0 * x);
+    let mut out = vec![format!(
+        "ambiguous: {} interpretations ({})",
+        kept.len(),
+        kept.iter()
+            .map(|i| pct(i.probability))
+            .collect::<Vec<_>>()
+            .join(", ")
+    )];
+    let first = kept[0];
+    for (k, i) in kept.iter().enumerate().skip(1) {
+        let mut only: Vec<String> = i.differences(first);
+        let mut instead: Vec<String> = first.differences(i);
+        only.truncate(4);
+        instead.truncate(4);
+        out.push(format!(
+            "  {}. {}: {} instead of {}",
+            k + 1,
+            pct(i.probability),
+            if only.is_empty() {
+                "-".into()
+            } else {
+                only.join(", ")
+            },
+            if instead.is_empty() {
+                "-".into()
+            } else {
+                instead.join(", ")
+            }
+        ));
     }
     out
 }

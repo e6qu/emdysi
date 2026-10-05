@@ -20,6 +20,7 @@ pub mod decisions;
 pub mod dict;
 pub mod glossary;
 pub mod modifiers;
+pub mod repeats;
 pub mod report;
 pub mod rules;
 pub mod semantics;

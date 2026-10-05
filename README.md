@@ -17,7 +17,15 @@ ranker trained on license-clean gold trees (2,626 items of all lengths)
 picks the gold analysis first for 81.7% of held-out sentences, long ones
 included. Each analysis comes with its semantics as Minimal Recursion
 Semantics (MRS, `en parse --mrs`), identical to the ERG's gold MRS for all
-2,966 gold analyses we reproduce. Sentences the grammar rejects are
+2,966 gold analyses we reproduce. English is ambiguous, and the parser
+says so: `en parse` groups the readings of a sentence by meaning (their
+predicate-argument dependencies) and, when a second meaning keeps at
+least 5% of the ranker's calibrated probability, reports the sentence as
+ambiguous and shows what differs (*I saw the man with the telescope*:
+*with(saw, telescope)* 50%, *with(man, telescope)* 40%). Famous stress
+sentences (*Buffalo buffalo Buffalo buffalo buffalo buffalo Buffalo
+buffalo*, *had had had*, garden paths) get full analyses and no error
+claims ([`corpora/stress`](corpora/stress/README.md)). Sentences the grammar rejects are
 re-parsed with the ERG's grammar-error ("mal-rule") variant, which names
 the error (agreement, verb forms, articles, ...).
 

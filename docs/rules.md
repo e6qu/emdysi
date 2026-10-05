@@ -197,6 +197,18 @@ the next word must be in the word list, and the article must be a
 determiner in the best analysis. `{fix}` and `{word}` are available in
 messages. The fix is applied automatically.
 
+### `repeated-word`
+
+A function word written twice in a row (*the the*, *to to*, *are are*) or,
+with `articles = true`, two different articles in a row (*a the*, *the
+an*). English allows some doublings (*That that is is that that is not is
+not*, *Will Will will Will Will's will?*, *He had had enough*), so a
+doubling is reported only in a sentence the grammar has no full analysis
+for, only for words in a fixed list (articles, prepositions,
+conjunctions, auxiliaries and pronouns that are never doubled in
+running text), and not in runs of three or more (*Can can can can can
+can*). The fix drops the second word.
+
 ### `consistency`
 
 American and British spellings mixed in one document, e.g. *color* and
