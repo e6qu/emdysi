@@ -127,7 +127,7 @@ fn main() {
     let mut results = results.into_inner().unwrap();
     results.sort_by_key(|r| r.0.parse::<u64>().unwrap_or(0));
     // ITEMS=<file> appends one line per item: id, grammatical, parsed,
-    // gold found, sentence.
+    // gold found, sentence, gold ranked first.
     if let Ok(path) = std::env::var("ITEMS") {
         use std::io::Write;
         let mut f = std::fs::OpenOptions::new()
@@ -136,7 +136,8 @@ fn main() {
             .open(path)
             .unwrap();
         for r in &results {
-            writeln!(f, "{}\t{}\t{}\t{}\t{}", r.0, r.2, r.3 > 0, r.4, r.1).unwrap();
+            let first = r.9.is_some() && r.8 == r.9;
+            writeln!(f, "{}\t{}\t{}\t{}\t{}\t{first}", r.0, r.2, r.3 > 0, r.4, r.1).unwrap();
         }
     }
     let (
