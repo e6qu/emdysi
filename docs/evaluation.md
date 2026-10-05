@@ -411,6 +411,22 @@ rare words are an open set. The development set is too small to show such
 gaps; the next step is a larger development set from other documents of
 the same sources, keeping the held-out set untouched.
 
+A second, larger development set (`dev2-*.tsv`, 13,442 sentences: the
+rest of the novel, more book chapters, blog posts and concept pages) showed
+gaps the first could not:
+
+| Step | Flags per 1,000 sentences |
+|---|---|
+| Gates above | 13.1 |
+| No claim leaning on an analysis with a generic entry for an unknown word (except an error on that word, *buyed*); a typo must be one edit from a listed word, not one the morphology derives; words of four letters or more | 8.6 |
+| Corrections must repair, not rebuild: finite forms only for agreement, none on a sentence's first word; subject/object swaps only for pronouns; no missing-article claims. A listed base plus an affix is a coinage unless a real inflection is one edit away; names skipped by the consistency rule | 6.4 |
+
+What is left is mostly spelling (3.4 per 1,000: jargon such as *libs*,
+*rootfs*, *async*; names and handles; the novel's own spellings such as
+*expence* and *dropt*; and real typos in the sources: *durnig*, *anyeone*,
+*righly*, *reseearchers*), spelling consistency within a document (1.7),
+and named grammar errors (1.0, mostly archaic constructions in the novel).
+
 The price is recall. On the `csli` test suite, named errors now catch 33
 of 388 ungrammatical sentences (104 before) and wrongly flag 3 of 965
 grammatical ones (17 before): the checker names fewer errors, and nearly
