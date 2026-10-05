@@ -391,6 +391,17 @@ After two more gates (no grammar claims on bold labels, or on words the
 document uses as names), the development set is at 4.8 flags per 1,000
 sentences (12 flags, at least six of them real errors in the source).
 
+With the changes of 2026-10-05 (spelling suggestions from the word list
+first, sentence-initial typos, a/an and repeated words, the grammar
+extensions, the grammar-error variant's types and the tagger), the
+development set is at 3.6 flags per 1,000 sentences (9 flags). Three of
+them were sentence-initial names read as typos (*Krug, Steve.*, *Cuaron,
+whose ...*, *Isner, who ...*); a capitalized first word followed by a
+comma or by another capitalized word is now taken as a name, which leaves
+6 flags (2.4 per 1,000): *neices* (a real typo in the novel), *offense*
+and *centered* against the rest of their documents, *permittee*, *async*,
+and *an easy form of think aloud* (a named error on a term).
+
 A held-out test set (`heldout-*.tsv`: other chapters, pages and posts of
 the same sources, 8,371 sentences, never inspected while developing) gives
 the honest estimate (`SET=heldout`, 2026-10-04):
@@ -455,6 +466,7 @@ false flag:
 | Gates of the previous section | 129 | 0 | 1 | 0 |
 | Listed words suggested first; a capitalized first word checked in lower case; a listed base plus an affix is a typo when another common word is one edit away; at most one inflection per word | 145 | 0 | 1 | 0 |
 | Deterministic a/an, repeated-word and double-article rules | 145 | 26 | 1 | 0 |
+| Repeated words claimed only in sentences the grammar rejects (*that that is is*, *Will Will will* are English) | 145 | 22 | 1 | 0 |
 
 The 33 spelling misses left are mostly words two edits from the intended
 one (*certicate*, *neccesary*, *admistrators*), capitalized words after
