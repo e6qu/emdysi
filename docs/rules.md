@@ -149,11 +149,18 @@ An error is a claim, so it is reported only when the grammar can show it
 (decision D13): a complete search (no pruning, no time limit) found no
 strict or informal analysis of the sentence; every best analysis of the
 grammar-error variant names the same error; and correcting it the way its
-kind suggests (another inflection of the word, an added or removed
-article, another case of a pronoun, *a*/*an*, *fewer*/*less*, deleting a
-doubled word, ...) gives a sentence the grammar analyses strictly. That
-correction is the suggestion. Errors of other kinds, and errors in names
-and numbers, are not reported. A correct sentence the grammar does not
+kind suggests (another inflection of the word, a finite one for
+agreement; a removed article; the subject or object form of a pronoun;
+*a*/*an*; *fewer*/*less*; deleting a doubled word, ...) gives a sentence the
+grammar analyses strictly. That correction is the suggestion. Corrections
+are kept to ones that can only repair the error, not build another phrase:
+no *-ing* form for an agreement error, no possessive for a pronoun. Errors
+of other kinds, and errors in names and numbers, are not reported; nor is
+an agreement error on the first word of a sentence (an imperative has no
+subject), nor a missing article (a bare noun is often right in edited
+text: a mass use, or headline style, which the grammar cannot tell from an
+error). The analyses must not lean on generic entries for unknown words,
+except for an error on the unknown word itself (*buyed*). A correct sentence the grammar does not
 cover stays unanalysable after such a small change, so it is not flagged.
 See [evaluation.md](evaluation.md#false-flags-on-edited-text).
 

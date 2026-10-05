@@ -1621,28 +1621,24 @@ fn candidate_fixes(
         // "runes" for "runing".
         let mut forms = erg.inflections(word);
         forms.sort_by_key(|f| (edit_distance(word, f), crate::dict::tier(f).is_none()));
-        for form in forms {
-            out.push((from, to, match_case(word, &form)));
+        // Agreement is between a subject and a finite verb: only finite
+        // forms repair it ("aspiring" would not repair "to aspire" but
+        // build another phrase), and the first word of a sentence has no
+        // subject before it ("Ensure that ...", "Try ...").
+        let agreement = f.contains("agree");
+        if !(agreement && sentence_start) {
+            for form in forms {
+                if agreement && form.ends_with("ing") {
+                    continue;
+                }
+                out.push((from, to, match_case(word, &form)));
+            }
         }
     }
-    // No article after a possessive or another determiner ("Chiang's
-    // department", "every day").
     let pl = prev_word.to_lowercase();
-    let determined = pl.ends_with("'s")
-        || pl.ends_with("’s")
-        || pl.ends_with("s'")
-        || pl.ends_with("s’")
-        || [
-            "the", "a", "an", "this", "that", "these", "those", "my", "your", "his", "her", "its",
-            "our", "their", "some", "any", "no", "every", "each", "either", "neither", "whose",
-            "which", "what",
-        ]
-        .contains(&pl.as_str());
-    if has(&["add an article", "add the article"]) && !determined {
-        for art in ["the ", "a ", "an "] {
-            out.push((from, from, match_case(word, art)));
-        }
-    }
+    // A missing article is not claimed: a bare noun is often right in
+    // edited text (a mass use, "hopeless of remedy"; headline style, "Goal
+    // is to ..."), and the grammar cannot tell these from an error.
     if has(&["“a”", "\"a\"", "“an”", "\"an\"", "article"]) {
         let pw_end = prev_word_start + prev_word.chars().count();
         match pl.as_str() {
@@ -1660,11 +1656,20 @@ fn candidate_fixes(
         }
     }
     if has(&["pronoun", "“am”", "\"am\""]) {
-        for set in PRONOUN_CASES {
-            if set.contains(&lower.as_str()) {
-                for p in set.iter().filter(|p| **p != lower) {
-                    out.push((from, to, match_case(word, p)));
-                }
+        // Subject and object forms only (he/him): a possessive in place of
+        // a pronoun builds another phrase rather than repairing one.
+        for (subject, object) in [
+            ("i", "me"),
+            ("we", "us"),
+            ("he", "him"),
+            ("she", "her"),
+            ("they", "them"),
+            ("who", "whom"),
+        ] {
+            if lower == subject {
+                out.push((from, to, match_case(word, object)));
+            } else if lower == object {
+                out.push((from, to, match_case(word, subject)));
             }
         }
         for v in ["am", "is", "are"] {
