@@ -346,6 +346,16 @@ impl Erg {
         let spanning: HashSet<String> = ace_setting(&config_src, "spanning-only-rules")
             .into_iter()
             .collect();
+        // emdysi's extensions declare their own spanning-only rules (rules
+        // that apply only to the whole input) in grammar/emdysi/settings.cfg.
+        let spanning: HashSet<String> = spanning
+            .into_iter()
+            .chain(
+                std::fs::read_to_string(dir.join("../emdysi/settings.cfg"))
+                    .map(|src| ace_setting(&src, "spanning-only-rules"))
+                    .unwrap_or_default(),
+            )
+            .collect();
         let mut rules = Vec::new();
         // Types whose constraints are inconsistent (e.g. in an extension).
         let mut warnings: Vec<String> = grammar

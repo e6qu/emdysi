@@ -14,6 +14,13 @@ are not changed. Written for this project (MIT, see the repository's
   binary rule joins the halves into a sentence whose semantics is a
   `comparative_correlative_rel` with the first half (the condition) as
   ARG1 and the second as ARG2.
+- `discourse.tdl`: a sentence that starts with a coordinating conjunction
+  (*And his sisters are charming women.*, *But I left.*), which the ERG
+  analyses as a fragment: the conjunction-marked clause becomes a main
+  clause when it spans the whole input (a spanning-only rule, declared in
+  `settings.cfg`, which the loader reads in the syntax of ACE's
+  configuration files). The conjunction's relation keeps its left
+  argument unfilled.
 - `lexicon.tdl`: adjectives used as plural nouns for people with "the"
   (*the brave*, *the free*, *the meek*), in the form of the ERG's 94 such
   entries (type `n_-_c-pl-def_le`, e.g. *the poor*).

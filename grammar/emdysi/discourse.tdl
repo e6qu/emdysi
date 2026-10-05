@@ -1,0 +1,46 @@
+;;; A sentence that starts with a coordinating conjunction: |And we left.|,
+;;; |But I knew I should persuade you at last.| The ERG analyses these as
+;;; fragments (the conjunction marks its clause as the right conjunct of a
+;;; coordination with nothing on the left); edited prose uses them freely.
+;;;
+;;; cl_disc-conj_c turns a clause marked by a coordinating conjunction
+;;; (the ERG's mrk-nh_cl_c) into a main clause when it spans the whole input
+;;; (spanning-only, see settings.cfg). The conjunction's relation stays in
+;;; the semantics with its left argument unfilled: the clause it links to
+;;; is in the previous sentence.
+
+:begin :type.
+
+disc-conj := cl-cl.
+
+discourse_conj_rule := rule & unary_phrase &
+  [ SYNSEM phr_synsem &
+           [ LOCAL [ CAT #cat & [ HEAD verb,
+                                  MC + ],
+                     AGR #agr,
+                     CONJ cnil,
+                     CTXT #ctxt ],
+             NONLOC #nonloc,
+             PUNCT #punct,
+             MODIFD #modif ],
+    ARGS < [ SYNSEM [ LOCAL [ CAT #cat,
+                              AGR #agr,
+                              CONJ lex-conj,
+                              CTXT #ctxt,
+                              CONT.HOOK #hook ],
+                      NONLOC #nonloc,
+                      PUNCT #punct,
+                      MODIFD #modif ] ] >,
+    C-CONT [ HOOK #hook,
+             RELS <! !>,
+             HCONS <! !>,
+             ICONS <! !> ] ].
+
+:end :type.
+
+:begin :instance :status rule.
+
+cl_disc-conj_c := discourse_conj_rule &
+  [ RNAME disc-conj ].
+
+:end :instance.
