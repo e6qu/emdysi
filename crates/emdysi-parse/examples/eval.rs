@@ -84,7 +84,9 @@ fn main() {
                     let ours: Vec<String> = p
                         .readings
                         .iter()
-                        .filter_map(|r| parse_sexp(&r.derivation).map(|t| skeleton(&t, false)))
+                        .filter_map(|r| {
+                            parse_sexp(&r.derivation).map(|t| skeleton(&erg_names(t), false))
+                        })
                         .collect();
                     let g = gold.get(id).cloned();
                     let hit = g.as_ref().is_some_and(|g| ours.iter().any(|o| o == g));
@@ -137,7 +139,16 @@ fn main() {
             .unwrap();
         for r in &results {
             let first = r.9.is_some() && r.8 == r.9;
-            writeln!(f, "{}\t{}\t{}\t{}\t{}\t{first}", r.0, r.2, r.3 > 0, r.4, r.1).unwrap();
+            writeln!(
+                f,
+                "{}\t{}\t{}\t{}\t{}\t{first}",
+                r.0,
+                r.2,
+                r.3 > 0,
+                r.4,
+                r.1
+            )
+            .unwrap();
         }
     }
     let (
@@ -201,4 +212,31 @@ fn main() {
     println!(
         "{dir}: grammatical {wf_parsed}/{wf} parsed; ungrammatical {nwf_parsed}/{nwf} parsed; gold tree found {gold_hit}/{with_gold}, ranked first {top1}; {exhausted} hit limits; total {total:?}"
     );
+}
+
+/// Rules of emdysi's grammar extensions (`grammar/emdysi`) that stand where
+/// an ERG rule does, with the same daughters: compared with the ERG's gold
+/// trees under the ERG rule's name. `cl_disc-conj_c` makes a strict sentence
+/// of a conjunction-marked clause, where the ERG's `cl_cnj-frg_c` makes a
+/// fragment of it.
+const EQUIVALENT: &[(&str, &str)] = &[("cl_disc-conj_c", "cl_cnj-frg_c")];
+
+fn erg_names(t: Sexp) -> Sexp {
+    match t {
+        Sexp::List(items) => Sexp::List(
+            items
+                .into_iter()
+                .map(|x| match x {
+                    Sexp::Atom(a) => Sexp::Atom(
+                        EQUIVALENT
+                            .iter()
+                            .find(|(ours, _)| *ours == a)
+                            .map_or(a, |(_, erg)| erg.to_string()),
+                    ),
+                    l => erg_names(l),
+                })
+                .collect(),
+        ),
+        a => a,
+    }
 }
