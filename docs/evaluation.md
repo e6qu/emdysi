@@ -470,6 +470,7 @@ false flag:
 | Listed words suggested first; a capitalized first word checked in lower case; a listed base plus an affix is a typo when another common word is one edit away; at most one inflection per word | 145 | 0 | 1 | 0 |
 | Deterministic a/an, repeated-word and double-article rules | 145 | 26 | 1 | 0 |
 | Repeated words claimed only in sentences the grammar rejects (*that that is is*, *Will Will will* are English) | 145 | 22 | 1 | 0 |
+| Precision first: no "common word one edit away" guess for coinages (*destructures*, *liveness* are words), sentence-initial typos only from seven letters, contractions formal | 139 | 22 | 1 | 0 |
 
 The 33 spelling misses left are mostly words two edits from the intended
 one (*certicate*, *neccesary*, *admistrators*), capitalized words after
