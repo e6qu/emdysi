@@ -422,8 +422,10 @@ impl Erg {
             deleted_daughters,
             roots,
             max_edges: 100_000,
-            // About 30 bytes a node: some 750 MB per parse, so that several
-            // threads parsing long sentences stay within a few gigabytes.
+            // Nodes of the structures the chart keeps (released ones are not
+            // counted): about 1 GB per parse at most, measured, so that
+            // several threads parsing long sentences stay within a few
+            // gigabytes.
             max_nodes: 25_000_000,
             timeout: Duration::from_secs(60),
             packing_restrictor,

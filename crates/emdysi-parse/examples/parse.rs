@@ -39,6 +39,10 @@ fn main() {
     if std::env::var_os("NO_BEAM").is_some() {
         erg.config.cell_beam = None;
     }
+    // MAX_NODES=<n> changes the node budget of a parse, for comparison.
+    if let Some(n) = std::env::var("MAX_NODES").ok().and_then(|v| v.parse().ok()) {
+        erg.config.max_nodes = n;
+    }
     eprintln!("loaded in {:?}", t.elapsed());
     for line in std::io::stdin().lines() {
         let line = line.unwrap();
