@@ -670,3 +670,37 @@ model stays; a fair comparison needs right readings judged independently
 of any one ranker, and pruning that does not depend on the model being
 evaluated.
 
+
+## Coverage of edited text
+
+How many sentences of edited prose get a strict (full, formal) reading:
+300 sentences drawn at random (seed 7) from whole paragraphs of the first
+development set (`corpora/edited`, `corpora/edited-by-sa`; 5 to 25 words,
+paragraphs without code, links, quotes or Markdown markup), parsed with
+`cargo run --release -p emdysi-parse --example parse`, which reports how
+many of a sentence's readings are strict. Of the sentences without one,
+most parse once shortened: the long ones ran out of search, not grammar.
+About a dozen are fragments the sampling cut at *Mr.*
+
+The parser stops a sentence when the structures its chart keeps pass a
+node budget (25 million nodes, about 1 GB). It counted the structures of
+edges it had released (frozen or pruned) as kept, so long sentences
+stopped early; counting only those it keeps (2026-10-06):
+
+| | Strict reading (of 300) | Out of budget | Total time | Slowest |
+|---|---|---|---|---|
+| Released structures counted | 254 | 5 | 400 s | 15 s |
+| Only kept structures counted | 261 | 1 | 461 s | 34 s |
+
+A 45-word sentence peaks at 1.07 GB (the grammar takes 365 MB of it).
+The per-cell beam (`DEFAULT_CELL_BEAM`, from 20 tokens) helps more than
+it costs: without it, more long sentences run out of budget (95 against
+101 strict readings on the first 131 sentences). On the gold profiles the
+change only adds analyses:
+
+| Profile | Grammatical parsed | Gold tree found | Gold ranked first | Hit limits |
+|---|---|---|---|---|
+| csli | 938 of 960 | 908 of 921 | 885 | 0 |
+| esd | 61 of 62 | 58 of 59 | 57 | 0 |
+| control | 1,292 → 1,298 of 1,305 | 1,494 of 1,582 | 1,384 | 0 |
+| sh-spec | 521 → 544 of 599 | 358 → 361 of 576 | 313 → 314 | 6 → 2 |
