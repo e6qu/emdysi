@@ -944,7 +944,9 @@ impl<'g> Parser<'g> {
     /// is only needed again if the edge is reactivated, and unpacking
     /// rebuilds what it needs from the daughters.
     fn release(&mut self, id: usize) {
-        if !self.chart[id].lexical {
+        if !self.chart[id].lexical && !Arc::ptr_eq(&self.chart[id].dag, &self.released) {
+            // The node budget counts the structures the chart keeps.
+            self.nodes -= self.chart[id].dag.nodes.len();
             self.chart[id].dag = self.released.clone();
         }
     }
@@ -966,6 +968,7 @@ impl<'g> Parser<'g> {
             .collect();
         match self.unify_rule(ri, &dags) {
             Some(dag) => {
+                self.nodes += dag.nodes.len();
                 self.chart[id].dag = Arc::new(dag);
                 true
             }
