@@ -35,13 +35,18 @@ fn main() {
     if std::env::var_os("NO_PACKING").is_some() {
         erg.config.packing_restrictor = None;
     }
+    // NO_BEAM=1 turns the per-cell beam off, for comparison.
+    if std::env::var_os("NO_BEAM").is_some() {
+        erg.config.cell_beam = None;
+    }
     eprintln!("loaded in {:?}", t.elapsed());
     for line in std::io::stdin().lines() {
         let line = line.unwrap();
         let p = erg.parse(&line).unwrap();
         println!(
-            "{line}\n  {} readings, {} lexical items, {} edges{}, {:?}",
+            "{line}\n  {} readings ({} strict), {} lexical items, {} edges{}, {:?}",
             p.readings.len(),
+            p.readings.iter().filter(|r| is_strict(&r.root)).count(),
             p.lexical_items,
             p.edges,
             if p.exhausted { " (exhausted)" } else { "" },

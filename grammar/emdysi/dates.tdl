@@ -1,0 +1,25 @@
+;;; US-style dates with a comma before the year: |on October 31, 1832|,
+;;; |Born October 31, 1832, in Sunderland, ...|.
+;;;
+;;; The ERG analyses the year as a complement of the day of the month,
+;;; which takes the comma before it only as its informal comma entry
+;;; (comma_inf_pct, GENRE nonformal), so the standard US date format had
+;;; no formal analysis. This comma does the same for a day of the month
+;;; only and is not informal.
+
+:begin :type.
+
+pt_-_comma-dom_le := punct_right_word &
+  [ SYNSEM [ LOCAL.CAT.VAL.COMPS.FIRST generic_dom_synsem &
+                                       [ PUNCT.RPUNCT pair_or_no_punct ],
+             PUNCT [ PNCTPR ppair,
+                     RPUNCT rbcomma_punct ] ] ].
+
+:end :type.
+
+:begin :instance :status lex-entry.
+
+comma_dom_pct := pt_-_comma-dom_le &
+  [ ORTH < "," > ].
+
+:end :instance.

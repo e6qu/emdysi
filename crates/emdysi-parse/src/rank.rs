@@ -37,6 +37,8 @@ pub const EQUIVALENT: &[(&str, &str)] = &[
     ("flr-hd_nwh-nc-adj-nmc_c", "flr-hd_nwh-nc-nmc_c"),
     ("comma_adj_pct", "comma_inf_pct"),
     ("pt_-_comma-adj_le", "pt_-_comma-informal_le"),
+    ("comma_dom_pct", "comma_inf_pct"),
+    ("pt_-_comma-dom_le", "pt_-_comma-informal_le"),
 ];
 
 /// The ERG's name for `name` (see [`EQUIVALENT`]).

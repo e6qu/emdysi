@@ -187,3 +187,407 @@ wretched_n_pldef := n_-_c-pl-def_le &
              PHON.ONSET con ] ].
 
 :end :instance.
+
+;;; Adjectives used as abstract mass nouns with "the": |the realm of the
+;;; unimaginable|, |the sublime|, |the unexpected|. The ERG lists 23 such
+;;; nouns (type n_-_m-def_le, e.g. |the impossible|, |the obvious|); these
+;;; are common ones it lacks, in the same form.
+
+:begin :instance :status lex-entry.
+
+sublime_n_mdef := n_-_m-def_le &
+  [ ORTH < "sublime" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_sublime_n_1_rel",
+             PHON.ONSET con ] ].
+
+ridiculous_n_mdef := n_-_m-def_le &
+  [ ORTH < "ridiculous" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_ridiculous_n_1_rel",
+             PHON.ONSET con ] ].
+
+extraordinary_n_mdef := n_-_m-def_le &
+  [ ORTH < "extraordinary" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_extraordinary_n_1_rel",
+             PHON.ONSET voc ] ].
+
+ordinary_n_mdef := n_-_m-def_le &
+  [ ORTH < "ordinary" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_ordinary_n_1_rel",
+             PHON.ONSET voc ] ].
+
+inconceivable_n_mdef := n_-_m-def_le &
+  [ ORTH < "inconceivable" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_inconceivable_n_1_rel",
+             PHON.ONSET voc ] ].
+
+incredible_n_mdef := n_-_m-def_le &
+  [ ORTH < "incredible" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_incredible_n_1_rel",
+             PHON.ONSET voc ] ].
+
+miraculous_n_mdef := n_-_m-def_le &
+  [ ORTH < "miraculous" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_miraculous_n_1_rel",
+             PHON.ONSET con ] ].
+
+bizarre_n_mdef := n_-_m-def_le &
+  [ ORTH < "bizarre" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_bizarre_n_1_rel",
+             PHON.ONSET con ] ].
+
+strange_n_mdef := n_-_m-def_le &
+  [ ORTH < "strange" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_strange_n_1_rel",
+             PHON.ONSET con ] ].
+
+uncanny_n_mdef := n_-_m-def_le &
+  [ ORTH < "uncanny" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_uncanny_n_1_rel",
+             PHON.ONSET voc ] ].
+
+marvellous_n_mdef := n_-_m-def_le &
+  [ ORTH < "marvellous" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_marvellous_n_1_rel",
+             PHON.ONSET con ] ].
+
+marvelous_n_mdef := n_-_m-def_le &
+  [ ORTH < "marvelous" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_marvelous_n_1_rel",
+             PHON.ONSET con ] ].
+
+trivial_n_mdef := n_-_m-def_le &
+  [ ORTH < "trivial" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_trivial_n_1_rel",
+             PHON.ONSET con ] ].
+
+profound_n_mdef := n_-_m-def_le &
+  [ ORTH < "profound" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_profound_n_1_rel",
+             PHON.ONSET con ] ].
+
+beautiful_n_mdef := n_-_m-def_le &
+  [ ORTH < "beautiful" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_beautiful_n_1_rel",
+             PHON.ONSET con ] ].
+
+predictable_n_mdef := n_-_m-def_le &
+  [ ORTH < "predictable" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_predictable_n_1_rel",
+             PHON.ONSET con ] ].
+
+impractical_n_mdef := n_-_m-def_le &
+  [ ORTH < "impractical" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_impractical_n_1_rel",
+             PHON.ONSET voc ] ].
+
+practical_n_mdef := n_-_m-def_le &
+  [ ORTH < "practical" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_practical_n_1_rel",
+             PHON.ONSET con ] ].
+
+unimaginable_n_mdef := n_-_m-def_le &
+  [ ORTH < "unimaginable" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_unimaginable_n_1_rel",
+             PHON.ONSET voc ] ].
+
+unexpected_n_mdef := n_-_m-def_le &
+  [ ORTH < "unexpected" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_unexpected_n_1_rel",
+             PHON.ONSET voc ] ].
+
+unknowable_n_mdef := n_-_m-def_le &
+  [ ORTH < "unknowable" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_unknowable_n_1_rel",
+             PHON.ONSET voc ] ].
+
+inexplicable_n_mdef := n_-_m-def_le &
+  [ ORTH < "inexplicable" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_inexplicable_n_1_rel",
+             PHON.ONSET voc ] ].
+
+unusual_n_mdef := n_-_m-def_le &
+  [ ORTH < "unusual" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_unusual_n_1_rel",
+             PHON.ONSET voc ] ].
+
+unfamiliar_n_mdef := n_-_m-def_le &
+  [ ORTH < "unfamiliar" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_unfamiliar_n_1_rel",
+             PHON.ONSET voc ] ].
+
+unpredictable_n_mdef := n_-_m-def_le &
+  [ ORTH < "unpredictable" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_unpredictable_n_1_rel",
+             PHON.ONSET voc ] ].
+
+improbable_n_mdef := n_-_m-def_le &
+  [ ORTH < "improbable" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_improbable_n_1_rel",
+             PHON.ONSET voc ] ].
+
+:end :instance.
+
+;;; Adjectives the ERG lacks (they had only its generic entries for
+;;; unknown words, which a native entry, such as the nouns above, would
+;;; replace), in the types of their positive counterparts (|usual|,
+;;; |predictable|, |familiar|, |probable|).
+
+:begin :instance :status lex-entry.
+
+unimaginable_a1 := aj_-_i_le &
+  [ ORTH < "unimaginable" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_unimaginable_a_1_rel",
+             PHON.ONSET voc ] ].
+
+unknowable_a1 := aj_-_i_le &
+  [ ORTH < "unknowable" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_unknowable_a_1_rel",
+             PHON.ONSET voc ] ].
+
+inexplicable_a1 := aj_-_i_le &
+  [ ORTH < "inexplicable" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_inexplicable_a_1_rel",
+             PHON.ONSET voc ] ].
+
+unexpected_a1 := aj_-_i_le &
+  [ ORTH < "unexpected" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_unexpected_a_1_rel",
+             PHON.ONSET voc ] ].
+
+unexpected_a2 := aj_cp_i-it_le &
+  [ ORTH < "unexpected" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_unexpected_a_1_rel",
+             PHON.ONSET voc ] ].
+
+unusual_a1 := aj_-_i_le &
+  [ ORTH < "unusual" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_unusual_a_1_rel",
+             PHON.ONSET voc ] ].
+
+unusual_a2 := aj_pp-vp_i-it-nt_le &
+  [ ORTH < "unusual" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_unusual_a_for_rel",
+             PHON.ONSET voc ] ].
+
+unusual_a3 := aj_cp_i-it_le &
+  [ ORTH < "unusual" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_unusual_a_for_rel",
+             PHON.ONSET voc ] ].
+
+unfamiliar_a1 := aj_pp_i_le &
+  [ ORTH < "unfamiliar" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_unfamiliar_a_1_rel",
+             PHON.ONSET voc ] ].
+
+unpredictable_a1 := aj_pp_i_le &
+  [ ORTH < "unpredictable" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_unpredictable_a_1_rel",
+             PHON.ONSET voc ] ].
+
+unpredictable_a2 := aj_cp_i-it_le &
+  [ ORTH < "unpredictable" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_unpredictable_a_1_rel",
+             PHON.ONSET voc ] ].
+
+improbable_a1 := aj_-_i_le &
+  [ ORTH < "improbable" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_improbable_a_1_rel",
+             PHON.ONSET voc ] ].
+
+improbable_a2 := aj_cp_i-it_le &
+  [ ORTH < "improbable" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_improbable_a_1_rel",
+             PHON.ONSET voc ] ].
+
+:end :instance.
+
+;;; |onboard|, which the ERG lacks: a preposition like |aboard| (|330 crew
+;;; are onboard the ship|), an adjective (|onboard storage|) and a verb
+;;; (|onboard new users|), all three since a native entry replaces the
+;;; generic ones.
+
+:begin :instance :status lex-entry.
+
+onboard_p := p_np_i_le &
+  [ ORTH < "onboard" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_onboard_p_rel",
+             PHON.ONSET voc ] ].
+
+onboard_pp := pp_-_i_le &
+  [ ORTH < "onboard" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_onboard_p_rel",
+             PHON.ONSET voc ] ].
+
+onboard_a1 := aj_-_i_le &
+  [ ORTH < "onboard" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_onboard_a_1_rel",
+             PHON.ONSET voc ] ].
+
+onboard_v1 := v_np*_le &
+  [ ORTH < "onboard" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_onboard_v_1_rel",
+             PHON.ONSET voc ] ].
+
+:end :instance.
+
+;;; Hyphenated |out-of-X| compound adjectives the ERG lacks, before a noun
+;;; (|out-of-memory kills|, |out-of-band data|), in the form of its
+;;; |out-of-court| entries (its tokenizer splits them as "out-of" or "out",
+;;; "of", with the hyphens).
+
+:begin :instance :status lex-entry.
+
+out_of_memory_a1 := aj_-_i-att_le &
+  [ ORTH < "out-of", "-", "memory" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_out-of-memory_a_1_rel",
+             PHON.ONSET voc ] ].
+
+out_of_memory_a2 := aj_-_i-att_le &
+  [ ORTH < "out", "-", "of", "-", "memory" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_out-of-memory_a_1_rel",
+             PHON.ONSET voc ] ].
+
+out_of_band_a1 := aj_-_i-att_le &
+  [ ORTH < "out-of", "-", "band" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_out-of-band_a_1_rel",
+             PHON.ONSET voc ] ].
+
+out_of_band_a2 := aj_-_i-att_le &
+  [ ORTH < "out", "-", "of", "-", "band" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_out-of-band_a_1_rel",
+             PHON.ONSET voc ] ].
+
+out_of_order_a1 := aj_-_i-att_le &
+  [ ORTH < "out-of", "-", "order" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_out-of-order_a_1_rel",
+             PHON.ONSET voc ] ].
+
+out_of_order_a2 := aj_-_i-att_le &
+  [ ORTH < "out", "-", "of", "-", "order" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_out-of-order_a_1_rel",
+             PHON.ONSET voc ] ].
+
+out_of_scope_a1 := aj_-_i-att_le &
+  [ ORTH < "out-of", "-", "scope" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_out-of-scope_a_1_rel",
+             PHON.ONSET voc ] ].
+
+out_of_scope_a2 := aj_-_i-att_le &
+  [ ORTH < "out", "-", "of", "-", "scope" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_out-of-scope_a_1_rel",
+             PHON.ONSET voc ] ].
+
+out_of_pocket_a1 := aj_-_i-att_le &
+  [ ORTH < "out-of", "-", "pocket" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_out-of-pocket_a_1_rel",
+             PHON.ONSET voc ] ].
+
+out_of_pocket_a2 := aj_-_i-att_le &
+  [ ORTH < "out", "-", "of", "-", "pocket" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_out-of-pocket_a_1_rel",
+             PHON.ONSET voc ] ].
+
+out_of_process_a1 := aj_-_i-att_le &
+  [ ORTH < "out-of", "-", "process" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_out-of-process_a_1_rel",
+             PHON.ONSET voc ] ].
+
+out_of_process_a2 := aj_-_i-att_le &
+  [ ORTH < "out", "-", "of", "-", "process" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_out-of-process_a_1_rel",
+             PHON.ONSET voc ] ].
+
+out_of_tree_a1 := aj_-_i-att_le &
+  [ ORTH < "out-of", "-", "tree" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_out-of-tree_a_1_rel",
+             PHON.ONSET voc ] ].
+
+out_of_tree_a2 := aj_-_i-att_le &
+  [ ORTH < "out", "-", "of", "-", "tree" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_out-of-tree_a_1_rel",
+             PHON.ONSET voc ] ].
+
+out_of_sync_a1 := aj_-_i-att_le &
+  [ ORTH < "out-of", "-", "sync" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_out-of-sync_a_1_rel",
+             PHON.ONSET voc ] ].
+
+out_of_sync_a2 := aj_-_i-att_le &
+  [ ORTH < "out", "-", "of", "-", "sync" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_out-of-sync_a_1_rel",
+             PHON.ONSET voc ] ].
+
+:end :instance.
+
+;;; Mass uses of nouns the ERG lists only as count nouns: |too much
+;;; ceremony|, |without ceremony|. A count noun without a determiner is
+;;; a grammar error the checker reports, so these are added one by one,
+;;; never by a general rule.
+
+:begin :instance :status lex-entry.
+
+ceremony_n_mass := n_-_m_le &
+  [ ORTH < "ceremony" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_ceremony_n_1_rel",
+             PHON.ONSET con ] ].
+
+:end :instance.
+
+;;; Hyphenated compound adjectives the ERG lacks, in the form of its
+;;; |in-house| and |on-site| entries (the tokenizer splits off the
+;;; hyphens): |in-person voting|, |in-memory storage|, |at-risk
+;;; children|, |compile-time checks|, |an opt-in feature|.
+
+:begin :instance :status lex-entry.
+
+in_person_a1 := aj_-_i_le &
+  [ ORTH < "in", "-", "person" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_in-person_a_1_rel",
+             PHON.ONSET voc ] ].
+
+on_call_a1 := aj_-_i_le &
+  [ ORTH < "on", "-", "call" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_on-call_a_1_rel",
+             PHON.ONSET voc ] ].
+
+on_premises_a1 := aj_-_i_le &
+  [ ORTH < "on", "-", "premises" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_on-premises_a_1_rel",
+             PHON.ONSET voc ] ].
+
+in_memory_a1 := aj_-_i_le &
+  [ ORTH < "in", "-", "memory" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_in-memory_a_1_rel",
+             PHON.ONSET voc ] ].
+
+in_place_a1 := aj_-_i-att_le &
+  [ ORTH < "in", "-", "place" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_in-place_a_1_rel",
+             PHON.ONSET voc ] ].
+
+at_risk_a1 := aj_-_i-att_le &
+  [ ORTH < "at", "-", "risk" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_at-risk_a_1_rel",
+             PHON.ONSET voc ] ].
+
+on_chain_a1 := aj_-_i_le &
+  [ ORTH < "on", "-", "chain" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_on-chain_a_1_rel",
+             PHON.ONSET voc ] ].
+
+compile_time_a1 := aj_-_i-att_le &
+  [ ORTH < "compile", "-", "time" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_compile-time_a_1_rel",
+             PHON.ONSET con ] ].
+
+opt_in_a1 := aj_-_i-att_le &
+  [ ORTH < "opt", "-", "in" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_opt-in_a_1_rel",
+             PHON.ONSET voc ] ].
+
+opt_out_a1 := aj_-_i-att_le &
+  [ ORTH < "opt", "-", "out" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_opt-out_a_1_rel",
+             PHON.ONSET voc ] ].
+
+:end :instance.
