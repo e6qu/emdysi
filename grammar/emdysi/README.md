@@ -37,7 +37,14 @@ are not changed. Written for this project (MIT, see the repository's
   analysis; edited prose uses them throughout.
 - `lexicon.tdl`: adjectives used as plural nouns for people with "the"
   (*the brave*, *the free*, *the meek*), in the form of the ERG's 94 such
-  entries (type `n_-_c-pl-def_le`, e.g. *the poor*).
+  entries (type `n_-_c-pl-def_le`, e.g. *the poor*); adjectives used as
+  abstract mass nouns with "the" (*the realm of the unimaginable*, *the
+  sublime*), in the form of the ERG's 23 (`n_-_m-def_le`, e.g. *the
+  impossible*); *onboard* (preposition, adjective and verb); hyphenated
+  *out-of-X* adjectives (*out-of-memory kills*, *out-of-band data*). A
+  native entry replaces the ERG's generic entries for an unknown word, so
+  a word the ERG lacks gets all its common uses (*unusual*, *unexpected*
+  also as adjectives, in the types of *usual* and *probable*).
 
 The ranking model was trained on the ERG's own rule and entry names; the
 ranker and the evaluation read an extension's rule or entry as the ERG one

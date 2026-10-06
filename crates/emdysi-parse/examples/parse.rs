@@ -35,6 +35,10 @@ fn main() {
     if std::env::var_os("NO_PACKING").is_some() {
         erg.config.packing_restrictor = None;
     }
+    // NO_BEAM=1 turns the per-cell beam off, for comparison.
+    if std::env::var_os("NO_BEAM").is_some() {
+        erg.config.cell_beam = None;
+    }
     eprintln!("loaded in {:?}", t.elapsed());
     for line in std::io::stdin().lines() {
         let line = line.unwrap();
