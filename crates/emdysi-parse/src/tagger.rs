@@ -45,6 +45,13 @@ pub fn tag(form: &str, initial: bool) -> Vec<Tag> {
         return tags(&[("CD", 1.0)]);
     }
     let lower = form.to_lowercase();
+    // Closed-class words have their own tags whatever their case: a
+    // sentence-initial |He| is a pronoun, not a candidate name (the ERG
+    // makes a sentence-initial capitalized word a name when it is tagged
+    // as a noun).
+    if let Some(t) = closed_class(&lower) {
+        return tags(t);
+    }
     let capitalized = chars[0].is_uppercase();
     if capitalized && !initial {
         return tags(&[("NNP", 0.8), ("NN", 0.2)]);
@@ -93,6 +100,46 @@ pub fn tag(form: &str, initial: bool) -> Vec<Tag> {
     tags(&out)
 }
 
+/// Tags of closed-class words (Penn Treebank), as a statistical tagger
+/// would give them.
+fn closed_class(w: &str) -> Option<&'static [(&'static str, f64)]> {
+    Some(match w {
+        "i" | "you" | "he" | "she" | "it" | "we" | "they" | "me" | "him" | "us" | "them"
+        | "myself" | "yourself" | "himself" | "herself" | "itself" | "ourselves" | "yourselves"
+        | "themselves" => &[("PRP", 1.0)],
+        "her" => &[("PRP", 0.5), ("PRP$", 0.5)],
+        "my" | "your" | "his" | "its" | "our" | "their" => &[("PRP$", 1.0)],
+        "the" | "a" | "an" | "these" | "those" | "every" | "each" | "another" | "no" => {
+            &[("DT", 1.0)]
+        }
+        "this" | "some" | "any" | "all" | "both" | "either" | "neither" => &[("DT", 1.0)],
+        "that" => &[("DT", 0.4), ("IN", 0.4), ("WDT", 0.2)],
+        "to" => &[("TO", 1.0)],
+        "in" | "on" | "at" | "of" | "for" | "with" | "from" | "by" | "about" | "into" | "onto"
+        | "over" | "under" | "after" | "before" | "during" | "through" | "between" | "among"
+        | "against" | "without" | "within" | "since" | "until" | "because" | "although"
+        | "though" | "while" | "if" | "whether" | "as" | "than" | "upon" | "across" | "behind"
+        | "beyond" | "toward" | "towards" | "despite" | "unless" => &[("IN", 1.0)],
+        "and" | "or" | "but" | "nor" => &[("CC", 1.0)],
+        "can" | "could" | "will" | "would" | "shall" | "should" | "may" | "might" | "must" => {
+            &[("MD", 1.0)]
+        }
+        "is" | "has" | "does" => &[("VBZ", 1.0)],
+        "are" | "have" | "do" => &[("VBP", 1.0)],
+        "was" | "were" | "had" | "did" => &[("VBD", 1.0)],
+        "be" => &[("VB", 1.0)],
+        "been" => &[("VBN", 1.0)],
+        "being" => &[("VBG", 1.0)],
+        "which" => &[("WDT", 1.0)],
+        "what" | "who" | "whom" => &[("WP", 1.0)],
+        "whose" => &[("WP$", 1.0)],
+        "when" | "where" | "why" | "how" => &[("WRB", 1.0)],
+        "there" => &[("EX", 0.6), ("RB", 0.4)],
+        "not" | "never" => &[("RB", 1.0)],
+        _ => return None,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::tag;
@@ -112,5 +159,16 @@ mod tests {
         assert_eq!(best("multifaceted"), "JJ");
         assert_eq!(best("well-designed"), "JJ");
         assert!(matches!(best("refactored").as_str(), "VBD" | "VBN"));
+    }
+
+    #[test]
+    fn closed_class_words() {
+        assert_eq!(tag("He", true)[0].tag, "PRP");
+        assert_eq!(tag("The", true)[0].tag, "DT");
+        assert!(
+            tag("He", true)
+                .iter()
+                .all(|t| t.tag != "NN" && t.tag != "NNP")
+        );
     }
 }

@@ -41,6 +41,7 @@ Rules for adding a corpus:
 | [`hh-rlhf/`](hh-rlhf/SOURCE.md) | MIT | Sample of Anthropic HH-RLHF helpful-base (200 final assistant turns; human turns excluded) |
 | [`edited/`](edited/SOURCE.md) | Public domain, CC0, MIT, CC BY 4.0 (one file each) | Edited text in several genres (a novel, US government guidance, the Rust book and blog, Kubernetes docs), for measuring false flags |
 | [`edited-by-sa/`](edited-by-sa/SOURCE.md) | CC BY-SA 3.0 | 500 Wikipedia sentences from UD English PUD (news and encyclopedia), for measuring false flags |
+| [`real-errors/`](real-errors/SOURCE.md) | MIT, CC BY 4.0 (one file each) | 377 paragraphs before and after typo, spelling and grammar fixes in the Rust book and the Kubernetes docs, for measuring how many real errors are caught |
 
 ## Considered and not vendored
 

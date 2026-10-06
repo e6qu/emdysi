@@ -4,8 +4,9 @@
 Usage: gen-variants.py scowl.db en-60.tsv > variants.tsv
 
 A word is marked `us` when ESDB lists it as a standard American spelling
-(variant level 2 or below) and as a standard British one in none of its
-uses; `gb` the other way round. Among British spellings, `ise` and `ize`
+and as a standard British one in none of its uses; `gb` the other way
+round. Standard means variant level 4 ("common") or below: a common
+variant is still standard usage (British "judgment"). Among British spellings, `ise` and `ize`
 mark words standard in only one of the -ise (B) and -ize (Z) lists. Each
 marked word is paired with the corresponding spelling of the other kind
 from the same ESDB group. Only words in the bundled size-60 list are kept.
@@ -21,7 +22,7 @@ for line in open(wl, encoding="utf-8"):
         known.add(line.split("\t")[0])
 
 c = sqlite3.connect(db)
-STD = 2  # variant levels 0-2: preferred, included, equal
+STD = 4  # variant levels 0-4: preferred, included, equal, disagreement, common
 info = defaultdict(dict)  # lemma_id -> spelling -> level
 for lemma, sp, lvl in c.execute("select lemma_id, spelling, variant_level from lemma_variant_info"):
     info[lemma][sp] = lvl

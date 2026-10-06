@@ -1,7 +1,7 @@
 //! How often the checker claims an error in edited text, per genre: the
 //! false-flag rate of the `core` pack (spelling, grammar, consistency) on
 //! the samples in `corpora/edited/` and `corpora/edited-by-sa/`, per 1,000
-//! sentences: the development sets by default; `SET=heldout` for the
+//! sentences: the first development set by default; `SET=heldout` for the
 //! held-out test set (`heldout-*.tsv`), `SET=dev2` for the second
 //! development set only. The target is at most
 //! one per 1,000 (99.9% precision on clean text).
@@ -78,7 +78,8 @@ fn main() {
                 .unwrap_or_default();
             match set.as_deref() {
                 Some(prefix) => name.starts_with(&format!("{prefix}-")),
-                None => !name.starts_with("heldout-"),
+                // The first development set: files without a set prefix.
+                None => !name.starts_with("heldout-") && !name.starts_with("dev2-"),
             }
         })
         .collect();

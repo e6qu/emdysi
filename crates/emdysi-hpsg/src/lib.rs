@@ -26,7 +26,10 @@ pub use unify::{Failure, Unifier};
 use emdysi_tdl::{DefOp, Entry, Env, Term};
 
 /// Collect `(type, parents)` declarations from loaded TDL entries, merging
-/// addenda (`:+`) into the type they extend.
+/// addenda (`:+`) into the type they extend. A later definition (`:=`) of a
+/// type replaces the earlier one, as in ACE: the ERG's grammar-error
+/// variant redefines some types of the standard grammar this way (e.g.
+/// `d_-_prt_le` in `educ/lextypes-educ.tdl`).
 pub fn type_declarations(entries: &[Entry]) -> Vec<(String, Vec<String>)> {
     let mut out: Vec<(String, Vec<String>)> = Vec::new();
     let mut pos: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
@@ -43,7 +46,7 @@ pub fn type_declarations(entries: &[Entry]) -> Vec<(String, Vec<String>)> {
             })
             .collect();
         match (e.def.op, pos.get(&name)) {
-            (DefOp::Addendum, Some(&i)) => out[i].1.extend(parents),
+            (DefOp::Define, Some(&i)) => out[i].1 = parents,
             (_, Some(&i)) => out[i].1.extend(parents),
             (_, None) => {
                 pos.insert(name.clone(), out.len());

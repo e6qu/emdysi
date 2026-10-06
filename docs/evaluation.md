@@ -391,6 +391,20 @@ After two more gates (no grammar claims on bold labels, or on words the
 document uses as names), the development set is at 4.8 flags per 1,000
 sentences (12 flags, at least six of them real errors in the source).
 
+With the changes of 2026-10-05 (spelling suggestions from the word list
+first, sentence-initial typos, a/an and repeated words, the grammar
+extensions, the grammar-error variant's types and the tagger), the
+development set is at 3.6 flags per 1,000 sentences (9 flags). Three of
+them were sentence-initial names read as typos (*Krug, Steve.*, *Cuaron,
+whose ...*, *Isner, who ...*); a capitalized first word followed by a
+comma or by another capitalized word was then taken as a name. With the
+later changes (a capitalized first word is a typo candidate only from
+seven letters, short ones being mostly names; agreement errors repaired
+only within the tense; contractions formal), the development set is at
+2.0 flags per 1,000 sentences (5 flags, measured): *neices* (a real typo
+in the novel), *offense* and *centered* against the rest of their
+documents, and two words outside every list, *permittee* and *async*.
+
 A held-out test set (`heldout-*.tsv`: other chapters, pages and posts of
 the same sources, 8,371 sentences, never inspected while developing) gives
 the honest estimate (`SET=heldout`, 2026-10-04):
@@ -411,6 +425,35 @@ rare words are an open set. The development set is too small to show such
 gaps; the next step is a larger development set from other documents of
 the same sources, keeping the held-out set untouched.
 
+A second, larger development set (`dev2-*.tsv`, 13,442 sentences: the
+rest of the novel, more book chapters, blog posts and concept pages) showed
+gaps the first could not:
+
+| Step | Flags per 1,000 sentences |
+|---|---|
+| Gates above | 13.1 |
+| No claim leaning on an analysis with a generic entry for an unknown word (except an error on that word, *buyed*); a typo must be one edit from a listed word, not one the morphology derives; words of four letters or more | 8.6 |
+| Corrections must repair, not rebuild: finite forms only for agreement, none on a sentence's first word; subject/object swaps only for pronouns; no missing-article claims. A listed base plus an affix is a coinage unless a real inflection is one edit away; names skipped by the consistency rule | 6.4 |
+
+What is left is mostly spelling (3.4 per 1,000: jargon such as *libs*,
+*rootfs*, *async*; names and handles; the novel's own spellings such as
+*expence* and *dropt*; and real typos in the sources: *durnig*, *anyeone*,
+*righly*, *reseearchers*), spelling consistency within a document (1.7),
+and named grammar errors (1.0, mostly archaic constructions in the novel).
+
+With the changes of 2026-10-05 (a/an and repeated words, grammar
+extensions, the grammar-error variant's types, the tagger, and the
+precision fixes that followed), dev2 is at 6.4 flags per 1,000 sentences
+(86 flags; 2026-10-06): spelling 3.7, consistency 1.6, repeated words
+0.4, articles 0.3, named grammar errors 0.3. About 16 of the 86 are real
+errors in the sources: all six repeated words (*this is is*, *the the*,
+*and and*, *this this*), *a overflow*, and the typos *reseearchers*,
+*anyeone*, *durnig*, *righly*, *consided*, *santisers*. What is left is
+mostly jargon and handles of the Rust blog (*libc*, *libs*, *iirc*,
+*impls*, *tiif*), the novel's own spellings (*dropt*, *expence*,
+*curtsey*, *an union*, *quitted*), and Kubernetes terms (*cadvisor*,
+*rootfs*, *nftables*).
+
 The price is recall. On the `csli` test suite, named errors now catch 33
 of 388 ungrammatical sentences (104 before) and wrongly flag 3 of 965
 grammatical ones (17 before): the checker names fewer errors, and nearly
@@ -421,6 +464,143 @@ error, and correcting it the way the error's kind suggests (another form
 of the word, an added or removed article, another case of a pronoun, a/an,
 fewer/less, ...) gives a sentence the grammar accepts. The verified
 correction is offered as the suggestion.
+
+## Recall on real errors
+
+Precision alone is easy to get by flagging nothing.
+[`corpora/real-errors`](../corpora/real-errors/SOURCE.md) holds 377
+paragraphs from the Rust book and the Kubernetes documentation as they
+were before and after a commit that fixed a typo, a spelling or a grammar
+error. An error counts as caught when a `core` diagnostic overlaps the
+changed words; a diagnostic on the same place in the fixed paragraph is a
+false flag:
+`cargo run --release -p emdysi-check --example real_errors -- OUT.tsv`
+(2026-10-05):
+
+| Step | Spelling (178) | Function words (123) | Inflections (76) | Flagged after the fix |
+|---|---|---|---|---|
+| Gates of the previous section | 129 | 0 | 1 | 0 |
+| Listed words suggested first; a capitalized first word checked in lower case; a listed base plus an affix is a typo when another common word is one edit away; at most one inflection per word | 145 | 0 | 1 | 0 |
+| Deterministic a/an, repeated-word and double-article rules | 145 | 26 | 1 | 0 |
+| Repeated words claimed only in sentences the grammar rejects (*that that is is*, *Will Will will* are English) | 145 | 22 | 1 | 0 |
+| Precision first: no "common word one edit away" guess for coinages (*destructures*, *liveness* are words), sentence-initial typos only from seven letters, contractions formal | 139 | 22 | 1 | 0 |
+
+The 33 spelling misses left are mostly words two edits from the intended
+one (*certicate*, *neccesary*, *admistrators*), capitalized words after
+the start of a sentence, which are taken as names (*Mananger*, *Servies*),
+words of three letters (*tha*, *wil*, *Nex*), abbreviations (*perf*,
+*langs*), and forms the grammar's morphology derives (*informations*,
+*stucked*, *returing*). Most of the grammar
+pairs are rewordings rather than errors (*a* to *the*, *use* to *we use*);
+the errors among them that no rule catches are mostly wrong verb forms in
+sentences the grammar still analyses (*adds* for *add*, *is granted* for
+*granted*) and missing words.
+
+## Stress sentences and ambiguity
+
+[`corpora/stress`](../corpora/stress/README.md) has 66 grammatical
+sentences that are hard for parsers and checkers: the buffalo and police
+sentences, *had had*, *That that is is ...*, *Will Will will Will Will's
+will?*, garden paths (*The horse raced past the barn fell*, *The old man
+the boat*, *The prime number few*), center embedding, famous ambiguities,
+and comparative correlatives (*The more you read, the more you know*,
+*The bigger they are, the harder they fall*, *The more, the merrier*).
+`crates/emdysi-check/tests/stress.rs` (2026-10-05): the `core` pack
+claims no error in any of them, and all 66 get a full analysis.
+
+With the ERG alone, 54 of the first 58 did. The comparative correlatives
+had no analysis at all, and *The prime number few* (and *the brave*,
+*the free*, *the meek*) none with the adjective as a plural noun for
+people: both are now covered by emdysi's grammar extensions
+([`grammar/emdysi`](../grammar/emdysi/README.md), D14). *Can can can can
+can can* (a bare singular count noun as subject, not standard English)
+was replaced by *Cans can can cans* and *Cans cans can can can cans*,
+which the grammar analyses.
+
+Loading the grammar-error variant also showed that seven of its types
+(bare nouns, unknown proper names, partitive determiners, quasi-modals
+such as *ought to*, ...) had inconsistent constraints, leaving their
+lexical entries unusable: the variant redefines types of the standard
+grammar, and emdysi merged the two definitions where ACE lets the later
+one replace the earlier. A later definition now replaces the earlier one,
+and a test checks that both grammars load without an inconsistent type
+or a rule that cannot be built (`crates/emdysi-parse/tests/grammar_loads.rs`).
+
+With those types working, the grammar-error variant read a sentence-initial
+*He* as an unknown name (*He go* then agrees, as a plural name would): the
+tagger, which only guessed from suffixes, tagged closed-class words such as
+*He*, *The* and *to* as nouns, and the ERG makes a sentence-initial
+capitalized noun a candidate name. Closed-class words now get their own
+tags (pronouns, determiners, prepositions, modals, ...), as a statistical
+tagger would give them, so no sentence starting with *He*, *The* or *We*
+gets a spurious name reading; and the grammar-error check no longer counts
+an analysis built from fragments, or one with a generic entry for a word
+the lexicon knows, as a whole-sentence analysis.
+
+On the ERG's gold profiles (`examples/eval.rs`, the code before these
+changes against after, 2026-10-05), the extensions and the tagger change
+cost no gold analysis and reject more ungrammatical items:
+
+| Profile | Grammatical parsed | Ungrammatical parsed (lower is better) | Gold tree found | Gold ranked first |
+|---|---|---|---|---|
+| csli | 939 → 938 of 960 | 270 → 254 of 388 | 907 → 908 of 921 | 884 → 885 |
+| esd | 62 → 61 of 62 | | 58 → 58 of 59 | 57 → 57 |
+| control | 1,294 → 1,292 of 1,305 | 498 → 497 of 527 | 1,494 → 1,494 of 1,582 | 1,384 → 1,384 |
+| sh-spec | 525 → 522 of 599 | | 358 → 360 of 576 | 314 → 313 |
+| mrs, ccs | unchanged | | unchanged | unchanged |
+
+The 16 ungrammatical items no longer accepted (*We works*, *Her hired
+him*, *Him hired her*, *Whom hired Browne?*, *Every programmers were
+hired*, ...) had been "parsed" by reading the capitalized first word as a
+name. The grammatical items lost had the same kind of analysis: none of
+them had the gold tree among its readings before either (*Did or will
+Abrams interview Browne?*, *Because.*, three long sentences of the
+Sherlock Holmes story whose analyses began with a name reading of
+*From* or *The*). Parsing time is unchanged.
+
+Two more extensions followed from the sentences of the development set
+that get no full analysis (found with
+`cargo run --release -p emdysi-parse --example culprits`, which replaces
+each word of such a sentence in turn by a plain word and reports the words
+whose replacement gives a full analysis): contracted auxiliaries
+(*we'll*, *it's*), which the ERG marks informal to steer its generator,
+now count as formal, and a sentence may start with a coordinating
+conjunction (*And his sisters are charming women.*, *But I saw nothing.*),
+which the ERG analyses as a fragment (`cl_cnj-frg_c`; emdysi's rule, a
+strict counterpart, applies only to the whole input). On the gold profiles
+neither changes coverage, the gold trees found, or the gold trees ranked
+first (sh-spec: 360 found, 313 first, with or without them; the eval
+compares emdysi's rule under the name of the ERG rule it stands for).
+
+The ranker's scores (an averaged perceptron) are not probabilities. A
+temperature fitted on the held-out 10% of the gold items (5.0, by
+maximum likelihood of the gold reading;
+`NO_PARSE=1 CALIBRATE_ONLY=1 cargo run --release -p emdysi-parse --example train -- CACHE`)
+makes them calibrated: on those 273 items,
+
+| Probability of the best reading | Items | Mean probability | Best reading right |
+|---|---|---|---|
+| 0-20% | 9 | 17% | 22% |
+| 20-40% | 10 | 33% | 30% |
+| 40-60% | 37 | 52% | 54% |
+| 60-80% | 66 | 71% | 79% |
+| 80-100% | 151 | 96% | 97% |
+
+Readings with the same predicate-argument dependencies mean the same, so
+they are grouped into interpretations
+([`ambiguity.rs`](../crates/emdysi-parse/src/ambiguity.rs)), and a
+sentence is reported as ambiguous when a second interpretation keeps at
+least 5% of the probability (`cargo run --release -p emdysi-parse
+--example interpretations -- SENTENCE` shows them all):
+
+| Sentence | Interpretations (probability) |
+|---|---|
+| I saw the man with the telescope. | *with(saw, telescope)* 50%; *with(man, telescope)* 40%; *saw(I, man, with)* 10% |
+| The chicken is ready to eat. | the chicken eats 50%; the chicken is eaten 49% |
+| Time flies like an arrow. | *time flies* (insects) *like* an arrow 62%; time *flies* like an arrow 17%; a third reading 13% (the ranker prefers the joke reading) |
+| They are cooking apples. | *cooking(they, apples)* 70%; *are(they, apples)* with *cooking apples* 21% |
+| Visiting relatives can be boring. | the visiting is boring 92%; the relatives are boring 5% |
+| We painted the wall with cracks. | *with(painted, cracks)* 82%; *with(wall, cracks)* 16% (two readings) |
 
 ## Parse readings of machine-written prose
 

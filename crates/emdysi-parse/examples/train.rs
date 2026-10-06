@@ -255,6 +255,49 @@ fn main() {
             test_set.len()
         );
     }
+    // Calibration: the temperature that turns the held-out model's scores
+    // into probabilities of the gold reading. CALIBRATE_ONLY=1 stops here.
+    let test_examples: Vec<Example> = test_set.iter().map(|c| to_example(c)).collect();
+    let (temperature, loglik) = emdysi_parse::rank::fit_temperature(&model, &test_examples);
+    println!(
+        "held-out calibration: temperature {temperature:.3}, mean log-probability of the gold reading {loglik:.3}"
+    );
+    // Reliability: held-out items by the calibrated probability of the best
+    // reading, and how often it is the gold one.
+    let mut bins = [(0usize, 0usize, 0f64); 5];
+    for c in &test_set {
+        let scores: Vec<f64> = c
+            .readings
+            .iter()
+            .map(|r| model.score(r) / temperature)
+            .collect();
+        let max = scores.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+        let z: f64 = scores.iter().map(|x| (x - max).exp()).sum();
+        let best = (0..scores.len())
+            .max_by(|&a, &b| scores[a].total_cmp(&scores[b]))
+            .unwrap_or(0);
+        let p = 1.0 / z;
+        let b = ((p * 5.0) as usize).min(4);
+        bins[b].0 += 1;
+        bins[b].1 += usize::from(best == c.gold || c.readings[best] == c.readings[c.gold]);
+        bins[b].2 += p;
+    }
+    println!("| Probability of the best reading | Items | Mean probability | Best reading right |");
+    println!("|---|---|---|---|");
+    for (k, (n, right, sum)) in bins.iter().enumerate() {
+        if *n > 0 {
+            println!(
+                "| {}-{}% | {n} | {:.0}% | {:.0}% |",
+                k * 20,
+                k * 20 + 20,
+                100.0 * sum / *n as f64,
+                100.0 * *right as f64 / *n as f64
+            );
+        }
+    }
+    if std::env::var("CALIBRATE_ONLY").is_ok() {
+        return;
+    }
     let ambiguous = test_set.iter().filter(|c| c.readings.len() > 1).count();
     println!(
         "held-out exact match: {hit}/{n} ({:.1}%); unranked first reading: {base}/{n}; {ambiguous} test items ambiguous",
@@ -318,6 +361,10 @@ fn main() {
     let all: Vec<Example> = cached.iter().map(to_example).collect();
     let full = train(&all, 10);
     let out = default_grammar_dir().join("../../crates/emdysi-parse/data/rank.tsv");
+    let full = Model {
+        temperature,
+        ..full
+    };
     std::fs::write(&out, full.to_tsv()).unwrap();
     println!("wrote {} features to {}", full.weights.len(), out.display());
 }

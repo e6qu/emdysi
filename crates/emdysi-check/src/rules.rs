@@ -12,6 +12,7 @@
 //!                           # | structure | parallel | acronyms | glossary
 //!                           # | variants | coined-words | concept-names
 //!                           # | hyphen-chain | ly-hyphen | noun-stack
+//!                           # | articles | repeated-word | ambiguity
 //!                           # | existence | substitution | adjective-stack
 //!                           # | modifier-density
 //! scope = "body"            # optional: all | heading | body | paragraph
@@ -219,6 +220,14 @@ pub enum Kind {
     HyphenChain { except: Vec<String> },
     /// A hyphen after an -ly adverb.
     LyHyphen,
+    /// *a* before a vowel sound, *an* before a consonant sound.
+    Articles,
+    /// A function word written twice, or two different articles in a row
+    /// (`articles`), in a sentence without a full analysis.
+    RepeatedWord { articles: bool },
+    /// Sentences with more than one meaning: a second interpretation keeps
+    /// at least `min_share` of the probability.
+    Ambiguity { min_share: f64 },
     /// Noun-noun compounds of `min` to `max` nouns.
     NounStack { min: usize, max: usize },
     /// Nouns that carry `min` or more adjectives.
@@ -561,6 +570,13 @@ impl Rule {
                     .collect(),
             },
             "ly-hyphen" => Kind::LyHyphen,
+            "articles" => Kind::Articles,
+            "ambiguity" => Kind::Ambiguity {
+                min_share: num("min_share").unwrap_or(0.25),
+            },
+            "repeated-word" => Kind::RepeatedWord {
+                articles: matches!(t.get("articles"), Some(Value::Bool(true))),
+            },
             "adjective-stack" => Kind::AdjectiveStack {
                 min: num("min").unwrap_or(3.0) as usize,
             },
@@ -754,6 +770,8 @@ impl Rule {
             }
             Kind::HyphenChain { except } => Some(crate::compounds::run_kebab(a, except)),
             Kind::LyHyphen => Some(crate::compounds::run_ly_hyphen(a)),
+            Kind::Articles => Some(crate::articles::run_articles(a)),
+            Kind::RepeatedWord { articles } => Some(crate::repeats::run_repeats(a, *articles)),
             Kind::AdjectiveStack { min } => Some(crate::modifiers::run_adjective_stacks(a, *min)),
             Kind::ModifierDensity { min, ratio } => {
                 Some(crate::modifiers::run_modifier_density(a, *min, *ratio))
@@ -999,9 +1017,40 @@ impl Rule {
                         *uses.entry(t.form.to_lowercase()).or_default() += 1;
                     }
                 }
+                // Words the document capitalizes after the start of a
+                // sentence are names.
+                let names: std::collections::HashSet<&str> = a
+                    .sentences
+                    .iter()
+                    .flat_map(|s| s.tokens.iter().skip(1))
+                    .filter(|t| t.form.chars().next().is_some_and(char::is_uppercase))
+                    .map(|t| t.form.as_str())
+                    .collect();
                 for (si, s) in a.sentences.iter().enumerate() {
-                    for t in &s.tokens {
-                        let w = &t.form;
+                    for (ti, t) in s.tokens.iter().enumerate() {
+                        // A capitalized first word is checked in lower case
+                        // ("Althought", "Insetad,"), unless the document uses
+                        // it as a name, or it reads like one: followed by
+                        // another capitalized word.
+                        let lowered;
+                        let name_like = s
+                            .tokens
+                            .get(1)
+                            .is_some_and(|n| n.form.chars().next().is_some_and(char::is_uppercase));
+                        let w: &String = if ti == 0
+                            // Short capitalized words are often names
+                            // (|Tage has started|, |Nuage is a platform|).
+                            && t.form.chars().count() >= 7
+                            && t.form.chars().next().is_some_and(char::is_uppercase)
+                            && t.form.chars().skip(1).all(char::is_lowercase)
+                            && !names.contains(t.form.as_str())
+                            && !name_like
+                        {
+                            lowered = t.form.to_lowercase();
+                            &lowered
+                        } else {
+                            &t.form
+                        };
                         // Only plain lower-case words: names, acronyms, code
                         // and numbers are out of scope.
                         if w.chars().count() < *min_length
@@ -1041,10 +1090,11 @@ impl Rule {
                                 b.chars().count() >= 4 && crate::dict::tier(b).is_some()
                             })
                         {
-                            let misspelled = erg
-                                .inflections(&base)
-                                .iter()
-                                .any(|f| edit_distance(w, f) == 1);
+                            // (A common word one edit away is no proof of a
+                            // typo here: |destructures| is one edit from
+                            // |restructures|, |liveness| from |aliveness|.)
+                            let inflections = erg.inflections(&base);
+                            let misspelled = inflections.iter().any(|f| edit_distance(w, f) == 1);
                             if !misspelled {
                                 continue;
                             }
@@ -1147,6 +1197,34 @@ impl Rule {
                         d.suggestions = vec![fix];
                         out.push(d);
                     }
+                }
+            }
+            Kind::Ambiguity { min_share } => {
+                for (si, s) in a.sentences.iter().enumerate() {
+                    let block_kind = a.blocks[s.block].kind;
+                    if matches!(
+                        block_kind,
+                        emdysi_text::blocks::BlockKind::Heading(_)
+                            | emdysi_text::blocks::BlockKind::TableCell
+                    ) {
+                        continue;
+                    }
+                    let Some((shares, alternative)) = crate::report::ambiguity(s, *min_share)
+                    else {
+                        continue;
+                    };
+                    let len = s.original.chars().count();
+                    let mut d = self.diag(a, si, 0, len, &s.original);
+                    let pct: Vec<String> = shares
+                        .iter()
+                        .map(|x| format!("{:.0}%", 100.0 * x))
+                        .collect();
+                    d.message = d
+                        .message
+                        .replace("{count}", &shares.len().to_string())
+                        .replace("{shares}", &pct.join(", "))
+                        .replace("{alternative}", &alternative);
+                    out.push(d);
                 }
             }
             Kind::Grammar => {
@@ -1402,11 +1480,15 @@ pub fn grammar_errors(s: &crate::Sentence) -> Vec<GrammarError> {
     };
     // Whole-sentence analyses are preferred to fragments; among them, the
     // one that assumes the fewest errors.
-    let sentence_root = |r: &str| {
-        matches!(
-            r,
+    // A reading glued together from fragments (|He| as a name, |go| as a
+    // command, |to school every day| as a verb-phrase fragment) is not a
+    // whole-sentence analysis, whatever its root.
+    let sentence_root = |r: &emdysi_parse::Reading| {
+        (matches!(
+            r.root.as_str(),
             "root_decl" | "root_question" | "root_command" | "root_robust_s" | "root_robust_ques"
-        ) || emdysi_parse::is_strict(r)
+        ) || emdysi_parse::is_strict(&r.root))
+            && !r.nodes.iter().any(|n| !n.leaf && n.name.contains("frg"))
     };
     // An error is reported only when the grammar has proved that the
     // sentence is outside it (a complete search found no strict or
@@ -1448,7 +1530,16 @@ pub fn grammar_errors(s: &crate::Sentence) -> Vec<GrammarError> {
         let sets: Vec<Vec<(String, usize, usize)>> = p
             .readings
             .iter()
-            .filter(|r| !whole || sentence_root(&r.root))
+            .filter(|r| !whole || sentence_root(r))
+            // A generic entry for a word the lexicon knows (|He| as a plural
+            // name, so that |He go| agrees) is not an analysis of the
+            // sentence.
+            .filter(|r| {
+                r.words
+                    .iter()
+                    .filter(|w| w.generic)
+                    .all(|w| generic_spans.contains(&(w.from, w.to)))
+            })
             .map(items)
             .collect();
         let fewest = sets.iter().map(Vec::len).min()?;
@@ -1561,6 +1652,38 @@ const PRONOUN_CASES: &[&[&str]] = &[
 /// Corrections to try for a named error, from the kind of error its
 /// feedback describes: (start, end, replacement) in characters of the
 /// sentence. Errors of other kinds get none.
+/// Whether `a` and `b` are the two numbers of one present- or past-tense
+/// verb form: |borrow| and |borrows|, |try| and |tries|, |has| and |have|,
+/// |was| and |were|.
+fn number_pair(a: &str, b: &str) -> bool {
+    const IRREGULAR: &[(&str, &str)] = &[
+        ("is", "are"),
+        ("am", "are"),
+        ("was", "were"),
+        ("has", "have"),
+        ("does", "do"),
+        ("doesn't", "don't"),
+        ("isn't", "aren't"),
+        ("wasn't", "weren't"),
+        ("hasn't", "haven't"),
+    ];
+    let third = |base: &str, s: &str| {
+        s == format!("{base}s")
+            || s == format!("{base}es")
+            || base
+                .strip_suffix('y')
+                .is_some_and(|stem| s == format!("{stem}ies"))
+    };
+    let irregular = |w: &str| IRREGULAR.iter().any(|&(x, y)| w == x || w == y);
+    if irregular(a) || irregular(b) {
+        // |was| is not |wa| plus -s.
+        return IRREGULAR
+            .iter()
+            .any(|&(x, y)| (a, b) == (x, y) || (a, b) == (y, x));
+    }
+    third(a, b) || third(b, a)
+}
+
 fn candidate_fixes(
     erg: &Erg,
     s: &crate::Sentence,
@@ -1625,10 +1748,13 @@ fn candidate_fixes(
         // forms repair it ("aspiring" would not repair "to aspire" but
         // build another phrase), and the first word of a sentence has no
         // subject before it ("Ensure that ...", "Try ...").
+        // And it is repaired by the other number of the same tense (|borrow|
+        // and |borrows|, |has| and |have|), not by another tense (|borrowed|
+        // and |had| parse, but say something else).
         let agreement = f.contains("agree");
         if !(agreement && sentence_start) {
             for form in forms {
-                if agreement && form.ends_with("ing") {
+                if agreement && !number_pair(&lower, &form) {
                     continue;
                 }
                 out.push((from, to, match_case(word, &form)));
@@ -1838,7 +1964,16 @@ fn suggestions(erg: &Erg, word: &str, max: usize) -> (Vec<String>, bool) {
             }
         }
     }
-    found.sort_by(|x, y| x.0.total_cmp(&y.0).then(x.1.cmp(&y.1)).then(x.2.cmp(&y.2)));
+    // Listed words first: the grammar's morphology also derives non-words
+    // ("doabled" for "diabled").
+    let listed = |w: &str| crate::dict::tier(w).is_some();
+    found.sort_by(|x, y| {
+        (!listed(&x.2))
+            .cmp(&!listed(&y.2))
+            .then(x.0.total_cmp(&y.0))
+            .then(x.1.cmp(&y.1))
+            .then(x.2.cmp(&y.2))
+    });
     // Confident: a cheap typo (transposition or doubled letter) with no
     // equally cheap rival of similar commonness.
     let confident = match found.as_slice() {
@@ -1856,4 +1991,19 @@ fn suggestions(erg: &Erg, word: &str, max: usize) -> (Vec<String>, bool) {
         .map(|(_, _, w)| match_case(word, &w))
         .collect();
     (out, confident)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::number_pair;
+
+    #[test]
+    fn number_pairs() {
+        assert!(number_pair("go", "goes"));
+        assert!(number_pair("tries", "try"));
+        assert!(number_pair("was", "were"));
+        assert!(!number_pair("was", "wa"));
+        assert!(!number_pair("borrow", "borrowed"));
+        assert!(!number_pair("has", "had"));
+    }
 }

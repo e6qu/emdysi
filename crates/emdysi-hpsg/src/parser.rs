@@ -682,6 +682,9 @@ impl<'g> Parser<'g> {
                             // quick-check the other daughters against the
                             // combined structure.
                             let Some(mut qc_other) = self.partial_qc(ri, pos, id) else {
+                                if traced(&self.rules[ri].name) {
+                                    eprintln!("trace: edge {id} fails as daughter {pos}");
+                                }
                                 continue;
                             };
                             // The unifier now holds the rule with this
@@ -701,6 +704,11 @@ impl<'g> Parser<'g> {
                                     &self.chart[c].qc,
                                 ) {
                                     self.stats.qc_filtered += 1;
+                                    if traced(&self.rules[ri].name) {
+                                        eprintln!(
+                                            "trace: edge {c} quick-check fails as daughter {other} with edge {id}"
+                                        );
+                                    }
                                     continue;
                                 }
                                 let pair = if pos == 0 { [id, c] } else { [c, id] };
@@ -741,10 +749,20 @@ impl<'g> Parser<'g> {
                 let roots: Vec<Arc<Dag>> =
                     self.config.roots.iter().map(|(_, r)| r.clone()).collect();
                 let preferred = self.config.preferred_roots.max(1);
-                roots
-                    .iter()
-                    .position(|r| self.unifies(r, &dag))
-                    .map(|k| (if k < preferred { 0 } else { k }, id))
+                let pos = roots.iter().position(|r| self.unifies(r, &dag));
+                if let EdgeKind::Rule(ri) = self.chart[id].kind {
+                    if traced(&self.rules[ri].name) {
+                        eprintln!(
+                            "trace: spanning edge {id}: root {:?}, {} instantiations",
+                            pos.map(|k| self.config.roots[k].0.clone()),
+                            self.unpack(id, &mut HashMap::new()).len()
+                        );
+                        for (name, r) in &self.config.roots {
+                            eprintln!("trace:   {name}: {:?}", self.g.clash_paths(r, &dag));
+                        }
+                    }
+                }
+                pos.map(|k| (if k < preferred { 0 } else { k }, id))
             })
             .collect();
         spanning.sort_by(|a, b| {
@@ -1307,6 +1325,19 @@ impl<'g> Parser<'g> {
             self.stats.unify_failed += 1;
             None
         };
+        if traced(&rule.name) {
+            eprintln!(
+                "trace: {:?}: {}",
+                dtrs,
+                if !ok {
+                    "unification fails"
+                } else if dag.is_none() {
+                    "cyclic"
+                } else {
+                    "ok"
+                }
+            );
+        }
         self.u.rollback(cp);
         if let Some(dag) = dag {
             self.add_edge(ri, dtrs, dag, agenda);
@@ -1380,6 +1411,15 @@ impl<'g> Parser<'g> {
         }
         out
     }
+}
+
+/// Whether to trace attempts of rule `name` (`EMDYSI_TRACE_RULE=name`, for
+/// grammar work): each attempt and where it fails is printed.
+fn traced(name: &str) -> bool {
+    static RULE: std::sync::OnceLock<Option<String>> = std::sync::OnceLock::new();
+    RULE.get_or_init(|| std::env::var("EMDYSI_TRACE_RULE").ok())
+        .as_deref()
+        == Some(name)
 }
 
 /// A derivation tree in the usual DELPH-IN bracketed notation.

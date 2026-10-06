@@ -17,6 +17,7 @@ use emdysi_hpsg::parser::{
 use emdysi_hpsg::{Dag, Grammar, Unifier};
 use emdysi_repp::Repp;
 
+pub mod ambiguity;
 pub mod rank;
 
 pub use emdysi_hpsg::mrs;
@@ -211,6 +212,9 @@ pub struct Parse {
     /// without an analysis after a complete search is outside the grammar.
     pub complete: bool,
     pub elapsed: Duration,
+    /// The ranking model's temperature: the probability of a reading among
+    /// `readings` is proportional to `exp(score / temperature)`.
+    pub temperature: f64,
 }
 
 /// A part-of-speech hypothesis for a token (Penn Treebank tag set).
@@ -260,7 +264,24 @@ impl Erg {
                 .map(|f| config_dir.join(f.trim_matches('"')))
         };
         let top = setting_path("grammar-top").unwrap_or_else(|| dir.join("english.tdl"));
-        let loaded = emdysi_tdl::load(&top, emdysi_tdl::Env::Type).map_err(err)?;
+        let mut loaded = emdysi_tdl::load(&top, emdysi_tdl::Env::Type).map_err(err)?;
+        // emdysi's extensions of the grammar (grammar/emdysi/*.tdl, e.g.
+        // comparative correlatives), loaded after the ERG's own files.
+        let ext_dir = dir.join("../emdysi");
+        let mut exts: Vec<PathBuf> = std::fs::read_dir(&ext_dir)
+            .map(|d| {
+                d.filter_map(|e| e.ok().map(|e| e.path()))
+                    .filter(|p| p.extension().is_some_and(|x| x == "tdl"))
+                    .collect()
+            })
+            .unwrap_or_default();
+        exts.sort();
+        for p in exts {
+            let ext = emdysi_tdl::load(&p, emdysi_tdl::Env::Type).map_err(err)?;
+            loaded.entries.extend(ext.entries);
+            loaded.letter_sets.extend(ext.letter_sets);
+            loaded.files.extend(ext.files);
+        }
         // The compiled type system is cached outside the source tree
         // (EMDYSI_CACHE_DIR, XDG_CACHE_HOME or ~/.cache); EMDYSI_NO_CACHE
         // turns the cache off.
@@ -325,8 +346,23 @@ impl Erg {
         let spanning: HashSet<String> = ace_setting(&config_src, "spanning-only-rules")
             .into_iter()
             .collect();
+        // emdysi's extensions declare their own spanning-only rules (rules
+        // that apply only to the whole input) in grammar/emdysi/settings.cfg.
+        let spanning: HashSet<String> = spanning
+            .into_iter()
+            .chain(
+                std::fs::read_to_string(dir.join("../emdysi/settings.cfg"))
+                    .map(|src| ace_setting(&src, "spanning-only-rules"))
+                    .unwrap_or_default(),
+            )
+            .collect();
         let mut rules = Vec::new();
-        let mut warnings = Vec::new();
+        // Types whose constraints are inconsistent (e.g. in an extension).
+        let mut warnings: Vec<String> = grammar
+            .errors
+            .iter()
+            .map(|e| format!("type {}: {}", e.what, e.msg))
+            .collect();
         for inst in &grammar.instances {
             let lexical = match inst.status.as_deref() {
                 Some("rule") => false,
@@ -507,6 +543,19 @@ impl Erg {
         let t0 = std::time::Instant::now();
         let tokens = self.tokens(text);
         let (lat, _) = self.map_tokens(&tokens, false)?;
+        if std::env::var_os("EMDYSI_CHART").is_some() {
+            let tags: Vec<String> = tokens
+                .iter()
+                .map(|t| {
+                    format!(
+                        "{}/{}",
+                        t.form,
+                        t.tags.first().map_or("", |g| g.tag.as_str())
+                    )
+                })
+                .collect();
+            eprintln!("tokens: {}", tags.join(" "));
+        }
         let mut u = Unifier::new();
         let items = self.lexicon.instantiate(&self.grammar, &lat, &mut u);
         let n_items = items.len();
@@ -578,6 +627,27 @@ impl Erg {
         } else {
             result
         };
+        // EMDYSI_CHART=1 prints every edge of the chart (for grammar work).
+        if std::env::var_os("EMDYSI_CHART").is_some() {
+            for (i, e) in result.chart.iter().enumerate() {
+                let name = match &e.kind {
+                    EdgeKind::Lex { inst, .. } => self.grammar.instances[*inst].name.clone(),
+                    EdgeKind::Rule(r) => self.rules[*r].name.clone(),
+                    EdgeKind::Cover => "cover".into(),
+                };
+                // EMDYSI_CHART_PATH="SYNSEM LOCAL CONJ" adds the type there.
+                let at = std::env::var("EMDYSI_CHART_PATH")
+                    .ok()
+                    .and_then(|p| self.grammar.path(&p))
+                    .and_then(|p| e.dag.follow(0, &p))
+                    .map(|n| self.grammar.ts.hier.name(e.dag.ty(n)).to_string())
+                    .unwrap_or_default();
+                eprintln!(
+                    "edge {i} {}-{} {name} {:?} {:?} {at}",
+                    e.start, e.end, e.daughters, e.state
+                );
+            }
+        }
         let form_path = self.lexicon.paths.token_form.clone();
         let forms = |toks: &[usize]| -> String {
             toks.iter()
@@ -648,6 +718,7 @@ impl Erg {
             exhausted: result.exhausted,
             complete: !result.exhausted && result.stats.pruned == 0,
             elapsed: t0.elapsed(),
+            temperature: self.model.temperature,
         })
     }
 
@@ -667,7 +738,10 @@ impl Erg {
             .iter()
             .any(|a| {
                 let derivational = a.rules.iter().filter(|r| r.ends_with("_dlr")).count();
-                derivational == 0 || derivational == 1 && a.stem.chars().count() >= 4
+                // One inflection at most: "chosing" is not "chose" + "-ing".
+                let inflectional = a.rules.iter().filter(|r| r.ends_with("_olr")).count();
+                inflectional <= 1
+                    && (derivational == 0 || derivational == 1 && a.stem.chars().count() >= 4)
             })
     }
 
