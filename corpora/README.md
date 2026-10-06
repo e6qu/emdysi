@@ -5,6 +5,9 @@ samples written for this project. Each subdirectory
 carries its own license and provenance note. Nothing here is compiled into the
 published crates.
 
+Every corpus, with its source, version, license and use, is listed in
+[`docs/vendored.md`](../docs/vendored.md).
+
 Rules for adding a corpus:
 
 1. Check that the license permits redistribution (public domain, MIT/BSD/Apache, CC0,
@@ -39,8 +42,9 @@ Rules for adding a corpus:
 | [`beemo/`](beemo/SOURCE.md) | MIT | Sample of Beemo (200 outputs of zephyr-7b-beta, Mistral-7B and Mixtral-8x7B with expert edits; No Robots prompts and human texts excluded) |
 | [`cheat/`](cheat/SOURCE.md) | MIT | Sample of CHEAT (200 ChatGPT-written abstracts; IEEE titles, keywords and abstracts excluded) |
 | [`hh-rlhf/`](hh-rlhf/SOURCE.md) | MIT | Sample of Anthropic HH-RLHF helpful-base (200 final assistant turns; human turns excluded) |
-| [`edited/`](edited/SOURCE.md) | Public domain, CC0, MIT, CC BY 4.0 (one file each) | Edited text in several genres (a novel, US government guidance, the Rust book and blog, Kubernetes docs), for measuring false flags |
-| [`edited-by-sa/`](edited-by-sa/SOURCE.md) | CC BY-SA 3.0 | 500 Wikipedia sentences from UD English PUD (news and encyclopedia), for measuring false flags |
+| [`stress/`](stress/README.md) | MIT (written for this project from well-known examples) | Grammatical stress sentences (the buffalo sentence, *had had*, garden paths, center embedding, comparative correlatives) and famous ambiguous ones; each must get a full analysis and no error claim |
+| [`edited/`](edited/SOURCE.md) | Public domain, CC0, MIT, CC BY 4.0 (one license per genre) | Edited text in four genres (a novel, US government guidance, the Rust book and blog, Kubernetes docs), for measuring false flags: a first development set (`<genre>.tsv`), a second one (`dev2-*.tsv`) and a held-out test set (`heldout-*.tsv`) that is not inspected while developing |
+| [`edited-by-sa/`](edited-by-sa/SOURCE.md) | CC BY-SA 3.0 | 1,000 Wikipedia sentences from UD English PUD (news and encyclopedia), for measuring false flags: 500 for development, 500 held out |
 | [`real-errors/`](real-errors/SOURCE.md) | MIT, CC BY 4.0 (one file each) | 377 paragraphs before and after typo, spelling and grammar fixes in the Rust book and the Kubernetes docs, for measuring how many real errors are caught |
 
 ## Considered and not vendored

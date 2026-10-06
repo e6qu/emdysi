@@ -786,7 +786,7 @@ impl Rule {
             return;
         }
         match &self.kind {
-            Kind::Words { items, on, replace } => self.run_words(a, items, *on, replace, out),
+            Kind::Words { items, on, replace } => self.run_words(erg, a, items, *on, replace, out),
             Kind::Existence { re, exceptions } => {
                 for (si, s) in a.sentences.iter().enumerate() {
                     // Match on the text with inline code masked.
@@ -1266,6 +1266,7 @@ impl Rule {
 
     fn run_words(
         &self,
+        erg: &Erg,
         a: &Analysis,
         items: &[Vec<String>],
         on: MatchOn,
@@ -1331,8 +1332,24 @@ impl Rule {
                     .collect();
                 let mut d = self.diag(a, si, from, to, &text);
                 if let Some(rep) = replace.get(&item.join(" ")) {
-                    d.replacement = Some(match_case(&text, rep));
-                    d.message = d.message.replace("{replacement}", rep);
+                    // A word matched by its lemma is replaced in the same
+                    // form (|utilizes| by |uses|); without such a form there
+                    // is no automatic fix.
+                    let lower = text.to_lowercase();
+                    let inflected = if on == MatchOn::Lemma
+                        && item.len() == 1
+                        && !rep.contains(' ')
+                        && lower != item[0]
+                    {
+                        erg.inflect_like(rep, &lower)
+                            .into_iter()
+                            .find(|f| crate::dict::tier(f).is_some())
+                    } else {
+                        Some(rep.clone())
+                    };
+                    let shown = inflected.clone().unwrap_or_else(|| rep.clone());
+                    d.replacement = inflected.map(|r| match_case(&text, &r));
+                    d.message = d.message.replace("{replacement}", &shown);
                 }
                 out.push(d);
             }
@@ -1655,18 +1672,38 @@ const PRONOUN_CASES: &[&[&str]] = &[
 /// Whether `a` and `b` are the two numbers of one present- or past-tense
 /// verb form: |borrow| and |borrows|, |try| and |tries|, |has| and |have|,
 /// |was| and |were|.
+/// Singular and plural forms of the verbs whose forms are separate words
+/// in the grammar, not inflections of one stem.
+const IRREGULAR_NUMBER: &[(&str, &str)] = &[
+    ("is", "are"),
+    ("am", "are"),
+    ("was", "were"),
+    ("has", "have"),
+    ("does", "do"),
+    ("doesn't", "don't"),
+    ("isn't", "aren't"),
+    ("wasn't", "weren't"),
+    ("hasn't", "haven't"),
+];
+
+/// The other number of an irregular verb form (|was| and |were|).
+fn irregular_number(w: &str) -> Vec<&'static str> {
+    IRREGULAR_NUMBER
+        .iter()
+        .filter_map(|&(x, y)| {
+            if w == x {
+                Some(y)
+            } else if w == y {
+                Some(x)
+            } else {
+                None
+            }
+        })
+        .collect()
+}
+
 fn number_pair(a: &str, b: &str) -> bool {
-    const IRREGULAR: &[(&str, &str)] = &[
-        ("is", "are"),
-        ("am", "are"),
-        ("was", "were"),
-        ("has", "have"),
-        ("does", "do"),
-        ("doesn't", "don't"),
-        ("isn't", "aren't"),
-        ("wasn't", "weren't"),
-        ("hasn't", "haven't"),
-    ];
+    const IRREGULAR: &[(&str, &str)] = IRREGULAR_NUMBER;
     let third = |base: &str, s: &str| {
         s == format!("{base}s")
             || s == format!("{base}es")
@@ -1743,6 +1780,13 @@ fn candidate_fixes(
         // The forms closest to what was written first: "running" before
         // "runes" for "runing".
         let mut forms = erg.inflections(word);
+        // |was| and |were| are separate words in the grammar, not forms of
+        // one stem.
+        for other in irregular_number(&lower) {
+            if !forms.iter().any(|f| f == other) {
+                forms.push(other.to_string());
+            }
+        }
         forms.sort_by_key(|f| (edit_distance(word, f), crate::dict::tier(f).is_none()));
         // Agreement is between a subject and a finite verb: only finite
         // forms repair it ("aspiring" would not repair "to aspire" but
@@ -1839,10 +1883,46 @@ fn verified_fix(
             .chain(rep.chars().collect::<Vec<_>>().iter())
             .chain(chars[to..].iter())
             .collect();
-        let Ok(p) = erg.parse_limited(fixed.trim(), std::time::Duration::from_secs(5), 1) else {
+        let Ok(p) = erg.parse_limited(fixed.trim(), std::time::Duration::from_secs(5), 20) else {
             continue;
         };
-        if p.readings.iter().any(|r| emdysi_parse::is_strict(&r.root)) {
+        // The correction must repair the analysis that names the error, not
+        // make way for another one: some strict reading of the corrected
+        // sentence keeps the lexical entry of every other word (|much good
+        // may it does them| parses only with |may| as a noun).
+        let lead = fixed.chars().count() - fixed.trim_start().chars().count();
+        let edited = (from.min(e.from), to.max(e.to));
+        let delta = rep.chars().count() as isize - (to - from) as isize;
+        let edited_fixed = (
+            edited.0,
+            (edited.1 as isize + delta).max(edited.0 as isize) as usize,
+        );
+        let others = |words: &[emdysi_parse::Word], skip: (usize, usize), shift: usize| {
+            words
+                .iter()
+                .filter(|w| !(w.from + shift < skip.1 && w.to + shift > skip.0))
+                .map(|w| w.entry.clone())
+                .collect::<Vec<String>>()
+        };
+        let erroneous: Vec<Vec<String>> = s
+            .mal_parse
+            .iter()
+            .flat_map(|m| m.readings.iter())
+            .filter(|r| {
+                r.nodes
+                    .iter()
+                    .any(|n| n.name == e.code && n.from == e.from && n.to == e.to)
+                    || r.words
+                        .iter()
+                        .any(|w| w.le_type == e.code && w.from == e.from && w.to == e.to)
+            })
+            .map(|r| others(&r.words, edited, 0))
+            .collect();
+        if p.readings.iter().any(|r| {
+            emdysi_parse::is_strict(&r.root)
+                && (erroneous.is_empty()
+                    || erroneous.contains(&others(&r.words, edited_fixed, lead)))
+        }) {
             let new: String = chars[from.min(e.from)..from]
                 .iter()
                 .chain(rep.chars().collect::<Vec<_>>().iter())
@@ -2005,5 +2085,12 @@ mod tests {
         assert!(!number_pair("was", "wa"));
         assert!(!number_pair("borrow", "borrowed"));
         assert!(!number_pair("has", "had"));
+    }
+
+    #[test]
+    fn irregular_numbers() {
+        assert_eq!(super::irregular_number("was"), ["were"]);
+        assert_eq!(super::irregular_number("are"), ["is", "am"]);
+        assert!(super::irregular_number("went").is_empty());
     }
 }

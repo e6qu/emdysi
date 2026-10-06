@@ -1,5 +1,4 @@
 3:23 suggestion substance.vague-quantity "a myriad of"
-3:62 error plain-style.repeated-word "the the" -> "the"
 3:62 warning core.repeated-word "the the" -> "the"
 5:31 suggestion plain-style.passive "validated"
 5:31 suggestion substance.agentless-passive "validated"

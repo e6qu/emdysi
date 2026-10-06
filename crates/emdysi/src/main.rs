@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 use std::time::Duration;
 
-use emdysi_check::report::{OutputFormat, ParseDetails, render, render_parses};
+use emdysi_check::report::{OutputFormat, ParseDetails, count, render, render_parses};
 use emdysi_check::{Checker, Format, Options, Pack, Severity, analyze, apply_fixes};
 use emdysi_parse::{Erg, default_grammar_dir};
 
@@ -390,7 +390,10 @@ fn run() -> Result<bool, String> {
         if let (true, Some(m)) = (args.decide_readings, model.as_mut()) {
             let mut ask = ModelAsk::new(&mut **m, &args);
             let n = emdysi_check::decisions::disambiguate(&mut a, &mut ask, READING_MARGIN, 0.6);
-            eprintln!("{name}: the model changed the best reading of {n} sentence(s)");
+            eprintln!(
+                "{name}: the model changed the best reading of {}",
+                count(n, "sentence", "sentences")
+            );
         }
         let a = a;
         match args.command.as_str() {
@@ -426,13 +429,13 @@ fn run() -> Result<bool, String> {
                         ),
                     }
                 }
-                eprintln!("{name}: {n} sentences rewritten");
+                eprintln!("{name}: {} rewritten", count(n, "sentence", "sentences"));
             }
             "fix" => {
                 let diags = check(&checker, &erg, &a, model.as_mut(), &args);
                 let (fixed, n) = apply_fixes(&src, &diags);
                 print!("{fixed}");
-                eprintln!("{name}: {n} fixes applied");
+                eprintln!("{name}: {} applied", count(n, "fix", "fixes"));
             }
             _ => {
                 let diags = check(&checker, &erg, &a, model.as_mut(), &args);

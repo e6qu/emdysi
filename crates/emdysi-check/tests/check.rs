@@ -49,7 +49,7 @@ fn checks_and_fixes() {
     assert!(rules_at(src, &d, "It is important").contains(&"ai-tells.signposting"));
     assert!(rules_at(src, &d, "delve").contains(&"ai-tells.vocabulary"));
     assert!(rules_at(src, &d, "written").contains(&"plain-style.passive"));
-    assert!(rules_at(src, &d, "the the").contains(&"plain-style.repeated-word"));
+    assert!(rules_at(src, &d, "the the").contains(&"core.repeated-word"));
     assert!(rules_at(src, &d, "recieved").contains(&"core.spelling"));
     // Inline code is not spell-checked.
     assert!(!rules_at(src, &d, "bild").contains(&"core.spelling"));
