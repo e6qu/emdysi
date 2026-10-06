@@ -407,7 +407,23 @@ impl Erg {
                 roots.push((format!("{name}_br"), Arc::new(dag)));
             }
         }
-        let preferred_roots = roots.iter().take_while(|(n, _)| is_strict(n)).count();
+        // Readings under the leading whole-sentence roots are unpacked
+        // first, so that a cap on readings does not crowd them out with
+        // fragments: the strict roots of the grammar, and the sentence
+        // roots of its grammar-error variant (an error needs an analysis of
+        // the whole sentence).
+        let sentence_root = |n: &str| {
+            is_strict(n)
+                || matches!(
+                    n.trim_end_matches("_br"),
+                    "root_decl"
+                        | "root_question"
+                        | "root_command"
+                        | "root_robust_ques"
+                        | "root_robust_s"
+                )
+        };
+        let preferred_roots = roots.iter().take_while(|(n, _)| sentence_root(n)).count();
         let deleted_daughters = ace_setting(&config_src, "deleted-daughters")
             .iter()
             .filter_map(|f| grammar.feat(f))
