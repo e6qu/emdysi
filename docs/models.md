@@ -27,21 +27,30 @@ Every command that takes a model accepts one of:
 `--server-model NAME` sets the model name sent to the server when it serves
 several.
 
-Examples:
+Examples. A GGUF file in-process, with a build that has the `llama`
+feature (`cargo install --path crates/emdysi --features llama`):
 
 ```sh
-# GGUF in-process (cargo install --features llama)
 en decide --model MODEL.gguf --statement "Paris is in France."
+```
 
-# GGUF served by llama.cpp
+A GGUF file served by llama.cpp:
+
+```sh
 llama-server -m MODEL.gguf --port 8080
 en check --pack decisions --server http://127.0.0.1:8080 notes.md
+```
 
-# MLX on Apple silicon
+An MLX model on Apple silicon:
+
+```sh
 mlx_lm.server --model mlx-community/MODEL --port 8080
 en rewrite --server http://127.0.0.1:8080 draft.md
+```
 
-# Ollama
+A model served by Ollama:
+
+```sh
 en decide --server http://127.0.0.1:11434 --server-model MODEL \
    --question "Which is clearer?" --option "Utilize the tool." --option "Use the tool."
 ```
@@ -84,10 +93,11 @@ answers are averaged; `--no-debias` asks once.
 A model's probabilities are often overconfident. `en decide --eval FILE.tsv`
 asks the questions of a file with known answers and reports accuracy, log
 loss, Brier score and calibration error, at the given temperature and at the
-temperature that fits the file best:
+temperature that fits the file best. Each line has four tab-separated
+fields: the question, its context (which may be empty), the options
+separated by `|`, and the index of the right option, counting from 0:
 
 ```text
-# question<TAB>context<TAB>option|option|...<TAB>index of the right option (from 0)
 Which spelling is American English?		colour|color	1
 ```
 
@@ -108,7 +118,7 @@ calibrated model.
   [[rule]]
   id = "mypack.passive-blame"
   kind = "decide"
-  unit = "sentence"          # or "block": a paragraph, heading or list item
+  unit = "sentence"
   min_words = 6
   question = "Does this sentence hide who is responsible for something?"
   options = ["yes", "no"]
@@ -116,6 +126,8 @@ calibrated model.
   threshold = 0.85
   message = "Who did this? ({percent}% by the model)"
   ```
+
+  `unit` is `sentence` or `block` (a paragraph, heading or list item).
 
 - **Parse disambiguation** (`--decide-readings` with `check`, `fix` or
   `parse`): when the two best readings of a sentence are close, the model

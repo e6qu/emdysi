@@ -1,134 +1,160 @@
 # emdysi
 
-An MIT-licensed English text analyzer written in Rust. It aims to:
+emdysi is an English parser and prose checker, written in Rust and
+MIT-licensed. Its command-line tool, `en`:
 
-- parse English into phrase (constituency) and sentence structure,
-- check spelling and apply safe automatic fixes,
-- run semi-deterministic style and substance checks, especially on
-  AI-generated prose, and enforce configurable style guides.
+- parses English into phrase structure and meaning, and says when a
+  sentence is ambiguous;
+- checks spelling and grammar, claiming an error only when the grammar
+  can prove it, and applies safe fixes;
+- enforces style guides: plain language, document structure, consistent
+  terminology, and the tells of machine-written prose.
 
-It runs the [English Resource Grammar](https://github.com/delph-in/erg) (ERG),
-a broad-coverage HPSG grammar, with its own Rust implementation of the
-DELPH-IN processing stack: TDL reader, typed feature structures and
-unification, REPP tokenizer, chart mapping, morphology and a packing chart
-parser. On the ERG's own test suites it parses 98% of the grammatical items
-and finds the gold analysis among its readings for 98.5% of them. A parse
-ranker trained on license-clean gold trees (2,626 items of all lengths)
-picks the gold analysis first for 81.7% of held-out sentences, long ones
-included. Each analysis comes with its semantics as Minimal Recursion
-Semantics (MRS, `en parse --mrs`), identical to the ERG's gold MRS for all
-2,966 gold analyses we reproduce. English is ambiguous, and the parser
-says so: `en parse` groups the readings of a sentence by meaning (their
-predicate-argument dependencies) and, when a second meaning keeps at
-least 5% of the ranker's calibrated probability, reports the sentence as
-ambiguous and shows what differs (*I saw the man with the telescope*:
-*with(saw, telescope)* 50%, *with(man, telescope)* 40%). Famous stress
-sentences (*Buffalo buffalo Buffalo buffalo buffalo buffalo Buffalo
-buffalo*, *had had had*, garden paths, *The more you read, the more you
-know*) get full analyses and no error claims
-([`corpora/stress`](corpora/stress/README.md)); constructions the ERG
-lacks, such as comparative correlatives, are added in emdysi's own grammar
-files ([`grammar/emdysi`](grammar/emdysi/README.md)). Sentences the grammar rejects are
-re-parsed with the ERG's grammar-error ("mal-rule") variant, which names
-the error (agreement, verb forms, articles, ...).
+```sh
+cargo build --release
+target/release/en check draft.md
+```
 
-Status: working prototype. See [`docs/plan.md`](docs/plan.md) for progress,
-[`docs/prior-art.md`](docs/prior-art.md) for the survey of existing tools and
-data, and [`docs/decisions.md`](docs/decisions.md) for the choices made.
+```text
+draft.md:4:58: warning [core.grammar-errors] Your subject doesn't agree in number with the verb 'are'.
+    delivered a robust and seamless upgrade. The new version are faster. It
+                                                             ^^^
+    suggestions: is
+```
+
+The [tutorial](docs/tutorial.md) walks through checking, fixing, parsing,
+rule packs, glossaries and custom rules, with real output.
+
+## How it works
+
+emdysi runs the [English Resource Grammar](https://github.com/delph-in/erg)
+(ERG), a broad-coverage HPSG grammar of English, with its own Rust
+implementation of the DELPH-IN processing stack: a TDL reader, typed
+feature structures and unification, the REPP tokenizer, chart mapping,
+morphology, and a packing chart parser. On the ERG's gold treebanks
+(dated measurements in [evaluation.md](docs/evaluation.md)):
+
+- it parses 97% of the grammatical items (3,011 of 3,096);
+- it finds the gold analysis among its readings for 96% of the
+  constructed test suites' items, and 63% of the sentences of a Sherlock
+  Holmes story;
+- each analysis comes with its meaning as Minimal Recursion Semantics
+  (MRS), identical to the ERG's gold MRS for every gold analysis checked
+  (2,966).
+
+A parse ranker trained only on license-clean gold trees picks the gold
+analysis first for 81.7% of held-out sentences. Its scores are calibrated
+probabilities, which lets emdysi report ambiguity: readings are grouped by
+meaning, and when a second meaning keeps at least 5% of the probability,
+the sentence is reported as ambiguous, with what differs (*I saw the man
+with the telescope*: *with(saw, telescope)* 50%, *with(man, telescope)*
+40%).
+
+Famous stress sentences get full analyses and no error claims: *Buffalo
+buffalo Buffalo buffalo buffalo buffalo Buffalo buffalo*, *had had had*,
+garden paths, center embedding ([`corpora/stress`](corpora/stress/README.md)).
+Constructions and words the ERG lacks are added in emdysi's own grammar
+files ([`grammar/emdysi`](grammar/emdysi/README.md)), such as comparative
+correlatives (*The more you read, the more you know*) and US-style dates.
+
+Sentences the grammar rejects are parsed again with the ERG's
+grammar-error variant, which names the error (agreement, verb form,
+article, ...). An error is claimed only when every best analysis of that
+variant names it and a correction makes the sentence grammatical; on
+edited text in five genres the checker claims about 2 errors per 1,000
+sentences of the development set
+([evaluation](docs/evaluation.md#false-flags-on-edited-text)).
 
 ## Usage
 
 ```sh
-cargo build --release
-target/release/en check README.md             # report problems
-target/release/en check --format markdown notes.txt
-target/release/en fix draft.md > fixed.md     # apply safe fixes
-target/release/en parse --derivations essay.md
-target/release/en packs                       # list rules
+en check draft.md
+en check --format markdown notes.txt
+en fix draft.md > fixed.md
+en parse --derivations --mrs essay.md
+en packs
 ```
 
 Input is plain text or Markdown (chosen from the file extension, or with
-`--input`); output is plain text or Markdown (`--format`). Rule packs are
-TOML files; see [`docs/rules.md`](docs/rules.md). The built-in packs are:
+`--input`); reports are plain text or Markdown (`--format`). `en --help`
+lists every option.
 
-- `core`: spelling (with safe automatic fixes), named grammatical errors, a/an
-  and US/GB spelling consistency. Every rule here claims an error, so each
-  reports only what it can show: an error the grammar names in every best
-  analysis, with a correction the grammar accepts; a typo one edit from a
-  known word. On edited text in five genres it flags about 6 sentences in
-  1,000 ([evaluation](docs/evaluation.md#false-flags-on-edited-text));
+The default rule packs are:
+
+- `core`: spelling (with safe automatic fixes), grammatical errors named
+  by the grammar, US/GB spelling consistency, *a*/*an*, repeated words.
+  Every rule here claims an error, so each reports only what it can show.
 - `ai-tells`: vocabulary, stock phrases and constructions over-represented
   in machine-written prose (contrast frames, trailing participial clauses,
-  three-part lists, em-dash density, chat-assistant residue);
-- `plain-style`: passive voice, long sentences, intensifiers, wordy phrases,
-  expletive *there*, repeated words;
-- `substance`: hedged, vague and unsupported claims (*seems to*, *may
-  potentially*, *studies show* without a citation, *a number of*,
-  *clearly*).
-- `structure`: the main point first (no throat-clearing or vague
-  openings, no conclusion held back to the end), a clean heading hierarchy
-  (no skipped levels, empty or lone sections), short paragraphs, specific
-  headings, parallel headings and list items, and procedures written as
-  numbered instructions;
+  three-part lists, em-dash density, chat-assistant residue).
+- `plain-style`: passive voice, long sentences, intensifiers, wordy
+  phrases, expletive *there*, tense shifts.
+- `substance`: hedged, vague and unsupported claims (*seems to*, *studies
+  show* without a citation, *a number of*, *clearly*).
+- `structure`: the main point first, a clean heading hierarchy, short
+  paragraphs, specific and parallel headings and list items, procedures
+  as numbered instructions.
 - `terms`: acronyms defined at first use, one spelling per term, glossary
-  terms (`--glossary FILE`: TOML, TBX or a Vale vocabulary) instead of
-  deprecated ones, no coined words or
-  concept names, no hyphen chains (*decision-making-framework*), no hyphen
-  after *-ly* adverbs and no noun stacks.
+  terms instead of deprecated ones (`--glossary FILE`: TOML, TBX or a Vale
+  vocabulary), no coined words, hyphen chains or noun stacks.
 
-Opt-in packs converted from other linters' rule data (see
-[`docs/rules.md`](docs/rules.md#imported-packs)): `microsoft`, `google` and
-`elastic` (word choice from those companies' style guides, via their Vale
-packages), `wordlists` (hedges, weasel words and fillers) and `equality`
-(insensitive wording, from the data behind alex). Load them with
-`--pack microsoft` and so on. `--pack coverage` shows the sentences the
-grammar could not analyse fully (not errors: mostly English it does not
-cover) and the sentences with more than one likely meaning.
+Opt-in packs (`--pack NAME`): `microsoft`, `google` and `elastic` (word
+choice from those style guides, via their Vale packages), `wordlists`
+(hedges, weasel words, fillers), `equality` (insensitive wording, from the
+data behind alex), `coverage` (sentences the grammar could not analyse
+fully, and ambiguous ones) and `decisions` (checks that ask a local model).
+Write your own packs in TOML: see [rules.md](docs/rules.md).
 
-`en rewrite` prints the text with guarded rewrites: the automatic fixes,
-spelling corrections and a small local language model's rewrites of
-sentences the rules cannot fix: a GGUF file with `--model FILE.gguf` (a
-build with `--features llama`), or any model served over the
-OpenAI-compatible API with `--server URL`, such as an MLX model on Apple
-silicon (`mlx_lm.server --model mlx-community/...`), LM Studio or Ollama. A candidate is kept only if the grammar gives it a
-strict analysis, its semantics keeps the original's content, and it
-introduces no new problem; the model's likelihood then picks among the
-survivors. Model weights are never bundled.
+Optional local models, never bundled: `en rewrite` proposes rewrites of
+sentences the rules cannot fix, kept only if the grammar accepts them and
+their meaning holds, and `en decide` asks a model a question with fixed
+answers. They work with a GGUF file through llama.cpp (a build with
+`--features llama`) or any OpenAI-compatible server (`llama-server`,
+`mlx_lm.server`, Ollama, LM Studio). See [models.md](docs/models.md).
 
-`en decide` asks a local model a question with fixed answers and prints
-the probability of each, in the manner of decision-only models such as Jev;
-the opt-in `decisions` pack uses it for checks that patterns cannot settle
-(sentences with nothing a reader could check, headings that say nothing),
-and `--decide-readings` uses it to settle close calls between parses. Any
-model works: GGUF through llama.cpp, or anything served over the
-OpenAI-compatible API (`llama-server`, `mlx_lm.server`, Ollama, LM Studio).
-See [`docs/models.md`](docs/models.md).
+The first run compiles the grammar (a few seconds) and caches it in
+`$EMDYSI_CACHE_DIR`, `$XDG_CACHE_HOME/emdysi` or `~/.cache/emdysi`, never
+in the repository; later runs load it in about a second. Parsing takes
+from tens of milliseconds to a few seconds per sentence.
 
-The first run compiles the grammar (about five seconds) and caches the
-result in `$EMDYSI_CACHE_DIR`, `$XDG_CACHE_HOME/emdysi` or `~/.cache/emdysi`
-(never in the repository); later runs load in about a second. The cache is
-keyed by the grammar sources, so editing them recompiles. Set
-`EMDYSI_NO_CACHE=1` to bypass it. Parsing takes from tens of milliseconds to
-a few seconds per sentence.
+## Documentation
 
-## License
-
-MIT. See [`LICENSE`](LICENSE). Bundled third-party data will carry its own
-notices in `THIRD_PARTY_NOTICES` once added.
+| Document | Contents |
+|---|---|
+| [docs/tutorial.md](docs/tutorial.md) | A walk through the tool, with real output |
+| [docs/rules.md](docs/rules.md) | Rule packs, every rule kind, glossaries |
+| [docs/models.md](docs/models.md) | Optional local models: backends, decisions, rewriting |
+| [docs/evaluation.md](docs/evaluation.md) | Measured accuracy: gold treebanks, edited text, real errors, minimal pairs |
+| [docs/decisions.md](docs/decisions.md) | The design decisions and why |
+| [docs/plan.md](docs/plan.md) | Milestones and status |
+| [docs/prior-art.md](docs/prior-art.md) | Survey of existing tools and data |
+| [docs/vendored.md](docs/vendored.md) | Every vendored resource, with its source, version and license |
+| [docs/dependencies.md](docs/dependencies.md) | Rust dependencies and their verified licenses |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Building, testing, measuring and extending emdysi |
 
 ## Layout
 
 | Path | Contents |
 |---|---|
 | `crates/emdysi-tdl` | Reader for TDL, the grammar-definition language of the ERG |
-| `crates/emdysi-hpsg` | Type hierarchy, typed feature structures, unification, grammar compilation |
+| `crates/emdysi-hpsg` | Type hierarchy, typed feature structures, unification, morphology, chart parser, MRS |
 | `crates/emdysi-repp` | REPP tokenizer with character offsets |
-| `crates/emdysi-text` | Markdown and plain-text prose blocks with source offsets; sentence segmentation |
+| `crates/emdysi-parse` | The pipeline: tokenizing, tagging, token mapping, lexical lookup, parsing, ranking, ambiguity |
+| `crates/emdysi-text` | Markdown and plain-text blocks with source offsets; sentence segmentation |
 | `crates/emdysi-check` | Document analysis, rule packs, diagnostics, fixes, reports |
-| `crates/emdysi` | Command-line tool, installed as `en` |
-| `crates/emdysi-parse` | Pipeline: tokenizing, tagging, token mapping, lexical lookup, parsing with the ERG |
-| `grammar/erg/` | Vendored English Resource Grammar (MIT), see `SOURCE.md` |
+| `crates/emdysi-lm` | Optional local language models |
+| `crates/emdysi-rewrite` | Guarded rewriting and typo correction |
+| `crates/emdysi` | The command-line tool, installed as `en` |
+| `grammar/erg` | The vendored English Resource Grammar (MIT), unchanged |
+| `grammar/emdysi` | emdysi's extensions of the ERG |
 | `packs/` | Built-in rule packs |
-| `data/scowl/` | English word list, American and British spellings (ESDB/SCOWL size 60) |
-| `corpora/` | Test-only corpora, each with its own license |
-| `docs/` | Prior art, decisions, plan, dependency policy |
+| `data/` | Word lists (SCOWL, cspell), ERG error texts, rule data from other linters |
+| `corpora/` | Test and evaluation corpora, each with its license |
+| `scripts/` | The vendoring check, the rule importer, the tiny test model |
+
+## License
+
+emdysi is MIT-licensed ([`LICENSE`](LICENSE)). It includes third-party
+material under its own licenses, all compatible with MIT: see
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) and
+[docs/vendored.md](docs/vendored.md).

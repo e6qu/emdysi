@@ -842,6 +842,34 @@ impl Erg {
         out
     }
 
+    /// The forms of `lemma` with the same inflection as `like`: *use* like
+    /// *utilizes* is *uses*, like *utilized* *used*, like *utilize* *use*.
+    /// The grammar's spelling rules also analyse misspellings (*useed* as
+    /// *use* plus -ed), so callers should check the forms against a word
+    /// list.
+    pub fn inflect_like(&self, lemma: &str, like: &str) -> Vec<String> {
+        let lemma = lemma.to_lowercase();
+        let endings = |form: &str, stem: Option<&str>| -> Vec<Vec<String>> {
+            self.lexicon
+                .morph
+                .analyze(form, &|s| self.lexicon.is_stem(s), 2)
+                .into_iter()
+                .filter(|a| !a.rules.iter().any(|r| r.ends_with("_dlr")))
+                .filter(|a| stem.is_none_or(|st| a.stem == st))
+                .map(|a| a.rules)
+                .collect()
+        };
+        let wanted = endings(&like.to_lowercase(), None);
+        std::iter::once(lemma.clone())
+            .chain(self.inflections(&lemma))
+            .filter(|f| {
+                endings(f, Some(&lemma))
+                    .iter()
+                    .any(|rules| wanted.contains(rules))
+            })
+            .collect()
+    }
+
     /// Spelling suggestions for an unknown word: known words within edit
     /// distance 1, or 2 if there are none, best first.
     pub fn spelling_suggestions(&self, word: &str, max: usize) -> Vec<String> {

@@ -47,6 +47,8 @@ LGPL and GPL) requires a new decision.
 | percent-encoding | 2.3.2 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-MIT`, `LICENSE-APACHE` | 2026-10-02 |
 | serde_core | 1.0.229 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-MIT`, `LICENSE-APACHE` | 2026-10-02 |
 | serde_json | 1.0.151 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-MIT`, `LICENSE-APACHE` | 2026-10-02 |
+| serde | 1.0.229 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-MIT`, `LICENSE-APACHE` | 2026-10-06 |
+| serde_derive | 1.0.229 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-MIT`, `LICENSE-APACHE` | 2026-10-06 |
 | ureq | 3.4.2 (default features off: no TLS) | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-MIT`, `LICENSE-APACHE` | 2026-10-02 |
 | ureq-proto | 0.6.4 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-MIT.txt`, `LICENSE-APACHE.txt` | 2026-10-02 |
 | utf8-zero | 0.8.1 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-MIT`, `LICENSE-APACHE` | 2026-10-02 |
@@ -80,6 +82,8 @@ Model weights are never bundled; the user supplies a GGUF file.
 | glob | 0.3.4 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT` | 2026-10-02 |
 | itertools | 0.13.0 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT` | 2026-10-02 |
 | jobserver | 0.1.35 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT` | 2026-10-02 |
+| getrandom | 0.4.3 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-MIT`, `LICENSE-APACHE` | 2026-10-06 |
+| r-efi | 6.0.0 | MIT OR Apache-2.0 OR LGPL-2.1-or-later (used under MIT) | crate `Cargo.toml`; the published crate has no license file, so the repository's `AUTHORS` file (triple license with the MIT text) at github.com/r-efi/r-efi | 2026-10-06 |
 | libc | 0.2.189 | MIT OR Apache-2.0 | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT` | 2026-10-02 |
 | libloading | 0.8.9 | ISC | crate `Cargo.toml` + `LICENSE` | 2026-10-02 |
 | llama-cpp-2 | 0.1.158 | MIT OR Apache-2.0 | crate `Cargo.toml` (no license file in the published crate; the repository's license files match) | 2026-10-02 |
@@ -104,13 +108,23 @@ Model weights are never bundled; the user supplies a GGUF file.
 | tracing | 0.1.44 | MIT | crate `Cargo.toml` + `LICENSE` | 2026-10-02 |
 | tracing-attributes | 0.1.31 | MIT | crate `Cargo.toml` + `LICENSE` | 2026-10-02 |
 | tracing-core | 0.1.36 | MIT | crate `Cargo.toml` + `LICENSE` | 2026-10-02 |
+| valuable | 0.1.1 | MIT | crate `Cargo.toml`; the published crate has no license file, so the repository's `LICENSE` (Copyright (c) 2021 Valuable Contributors) at github.com/tokio-rs/valuable | 2026-10-06 |
 | unicode-ident | 1.0.26 | (MIT OR Apache-2.0) AND Unicode-3.0 | crate `Cargo.toml` + `LICENSE-APACHE`, `LICENSE-MIT`, `LICENSE-UNICODE` | 2026-10-02 |
 | walkdir | 2.5.0 | Unlicense/MIT | crate `Cargo.toml` + `COPYING`, `LICENSE-MIT`, `UNLICENSE` | 2026-10-02 |
+| winapi-util | 0.1.11 | Unlicense OR MIT | crate `Cargo.toml` + `COPYING`, `LICENSE-MIT`, `UNLICENSE` | 2026-10-06 |
+| windows-sys | 0.61.2 | MIT OR Apache-2.0 | crate `Cargo.toml` + `license-mit`, `license-apache-2.0` | 2026-10-06 |
+| windows-link | 0.2.1 | MIT OR Apache-2.0 | crate `Cargo.toml` + `license-mit`, `license-apache-2.0` | 2026-10-06 |
 
 ## Data
 
-Bundled data is listed in [`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md).
-Test-only data is in [`corpora/`](../corpora/README.md).
+Everything that is not Rust code (the grammar, word lists, rule data, model
+weights and the test corpora) is listed with its source, version, license
+and use in [`vendored.md`](vendored.md), generated from
+[`VENDORED.toml`](../VENDORED.toml); the notices that must travel with it
+are in [`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md). The policy
+for data is the same as for crates, except that share-alike text (CC BY-SA)
+may be used as test data in its own directory (see
+[`corpora/README.md`](../corpora/README.md)).
 
 ## Not dependencies: the tiny test model
 

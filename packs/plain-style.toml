@@ -44,11 +44,22 @@ match = "surface"
 severity = "warning"
 message = "Wordy: use '{replacement}' for '{match}'."
 words = [
-  "in order to", "due to the fact that", "at this point in time", "utilize",
+  "in order to", "due to the fact that", "at this point in time",
   "a large number of", "prior to", "in the event that", "with regard to",
   "in spite of the fact that", "for the purpose of",
 ]
-replace = { "in order to" = "to", "due to the fact that" = "because", "at this point in time" = "now", "utilize" = "use", "a large number of" = "many", "prior to" = "before", "in the event that" = "if", "with regard to" = "about", "in spite of the fact that" = "although", "for the purpose of" = "to" }
+replace = { "in order to" = "to", "due to the fact that" = "because", "at this point in time" = "now", "a large number of" = "many", "prior to" = "before", "in the event that" = "if", "with regard to" = "about", "in spite of the fact that" = "although", "for the purpose of" = "to" }
+
+[[rule]]
+id = "plain-style.wordy-verb"
+kind = "words"
+match = "lemma"
+severity = "warning"
+message = "Wordy: use '{replacement}' for '{match}'."
+words = ["utilize"]
+replace = { "utilize" = "use" }
+examples = ["We utilized the cache.", "The service utilizes a cache."]
+acceptable = ["We used the cache."]
 
 [[rule]]
 id = "plain-style.expletive-there"
@@ -56,14 +67,6 @@ kind = "construction"
 severity = "suggestion"
 message = "Expletive 'there' ('{match}'); consider a more direct subject."
 entries = ["there_expl"]
-
-[[rule]]
-id = "plain-style.repeated-word"
-kind = "regex"
-severity = "error"
-message = "Repeated word '{match}'."
-pattern = "(?i)\\b(\\w+)\\s+\\1\\b"
-replace = "$1"
 
 [[rule]]
 id = "plain-style.double-space"

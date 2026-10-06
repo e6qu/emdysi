@@ -52,7 +52,10 @@ Words or phrases. `words` lists them; phrases are space-separated words.
 - `match = "surface"`: compare the words as written (case-insensitive).
 - Overlapping matches of one rule are reported once, for the longest item.
 - `replace`: a table from listed items to automatic fixes. The fix keeps the
-  capitalization of the matched text. `{replacement}` is available in
+  capitalization of the matched text, and with `match = "lemma"` a
+  one-word fix takes the form of the matched word (*utilizes* becomes
+  *uses*, *utilized* *used*); when the word list has no such form, the
+  rule reports the match without a fix. `{replacement}` is available in
   messages.
 
 ### `regex`

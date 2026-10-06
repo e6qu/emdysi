@@ -10,13 +10,19 @@ pub enum OutputFormat {
     Markdown,
 }
 
+/// `n` and a noun in the singular or the plural (|1 warning|, |2
+/// warnings|).
+pub fn count(n: usize, singular: &str, plural: &str) -> String {
+    format!("{n} {}", if n == 1 { singular } else { plural })
+}
+
 fn counts(diags: &[Diagnostic]) -> String {
     let n = |s: Severity| diags.iter().filter(|d| d.severity == s).count();
     format!(
-        "{} errors, {} warnings, {} suggestions",
-        n(Severity::Error),
-        n(Severity::Warning),
-        n(Severity::Suggestion)
+        "{}, {}, {}",
+        count(n(Severity::Error), "error", "errors"),
+        count(n(Severity::Warning), "warning", "warnings"),
+        count(n(Severity::Suggestion), "suggestion", "suggestions")
     )
 }
 
@@ -105,8 +111,11 @@ pub fn render_parses(a: &Analysis, format: OutputFormat, show: &ParseDetails) ->
         let status = match (&s.skipped, n, s.strict()) {
             (Some(why), _, _) => format!("not parsed: {why}"),
             (None, 0, _) => "no analysis".to_string(),
-            (None, n, true) => format!("{n} readings"),
-            (None, n, false) => format!("{n} readings, fragment or informal only"),
+            (None, n, true) => count(n, "reading", "readings"),
+            (None, n, false) => format!(
+                "{}, fragment or informal only",
+                count(n, "reading", "readings")
+            ),
         };
         let best = s.best();
         let tree = best.and_then(|r| r.tree.as_ref()).map(|t| t.bracketed());
