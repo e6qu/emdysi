@@ -496,6 +496,18 @@ the errors among them that no rule catches are mostly wrong verb forms in
 sentences the grammar still analyses (*adds* for *add*, *is granted* for
 *granted*) and missing words.
 
+Agreement errors with the verbs whose singular and plural are separate
+words in the grammar (*was* and *were*, *is* and *are*, *has* and *have*,
+*does* and *do*) were named by the grammar-error variant but never
+reported: the correction was looked for among the word's inflections, and
+*were* is not an inflection of *was*. With those pairs as candidate
+corrections (each still accepted only if the grammar then analyses the
+sentence), *The results was clear.*, *The new version are faster.* and
+*She are a writer.* are reported with the right correction (2026-10-06).
+On the real errors nothing changes (162 caught, none flagged after the
+fix), and on the first development set of edited text the flags are the
+same five.
+
 ## Stress sentences and ambiguity
 
 [`corpora/stress`](../corpora/stress/README.md) has 66 grammatical
