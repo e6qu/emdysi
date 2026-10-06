@@ -503,10 +503,31 @@ reported: the correction was looked for among the word's inflections, and
 *were* is not an inflection of *was*. With those pairs as candidate
 corrections (each still accepted only if the grammar then analyses the
 sentence), *The results was clear.*, *The new version are faster.* and
-*She are a writer.* are reported with the right correction (2026-10-06).
-On the real errors nothing changes (162 caught, none flagged after the
-fix), and on the first development set of edited text the flags are the
-same five.
+*She are a writer.* are reported with the right correction (2026-10-06). Two further changes
+go with it. The grammar-error variant kept at most 20 readings and ranked
+run-on fragments first, so a whole-sentence reading naming the error
+(*Our users has asked for this feature*) could be crowded out; its
+whole-sentence roots are now unpacked first, as the strict root is for
+the grammar. That alone made two correct sentences of edited text look
+wrong (*Well, much good may it do them!*, *to prevent a continued
+legislative paralysis*), each with a "correction" the grammar accepts
+only under another analysis (*much good may it does them* parses with
+*may* as a noun). So a correction now counts only if a strict reading of
+the corrected sentence keeps the lexical entry of every other word of the
+reading that names the error. With all three:
+
+| | Before | After |
+|---|---|---|
+| Real errors caught (377) | 162 | 162 |
+| Flagged after the fix | 0 | 0 |
+| Flags on the first development set (2,498 sentences) | 5 | 6 |
+| Flags on the second development set (13,442 sentences) | 86 | 86 or fewer |
+
+The new flag is *Its police includes a special unit*, where *police*
+takes a plural verb in edited English. The second development set was
+measured with the first two changes (87 flags, the one new being *much
+good may it do them*); the third change only rejects corrections, and
+rejects that one.
 
 ## Stress sentences and ambiguity
 
