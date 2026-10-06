@@ -44,8 +44,9 @@ fn main() {
         let line = line.unwrap();
         let p = erg.parse(&line).unwrap();
         println!(
-            "{line}\n  {} readings, {} lexical items, {} edges{}, {:?}",
+            "{line}\n  {} readings ({} strict), {} lexical items, {} edges{}, {:?}",
             p.readings.len(),
+            p.readings.iter().filter(|r| is_strict(&r.root)).count(),
             p.lexical_items,
             p.edges,
             if p.exhausted { " (exhausted)" } else { "" },

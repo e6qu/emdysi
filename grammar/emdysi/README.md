@@ -24,6 +24,11 @@ are not changed. Written for this project (MIT, see the repository's
   binary rule joins the halves into a sentence whose semantics is a
   `comparative_correlative_rel` with the first half (the condition) as
   ARG1 and the second as ARG2.
+- `dates.tdl`: US-style dates with a comma before the year (*on October
+  31, 1832*): the ERG takes that comma only as its informal comma entry,
+  so the date analysis was informal (the sentence kept strict readings
+  only with other, wrong structures); `comma_dom_pct` is the same comma
+  for a day of the month only, not informal.
 - `discourse.tdl`: a sentence that starts with a coordinating conjunction
   (*And his sisters are charming women.*, *But I left.*), which the ERG
   analyses as a fragment: the conjunction-marked clause becomes a main
@@ -44,7 +49,11 @@ are not changed. Written for this project (MIT, see the repository's
   *out-of-X* adjectives (*out-of-memory kills*, *out-of-band data*). A
   native entry replaces the ERG's generic entries for an unknown word, so
   a word the ERG lacks gets all its common uses (*unusual*, *unexpected*
-  also as adjectives, in the types of *usual* and *probable*).
+  also as adjectives, in the types of *usual* and *probable*); mass uses
+  of nouns the ERG has only as count nouns (*too much ceremony*), one by
+  one, since a bare count noun is a grammar error the checker reports;
+  hyphenated compound adjectives (*in-person*, *in-memory*, *at-risk*,
+  *compile-time*, *opt-in*) in the form of the ERG's *in-house*.
 
 The ranking model was trained on the ERG's own rule and entry names; the
 ranker and the evaluation read an extension's rule or entry as the ERG one

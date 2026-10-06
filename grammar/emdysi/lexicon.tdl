@@ -518,3 +518,76 @@ out_of_sync_a2 := aj_-_i-att_le &
              PHON.ONSET voc ] ].
 
 :end :instance.
+
+;;; Mass uses of nouns the ERG lists only as count nouns: |too much
+;;; ceremony|, |without ceremony|. A count noun without a determiner is
+;;; a grammar error the checker reports, so these are added one by one,
+;;; never by a general rule.
+
+:begin :instance :status lex-entry.
+
+ceremony_n_mass := n_-_m_le &
+  [ ORTH < "ceremony" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_ceremony_n_1_rel",
+             PHON.ONSET con ] ].
+
+:end :instance.
+
+;;; Hyphenated compound adjectives the ERG lacks, in the form of its
+;;; |in-house| and |on-site| entries (the tokenizer splits off the
+;;; hyphens): |in-person voting|, |in-memory storage|, |at-risk
+;;; children|, |compile-time checks|, |an opt-in feature|.
+
+:begin :instance :status lex-entry.
+
+in_person_a1 := aj_-_i_le &
+  [ ORTH < "in", "-", "person" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_in-person_a_1_rel",
+             PHON.ONSET voc ] ].
+
+on_call_a1 := aj_-_i_le &
+  [ ORTH < "on", "-", "call" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_on-call_a_1_rel",
+             PHON.ONSET voc ] ].
+
+on_premises_a1 := aj_-_i_le &
+  [ ORTH < "on", "-", "premises" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_on-premises_a_1_rel",
+             PHON.ONSET voc ] ].
+
+in_memory_a1 := aj_-_i_le &
+  [ ORTH < "in", "-", "memory" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_in-memory_a_1_rel",
+             PHON.ONSET voc ] ].
+
+in_place_a1 := aj_-_i-att_le &
+  [ ORTH < "in", "-", "place" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_in-place_a_1_rel",
+             PHON.ONSET voc ] ].
+
+at_risk_a1 := aj_-_i-att_le &
+  [ ORTH < "at", "-", "risk" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_at-risk_a_1_rel",
+             PHON.ONSET voc ] ].
+
+on_chain_a1 := aj_-_i_le &
+  [ ORTH < "on", "-", "chain" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_on-chain_a_1_rel",
+             PHON.ONSET voc ] ].
+
+compile_time_a1 := aj_-_i-att_le &
+  [ ORTH < "compile", "-", "time" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_compile-time_a_1_rel",
+             PHON.ONSET con ] ].
+
+opt_in_a1 := aj_-_i-att_le &
+  [ ORTH < "opt", "-", "in" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_opt-in_a_1_rel",
+             PHON.ONSET voc ] ].
+
+opt_out_a1 := aj_-_i-att_le &
+  [ ORTH < "opt", "-", "out" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_opt-out_a_1_rel",
+             PHON.ONSET voc ] ].
+
+:end :instance.
