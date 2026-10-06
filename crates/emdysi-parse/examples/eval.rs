@@ -219,7 +219,11 @@ fn main() {
 /// trees under the ERG rule's name. `cl_disc-conj_c` makes a strict sentence
 /// of a conjunction-marked clause, where the ERG's `cl_cnj-frg_c` makes a
 /// fragment of it.
-const EQUIVALENT: &[(&str, &str)] = &[("cl_disc-conj_c", "cl_cnj-frg_c")];
+const EQUIVALENT: &[(&str, &str)] = &[
+    ("cl_disc-conj_c", "cl_cnj-frg_c"),
+    ("flr-hd_nwh-nc-adj_c", "flr-hd_nwh-nc_c"),
+    ("flr-hd_nwh-nc-adj-nmc_c", "flr-hd_nwh-nc-nmc_c"),
+];
 
 fn erg_names(t: Sexp) -> Sexp {
     match t {
