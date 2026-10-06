@@ -31,6 +31,10 @@ fn main() {
     {
         erg.config.timeout = std::time::Duration::from_secs(t);
     }
+    // NO_PACKING=1 turns ambiguity packing off, for comparison.
+    if std::env::var_os("NO_PACKING").is_some() {
+        erg.config.packing_restrictor = None;
+    }
     eprintln!("loaded in {:?}", t.elapsed());
     for line in std::io::stdin().lines() {
         let line = line.unwrap();
