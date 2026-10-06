@@ -572,6 +572,17 @@ neither changes coverage, the gold trees found, or the gold trees ranked
 first (sh-spec: 360 found, 313 first, with or without them; the eval
 compares emdysi's rule under the name of the ERG rule it stands for).
 
+Two more make common edited-prose constructions formal: comma-separated
+adjectives before a noun (*a long, cold, dark night*), for which the ERG
+has only its informal comma entry, and fronted prepositional phrases and
+adverbs without a comma (*In 2019 we released the book.*), which the ERG
+parses with informal rules (`grammar/emdysi/README.md`). The ranker now
+also reads each extension rule or entry as the ERG one it stands for
+(`EQUIVALENT` in `crates/emdysi-parse/src/rank.rs`). On the gold profiles
+(2026-10-06) csli, esd and control are unchanged; on sh-spec one gold tree
+and one parse are lost and one more gold tree is ranked first (359 vs 360
+found, 521 vs 522 parsed, 314 vs 313 first).
+
 The ranker's scores (an averaged perceptron) are not probabilities. A
 temperature fitted on the held-out 10% of the gold items (5.0, by
 maximum likelihood of the gold reading;

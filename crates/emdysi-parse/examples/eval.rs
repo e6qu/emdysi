@@ -214,29 +214,13 @@ fn main() {
     );
 }
 
-/// Rules of emdysi's grammar extensions (`grammar/emdysi`) that stand where
-/// an ERG rule does, with the same daughters: compared with the ERG's gold
-/// trees under the ERG rule's name. `cl_disc-conj_c` makes a strict sentence
-/// of a conjunction-marked clause, where the ERG's `cl_cnj-frg_c` makes a
-/// fragment of it.
-const EQUIVALENT: &[(&str, &str)] = &[
-    ("cl_disc-conj_c", "cl_cnj-frg_c"),
-    ("flr-hd_nwh-nc-adj_c", "flr-hd_nwh-nc_c"),
-    ("flr-hd_nwh-nc-adj-nmc_c", "flr-hd_nwh-nc-nmc_c"),
-];
-
 fn erg_names(t: Sexp) -> Sexp {
     match t {
         Sexp::List(items) => Sexp::List(
             items
                 .into_iter()
                 .map(|x| match x {
-                    Sexp::Atom(a) => Sexp::Atom(
-                        EQUIVALENT
-                            .iter()
-                            .find(|(ours, _)| *ours == a)
-                            .map_or(a, |(_, erg)| erg.to_string()),
-                    ),
+                    Sexp::Atom(a) => Sexp::Atom(emdysi_parse::rank::erg_name(&a).to_string()),
                     l => erg_names(l),
                 })
                 .collect(),

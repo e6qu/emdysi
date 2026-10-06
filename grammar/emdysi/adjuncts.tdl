@@ -1,0 +1,41 @@
+;;; Fronted adjuncts without a comma: |In 2019 we released the book.|,
+;;; |Yesterday we left.|, |In this chapter we will discuss ownership.|
+;;;
+;;; The ERG analyses a fronted phrase without a comma with its non-wh
+;;; filler-head rules for "no comma" (flr-hd_nwh-nc_c and -nmc_c), which are
+;;; GENRE nonformal; with a comma (flr-hd_nwh_c) the sentence is formal.
+;;; Edited prose leaves the comma out after short introductory adjuncts
+;;; all the time. These rules are the formal counterparts for fronted
+;;; prepositional phrases and adverbs only (HEAD p_or_adv, which includes
+;;; noun phrases used as adverbs, |Yesterday|): fronted adjectives and noun
+;;; phrases without a comma (|Bigger they are.|) stay informal.
+
+:begin :type.
+
+flr-hd-adj := flr-hd.
+
+filler_head_rule_adjunct_nc := filler_head_rule_non_wh &
+  [ HD-DTR.SYNSEM.LEX -,
+    NH-DTR.SYNSEM [ LOCAL.CAT.HEAD p_or_adv &
+                                   [ MINORS.ALTMIN non_ellipt_rel ],
+                    PUNCT.RPUNCT no_punct ] ].
+
+filler_head_rule_adjunct_nc_mc := filler_head_rule_adjunct_nc &
+  [ SYNSEM.LOCAL.CAT.MC +,
+    HD-DTR.SYNSEM [ LOCAL.CONT.HOOK.INDEX.SF #psf,
+                    PUNCT.RPUNCT.PSF #psf ] ].
+
+filler_head_rule_adjunct_nc_nonmc := filler_head_rule_adjunct_nc &
+  [ SYNSEM.LOCAL.CAT.MC - ].
+
+:end :type.
+
+:begin :instance :status rule.
+
+flr-hd_nwh-nc-adj_c := filler_head_rule_adjunct_nc_mc &
+  [ RNAME flr-hd-adj ].
+
+flr-hd_nwh-nc-adj-nmc_c := filler_head_rule_adjunct_nc_nonmc &
+  [ RNAME flr-hd-adj ].
+
+:end :instance.

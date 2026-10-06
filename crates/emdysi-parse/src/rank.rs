@@ -26,10 +26,31 @@ pub fn lexical_type(g: &Grammar, inst: usize) -> String {
         .unwrap_or_default()
 }
 
+/// Rules, lexical entries and lexical types of emdysi's grammar extensions
+/// (`grammar/emdysi`) that stand where an ERG one does, with the same
+/// daughters: the ranker scores them under the ERG's name, so that a formal
+/// counterpart of an informal ERG analysis ranks like it, and an
+/// evaluation against the ERG's gold trees compares them as the same.
+pub const EQUIVALENT: &[(&str, &str)] = &[
+    ("cl_disc-conj_c", "cl_cnj-frg_c"),
+    ("flr-hd_nwh-nc-adj_c", "flr-hd_nwh-nc_c"),
+    ("flr-hd_nwh-nc-adj-nmc_c", "flr-hd_nwh-nc-nmc_c"),
+    ("comma_adj_pct", "comma_inf_pct"),
+    ("pt_-_comma-adj_le", "pt_-_comma-informal_le"),
+];
+
+/// The ERG's name for `name` (see [`EQUIVALENT`]).
+pub fn erg_name(name: &str) -> &str {
+    EQUIVALENT
+        .iter()
+        .find(|(ours, _)| *ours == name)
+        .map_or(name, |(_, erg)| erg)
+}
+
 fn node_name(g: &Grammar, rules: &[Rule], d: &Deriv) -> String {
     match &d.kind {
-        EdgeKind::Lex { inst, .. } => lexical_type(g, *inst),
-        EdgeKind::Rule(ri) => rules[*ri].name.clone(),
+        EdgeKind::Lex { inst, .. } => erg_name(&lexical_type(g, *inst)).to_string(),
+        EdgeKind::Rule(ri) => erg_name(&rules[*ri].name).to_string(),
         EdgeKind::Cover => "fragment".to_string(),
     }
 }
@@ -50,7 +71,7 @@ fn collect(g: &Grammar, rules: &[Rule], d: &Deriv, parent: &str, out: &mut Vec<S
     let name = node_name(g, rules, d);
     match &d.kind {
         EdgeKind::Lex { inst, .. } => {
-            out.push(format!("lex:{}", g.instances[*inst].name));
+            out.push(format!("lex:{}", erg_name(&g.instances[*inst].name)));
             out.push(format!("le:{name}"));
             out.push(format!("le^:{parent}>{name}"));
         }
@@ -152,24 +173,26 @@ impl ChartScorer<'_> {
 
     fn category(&self, d: &Dtr) -> String {
         match *d {
-            Dtr::Lex(inst) => self.le_types[inst].clone(),
+            Dtr::Lex(inst) => erg_name(&self.le_types[inst]).to_string(),
             Dtr::Rule(ri) => self
                 .rules
                 .get(ri)
-                .map_or_else(|| "fragment".to_string(), |r| r.name.clone()),
+                .map_or_else(|| "fragment".to_string(), |r| erg_name(&r.name).to_string()),
         }
     }
 }
 
 impl Scorer for ChartScorer<'_> {
     fn lexical(&self, inst: usize) -> f64 {
-        let le = &self.le_types[inst];
-        self.weight(&format!("lex:{}", self.grammar.instances[inst].name))
-            + self.weight(&format!("le:{le}"))
+        let le = erg_name(&self.le_types[inst]);
+        self.weight(&format!(
+            "lex:{}",
+            erg_name(&self.grammar.instances[inst].name)
+        )) + self.weight(&format!("le:{le}"))
     }
 
     fn rule(&self, rule: usize, dtrs: &[Dtr]) -> f64 {
-        let name = &self.rules[rule].name;
+        let name = erg_name(&self.rules[rule].name);
         let kids: Vec<String> = dtrs.iter().map(|d| self.category(d)).collect();
         self.weight(&format!("r:{name}")) + self.weight(&format!("rd:{name}>{}", kids.join(",")))
     }

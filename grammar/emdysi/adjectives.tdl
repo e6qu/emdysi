@@ -1,0 +1,25 @@
+;;; Comma-separated adjectives before a noun: |a selfish, hypocritical
+;;; woman|, |a known, fixed size|, |a long, cold, dark night|.
+;;;
+;;; The ERG's rule for an adjective before a modified noun (adj_adjn_phrase,
+;;; aj-hdn_adjn_c) admits a comma after the adjective only as the comma of
+;;; its informal comma entry (comma_inf_pct, GENRE nonformal), so these
+;;; noun phrases, standard in edited prose, have no formal analysis. This
+;;; comma does the same for adjectives only and is not informal.
+
+:begin :type.
+
+pt_-_comma-adj_le := punct_right_word &
+  [ SYNSEM [ LOCAL.CAT.VAL.COMPS.FIRST [ LOCAL.CAT.HEAD adj,
+                                         PUNCT.RPUNCT pair_or_no_punct ],
+             PUNCT [ PNCTPR ppair,
+                     RPUNCT rbcomma_punct ] ] ].
+
+:end :type.
+
+:begin :instance :status lex-entry.
+
+comma_adj_pct := pt_-_comma-adj_le &
+  [ ORTH < "," > ].
+
+:end :instance.
