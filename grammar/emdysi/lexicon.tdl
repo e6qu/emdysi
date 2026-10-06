@@ -327,80 +327,6 @@ improbable_n_mdef := n_-_m-def_le &
 
 :end :instance.
 
-;;; Adjectives the ERG lacks (they had only its generic entries for
-;;; unknown words, which a native entry, such as the nouns above, would
-;;; replace), in the types of their positive counterparts (|usual|,
-;;; |predictable|, |familiar|, |probable|).
-
-:begin :instance :status lex-entry.
-
-unimaginable_a1 := aj_-_i_le &
-  [ ORTH < "unimaginable" >,
-    SYNSEM [ LKEYS.KEYREL.PRED "_unimaginable_a_1_rel",
-             PHON.ONSET voc ] ].
-
-unknowable_a1 := aj_-_i_le &
-  [ ORTH < "unknowable" >,
-    SYNSEM [ LKEYS.KEYREL.PRED "_unknowable_a_1_rel",
-             PHON.ONSET voc ] ].
-
-inexplicable_a1 := aj_-_i_le &
-  [ ORTH < "inexplicable" >,
-    SYNSEM [ LKEYS.KEYREL.PRED "_inexplicable_a_1_rel",
-             PHON.ONSET voc ] ].
-
-unexpected_a1 := aj_-_i_le &
-  [ ORTH < "unexpected" >,
-    SYNSEM [ LKEYS.KEYREL.PRED "_unexpected_a_1_rel",
-             PHON.ONSET voc ] ].
-
-unexpected_a2 := aj_cp_i-it_le &
-  [ ORTH < "unexpected" >,
-    SYNSEM [ LKEYS.KEYREL.PRED "_unexpected_a_1_rel",
-             PHON.ONSET voc ] ].
-
-unusual_a1 := aj_-_i_le &
-  [ ORTH < "unusual" >,
-    SYNSEM [ LKEYS.KEYREL.PRED "_unusual_a_1_rel",
-             PHON.ONSET voc ] ].
-
-unusual_a2 := aj_pp-vp_i-it-nt_le &
-  [ ORTH < "unusual" >,
-    SYNSEM [ LKEYS.KEYREL.PRED "_unusual_a_for_rel",
-             PHON.ONSET voc ] ].
-
-unusual_a3 := aj_cp_i-it_le &
-  [ ORTH < "unusual" >,
-    SYNSEM [ LKEYS.KEYREL.PRED "_unusual_a_for_rel",
-             PHON.ONSET voc ] ].
-
-unfamiliar_a1 := aj_pp_i_le &
-  [ ORTH < "unfamiliar" >,
-    SYNSEM [ LKEYS.KEYREL.PRED "_unfamiliar_a_1_rel",
-             PHON.ONSET voc ] ].
-
-unpredictable_a1 := aj_pp_i_le &
-  [ ORTH < "unpredictable" >,
-    SYNSEM [ LKEYS.KEYREL.PRED "_unpredictable_a_1_rel",
-             PHON.ONSET voc ] ].
-
-unpredictable_a2 := aj_cp_i-it_le &
-  [ ORTH < "unpredictable" >,
-    SYNSEM [ LKEYS.KEYREL.PRED "_unpredictable_a_1_rel",
-             PHON.ONSET voc ] ].
-
-improbable_a1 := aj_-_i_le &
-  [ ORTH < "improbable" >,
-    SYNSEM [ LKEYS.KEYREL.PRED "_improbable_a_1_rel",
-             PHON.ONSET voc ] ].
-
-improbable_a2 := aj_cp_i-it_le &
-  [ ORTH < "improbable" >,
-    SYNSEM [ LKEYS.KEYREL.PRED "_improbable_a_1_rel",
-             PHON.ONSET voc ] ].
-
-:end :instance.
-
 ;;; |onboard|, which the ERG lacks: a preposition like |aboard| (|330 crew
 ;;; are onboard the ship|), an adjective (|onboard storage|) and a verb
 ;;; (|onboard new users|), all three since a native entry replaces the
@@ -588,6 +514,85 @@ opt_in_a1 := aj_-_i-att_le &
 opt_out_a1 := aj_-_i-att_le &
   [ ORTH < "opt", "-", "out" >,
     SYNSEM [ LKEYS.KEYREL.PRED "_opt-out_a_1_rel",
+             PHON.ONSET voc ] ].
+
+:end :instance.
+
+;;; Technical vocabulary the ERG lacks: |a borrow| (Rust), |swap| (memory
+;;; swapped to disk, mass), |metrics| as a noun that modifies nouns (|a
+;;; metrics pipeline|, like the ERG's |statistics|), intransitive
+;;; |evaluate| (|the expression evaluates to 5|), and |out-of-the-box|.
+
+:begin :instance :status lex-entry.
+
+borrow_n1 := n_-_c_le &
+  [ ORTH < "borrow" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_borrow_n_1_rel",
+             PHON.ONSET con ] ].
+
+swap_n_mass := n_-_m_le &
+  [ ORTH < "swap" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_swap_n_2_rel",
+             PHON.ONSET con ] ].
+
+metrics_n1 := n_-_m_le &
+  [ ORTH < "metrics" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_metrics_n_1_rel",
+             PHON.ONSET con ] ].
+
+evaluate_v_intr := v_-_le &
+  [ ORTH < "evaluate" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_evaluate_v_1_rel",
+             PHON.ONSET voc ] ].
+
+out_of_the_box_a1 := aj_-_i_le &
+  [ ORTH < "out-of", "-", "the", "-", "box" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_out-of-the-box_a_1_rel",
+             PHON.ONSET voc ] ].
+
+out_of_the_box_a2 := aj_-_i_le &
+  [ ORTH < "out", "-", "of", "-", "the", "-", "box" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_out-of-the-box_a_1_rel",
+             PHON.ONSET voc ] ].
+
+out_of_the_box_pp1 := pp_-_i_le &
+  [ ORTH < "out-of", "-", "the", "-", "box" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_out-of-the-box_a_1_rel",
+             PHON.ONSET voc ] ].
+
+out_of_the_box_pp2 := pp_-_i_le &
+  [ ORTH < "out", "-", "of", "-", "the", "-", "box" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_out-of-the-box_a_1_rel",
+             PHON.ONSET voc ] ].
+
+:end :instance.
+
+;;; Adjectives the ERG lacks for nouns above: a native entry replaces the
+;;; generic entries of an unknown word, so these would otherwise lose
+;;; their adjective use (|an inexplicable result|), in the types of their
+;;; positive counterparts (|probable|). Words with "un-" from an ERG
+;;; adjective (|unusual|, |unexpected|) need none: the ERG derives them.
+
+:begin :instance :status lex-entry.
+
+unknowable_a1 := aj_-_i_le &
+  [ ORTH < "unknowable" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_unknowable_a_1_rel",
+             PHON.ONSET voc ] ].
+
+inexplicable_a1 := aj_-_i_le &
+  [ ORTH < "inexplicable" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_inexplicable_a_1_rel",
+             PHON.ONSET voc ] ].
+
+improbable_a1 := aj_-_i_le &
+  [ ORTH < "improbable" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_improbable_a_1_rel",
+             PHON.ONSET voc ] ].
+
+improbable_a2 := aj_cp_i-it_le &
+  [ ORTH < "improbable" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_improbable_a_1_rel",
              PHON.ONSET voc ] ].
 
 :end :instance.
