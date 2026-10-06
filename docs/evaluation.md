@@ -441,6 +441,19 @@ What is left is mostly spelling (3.4 per 1,000: jargon such as *libs*,
 *righly*, *reseearchers*), spelling consistency within a document (1.7),
 and named grammar errors (1.0, mostly archaic constructions in the novel).
 
+With the changes of 2026-10-05 (a/an and repeated words, grammar
+extensions, the grammar-error variant's types, the tagger, and the
+precision fixes that followed), dev2 is at 6.4 flags per 1,000 sentences
+(86 flags; 2026-10-06): spelling 3.7, consistency 1.6, repeated words
+0.4, articles 0.3, named grammar errors 0.3. About 16 of the 86 are real
+errors in the sources: all six repeated words (*this is is*, *the the*,
+*and and*, *this this*), *a overflow*, and the typos *reseearchers*,
+*anyeone*, *durnig*, *righly*, *consided*, *santisers*. What is left is
+mostly jargon and handles of the Rust blog (*libc*, *libs*, *iirc*,
+*impls*, *tiif*), the novel's own spellings (*dropt*, *expence*,
+*curtsey*, *an union*, *quitted*), and Kubernetes terms (*cadvisor*,
+*rootfs*, *nftables*).
+
 The price is recall. On the `csli` test suite, named errors now catch 33
 of 388 ungrammatical sentences (104 before) and wrongly flag 3 of 965
 grammatical ones (17 before): the checker names fewer errors, and nearly
