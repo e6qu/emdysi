@@ -355,6 +355,11 @@ fn grammar_corrections() {
             "informations",
             "information is",
         ),
+        (
+            "The informations help us.\n",
+            "informations",
+            "information helps",
+        ),
     ] {
         let a = analyze(&erg, src, Format::Plain, &opts);
         let d = checker.check(&erg, &a);

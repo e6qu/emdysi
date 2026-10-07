@@ -1877,7 +1877,7 @@ fn candidate_fixes(
             // other number (|are|, |were|, |have|, |do|) is the verb that
             // agrees.
             let mut i = to;
-            for _ in 0..6 {
+            for k in 0..6 {
                 while i < chars.len() && !chars[i].is_alphabetic() {
                     i += 1;
                 }
@@ -1890,11 +1890,25 @@ fn candidate_fixes(
                 }
                 let w: String = chars[start..i].iter().collect();
                 let lw = w.to_lowercase();
-                let others = irregular_number(&lw);
+                let mut others: Vec<String> = irregular_number(&lw)
+                    .iter()
+                    .map(|o| o.to_string())
+                    .collect();
+                // A verb right after the noun takes its singular form
+                // (|informations help| as |information helps|).
+                if others.is_empty() && k == 0 {
+                    others = erg
+                        .forms_by_rule(&lw, Some("v_3s-fin_olr"))
+                        .into_iter()
+                        .filter(|f| crate::dict::tier(f).is_some())
+                        // Only from the base form: not |given|.
+                        .filter(|f| erg.forms_by_rule(f, None).contains(&lw))
+                        .collect();
+                }
                 if !others.is_empty() {
                     let between: String = chars[to..start].iter().collect();
                     for o in others {
-                        out.push((from, i, format!("{base}{between}{}", match_case(&w, o))));
+                        out.push((from, i, format!("{base}{between}{}", match_case(&w, &o))));
                     }
                     break;
                 }
