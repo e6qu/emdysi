@@ -1822,6 +1822,21 @@ fn candidate_fixes(
             }
         }
     }
+    // |has went|: the error is on the auxiliary, the repair on the verb
+    // after it, which takes its past participle (|has gone|).
+    if has(&["participle form"]) {
+        let after: String = chars[to.min(chars.len())..].iter().collect();
+        let start = to + after.chars().take_while(|c| c.is_whitespace()).count();
+        let next: String = chars[start.min(chars.len())..]
+            .iter()
+            .take_while(|c| c.is_alphabetic())
+            .collect();
+        if !next.is_empty() {
+            for p in erg.irregular_participles(&next) {
+                out.push((start, start + next.chars().count(), match_case(&next, &p)));
+            }
+        }
+    }
     let pl = prev_word.to_lowercase();
     // A missing article is not claimed: a bare noun is often right in
     // edited text (a mass use, "hopeless of remedy"; headline style, "Goal

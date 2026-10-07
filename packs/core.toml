@@ -22,12 +22,14 @@ examples = [
   "They doesn't know.\n",
   "He don't know.\n",
   "I buyed a car.\n",
+  "We have ate lunch.\n",
 ]
 acceptable = [
   "The results were clear.\n",
   "They don't know.\n",
   "Well, much good may it do them!\n",
   "I bought a car.\n",
+  "She has written a letter.\n",
 ]
 
 [[rule]]

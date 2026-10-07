@@ -886,6 +886,29 @@ impl Erg {
             .collect()
     }
 
+    /// The irregular past participles of the verb `word` is a form of:
+    /// *gone* for *went*, *broken* for *broke*.
+    pub fn irregular_participles(&self, word: &str) -> Vec<String> {
+        let w = word.to_lowercase();
+        let mut out: Vec<String> = Vec::new();
+        for a in self
+            .lexicon
+            .morph
+            .analyze(&w, &|s| self.lexicon.is_stem(s), 1)
+        {
+            for f in self
+                .lexicon
+                .morph
+                .irregular_forms_by(&a.stem, &["v_psp_olr"])
+            {
+                if f != w && !out.contains(&f) {
+                    out.push(f);
+                }
+            }
+        }
+        out
+    }
+
     /// The irregular past forms of the verb a wrongly regular form
     /// belongs to: *bought* for *buyed*, *ran* for *runned*, *went* and
     /// *gone* for *goed*.
