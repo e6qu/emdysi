@@ -1838,6 +1838,31 @@ fn candidate_fixes(
             }
         }
     }
+    // An auxiliary followed by the wrong form of a verb: the repair is on
+    // the verb, its base form after a modal (|can goes|) or its -ing form
+    // after |be| (|is go|).
+    let next_verb = |rule: Option<&str>| -> Vec<(usize, usize, String)> {
+        let after: String = chars[to.min(chars.len())..].iter().collect();
+        let start = to + after.chars().take_while(|c| c.is_whitespace()).count();
+        let next: String = chars[start.min(chars.len())..]
+            .iter()
+            .take_while(|c| c.is_alphabetic())
+            .collect();
+        if next.is_empty() {
+            return Vec::new();
+        }
+        erg.forms_by_rule(&next, rule)
+            .into_iter()
+            .filter(|f| crate::dict::tier(f).is_some())
+            .map(|f| (start, start + next.chars().count(), match_case(&next, &f)))
+            .collect()
+    };
+    if has(&["should not be inflected"]) {
+        out.extend(next_verb(None));
+    }
+    if has(&["present participle"]) {
+        out.extend(next_verb(Some("v_prp_olr")));
+    }
     // |has went|: the error is on the auxiliary, the repair on the verb
     // after it, which takes its past participle (|has gone|).
     if has(&["participle form"]) {

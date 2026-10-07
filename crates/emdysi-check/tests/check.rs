@@ -344,6 +344,7 @@ fn grammar_corrections() {
         ("She runned home.\n", "runned", "ran"),
         ("He has went home.\n", "went", "gone"),
         ("She has wrote a letter.\n", "wrote", "written"),
+        ("She can goes home.\n", "can", "can go"),
     ] {
         let a = analyze(&erg, src, Format::Plain, &opts);
         let d = checker.check(&erg, &a);

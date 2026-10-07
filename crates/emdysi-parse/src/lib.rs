@@ -886,6 +886,42 @@ impl Erg {
             .collect()
     }
 
+    /// The forms of the verbs `word` is a form of that the grammar makes
+    /// with inflection rule `rule` (`None`: the base form): *go* for
+    /// *goes* and none, *going* for *go* and `v_prp_olr`.
+    pub fn forms_by_rule(&self, word: &str, rule: Option<&str>) -> Vec<String> {
+        let w = word.to_lowercase();
+        let analyses = |form: &str| {
+            self.lexicon
+                .morph
+                .analyze(form, &|s| self.lexicon.is_stem(s), 2)
+                .into_iter()
+                .filter(|a| !a.rules.iter().any(|r| r.ends_with("_dlr")))
+                .collect::<Vec<_>>()
+        };
+        let mut stems: Vec<String> = Vec::new();
+        for a in analyses(&w) {
+            if !stems.contains(&a.stem) {
+                stems.push(a.stem);
+            }
+        }
+        let wanted: Vec<String> = rule.into_iter().map(String::from).collect();
+        let mut out: Vec<String> = Vec::new();
+        for st in &stems {
+            for f in std::iter::once(st.clone()).chain(self.inflections(st)) {
+                if f != w
+                    && !out.contains(&f)
+                    && analyses(&f)
+                        .iter()
+                        .any(|a| a.stem == *st && a.rules == wanted)
+                {
+                    out.push(f);
+                }
+            }
+        }
+        out
+    }
+
     /// The irregular past participles of the verb `word` is a form of:
     /// *gone* for *went*, *broken* for *broke*.
     pub fn irregular_participles(&self, word: &str) -> Vec<String> {
