@@ -96,6 +96,23 @@ impl Morphology {
         out
     }
 
+    /// The irregular forms of a stem made by one of `rules` (*bought* for
+    /// *buy* and `v_pst_olr`).
+    pub fn irregular_forms_by(&self, stem: &str, rules: &[&str]) -> Vec<String> {
+        let stem = stem.to_lowercase();
+        let mut out: Vec<String> = self
+            .irregs
+            .iter()
+            .filter(|(_, v)| {
+                v.iter()
+                    .any(|(r, s)| *s == stem && rules.contains(&r.as_str()))
+            })
+            .map(|(f, _)| f.clone())
+            .collect();
+        out.sort();
+        out
+    }
+
     pub fn is_orth_rule(&self, name: &str) -> bool {
         self.rules.iter().any(|r| r.name == name)
     }

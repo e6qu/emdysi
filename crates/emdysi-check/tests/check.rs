@@ -324,3 +324,31 @@ fn no_grammar_claims_on_labels_or_names() {
     let d = checker.check(&erg, &a);
     assert!(!d.iter().any(|x| x.rule == "core.grammar-errors"), "{d:?}");
 }
+
+#[test]
+fn grammar_corrections() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let checker = Checker::new(packs());
+    let opts = Options {
+        threads: 2,
+        ..Options::default()
+    };
+    // Each error with the correction the checker must suggest: the other
+    // number of the same tense, the irregular past.
+    for (src, word, fix) in [
+        ("The results was clear.\n", "was", "were"),
+        ("They doesn't know.\n", "doesn't", "don't"),
+        ("He don't know.\n", "don't", "doesn't"),
+        ("She are a writer.\n", "are", "is"),
+        ("I buyed a car.\n", "buyed", "bought"),
+        ("She runned home.\n", "runned", "ran"),
+    ] {
+        let a = analyze(&erg, src, Format::Plain, &opts);
+        let d = checker.check(&erg, &a);
+        let e = d
+            .iter()
+            .find(|x| x.rule == "core.grammar-errors" && &src[x.range.clone()] == word)
+            .unwrap_or_else(|| panic!("{src}: {d:?}"));
+        assert_eq!(e.suggestions, [fix], "{src}");
+    }
+}

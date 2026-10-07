@@ -16,6 +16,19 @@ kind = "grammar-errors"
 severity = "warning"
 message = "{feedback}"
 description = "Grammatical errors named by the grammar-error variant of the English Resource Grammar (its mal-rules and robust lexical entries): subject-verb agreement, wrong verb forms, missing articles, a/an, plural compounds and more. Only sentences without a strict analysis are re-parsed."
+examples = [
+  "The results was clear.\n",
+  "Our users has asked for this feature.\n",
+  "They doesn't know.\n",
+  "He don't know.\n",
+  "I buyed a car.\n",
+]
+acceptable = [
+  "The results were clear.\n",
+  "They don't know.\n",
+  "Well, much good may it do them!\n",
+  "I bought a car.\n",
+]
 
 [[rule]]
 id = "core.consistency"

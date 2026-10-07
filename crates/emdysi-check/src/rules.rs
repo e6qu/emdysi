@@ -1483,15 +1483,27 @@ pub fn grammar_errors(s: &crate::Sentence) -> Vec<GrammarError> {
     };
     let items = |r: &emdysi_parse::Reading| -> Vec<(String, usize, usize)> {
         let mut out = Vec::new();
-        for n in &r.nodes {
+        for n in r.nodes.iter().filter(|n| !n.leaf) {
             if is_error_item(&n.name) {
                 out.push((n.name.clone(), n.from, n.to));
             }
         }
+        // A word's error is named by its entry when the error table has the
+        // entry (|be_c_was_rbst|), else by its lexical type, which is where
+        // the table describes most grammar-error entries
+        // (|do1_neg_1_u_mal|, of type |va_dont_neg_pres_le_rbst|).
+        let table = crate::dict::erg_errors();
         for w in &r.words {
-            if is_error_item(&w.le_type) && !out.iter().any(|(c, ..)| *c == w.entry) {
-                out.push((w.le_type.clone(), w.from, w.to));
-            }
+            let code = if table.contains_key(&w.entry) {
+                &w.entry
+            } else if is_error_item(&w.le_type) {
+                &w.le_type
+            } else if is_error_item(&w.entry) {
+                &w.entry
+            } else {
+                continue;
+            };
+            out.push((code.clone(), w.from, w.to));
         }
         out
     };
@@ -1796,6 +1808,11 @@ fn candidate_fixes(
         // and |borrows|, |has| and |have|), not by another tense (|borrowed|
         // and |had| parse, but say something else).
         let agreement = f.contains("agree");
+        // A regular past of a verb with an irregular one is repaired by the
+        // irregular form (|buyed| by |bought|), not by another tense (|buy|).
+        if f.contains("irregular") && f.contains("past") {
+            forms = erg.irregular_pasts(word);
+        }
         if !(agreement && sentence_start) {
             for form in forms {
                 if agreement && !number_pair(&lower, &form) {
