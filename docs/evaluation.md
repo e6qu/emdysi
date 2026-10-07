@@ -546,7 +546,9 @@ reported, for the same reason, a correction never offered
   its irregular past participle (*has gone*, *have eaten*, *have taken*).
 
 On the real errors and the first development set nothing changes (162
-caught; the same six flags).
+caught; the same six flags); on the second development set the flags go
+from 86 to 83, the three gone all false (*quitted* twice, correct in
+Austen, and *we will ask you no questions*).
 
 ## Stress sentences and ambiguity
 
