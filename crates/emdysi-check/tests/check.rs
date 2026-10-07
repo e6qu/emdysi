@@ -345,6 +345,16 @@ fn grammar_corrections() {
         ("He has went home.\n", "went", "gone"),
         ("She has wrote a letter.\n", "wrote", "written"),
         ("She can goes home.\n", "can", "can go"),
+        (
+            "We need more informations.\n",
+            "informations",
+            "information",
+        ),
+        (
+            "The informations are useful.\n",
+            "informations",
+            "information is",
+        ),
     ] {
         let a = analyze(&erg, src, Format::Plain, &opts);
         let d = checker.check(&erg, &a);

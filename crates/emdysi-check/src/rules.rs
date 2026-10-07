@@ -1857,6 +1857,50 @@ fn candidate_fixes(
             .map(|f| (start, start + next.chars().count(), match_case(&next, &f)))
             .collect()
     };
+    // A mass noun made plural (|informations|): its singular, and, when a
+    // verb agrees with the plural (|informations are|), the singular with
+    // that verb in the singular too (|information is|).
+    // Only when the word list has no such plural: |lints|, |coercions|,
+    // |researches| are count uses the grammar's lexicon lacks.
+    if has(&["always singular"])
+        && crate::dict::tier(&lower).is_none()
+        && !crate::dict::accepted(&lower)
+    {
+        for base in erg
+            .forms_by_rule(word, None)
+            .into_iter()
+            .filter(|f| crate::dict::tier(f).is_some())
+        {
+            let base = match_case(word, &base);
+            out.push((from, to, base.clone()));
+            // The first auxiliary in the next few words with a form of the
+            // other number (|are|, |were|, |have|, |do|) is the verb that
+            // agrees.
+            let mut i = to;
+            for _ in 0..6 {
+                while i < chars.len() && !chars[i].is_alphabetic() {
+                    i += 1;
+                }
+                let start = i;
+                while i < chars.len() && (chars[i].is_alphabetic() || chars[i] == '\'') {
+                    i += 1;
+                }
+                if start == i {
+                    break;
+                }
+                let w: String = chars[start..i].iter().collect();
+                let lw = w.to_lowercase();
+                let others = irregular_number(&lw);
+                if !others.is_empty() {
+                    let between: String = chars[to..start].iter().collect();
+                    for o in others {
+                        out.push((from, i, format!("{base}{between}{}", match_case(&w, o))));
+                    }
+                    break;
+                }
+            }
+        }
+    }
     if has(&["should not be inflected"]) {
         out.extend(next_verb(None));
     }

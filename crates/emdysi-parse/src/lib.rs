@@ -58,6 +58,8 @@ pub struct Erg {
     pub orth: HashMap<usize, String>,
     /// How many of the best readings get a labelled tree.
     pub trees_for: usize,
+    /// Keep each reading's feature structure ([`Reading::dag`]).
+    pub keep_dags: bool,
     /// Lexical type of each instance, by instance index.
     pub le_types: Vec<String>,
     /// Chart-pruning beam for a first, faster pass (see `parse`).
@@ -158,8 +160,10 @@ pub struct Reading {
     pub nodes: Vec<Node>,
     /// The lexical items, in order.
     pub words: Vec<Word>,
-    /// The feature structure of the whole sentence.
-    pub dag: Arc<emdysi_hpsg::Dag>,
+    /// The feature structure of the whole sentence, kept only when
+    /// [`Erg::keep_dags`] is set: a document's readings would otherwise
+    /// hold gigabytes of structures that nothing reads after parsing.
+    pub dag: Option<Arc<emdysi_hpsg::Dag>>,
     /// The semantics (Minimal Recursion Semantics) of the reading.
     pub mrs: Option<emdysi_hpsg::mrs::Mrs>,
 }
@@ -488,6 +492,7 @@ impl Erg {
             orth,
             model: rank::Model::parse(DEFAULT_MODEL),
             trees_for: 3,
+            keep_dags: false,
             labeler,
             grammar,
             repp,
@@ -710,7 +715,7 @@ impl Erg {
                 Reading {
                     nodes,
                     words,
-                    dag: r.dag.clone(),
+                    dag: self.keep_dags.then(|| r.dag.clone()),
                     mrs: self
                         .mrs
                         .as_ref()
