@@ -1860,7 +1860,12 @@ fn candidate_fixes(
     // A mass noun made plural (|informations|): its singular, and, when a
     // verb agrees with the plural (|informations are|), the singular with
     // that verb in the singular too (|information is|).
-    if has(&["always singular"]) {
+    // Only when the word list has no such plural: |lints|, |coercions|,
+    // |researches| are count uses the grammar's lexicon lacks.
+    if has(&["always singular"])
+        && crate::dict::tier(&lower).is_none()
+        && !crate::dict::accepted(&lower)
+    {
         for base in erg
             .forms_by_rule(word, None)
             .into_iter()

@@ -548,12 +548,17 @@ reported, for the same reason, a correction never offered
   irregular past participle (*has gone*, *have eaten*, *has written*);
 - an inflected verb after a modal (*can goes*, *should went*): corrected
   to the verb's base form (*can go*, *should go*).
-- a mass noun made plural (*informations*, *advices*, *furnitures*): the
-  error table says the noun "is always singular" but no correction was
-  offered; the singular is, and where an auxiliary in the next few words
-  agrees with the plural, the singular with that auxiliary in the
+- a mass noun made plural (*informations*, *furnitures*, *softwares*):
+  the error table says the noun "is always singular" but no correction
+  was offered; the singular is, and where an auxiliary in the next few
+  words agrees with the plural, the singular with that auxiliary in the
   singular too (*The informations are useful* to *information is*), each
-  still accepted only if the grammar then analyses the sentence.
+  still accepted only if the grammar then analyses the sentence. The
+  claim needs the plural to be missing from the word list: the grammar's
+  lexicon has *lint*, *coercion*, *research* and *advice* as mass nouns
+  only, and their plurals, in the list, are count uses in edited text
+  (five false flags on the second development set before this
+  condition, none after).
 
 Some errors stay unclaimed on purpose: *He will makes it* also reads as
 *His will makes it*, *He is go home* has a second analysis with another
