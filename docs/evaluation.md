@@ -529,6 +529,27 @@ measured with the first two changes (87 flags, the one new being *much
 good may it do them*); the third change only rejects corrections, and
 rejects that one.
 
+Three more kinds of error the grammar-error variant named were never
+reported, for the same reason, a correction never offered
+(2026-10-07):
+
+- contracted auxiliaries (*They doesn't know*, *He don't know*): the
+  error table describes these entries by their lexical type, not by their
+  name, so they had no feedback and no correction; a word's error is now
+  named by its type when the table has no entry for its name;
+- regular pasts of irregular verbs (*buyed*, *runned*, *catched*,
+  *goed*): the correction was the closest form by spelling (*buy*, which
+  changes the tense); it is now the verb's irregular past from the
+  grammar's irregular-forms table (*bought*, *ran*, *caught*, *went*);
+- a past tense after *has* or *have* (*has went*, *have ate*, *have
+  took*): the error is on the auxiliary, the repair on the next verb, now
+  its irregular past participle (*has gone*, *have eaten*, *have taken*).
+
+On the real errors and the first development set nothing changes (162
+caught; the same six flags); on the second development set the flags go
+from 86 to 83, the three gone all false (*quitted* twice, correct in
+Austen, and *we will ask you no questions*).
+
 ## Stress sentences and ambiguity
 
 [`corpora/stress`](../corpora/stress/README.md) has 66 grammatical

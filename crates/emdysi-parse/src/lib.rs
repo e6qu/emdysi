@@ -886,6 +886,69 @@ impl Erg {
             .collect()
     }
 
+    /// The irregular past participles of the verb `word` is a form of:
+    /// *gone* for *went*, *broken* for *broke*.
+    pub fn irregular_participles(&self, word: &str) -> Vec<String> {
+        let w = word.to_lowercase();
+        let mut out: Vec<String> = Vec::new();
+        for a in self
+            .lexicon
+            .morph
+            .analyze(&w, &|s| self.lexicon.is_stem(s), 1)
+        {
+            for f in self
+                .lexicon
+                .morph
+                .irregular_forms_by(&a.stem, &["v_psp_olr"])
+            {
+                if f != w && !out.contains(&f) {
+                    out.push(f);
+                }
+            }
+        }
+        out
+    }
+
+    /// The irregular past forms of the verb a wrongly regular form
+    /// belongs to: *bought* for *buyed*, *ran* for *runned*, *went* and
+    /// *gone* for *goed*.
+    pub fn irregular_pasts(&self, word: &str) -> Vec<String> {
+        let w = word.to_lowercase();
+        let mut stems: Vec<String> = Vec::new();
+        let mut add = |st: String| {
+            if self.lexicon.is_stem(&st) && !stems.contains(&st) {
+                stems.push(st);
+            }
+        };
+        for suffix in ["ed", "d"] {
+            if let Some(st) = w.strip_suffix(suffix) {
+                add(st.to_string());
+                // A doubled final consonant: |runned|, |stopped|.
+                let cs: Vec<char> = st.chars().collect();
+                if cs.len() > 2 && cs[cs.len() - 1] == cs[cs.len() - 2] {
+                    add(cs[..cs.len() - 1].iter().collect());
+                }
+                // A final y made i: |buyed| has none, |flied| from |fly|.
+                if let Some(b) = st.strip_suffix('i') {
+                    add(format!("{b}y"));
+                }
+            }
+        }
+        let mut out = Vec::new();
+        for st in &stems {
+            for f in self
+                .lexicon
+                .morph
+                .irregular_forms_by(st, &["v_pst_olr", "v_psp_olr"])
+            {
+                if !out.contains(&f) {
+                    out.push(f);
+                }
+            }
+        }
+        out
+    }
+
     /// Spelling suggestions for an unknown word: known words within edit
     /// distance 1, or 2 if there are none, best first.
     pub fn spelling_suggestions(&self, word: &str, max: usize) -> Vec<String> {

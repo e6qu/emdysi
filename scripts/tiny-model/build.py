@@ -76,14 +76,15 @@ def tsv_rows(path):
 
 
 def texts():
-    """Prose from the vendored corpora and documentation."""
+    """Prose from the vendored corpora. Not the documentation: it changes
+    with every pull request, and the model, which CI trains afresh, would
+    change with it (a model that answers every prompt with blank lines
+    breaks the generation test)."""
     out = []
     for name in ["beemo", "cheat", "hh-rlhf"]:
         for row in tsv_rows(ROOT / "corpora" / name / "sample.tsv"):
             out.extend(c for c in row if len(c.split()) >= 8)
     for p in sorted((ROOT / "corpora" / "ai-prose").glob("*.md")):
-        out.append(p.read_text(encoding="utf-8"))
-    for p in sorted((ROOT / "docs").glob("*.md")):
         out.append(p.read_text(encoding="utf-8"))
     return out
 
