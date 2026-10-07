@@ -1503,6 +1503,20 @@ pub fn grammar_errors(s: &crate::Sentence) -> Vec<GrammarError> {
             } else {
                 continue;
             };
+            // A past tense after |has| or |have| is named either on the
+            // auxiliary or as a wrong participle of the verb after it; both
+            // are the error of the verb (|has went|, |has wrote|).
+            if code == "has_aux_finc_rbst" || code == "have_aux_finc_rbst" {
+                if let Some(next) = r
+                    .words
+                    .iter()
+                    .filter(|x| x.from >= w.to)
+                    .min_by_key(|x| x.from)
+                {
+                    out.push(("v_psp_olr_rbst".to_string(), next.from, next.to));
+                    continue;
+                }
+            }
             out.push((code.clone(), w.from, w.to));
         }
         out
@@ -1810,7 +1824,9 @@ fn candidate_fixes(
         let agreement = f.contains("agree");
         // A regular past of a verb with an irregular one is repaired by the
         // irregular form (|buyed| by |bought|), not by another tense (|buy|).
-        if f.contains("irregular") && f.contains("past") {
+        if f.contains("past participle") {
+            forms = erg.irregular_participles(word);
+        } else if f.contains("irregular") && f.contains("past") {
             forms = erg.irregular_pasts(word);
         }
         if !(agreement && sentence_start) {
