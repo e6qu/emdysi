@@ -4,7 +4,8 @@ use emdysi_parse::*;
 
 fn main() {
     let path = std::env::args().nth(1).unwrap_or_default();
-    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let mut erg = Erg::load(&default_grammar_dir()).unwrap();
+    erg.keep_dags = true;
     for line in std::io::stdin().lines() {
         let p = erg.parse(&line.unwrap()).unwrap();
         let Some(r) = p.readings.first() else {
@@ -14,8 +15,8 @@ fn main() {
             .grammar
             .path(&path.replace('.', " "))
             .unwrap_or_default();
-        let n = r.dag.follow(0, &feats).unwrap();
-        let sub = sub_dag(&r.dag, n);
+        let n = r.dag.as_ref().unwrap().follow(0, &feats).unwrap();
+        let sub = sub_dag(r.dag.as_ref().unwrap(), n);
         println!("{}", erg.grammar.display(&sub));
     }
 }
