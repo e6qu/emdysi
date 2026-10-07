@@ -542,8 +542,17 @@ reported, for the same reason, a correction never offered
   changes the tense); it is now the verb's irregular past from the
   grammar's irregular-forms table (*bought*, *ran*, *caught*, *went*);
 - a past tense after *has* or *have* (*has went*, *have ate*, *have
-  took*): the error is on the auxiliary, the repair on the next verb, now
-  its irregular past participle (*has gone*, *have eaten*, *have taken*).
+  took*, *has wrote*): the grammar-error variant names it either on the
+  auxiliary or as a wrong participle of the verb, two analyses that used
+  to disagree; both are now the error of the verb, corrected to its
+  irregular past participle (*has gone*, *have eaten*, *has written*);
+- an inflected verb after a modal (*can goes*, *should went*): corrected
+  to the verb's base form (*can go*, *should go*).
+
+Some errors stay unclaimed on purpose: *He will makes it* also reads as
+*His will makes it*, *He is go home* has a second analysis with another
+error, and the grammar accepts *This is more better*, *I am interesting
+in music* and *He must to go* as they stand.
 
 On the real errors and the first development set nothing changes (162
 caught; the same six flags); on the second development set the flags go

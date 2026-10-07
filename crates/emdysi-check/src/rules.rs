@@ -1503,6 +1503,20 @@ pub fn grammar_errors(s: &crate::Sentence) -> Vec<GrammarError> {
             } else {
                 continue;
             };
+            // A past tense after |has| or |have| is named either on the
+            // auxiliary or as a wrong participle of the verb after it; both
+            // are the error of the verb (|has went|, |has wrote|).
+            if code == "has_aux_finc_rbst" || code == "have_aux_finc_rbst" {
+                if let Some(next) = r
+                    .words
+                    .iter()
+                    .filter(|x| x.from >= w.to)
+                    .min_by_key(|x| x.from)
+                {
+                    out.push(("v_psp_olr_rbst".to_string(), next.from, next.to));
+                    continue;
+                }
+            }
             out.push((code.clone(), w.from, w.to));
         }
         out
@@ -1810,7 +1824,9 @@ fn candidate_fixes(
         let agreement = f.contains("agree");
         // A regular past of a verb with an irregular one is repaired by the
         // irregular form (|buyed| by |bought|), not by another tense (|buy|).
-        if f.contains("irregular") && f.contains("past") {
+        if f.contains("past participle") {
+            forms = erg.irregular_participles(word);
+        } else if f.contains("irregular") && f.contains("past") {
             forms = erg.irregular_pasts(word);
         }
         if !(agreement && sentence_start) {
@@ -1821,6 +1837,31 @@ fn candidate_fixes(
                 out.push((from, to, match_case(word, &form)));
             }
         }
+    }
+    // An auxiliary followed by the wrong form of a verb: the repair is on
+    // the verb, its base form after a modal (|can goes|) or its -ing form
+    // after |be| (|is go|).
+    let next_verb = |rule: Option<&str>| -> Vec<(usize, usize, String)> {
+        let after: String = chars[to.min(chars.len())..].iter().collect();
+        let start = to + after.chars().take_while(|c| c.is_whitespace()).count();
+        let next: String = chars[start.min(chars.len())..]
+            .iter()
+            .take_while(|c| c.is_alphabetic())
+            .collect();
+        if next.is_empty() {
+            return Vec::new();
+        }
+        erg.forms_by_rule(&next, rule)
+            .into_iter()
+            .filter(|f| crate::dict::tier(f).is_some())
+            .map(|f| (start, start + next.chars().count(), match_case(&next, &f)))
+            .collect()
+    };
+    if has(&["should not be inflected"]) {
+        out.extend(next_verb(None));
+    }
+    if has(&["present participle"]) {
+        out.extend(next_verb(Some("v_prp_olr")));
     }
     // |has went|: the error is on the auxiliary, the repair on the verb
     // after it, which takes its past participle (|has gone|).

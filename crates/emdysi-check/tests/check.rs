@@ -342,7 +342,9 @@ fn grammar_corrections() {
         ("She are a writer.\n", "are", "is"),
         ("I buyed a car.\n", "buyed", "bought"),
         ("She runned home.\n", "runned", "ran"),
-        ("He has went home.\n", "has", "has gone"),
+        ("He has went home.\n", "went", "gone"),
+        ("She has wrote a letter.\n", "wrote", "written"),
+        ("She can goes home.\n", "can", "can go"),
     ] {
         let a = analyze(&erg, src, Format::Plain, &opts);
         let d = checker.check(&erg, &a);
