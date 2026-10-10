@@ -1553,6 +1553,31 @@ fn named_errors(s: &crate::Sentence, alternatives: bool) -> Vec<GrammarError> {
         return Vec::new();
     };
     let original: Vec<char> = s.original.chars().collect();
+    // Capitals that are not errors: at the start of the sentence, after a
+    // colon or a line break (list labels, verse), and in runs of
+    // capitalized words (titles such as "Your Majesty", names such as
+    // "Common Expression Language").
+    let licensed_capital = |from: usize, to: usize| {
+        let before: String = original[..from.min(original.len())].iter().collect();
+        let before = before.trim_end_matches([' ', '\t']);
+        let prev_word = before
+            .rsplit(|c: char| c.is_whitespace())
+            .next()
+            .unwrap_or("");
+        let next_word = original[to.min(original.len())..]
+            .iter()
+            .find(|c| !c.is_whitespace());
+        before.trim().is_empty()
+            || before.ends_with(':')
+            || before.ends_with('\n')
+            || prev_word.chars().next().is_some_and(char::is_uppercase)
+            || next_word.is_some_and(|c| c.is_uppercase())
+    };
+    // A capital where none is expected (not the `nocap` errors, a missing
+    // capital) that is licensed is not an error.
+    let not_error = |code: &str, from: usize, to: usize| {
+        code.contains("cap") && !code.contains("nocap") && licensed_capital(from, to)
+    };
     let items = |r: &emdysi_parse::Reading| -> Vec<(String, usize, usize)> {
         let mut out = Vec::new();
         for n in r.nodes.iter().filter(|n| !n.leaf) {
@@ -1607,6 +1632,7 @@ fn named_errors(s: &crate::Sentence, alternatives: bool) -> Vec<GrammarError> {
             }
             out.push((code.clone(), w.from, w.to));
         }
+        out.retain(|(code, from, to)| !not_error(code, *from, *to));
         out
     };
     // Whole-sentence analyses are preferred to fragments; among them, the
@@ -1725,30 +1751,9 @@ fn named_errors(s: &crate::Sentence, alternatives: bool) -> Vec<GrammarError> {
     if !alternatives && best.len() > MAX_ERRORS {
         return Vec::new();
     }
-    let chars: Vec<char> = s.original.chars().collect();
-    // Capitals that are not errors: at the start of the sentence, after a
-    // colon or a line break (list labels, verse), and in runs of
-    // capitalized words (titles such as "Your Majesty").
-    let licensed_capital = |from: usize| {
-        let before: String = chars[..from.min(chars.len())].iter().collect();
-        let before = before.trim_end_matches([' ', '\t']);
-        let prev_word = before
-            .rsplit(|c: char| c.is_whitespace())
-            .next()
-            .unwrap_or("");
-        before.trim().is_empty()
-            || before.ends_with(':')
-            || before.ends_with('\n')
-            || prev_word.chars().next().is_some_and(char::is_uppercase)
-    };
+    let chars = &original;
     let mut out: Vec<GrammarError> = Vec::new();
     for (code, from, to) in best {
-        // A capital where none is expected (not the `nocap` errors, a
-        // missing capital).
-        let wrong_capital = code.contains("cap") && !code.contains("nocap");
-        if wrong_capital && licensed_capital(from) {
-            continue;
-        }
         let text: String = chars
             .get(from..to)
             .map(|c| c.iter().collect())
@@ -1774,9 +1779,20 @@ fn named_errors(s: &crate::Sentence, alternatives: bool) -> Vec<GrammarError> {
             out.push(e);
         }
     }
+    // An acronym (|CEL|, |RBAC|) is a name, whatever the grammar knows of it.
+    let acronym = |f: usize, t: usize| {
+        let w: String = original
+            .get(f..t)
+            .map(|c| c.iter().collect())
+            .unwrap_or_default();
+        w.chars().count() >= 2
+            && w.chars()
+                .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
+    };
     if !s.strict()
         && generic_spans
             .iter()
+            .filter(|&&(f, t)| !acronym(f, t))
             .any(|&(f, t)| !out.iter().any(|e| e.from < t && f < e.to))
     {
         return Vec::new();

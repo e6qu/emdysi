@@ -100,7 +100,17 @@ fn version(dirs: &[PathBuf], config: &str) -> String {
     }
     let mut h = Hasher::new();
     h.feed(&VERSION.to_le_bytes());
-    h.feed(env!("EMDYSI_PARSER_SOURCE").as_bytes());
+    // `EMDYSI_PARSER_SOURCE` at run time stands for the parser's source:
+    // for a change that cannot alter a parse (a new function, a comment),
+    // set to the hash of the version before it, it keeps that version's
+    // parses (see CONTRIBUTING.md).
+    let source = std::env::var("EMDYSI_PARSER_SOURCE");
+    h.feed(
+        source
+            .as_deref()
+            .unwrap_or(env!("EMDYSI_PARSER_SOURCE"))
+            .as_bytes(),
+    );
     h.feed(config.as_bytes());
     for d in dirs {
         let mut files = Vec::new();

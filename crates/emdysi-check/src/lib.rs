@@ -357,7 +357,8 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                     // `unlicensed_quoting`) are no evidence that the
                     // sentence is grammatical. When every strict reading is
                     // one, they are dropped, after making sure no other
-                    // strict reading was left out by the reading limit.
+                    // strict reading was left out by the reading limit or
+                    // by chart pruning.
                     let parse = parse.map(|p| {
                         let masked = parser_text(text, in_list);
                         let text = masked.as_deref().unwrap_or(text);
@@ -379,6 +380,24 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                             }
                         } else {
                             p
+                        };
+                        // A pruned search proves nothing about what it
+                        // missed: search again without pruning, which, if
+                        // it finishes, shows whether another analysis
+                        // exists.
+                        let p = if p.complete {
+                            p
+                        } else {
+                            match erg.parse_unpruned(text, opts.timeout, ALL_READINGS) {
+                                Ok(q)
+                                    if q.complete
+                                        && q.readings.len() < ALL_READINGS
+                                        && quoting_only(&q) =>
+                                {
+                                    q
+                                }
+                                _ => p,
+                            }
                         };
                         let mut p = p;
                         p.readings.retain(|r| !unlicensed_quoting(r, text));

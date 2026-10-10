@@ -193,7 +193,12 @@ in minutes; a change to the grammar or the parser parses afresh, as it
 must. A parse cut short by the time limit is reused as it is, so a rerun
 reports the same results. Each version of the grammar and the parser has
 its own directory, and only the four most recently used are kept, so even
-a formatting change in the parsing crates starts a cold run. The cache of
+a formatting change in the parsing crates starts a cold run. When a change
+to the parsing crates cannot alter any parse (a new function, a comment),
+set `EMDYSI_PARSER_SOURCE` to the source hash of the version before it to
+keep its parses: the hash is in the build script's output,
+`target/release/build/emdysi-parse-*/output`, of a build of that version.
+Get this wrong and the measurements are of the old parser. The cache of
 both development sets takes a few gigabytes; delete the directory to
 reclaim it, or set `EMDYSI_NO_CACHE=1` to parse without it.
 
