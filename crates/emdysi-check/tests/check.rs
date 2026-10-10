@@ -344,7 +344,8 @@ fn grammar_corrections() {
         ("She runned home.\n", "runned", "ran"),
         ("He has went home.\n", "went", "gone"),
         ("She has wrote a letter.\n", "wrote", "written"),
-        ("She can goes home.\n", "can", "can go"),
+        ("She can goes home.\n", "can goes", "can go"),
+        ("He will makes it.\n", "will makes", "will make"),
         (
             "We need more informations.\n",
             "informations",
@@ -352,12 +353,12 @@ fn grammar_corrections() {
         ),
         (
             "The informations are useful.\n",
-            "informations",
+            "informations are",
             "information is",
         ),
         (
             "The informations help us.\n",
-            "informations",
+            "informations help",
             "information helps",
         ),
     ] {
