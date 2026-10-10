@@ -72,7 +72,7 @@ pub(crate) fn open(root: &Path, dirs: &[PathBuf], config: &str) -> PathBuf {
                 .collect()
         })
         .unwrap_or_default();
-    versions.sort_by(|a, b| b.0.cmp(&a.0));
+    versions.sort_by_key(|v| std::cmp::Reverse(v.0));
     for (_, old) in versions.into_iter().skip(KEEP) {
         if old != dir {
             let _ = std::fs::remove_dir_all(old);
