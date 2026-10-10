@@ -1210,7 +1210,17 @@ impl Rule {
                         .collect();
                     let fixes: Vec<&(usize, usize, String)> =
                         verified.iter().map(|(_, f)| f).collect();
-                    if fixes.is_empty() {
+                    // An analysis whose corrections the grammar all
+                    // rejects (|His will makes it|) describes no error it
+                    // can repair; one for which no correction can be tried
+                    // (|How he lived I know not| as a run-on that wants a
+                    // comma) may be what the writer meant, and blocks the
+                    // claim.
+                    let untried = alts.iter().any(|e| {
+                        !verified.iter().any(|(v, _)| std::ptr::eq(*v, e))
+                            && candidate_fixes(erg, s, e, &names).is_empty()
+                    });
+                    if fixes.is_empty() || untried {
                         continue;
                     }
                     let from = fixes.iter().map(|f| f.0).min().unwrap_or(0);
