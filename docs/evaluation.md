@@ -616,6 +616,19 @@ Expression Language (CEL)* is claimed only without its last six words).
 *He is go home* also stays unclaimed: its second analysis wants an
 article before *go*, and no correction adds an article yet.
 
+Three more changes let such sentences be claimed when they are long
+(2026-10-10): a pruned parse whose strict readings all quote without
+quoting is redone without pruning, and the readings are dropped if that
+search finishes and finds no other; a capital at the start of a run of
+capitalized words (*Common Expression Language*) is licensed like the
+rest of the run before the errors are counted, so it no longer pushes an
+analysis over the limit of two; and an acronym the grammar does not know
+(*CEL*) no longer blocks a claim, as an unknown word does. *Policy
+objects describes the abstract logic of a policy using Common Expression
+Language (CEL)* is now reported, with *describe*: 163 real errors caught
+of 377, none flagged after the fix, and the same flags on both
+development sets (6 and 83).
+
 The measurement tools now cache parses (see
 [CONTRIBUTING.md](../CONTRIBUTING.md#measure)): with the cache filled,
 the first development set takes 15 seconds instead of 38 minutes, the

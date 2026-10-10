@@ -590,6 +590,22 @@ impl Erg {
         self.parse_with(text, &config)
     }
 
+    /// Parse one sentence like [`Erg::parse_limited`], without chart
+    /// pruning: a search that, when it finishes in time, misses no
+    /// analysis.
+    pub fn parse_unpruned(
+        &self,
+        text: &str,
+        timeout: Duration,
+        max_readings: usize,
+    ) -> Result<Parse, Error> {
+        let mut config = self.config.clone();
+        config.timeout = timeout;
+        config.max_readings = max_readings;
+        config.cell_beam = None;
+        self.parse_with(text, &config)
+    }
+
     /// Cache parses in `dir`, and reuse the ones cached there (also for
     /// the grammar-error variant, [`Erg::mal`]). For measurement runs,
     /// which parse the same sentences each time: a parse is keyed by the

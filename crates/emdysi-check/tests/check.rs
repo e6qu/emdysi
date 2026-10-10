@@ -352,6 +352,11 @@ fn grammar_corrections() {
             "describe",
         ),
         (
+            "Policy objects describes the abstract logic of a policy using Common Expression Language (CEL).\n",
+            "describes",
+            "describe",
+        ),
+        (
             "The function only needs to knows that there is some scope.\n",
             "to knows",
             "to know",
