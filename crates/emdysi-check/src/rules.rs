@@ -2030,7 +2030,7 @@ fn candidate_fixes(
             }
         }
     }
-    if has(&["should not be inflected"]) {
+    if has(&["should not be inflected", "should be the base form"]) {
         out.extend(next_verb(None));
     }
     if has(&["present participle"]) {
@@ -2130,13 +2130,19 @@ fn verified_fix(
             .chain(rep.chars().collect::<Vec<_>>().iter())
             .chain(chars[to..].iter())
             .collect();
-        let Ok(p) = erg.parse_limited(fixed.trim(), std::time::Duration::from_secs(5), 20) else {
+        let Ok(p) = erg.parse_limited(
+            fixed.trim(),
+            std::time::Duration::from_secs(5),
+            VERIFY_READINGS,
+        ) else {
             continue;
         };
         // The correction must repair the analysis that names the error, not
         // make way for another one: some strict reading of the corrected
         // sentence keeps the lexical entry of every other word (|much good
-        // may it does them| parses only with |may| as a noun).
+        // may it does them| parses only with |may| as a noun). A word the
+        // erroneous analysis covers with a generic entry (|Binding| as an
+        // unknown name) may have any.
         let lead = fixed.chars().count() - fixed.trim_start().chars().count();
         let edited = (from.min(e.from), to.max(e.to));
         let delta = rep.chars().count() as isize - (to - from) as isize;
@@ -2148,10 +2154,14 @@ fn verified_fix(
             words
                 .iter()
                 .filter(|w| !(w.from + shift < skip.1 && w.to + shift > skip.0))
-                .map(|w| w.entry.clone())
-                .collect::<Vec<String>>()
+                .map(|w| (!w.generic).then(|| w.entry.clone()))
+                .collect::<Vec<Option<String>>>()
         };
-        let erroneous: Vec<Vec<String>> = s
+        let keeps = |wrong: &[Option<String>], fixed: &[Option<String>]| {
+            wrong.len() == fixed.len()
+                && wrong.iter().zip(fixed).all(|(a, b)| a.is_none() || a == b)
+        };
+        let erroneous: Vec<Vec<Option<String>>> = s
             .mal_parse
             .iter()
             .flat_map(|m| m.readings.iter())
@@ -2167,8 +2177,11 @@ fn verified_fix(
             .collect();
         if p.readings.iter().any(|r| {
             emdysi_parse::is_strict(&r.root)
-                && (erroneous.is_empty()
-                    || erroneous.contains(&others(&r.words, edited_fixed, lead)))
+                && !crate::unlicensed_quoting(r, fixed.trim())
+                && (erroneous.is_empty() || {
+                    let fixed = others(&r.words, edited_fixed, lead);
+                    erroneous.iter().any(|w| keeps(w, &fixed))
+                })
         }) {
             let new: String = chars[from.min(e.from)..from]
                 .iter()
@@ -2180,6 +2193,11 @@ fn verified_fix(
     }
     None
 }
+
+/// Readings of a corrected sentence searched for one that keeps the
+/// other words' entries: the one that does is not always among the best
+/// few.
+const VERIFY_READINGS: usize = 100;
 
 /// Give `rep` the capitalization pattern of `like`.
 fn match_case(like: &str, rep: &str) -> String {

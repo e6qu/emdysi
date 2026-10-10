@@ -348,6 +348,16 @@ fn grammar_corrections() {
         ("He will makes it.\n", "will makes", "will make"),
         ("He is go home.\n", "is go", "is going"),
         (
+            "Policy objects describes the abstract logic of a policy.\n",
+            "describes",
+            "describe",
+        ),
+        (
+            "The function only needs to knows that there is some scope.\n",
+            "to knows",
+            "to know",
+        ),
+        (
             "We need more informations.\n",
             "informations",
             "information",
