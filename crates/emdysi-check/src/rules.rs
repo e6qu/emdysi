@@ -1779,6 +1779,17 @@ fn named_errors(s: &crate::Sentence, alternatives: bool) -> Vec<GrammarError> {
             out.push(e);
         }
     }
+    // Code masked for the parser (see `parser_text`) is read as a name.
+    let masked: Vec<char> = crate::parser_text(&s.original, false)
+        .unwrap_or_default()
+        .chars()
+        .collect();
+    let placeholder = |f: usize, t: usize| {
+        masked.get(f) == Some(&'X')
+            && masked
+                .get(f + 1..t)
+                .is_some_and(|m| m.iter().all(|&c| c == 'x'))
+    };
     // An acronym (|CEL|, |RBAC|) is a name, whatever the grammar knows of it.
     let acronym = |f: usize, t: usize| {
         let w: String = original
@@ -1792,7 +1803,7 @@ fn named_errors(s: &crate::Sentence, alternatives: bool) -> Vec<GrammarError> {
     if !s.strict()
         && generic_spans
             .iter()
-            .filter(|&&(f, t)| !acronym(f, t))
+            .filter(|&&(f, t)| !acronym(f, t) && !placeholder(f, t))
             .any(|&(f, t)| !out.iter().any(|e| e.from < t && f < e.to))
     {
         return Vec::new();
@@ -2147,14 +2158,19 @@ fn verified_fix(
     names: &std::collections::HashSet<String>,
 ) -> Option<(usize, usize, String)> {
     let chars: Vec<char> = s.original.chars().collect();
+    // The corrected sentence is parsed as the sentence was, with code
+    // masked (see `parser_text`); the positions are the same.
+    let masked: Vec<char> = crate::parser_text(&s.original, false)
+        .map(|m| m.chars().collect())
+        .unwrap_or_else(|| chars.clone());
     for (from, to, rep) in candidate_fixes(erg, s, e, names) {
-        if from > to || to > chars.len() {
+        if from > to || to > chars.len() || masked.len() != chars.len() {
             continue;
         }
-        let fixed: String = chars[..from]
+        let fixed: String = masked[..from]
             .iter()
             .chain(rep.chars().collect::<Vec<_>>().iter())
-            .chain(chars[to..].iter())
+            .chain(masked[to..].iter())
             .collect();
         let Ok(p) = erg.parse_limited(
             fixed.trim(),
@@ -2362,6 +2378,86 @@ fn suggestions(erg: &Erg, word: &str, max: usize) -> (Vec<String>, bool) {
         .map(|(_, _, w)| match_case(word, &w))
         .collect();
     (out, confident)
+}
+
+/// Why the grammar-error check does or does not claim an error in a
+/// sentence, step by step: for working on the checks (the `why`
+/// example).
+pub fn explain_grammar(erg: &Erg, a: &crate::Analysis, si: usize) -> String {
+    let s = &a.sentences[si];
+    let names: std::collections::HashSet<String> = a
+        .sentences
+        .iter()
+        .flat_map(|s| s.tokens.iter().skip(1))
+        .filter(|t| t.form.chars().next().is_some_and(char::is_uppercase))
+        .map(|t| t.form.clone())
+        .collect();
+    let mut out = Vec::new();
+    match &s.parse {
+        None => out.push(format!(
+            "not parsed: {}",
+            s.skipped.as_deref().unwrap_or("?")
+        )),
+        Some(p) => {
+            let strict = p
+                .readings
+                .iter()
+                .filter(|r| emdysi_parse::is_strict(&r.root))
+                .count();
+            out.push(format!(
+                "parse: {} readings, {strict} strict, complete={}, exhausted={}",
+                p.readings.len(),
+                p.complete,
+                p.exhausted
+            ));
+            if let Some(r) = p.readings.first() {
+                out.push(format!("  best: [{}] {}", r.root, r.derivation));
+            }
+        }
+    }
+    match &s.mal_parse {
+        None => out.push("grammar-error variant: not asked".into()),
+        Some(m) => {
+            out.push(format!(
+                "grammar-error variant: {} readings",
+                m.readings.len()
+            ));
+            for r in m.readings.iter().take(5) {
+                let mut errs: Vec<String> = r
+                    .nodes
+                    .iter()
+                    .filter(|n| is_error_item(&n.name))
+                    .map(|n| format!("{}@{}-{}", n.name, n.from, n.to))
+                    .collect();
+                errs.extend(
+                    r.words
+                        .iter()
+                        .filter(|w| w.generic)
+                        .map(|w| format!("generic:{}@{}-{}", w.surface, w.from, w.to)),
+                );
+                out.push(format!("  [{}] {:.1} {}", r.root, r.score, errs.join(" ")));
+            }
+        }
+    }
+    let named = grammar_errors(s);
+    let alts = grammar_error_alternatives(s);
+    if named.is_empty() && alts.is_empty() {
+        out.push("named: none".into());
+    }
+    for (kind, errs) in [("named", &named), ("alternative", &alts)] {
+        for e in errs.iter() {
+            let fixes = candidate_fixes(erg, s, e, &names);
+            let verified = verified_fix(erg, s, e, &names);
+            out.push(format!(
+                "{kind}: {} on '{}': candidates {:?}, verified {:?}",
+                e.code,
+                e.text,
+                fixes.iter().map(|f| &f.2).collect::<Vec<_>>(),
+                verified.map(|v| v.2)
+            ));
+        }
+    }
+    out.join("\n")
 }
 
 #[cfg(test)]

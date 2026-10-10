@@ -640,6 +640,18 @@ verifying the correction does not keep them out: the flags went from 6
 to 22 on the first development set and from 83 to 142 on the second,
 with no more real errors caught.
 
+Of the 76 wrong verb forms and agreement errors among the real errors,
+the strict grammar accepts 43 as written (many are word choices or UK
+spellings, not errors), the search is cut short for 23, the analyses name
+no single error for 8, and the correction fails for 2 (2026-10-10,
+counted with the `why` example). Template shortcodes (`{{< glossary_tooltip
+... >}}`) are now masked for the parser like other code, and a masked
+span no longer blocks a claim as an unknown word does; corrections are
+parsed with the same masking. *This tutorial show you how to install {{<
+glossary_tooltip ... >}} drivers in your cluster* is now reported, with
+*shows*; the real errors and both development sets are unchanged (163
+caught; 6 and 83 flags).
+
 The measurement tools now cache parses (see
 [CONTRIBUTING.md](../CONTRIBUTING.md#measure)): with the cache filled,
 the first development set takes 15 seconds instead of 38 minutes, the

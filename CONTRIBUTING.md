@@ -132,7 +132,14 @@ variables:
 | `CONFIG=ace/config-mal.tdl` | parse with the grammar-error variant |
 
 A sentence that parses once shortened ran out of search; one that does
-not is a grammar gap. To find which word is the problem, run `culprits`.
+not is a grammar gap. To see why the checker does or does not claim a
+grammatical error in a sentence (its parse, the errors the grammar-error
+variant names, the corrections tried and which the grammar accepts), run
+`why`:
+
+```sh
+echo "He will makes it." | cargo run --release -p emdysi-check --example why
+``` To find which word is the problem, run `culprits`.
 It replaces each word in turn by a plain word of the same shape and
 reports the replacements that give a full analysis:
 
