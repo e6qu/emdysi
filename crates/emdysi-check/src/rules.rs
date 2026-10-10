@@ -1542,11 +1542,28 @@ fn named_errors(s: &crate::Sentence, alternatives: bool) -> Vec<GrammarError> {
     let Some(p) = &s.mal_parse else {
         return Vec::new();
     };
+    let original: Vec<char> = s.original.chars().collect();
     let items = |r: &emdysi_parse::Reading| -> Vec<(String, usize, usize)> {
         let mut out = Vec::new();
         for n in r.nodes.iter().filter(|n| !n.leaf) {
             if is_error_item(&n.name) {
                 out.push((n.name.clone(), n.from, n.to));
+            }
+            // Two clauses run together with no punctuation between them
+            // (|He is go home| as |He is. Go home.|): the strict grammar
+            // joins clauses only with a semicolon or a dash, and the
+            // grammar-error variant names only a comma splice.
+            if n.name == "cl-cl_runon_c" {
+                let joined = n
+                    .children
+                    .first()
+                    .and_then(|&c| r.nodes.get(c))
+                    .and_then(|left| left.to.checked_sub(1))
+                    .and_then(|i| original.get(i))
+                    .is_some_and(|c| c.is_alphanumeric());
+                if joined {
+                    out.push((n.name.clone(), n.from, n.to));
+                }
             }
         }
         // A word's error is named by its entry when the error table has the

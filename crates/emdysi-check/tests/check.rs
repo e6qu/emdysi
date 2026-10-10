@@ -346,6 +346,7 @@ fn grammar_corrections() {
         ("She has wrote a letter.\n", "wrote", "written"),
         ("She can goes home.\n", "can goes", "can go"),
         ("He will makes it.\n", "will makes", "will make"),
+        ("He is go home.\n", "is go", "is going"),
         (
             "We need more informations.\n",
             "informations",
