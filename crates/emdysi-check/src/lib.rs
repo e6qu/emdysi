@@ -213,12 +213,13 @@ static CITATION: std::sync::LazyLock<fancy_regex::Regex> = std::sync::LazyLock::
     .expect("citation pattern")
 });
 
-/// Code-like tokens in prose: URLs, email addresses, paths
-/// (`src/main.rs`) and names with a file or domain extension (`cmd.exe`,
-/// `crates.io`).
+/// Code-like tokens in prose: template shortcodes (`{{< glossary_tooltip
+/// term_id="pod" >}}`, `{{% note %}}`, `{{ .Site.Title }}`), URLs, email
+/// addresses, paths (`src/main.rs`) and names with a file or domain
+/// extension (`cmd.exe`, `crates.io`).
 static CODE_LIKE: std::sync::LazyLock<fancy_regex::Regex> = std::sync::LazyLock::new(|| {
     fancy_regex::Regex::new(
-        r"\bhttps?://[^\s<>()]+[^\s<>().,;:!?]|\b[\w.+-]+@[\w-]+(?:\.[\w-]+)+|(?<![\w/])(?:[\w.-]+/)+[\w-]*\.[A-Za-z0-9]+\b|(?<![\w/])/[\w.-]+(?:/[\w.-]+)+|\b[A-Za-z][\w-]*\.(?:io|com|org|net|dev|gov|edu|rs|exe|py|js|ts|md|toml|json|ya?ml|txt|html?|sh|go|c|h)\b",
+        r"\{\{[<%]?[^{}]*?[>%]?\}\}|\bhttps?://[^\s<>()]+[^\s<>().,;:!?]|\b[\w.+-]+@[\w-]+(?:\.[\w-]+)+|(?<![\w/])(?:[\w.-]+/)+[\w-]*\.[A-Za-z0-9]+\b|(?<![\w/])/[\w.-]+(?:/[\w.-]+)+|\b[A-Za-z][\w-]*\.(?:io|com|org|net|dev|gov|edu|rs|exe|py|js|ts|md|toml|json|ya?ml|txt|html?|sh|go|c|h)\b",
     )
     .expect("code-like pattern")
 });
@@ -230,7 +231,7 @@ static CODE_LIKE: std::sync::LazyLock<fancy_regex::Regex> = std::sync::LazyLock:
 /// sentence's grammar, and the parser would otherwise build them into a
 /// noun phrase. Character positions are unchanged. `None` if nothing is
 /// masked.
-fn parser_text(text: &str, in_list: bool) -> Option<String> {
+pub(crate) fn parser_text(text: &str, in_list: bool) -> Option<String> {
     let labelled = mask_label(text).filter(|_| in_list);
     let base = labelled.as_deref().unwrap_or(text);
     let mut spans: Vec<(usize, usize, bool)> = CITATION

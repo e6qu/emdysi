@@ -629,6 +629,29 @@ Language (CEL)* is now reported, with *describe*: 163 real errors caught
 of 377, none flagged after the fix, and the same flags on both
 development sets (6 and 83).
 
+Corrections that add a missing article were tried and dropped
+(2026-10-10). The grammar-error variant names a missing article
+(`hdn_bnp_c_rbst`, "Add an article, like *the* or *a*") in *He is go
+home* and *She bought car yesterday*, but it is also how it covers what
+the grammar lacks in edited text: names (*Capitol Hill*, *Visual
+Studio*), numbers and years (*line 7*, *2025*), code and links. Adding
+*the* before them usually gives a sentence the grammar accepts, so
+verifying the correction does not keep them out: the flags went from 6
+to 22 on the first development set and from 83 to 142 on the second,
+with no more real errors caught.
+
+Of the 76 wrong verb forms and agreement errors among the real errors,
+the strict grammar accepts 43 as written (many are word choices or UK
+spellings, not errors), the search is cut short for 23, the analyses name
+no single error for 8, and the correction fails for 2 (2026-10-10,
+counted with the `why` example). Template shortcodes (`{{< glossary_tooltip
+... >}}`) are now masked for the parser like other code, and a masked
+span no longer blocks a claim as an unknown word does; corrections are
+parsed with the same masking. *This tutorial show you how to install {{<
+glossary_tooltip ... >}} drivers in your cluster* is now reported, with
+*shows*; the real errors and both development sets are unchanged (163
+caught; 6 and 83 flags).
+
 The measurement tools now cache parses (see
 [CONTRIBUTING.md](../CONTRIBUTING.md#measure)): with the cache filled,
 the first development set takes 15 seconds instead of 38 minutes, the

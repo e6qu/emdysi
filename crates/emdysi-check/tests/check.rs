@@ -357,6 +357,11 @@ fn grammar_corrections() {
             "describe",
         ),
         (
+            "This tutorial show you how to install {{< glossary_tooltip term_id=\"dra\" text=\"DRA\" >}} drivers in your cluster.\n",
+            "show",
+            "shows",
+        ),
+        (
             "The function only needs to knows that there is some scope.\n",
             "to knows",
             "to know",
