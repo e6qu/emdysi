@@ -18,7 +18,11 @@ fn main() {
         .filter(|f| f.len() > 10)
         .map(|f| (f[6].replace("\\s", "@"), f[10] == "1"))
         .collect();
-    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let mut erg = Erg::load(&default_grammar_dir()).unwrap();
+    // Parses are cached between runs (see `Erg::cache_parses`).
+    if let Some(dir) = emdysi_parse::parse_cache_dir() {
+        erg.cache_parses(&dir);
+    }
     let pack = Pack::parse(include_str!("../../../packs/core.toml")).unwrap();
     let coverage = Pack::parse(include_str!("../../../packs/coverage.toml")).unwrap();
     let mut checker = Checker::new(vec![pack, coverage]);

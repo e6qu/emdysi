@@ -90,7 +90,11 @@ fn main() {
         })
         .collect();
     let checker = Checker::new(packs);
-    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let mut erg = Erg::load(&default_grammar_dir()).unwrap();
+    // Parses are cached between runs (see `Erg::cache_parses`).
+    if let Some(dir) = emdysi_parse::parse_cache_dir() {
+        erg.cache_parses(&dir);
+    }
     let opts = Options {
         threads: 1,
         timeout: Duration::from_secs(5),

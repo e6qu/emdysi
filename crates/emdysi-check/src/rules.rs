@@ -1667,11 +1667,14 @@ fn named_errors(s: &crate::Sentence, alternatives: bool) -> Vec<GrammarError> {
         // Each error's share of the probability of the best analyses,
         // which orders the corrections; the ranker never decides whether
         // there is an error, which the strict grammar has proved.
+        // The model's probabilities are proportional to
+        // `exp(score / temperature)` (see `Parse::temperature`).
+        let t = p.temperature;
         let top = sets.iter().map(|e| e.1).fold(f64::NEG_INFINITY, f64::max);
-        let total: f64 = sets.iter().map(|e| (e.1 - top).exp()).sum();
+        let total: f64 = sets.iter().map(|e| ((e.1 - top) / t).exp()).sum();
         let mut alts: Vec<((String, usize, usize), f64)> = Vec::new();
         for (e, score) in sets {
-            let share = (score - top).exp() / total;
+            let share = ((score - top) / t).exp() / total;
             let e = e.into_iter().next().expect("one error");
             match alts.iter_mut().find(|a| a.0 == e) {
                 Some(a) => a.1 += share,

@@ -22,6 +22,10 @@ fn main() {
         .and_then(|s| s.parse().ok())
         .unwrap_or(usize::MAX);
     let mut erg = Erg::load(&default_grammar_dir()).unwrap();
+    // Parses are cached between runs (see `Erg::cache_parses`).
+    if let Some(dir) = emdysi_parse::parse_cache_dir() {
+        erg.cache_parses(&dir);
+    }
     erg.config.timeout = Duration::from_secs(20);
     erg.config.max_edges = 60_000;
     // CELL_BEAM=0 disables chart pruning, for comparison.

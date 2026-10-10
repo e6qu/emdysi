@@ -123,6 +123,10 @@ fn main() {
             })
             .collect();
     let mut erg = Erg::load(&default_grammar_dir()).unwrap();
+    // Parses are cached between runs (see `Erg::cache_parses`).
+    if let Some(dir) = emdysi_parse::parse_cache_dir() {
+        erg.cache_parses(&dir);
+    }
     // FIRST_BEAM=n|none and CELL_BEAM=n override chart pruning, for
     // measuring what the beams cost in accuracy and time.
     let env = |k: &str| std::env::var(k).ok();

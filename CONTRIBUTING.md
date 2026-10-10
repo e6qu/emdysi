@@ -183,6 +183,18 @@ documents itself at the top of its source file.
 | `cargo run --release -p emdysi-check --example treebank_eval` | How often the best reading is the hand-judged one, on machine-written prose |
 | `cargo run --release -p emdysi-check --example rule_rates -- corpora/beemo/sample.tsv 3,4` | How often each rule fires on a corpus's texts (here Beemo's model outputs, column 3, against their expert edits, column 4) |
 
+These tools cache every parse they make, in `parses` in the grammar
+cache directory (or `$EMDYSI_PARSE_CACHE`). A parse is cached under a hash
+of everything its result depends on: the grammar's files, the parser's
+settings, the source code of the parsing crates (`emdysi-parse`,
+`emdysi-hpsg`, `emdysi-repp`, `emdysi-tdl`) and the sentence. A change to
+the checks after parsing, such as a rule or an error correction, reruns
+in minutes; a change to the grammar or the parser parses afresh, as it
+must. A parse cut short by the time limit is reused as it is, so a rerun
+reports the same results. The cache of both development sets takes a few
+gigabytes; delete the directory to reclaim it, or set `EMDYSI_NO_CACHE=1`
+to parse without it.
+
 The held-out set (`corpora/edited/heldout-*`) is for final measurements
 only: do not tune against it. Record results that change what the
 project claims in [evaluation.md](docs/evaluation.md), with the date and

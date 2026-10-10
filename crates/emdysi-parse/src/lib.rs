@@ -18,6 +18,7 @@ use emdysi_hpsg::{Dag, Grammar, Unifier};
 use emdysi_repp::Repp;
 
 pub mod ambiguity;
+mod parse_cache;
 pub mod rank;
 
 pub use emdysi_hpsg::mrs;
@@ -36,6 +37,20 @@ impl std::error::Error for Error {}
 
 fn err(e: impl std::fmt::Display) -> Error {
     Error(e.to_string())
+}
+
+/// Where the measurement tools cache parses (see [`Erg::cache_parses`]):
+/// `$EMDYSI_PARSE_CACHE`, else `parses` in the grammar cache directory
+/// (`$EMDYSI_CACHE_DIR`, `$XDG_CACHE_HOME/emdysi` or `~/.cache/emdysi`).
+/// `None` when `EMDYSI_NO_CACHE` is set.
+pub fn parse_cache_dir() -> Option<PathBuf> {
+    if std::env::var_os("EMDYSI_NO_CACHE").is_some() {
+        return None;
+    }
+    if let Some(d) = std::env::var_os("EMDYSI_PARSE_CACHE") {
+        return Some(PathBuf::from(d));
+    }
+    emdysi_hpsg::cache::default_dir().map(|d| d.join("parses"))
 }
 
 /// Location of the vendored ERG inside this repository.
@@ -70,6 +85,12 @@ pub struct Erg {
     pub warnings: Vec<String>,
     /// The grammar directory.
     pub dir: PathBuf,
+    /// The configuration file the grammar was loaded with, relative to
+    /// [`Erg::dir`].
+    pub config_file: String,
+    /// Where parses are cached, with the key of the grammar's files (see
+    /// [`Erg::cache_parses`]).
+    parse_cache: Option<(PathBuf, String)>,
     /// The grammar-error ("mal-rule") variant of the grammar, loaded on
     /// first use (see [`Erg::mal`]).
     mal: std::sync::OnceLock<Option<Box<Erg>>>,
@@ -259,6 +280,7 @@ impl Erg {
     /// Load the grammar with an ACE configuration file, relative to `dir`
     /// (e.g. `ace/config-mal.tdl` for the grammar-error variant of the ERG).
     pub fn load_config(dir: &Path, config: &str) -> Result<Erg, Error> {
+        let config_file = config.to_string();
         let config_path = dir.join(config);
         let config_src = std::fs::read_to_string(&config_path).map_err(err)?;
         let config_dir = config_path.parent().unwrap_or(dir).to_path_buf();
@@ -484,6 +506,8 @@ impl Erg {
             });
         Ok(Erg {
             dir: dir.to_path_buf(),
+            config_file,
+            parse_cache: None,
             mal: std::sync::OnceLock::new(),
             warnings,
             mrs,
@@ -516,7 +540,11 @@ impl Erg {
                 if !self.dir.join(MAL_CONFIG).exists() {
                     return None;
                 }
-                Erg::load_config(&self.dir, MAL_CONFIG).ok().map(Box::new)
+                let mut m = Erg::load_config(&self.dir, MAL_CONFIG).ok()?;
+                if let Some((dir, _)) = &self.parse_cache {
+                    m.cache_parses(dir);
+                }
+                Some(Box::new(m))
             })
             .as_deref()
     }
@@ -562,7 +590,36 @@ impl Erg {
         self.parse_with(text, &config)
     }
 
+    /// Cache parses in `dir`, and reuse the ones cached there (also for
+    /// the grammar-error variant, [`Erg::mal`]). For measurement runs,
+    /// which parse the same sentences each time: a parse is keyed by the
+    /// grammar's files, the parser's settings and source code, and the
+    /// sentence, so a change to any of them parses afresh. Parses cut
+    /// short by the time limit are reused as they are. Not used while
+    /// [`Erg::keep_dags`] is set, as the cache holds no structures; a
+    /// replaced ranking model ([`Erg::model`]) must use another `dir`.
+    pub fn cache_parses(&mut self, dir: &Path) {
+        let key = parse_cache::grammar_key(
+            &[self.dir.clone(), self.dir.join("../emdysi")],
+            &self.config_file,
+        );
+        self.parse_cache = Some((dir.to_path_buf(), key));
+    }
+
     fn parse_with(&self, text: &str, config: &ParserConfig) -> Result<Parse, Error> {
+        let Some((dir, grammar)) = self.parse_cache.as_ref().filter(|_| !self.keep_dags) else {
+            return self.parse_uncached(text, config);
+        };
+        let key = parse_cache::key(grammar, config, self.first_beam, self.trees_for, text);
+        if let Some(p) = parse_cache::load(dir, &key) {
+            return Ok(p);
+        }
+        let p = self.parse_uncached(text, config)?;
+        parse_cache::store(dir, &key, &p);
+        Ok(p)
+    }
+
+    fn parse_uncached(&self, text: &str, config: &ParserConfig) -> Result<Parse, Error> {
         let t0 = std::time::Instant::now();
         let tokens = self.tokens(text);
         let (lat, _) = self.map_tokens(&tokens, false)?;
