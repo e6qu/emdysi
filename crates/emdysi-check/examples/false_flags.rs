@@ -99,7 +99,11 @@ fn main() {
     let core =
         Pack::parse(&std::fs::read_to_string(root.join("packs/core.toml")).unwrap()).unwrap();
     let checker = Checker::new(vec![core]);
-    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let mut erg = Erg::load(&default_grammar_dir()).unwrap();
+    // Parses are cached between runs (see `Erg::cache_parses`).
+    if let Some(dir) = emdysi_parse::parse_cache_dir() {
+        erg.cache_parses(&dir);
+    }
     let opts = Options {
         threads: 1,
         ..Options::default()

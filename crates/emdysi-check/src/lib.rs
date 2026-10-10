@@ -157,6 +157,36 @@ impl Default for Options {
 const MAL_TIMEOUT: Duration = Duration::from_secs(3);
 const MAL_READINGS: usize = 20;
 
+/// Readings recovered to make sure none is left out: a parse with fewer
+/// has all of them.
+const ALL_READINGS: usize = 1000;
+
+/// The ERG's lexical rules for verbs of saying in quotations: inversion
+/// (|He left, said Kim|) and a fragment for the quoted clause (|Yes, said
+/// Kim|).
+const QUOTING_RULES: &[&str] = &["v_inv-quot_dlr", "v_cp-frag_dlr"];
+
+/// Whether a reading uses a verb of saying in a quotation where nothing is
+/// quoted: no punctuation next to the verb (|Policy objects describes the
+/// logic| as |Policy objects, "describes the logic"|, |the commands adds
+/// two contexts| as |adds two, the commands|).
+pub fn unlicensed_quoting(r: &Reading, text: &str) -> bool {
+    let chars: Vec<char> = text.chars().collect();
+    r.words.iter().any(|w| {
+        w.rules.iter().any(|x| QUOTING_RULES.contains(&x.as_str())) && {
+            let before = chars[..w.from.min(chars.len())]
+                .iter()
+                .rev()
+                .find(|c| !c.is_whitespace());
+            let after = chars[w.to.min(chars.len())..]
+                .iter()
+                .find(|c| !c.is_whitespace());
+            let set_off = |c: Option<&char>| c.is_some_and(|c| !c.is_alphanumeric());
+            !set_off(before) && !set_off(after)
+        }
+    })
+}
+
 /// The text of a list item's sentence that starts with a short label ("Set
 /// goals: The terms ..."), with the label and its colon replaced by spaces, for the
 /// parser: the label is not part of the clause and only slows the parse
@@ -323,6 +353,37 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                             Err(e) => (None, Some(e.to_string())),
                         }
                     };
+                    // Readings that quote without quoting (see
+                    // `unlicensed_quoting`) are no evidence that the
+                    // sentence is grammatical. When every strict reading is
+                    // one, they are dropped, after making sure no other
+                    // strict reading was left out by the reading limit.
+                    let parse = parse.map(|p| {
+                        let masked = parser_text(text, in_list);
+                        let text = masked.as_deref().unwrap_or(text);
+                        let quoting_only = |p: &Parse| {
+                            let strict: Vec<&Reading> = p
+                                .readings
+                                .iter()
+                                .filter(|r| emdysi_parse::is_strict(&r.root))
+                                .collect();
+                            !strict.is_empty() && strict.iter().all(|r| unlicensed_quoting(r, text))
+                        };
+                        if !quoting_only(&p) {
+                            return p;
+                        }
+                        let p = if p.readings.len() >= opts.max_readings {
+                            match erg.parse_limited(text, opts.timeout, ALL_READINGS) {
+                                Ok(q) if q.readings.len() < ALL_READINGS && quoting_only(&q) => q,
+                                _ => return p,
+                            }
+                        } else {
+                            p
+                        };
+                        let mut p = p;
+                        p.readings.retain(|r| !unlicensed_quoting(r, text));
+                        p
+                    });
                     let strict = parse.as_ref().is_some_and(|p| {
                         p.readings.iter().any(|r| emdysi_parse::is_strict(&r.root))
                     });
@@ -346,6 +407,10 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                                 opts.max_readings.min(MAL_READINGS),
                             )
                             .ok()
+                            .map(|mut p| {
+                                p.readings.retain(|r| !unlicensed_quoting(r, text));
+                                p
+                            })
                         })
                     } else {
                         None

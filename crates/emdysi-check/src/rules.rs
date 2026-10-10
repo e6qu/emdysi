@@ -1183,13 +1183,16 @@ impl Rule {
                     if label("**") || label("__") {
                         continue;
                     }
+                    let chars: Vec<char> = s.original.chars().collect();
+                    let span =
+                        |from: usize, to: usize| -> String { chars[from..to].iter().collect() };
                     for e in grammar_errors(s) {
                         // Reported only with a correction the grammar
                         // accepts: see `verified_fix`.
-                        let Some(fix) = verified_fix(erg, s, &e, &names) else {
+                        let Some((from, to, fix)) = verified_fix(erg, s, &e, &names) else {
                             continue;
                         };
-                        let mut d = self.diag(a, si, e.from, e.to, &e.text);
+                        let mut d = self.diag(a, si, from, to, &span(from, to));
                         d.message = d
                             .message
                             .replace("{feedback}", &e.feedback)
@@ -1197,6 +1200,53 @@ impl Rule {
                         d.suggestions = vec![fix];
                         out.push(d);
                     }
+                    // Analyses that disagree on the error: the sentence is
+                    // reported with every correction the grammar accepts,
+                    // the likeliest analysis's first.
+                    let alts = grammar_error_alternatives(s);
+                    let verified: Vec<(&GrammarError, (usize, usize, String))> = alts
+                        .iter()
+                        .filter_map(|e| Some((e, verified_fix(erg, s, e, &names)?)))
+                        .collect();
+                    let fixes: Vec<&(usize, usize, String)> =
+                        verified.iter().map(|(_, f)| f).collect();
+                    // An analysis whose corrections the grammar all
+                    // rejects (|His will makes it|) describes no error it
+                    // can repair; one for which no correction can be tried
+                    // (|How he lived I know not| as a run-on that wants a
+                    // comma) may be what the writer meant, and blocks the
+                    // claim.
+                    let untried = alts.iter().any(|e| {
+                        !verified.iter().any(|(v, _)| std::ptr::eq(*v, e))
+                            && candidate_fixes(erg, s, e, &names).is_empty()
+                    });
+                    if fixes.is_empty() || untried {
+                        continue;
+                    }
+                    let from = fixes.iter().map(|f| f.0).min().unwrap_or(0);
+                    let to = fixes.iter().map(|f| f.1).max().unwrap_or(0);
+                    let mut suggestions: Vec<String> = Vec::new();
+                    for &(f, t, rep) in &fixes {
+                        let whole = format!("{}{rep}{}", span(from, *f), span(*t, to));
+                        if !suggestions.contains(&whole) {
+                            suggestions.push(whole);
+                        }
+                    }
+                    let feedback = if suggestions.len() == 1 {
+                        verified[0].0.feedback.clone()
+                    } else {
+                        format!(
+                            "This is not grammatical; the grammar accepts {} corrections.",
+                            suggestions.len()
+                        )
+                    };
+                    let mut d = self.diag(a, si, from, to, &span(from, to));
+                    d.message = d
+                        .message
+                        .replace("{feedback}", &feedback)
+                        .replace("{code}", "alternatives");
+                    d.suggestions = suggestions;
+                    out.push(d);
                 }
             }
             Kind::Ambiguity { min_share } => {
@@ -1231,7 +1281,7 @@ impl Rule {
                 for (si, s) in a.sentences.iter().enumerate() {
                     let Some(p) = &s.parse else { continue };
                     // A named error is reported by `grammar-errors` instead.
-                    if !grammar_errors(s).is_empty() {
+                    if !grammar_errors(s).is_empty() || !grammar_error_alternatives(s).is_empty() {
                         continue;
                     }
                     let block_kind = a.blocks[s.block].kind;
@@ -1478,14 +1528,52 @@ fn is_error_item(name: &str) -> bool {
 const MAX_ERRORS: usize = 2;
 
 pub fn grammar_errors(s: &crate::Sentence) -> Vec<GrammarError> {
+    named_errors(s, false)
+}
+
+/// The errors of the best analyses of the grammar-error variant when they
+/// disagree: each best analysis names one error, and no error is named by
+/// all of them (|He will makes it|: |will makes| or |He will| for |His
+/// will|). The sentence is proved ungrammatical; which correction the
+/// writer meant is not. Empty when `grammar_errors` reports, or when the
+/// analyses do not each name exactly one error.
+pub fn grammar_error_alternatives(s: &crate::Sentence) -> Vec<GrammarError> {
+    named_errors(s, true)
+}
+
+/// Most analyses that disagree on the error that are worth reporting.
+const MAX_ALTERNATIVES: usize = 5;
+
+/// The least share of the probability of the best analyses for which an
+/// alternative correction is offered.
+const MIN_SHARE: f64 = 0.05;
+
+fn named_errors(s: &crate::Sentence, alternatives: bool) -> Vec<GrammarError> {
     let Some(p) = &s.mal_parse else {
         return Vec::new();
     };
+    let original: Vec<char> = s.original.chars().collect();
     let items = |r: &emdysi_parse::Reading| -> Vec<(String, usize, usize)> {
         let mut out = Vec::new();
         for n in r.nodes.iter().filter(|n| !n.leaf) {
             if is_error_item(&n.name) {
                 out.push((n.name.clone(), n.from, n.to));
+            }
+            // Two clauses run together with no punctuation between them
+            // (|He is go home| as |He is. Go home.|): the strict grammar
+            // joins clauses only with a semicolon or a dash, and the
+            // grammar-error variant names only a comma splice.
+            if n.name == "cl-cl_runon_c" {
+                let joined = n
+                    .children
+                    .first()
+                    .and_then(|&c| r.nodes.get(c))
+                    .and_then(|left| left.to.checked_sub(1))
+                    .and_then(|i| original.get(i))
+                    .is_some_and(|c| c.is_alphanumeric());
+                if joined {
+                    out.push((n.name.clone(), n.from, n.to));
+                }
             }
         }
         // A word's error is named by its entry when the error table has the
@@ -1569,8 +1657,9 @@ pub fn grammar_errors(s: &crate::Sentence) -> Vec<GrammarError> {
         .map(|w| (w.from, w.to))
         .filter(|&(f, t)| !words.iter().any(|w| !w.generic && w.from == f && w.to == t))
         .collect();
-    let pick = |whole: bool| -> Option<Vec<(String, usize, usize)>> {
-        let sets: Vec<Vec<(String, usize, usize)>> = p
+    type Items = Vec<(String, usize, usize)>;
+    let pick = |whole: bool| -> Option<(Items, Vec<(Items, f64)>)> {
+        let sets: Vec<(Items, f64)> = p
             .readings
             .iter()
             .filter(|r| !whole || sentence_root(r))
@@ -1583,26 +1672,57 @@ pub fn grammar_errors(s: &crate::Sentence) -> Vec<GrammarError> {
                     .filter(|w| w.generic)
                     .all(|w| generic_spans.contains(&(w.from, w.to)))
             })
-            .map(items)
+            .map(|r| (items(r), r.score))
             .collect();
-        let fewest = sets.iter().map(Vec::len).min()?;
-        let mut best: Vec<&Vec<(String, usize, usize)>> =
-            sets.iter().filter(|e| e.len() == fewest).collect();
-        let first = best.remove(0).clone();
-        Some(
-            first
-                .into_iter()
-                .filter(|e| best.iter().all(|o| o.contains(e)))
-                .collect(),
-        )
+        let fewest = sets.iter().map(|e| e.0.len()).min()?;
+        let best: Vec<(Items, f64)> = sets.into_iter().filter(|e| e.0.len() == fewest).collect();
+        let shared = best[0]
+            .0
+            .iter()
+            .filter(|e| best[1..].iter().all(|o| o.0.contains(e)))
+            .cloned()
+            .collect();
+        Some((shared, best))
     };
-    let Some(best) = pick(true).or_else(|| pick(false)) else {
+    let Some((shared, sets)) = pick(true).or_else(|| pick(false)) else {
         return Vec::new();
     };
+    let best = if alternatives {
+        if !shared.is_empty() || sets.iter().any(|e| e.0.len() != 1) {
+            return Vec::new();
+        }
+        // Each error's share of the probability of the best analyses,
+        // which orders the corrections; the ranker never decides whether
+        // there is an error, which the strict grammar has proved.
+        // The model's probabilities are proportional to
+        // `exp(score / temperature)` (see `Parse::temperature`).
+        let t = p.temperature;
+        let top = sets.iter().map(|e| e.1).fold(f64::NEG_INFINITY, f64::max);
+        let total: f64 = sets.iter().map(|e| ((e.1 - top) / t).exp()).sum();
+        let mut alts: Vec<((String, usize, usize), f64)> = Vec::new();
+        for (e, score) in sets {
+            let share = ((score - top) / t).exp() / total;
+            let e = e.into_iter().next().expect("one error");
+            match alts.iter_mut().find(|a| a.0 == e) {
+                Some(a) => a.1 += share,
+                None => alts.push((e, share)),
+            }
+        }
+        if alts.len() < 2 || alts.len() > MAX_ALTERNATIVES {
+            return Vec::new();
+        }
+        alts.sort_by(|a, b| b.1.total_cmp(&a.1));
+        // As for ambiguity, an analysis with less than 5% is not offered.
+        alts.retain(|a| a.1 >= MIN_SHARE);
+        alts.into_iter().map(|a| a.0).collect()
+    } else {
+        shared
+    };
+    let wanted = best.len();
     // A reading that needs many corrections is the grammar-error variant
     // making the best of a sentence the grammar could not analyse (long,
     // or with a construction it lacks), not a list of real errors.
-    if best.len() > MAX_ERRORS {
+    if !alternatives && best.len() > MAX_ERRORS {
         return Vec::new();
     }
     let chars: Vec<char> = s.original.chars().collect();
@@ -1676,6 +1796,11 @@ pub fn grammar_errors(s: &crate::Sentence) -> Vec<GrammarError> {
             })
             .unwrap_or_default();
         out.retain(|e| unknown.iter().any(|&(f, t)| e.from < t && f < e.to));
+    }
+    // An alternative that is not an error (a licensed capital) leaves an
+    // analysis without one.
+    if alternatives && out.len() != wanted {
+        return Vec::new();
     }
     out
 }
@@ -1915,7 +2040,7 @@ fn candidate_fixes(
             }
         }
     }
-    if has(&["should not be inflected"]) {
+    if has(&["should not be inflected", "should be the base form"]) {
         out.extend(next_verb(None));
     }
     if has(&["present participle"]) {
@@ -1996,14 +2121,15 @@ fn candidate_fixes(
 /// error is real only if fixing it the way its kind suggests turns the
 /// sentence into one the grammar analyses strictly. A sentence that is
 /// correct English outside the grammar's coverage stays unanalysable
-/// after such a small change, so it is not reported. Returns the
-/// replacement text for the error's span.
+/// after such a small change, so it is not reported. Returns the span it
+/// replaces (the error's, widened to the words the correction changes,
+/// such as the verb in |informations are|) and the replacement.
 fn verified_fix(
     erg: &Erg,
     s: &crate::Sentence,
     e: &GrammarError,
     names: &std::collections::HashSet<String>,
-) -> Option<String> {
+) -> Option<(usize, usize, String)> {
     let chars: Vec<char> = s.original.chars().collect();
     for (from, to, rep) in candidate_fixes(erg, s, e, names) {
         if from > to || to > chars.len() {
@@ -2014,13 +2140,19 @@ fn verified_fix(
             .chain(rep.chars().collect::<Vec<_>>().iter())
             .chain(chars[to..].iter())
             .collect();
-        let Ok(p) = erg.parse_limited(fixed.trim(), std::time::Duration::from_secs(5), 20) else {
+        let Ok(p) = erg.parse_limited(
+            fixed.trim(),
+            std::time::Duration::from_secs(5),
+            VERIFY_READINGS,
+        ) else {
             continue;
         };
         // The correction must repair the analysis that names the error, not
         // make way for another one: some strict reading of the corrected
         // sentence keeps the lexical entry of every other word (|much good
-        // may it does them| parses only with |may| as a noun).
+        // may it does them| parses only with |may| as a noun). A word the
+        // erroneous analysis covers with a generic entry (|Binding| as an
+        // unknown name) may have any.
         let lead = fixed.chars().count() - fixed.trim_start().chars().count();
         let edited = (from.min(e.from), to.max(e.to));
         let delta = rep.chars().count() as isize - (to - from) as isize;
@@ -2032,10 +2164,14 @@ fn verified_fix(
             words
                 .iter()
                 .filter(|w| !(w.from + shift < skip.1 && w.to + shift > skip.0))
-                .map(|w| w.entry.clone())
-                .collect::<Vec<String>>()
+                .map(|w| (!w.generic).then(|| w.entry.clone()))
+                .collect::<Vec<Option<String>>>()
         };
-        let erroneous: Vec<Vec<String>> = s
+        let keeps = |wrong: &[Option<String>], fixed: &[Option<String>]| {
+            wrong.len() == fixed.len()
+                && wrong.iter().zip(fixed).all(|(a, b)| a.is_none() || a == b)
+        };
+        let erroneous: Vec<Vec<Option<String>>> = s
             .mal_parse
             .iter()
             .flat_map(|m| m.readings.iter())
@@ -2051,19 +2187,27 @@ fn verified_fix(
             .collect();
         if p.readings.iter().any(|r| {
             emdysi_parse::is_strict(&r.root)
-                && (erroneous.is_empty()
-                    || erroneous.contains(&others(&r.words, edited_fixed, lead)))
+                && !crate::unlicensed_quoting(r, fixed.trim())
+                && (erroneous.is_empty() || {
+                    let fixed = others(&r.words, edited_fixed, lead);
+                    erroneous.iter().any(|w| keeps(w, &fixed))
+                })
         }) {
             let new: String = chars[from.min(e.from)..from]
                 .iter()
                 .chain(rep.chars().collect::<Vec<_>>().iter())
                 .chain(chars[to..to.max(e.to)].iter())
                 .collect();
-            return Some(new);
+            return Some((from.min(e.from), to.max(e.to), new));
         }
     }
     None
 }
+
+/// Readings of a corrected sentence searched for one that keeps the
+/// other words' entries: the one that does is not always among the best
+/// few.
+const VERIFY_READINGS: usize = 100;
 
 /// Give `rep` the capitalization pattern of `like`.
 fn match_case(like: &str, rep: &str) -> String {

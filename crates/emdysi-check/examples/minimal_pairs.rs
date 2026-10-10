@@ -26,7 +26,11 @@ fn main() {
             (f.len() >= 5).then(|| (f[0].to_string(), f[3].to_string(), f[4].to_string()))
         })
         .collect();
-    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let mut erg = Erg::load(&default_grammar_dir()).unwrap();
+    // Parses are cached between runs (see `Erg::cache_parses`).
+    if let Some(dir) = emdysi_parse::parse_cache_dir() {
+        erg.cache_parses(&dir);
+    }
     let accepts = |s: &str| {
         erg.parse_limited(s, Duration::from_secs(10), 20)
             .is_ok_and(|p| p.readings.iter().any(|r| is_strict(&r.root)))

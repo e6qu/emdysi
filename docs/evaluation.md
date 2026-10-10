@@ -570,6 +570,58 @@ caught; the same six flags); on the second development set the flags go
 from 86 to 83, the three gone all false (*quitted* twice, correct in
 Austen, and *we will ask you no questions*).
 
+Four changes claim errors that were proved but not reported
+(2026-10-10):
+
+- When the best analyses of the grammar-error variant disagree on the
+  error, each naming one, the sentence is still proved ungrammatical; it
+  is reported with the corrections the grammar accepts, ordered by the
+  ranker's probability of their analyses, those under 5% left out. An
+  analysis whose corrections the grammar all rejects (*His will makes
+  it*) does not stop the claim; one for which no correction can be tried
+  does (*How he lived I know not*, read as a run-on that wants a comma).
+  *He will makes it* is now reported, with *will make*.
+- Two clauses run together with no punctuation between them count as an
+  error of the analysis that joins them: the strict grammar joins clauses
+  only with a semicolon or a dash, so such an analysis used to make a
+  sentence look error-free to the grammar-error variant.
+- The ERG's rules for verbs of saying in quotations (*He left, said
+  Kim*; *Yes, said Kim*) also analyse agreement errors as quotations:
+  *Policy objects describes the logic* as *Policy objects, "describes the
+  logic"*, *the commands adds two contexts* with *adds* inverted. A
+  reading that uses them with no punctuation next to the verb is no
+  longer evidence that the sentence is grammatical, when no other strict
+  reading exists (the parse is redone with up to 1,000 readings to make
+  sure).
+- An inflected verb after *to* (*needs to knows*) is corrected to its base
+  form; the corrected sentence is searched for a reading that keeps the
+  other words' entries among 100 readings instead of 20, and a word the
+  erroneous analysis covers with a generic entry may have any entry.
+
+A combined correction (*informations are* to *information is*) now marks
+both words it replaces; it used to mark the first only, so applying the
+suggestion gave *information is are*.
+
+| | Before | After |
+|---|---|---|
+| Real errors caught (377) | 162 | 162 |
+| Flagged after the fix | 0 | 0 |
+| Flags on the first development set (2,498 sentences) | 6 | 6 |
+| Flags on the second development set (13,442 sentences) | 83 | 83 |
+
+The real errors these changes target are in longer sentences, which the
+parser prunes; a pruned search proves nothing, so they stay unclaimed
+(*Policy objects describes the abstract logic of a policy using Common
+Expression Language (CEL)* is claimed only without its last six words).
+*He is go home* also stays unclaimed: its second analysis wants an
+article before *go*, and no correction adds an article yet.
+
+The measurement tools now cache parses (see
+[CONTRIBUTING.md](../CONTRIBUTING.md#measure)): with the cache filled,
+the first development set takes 15 seconds instead of 38 minutes, the
+second 78 seconds instead of about three hours, and the real errors 31
+seconds.
+
 ## Stress sentences and ambiguity
 
 [`corpora/stress`](../corpora/stress/README.md) has 66 grammatical

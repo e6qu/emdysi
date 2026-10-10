@@ -30,6 +30,7 @@ acceptable = [
   "Well, much good may it do them!\n",
   "I bought a car.\n",
   "She has written a letter.\n",
+  "How he lived I know not.\n",
 ]
 
 [[rule]]
