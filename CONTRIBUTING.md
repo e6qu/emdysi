@@ -191,9 +191,11 @@ settings, the source code of the parsing crates (`emdysi-parse`,
 the checks after parsing, such as a rule or an error correction, reruns
 in minutes; a change to the grammar or the parser parses afresh, as it
 must. A parse cut short by the time limit is reused as it is, so a rerun
-reports the same results. The cache of both development sets takes a few
-gigabytes; delete the directory to reclaim it, or set `EMDYSI_NO_CACHE=1`
-to parse without it.
+reports the same results. Each version of the grammar and the parser has
+its own directory, and only the four most recently used are kept, so even
+a formatting change in the parsing crates starts a cold run. The cache of
+both development sets takes a few gigabytes; delete the directory to
+reclaim it, or set `EMDYSI_NO_CACHE=1` to parse without it.
 
 The held-out set (`corpora/edited/heldout-*`) is for final measurements
 only: do not tune against it. Record results that change what the

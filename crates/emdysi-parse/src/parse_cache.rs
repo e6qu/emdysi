@@ -1,13 +1,15 @@
 //! A cache of parses, for measurement runs that parse the same sentences
 //! again and again while only the checks after parsing change.
 //!
-//! Each parse is a file named by a hash of everything its result depends
-//! on: the grammar's files, the configuration, the parser settings, the
-//! source code of the parsing pipeline (see `build.rs`) and the sentence.
-//! Editing the grammar or the parser therefore never returns a stale
-//! parse. A parse cut short by the time limit is cached as it came out,
-//! which also makes reruns repeatable. A missing or unreadable entry
-//! simply means parsing.
+//! Parses are kept in a directory per version of the grammar and the
+//! parser, named by a hash of the grammar's files, the configuration and
+//! the source code of the parsing pipeline (see `build.rs`); in it, each
+//! parse is a file named by a hash of the parser settings and the
+//! sentence. Editing the grammar or the parser therefore never returns a
+//! stale parse. Only the [`KEEP`] most recently used versions are kept. A
+//! parse cut short by the time limit is cached as it came out, which also
+//! makes reruns repeatable. A missing or unreadable entry simply means
+//! parsing.
 
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -18,6 +20,10 @@ use emdysi_hpsg::mrs::{Ep, Mrs};
 use emdysi_hpsg::parser::ParserConfig;
 
 use crate::{InputToken, Node, Parse, Reading, Tag, Word};
+
+/// Versions of the grammar and parser whose parses are kept: the current
+/// one and the one before it, each with its grammar-error variant.
+const KEEP: usize = 4;
 
 /// Bump when the layout below changes.
 const VERSION: u32 = 3;
@@ -45,9 +51,40 @@ impl Hasher {
     }
 }
 
-/// A hash of every file under the grammar directories, and of the
-/// configuration file's name.
-pub(crate) fn grammar_key(dirs: &[PathBuf], config: &str) -> String {
+/// The directory in `root` for the parses of this grammar (every file
+/// under `dirs`, read with configuration `config`) and parser. Marks it as
+/// used, and deletes all but the [`KEEP`] most recently used.
+pub(crate) fn open(root: &Path, dirs: &[PathBuf], config: &str) -> PathBuf {
+    let dir = root.join(version(dirs, config));
+    let _ = std::fs::create_dir_all(&dir);
+    let _ = std::fs::write(dir.join(USED), b"");
+    let used = |d: &Path| {
+        std::fs::metadata(d.join(USED))
+            .and_then(|m| m.modified())
+            .ok()
+    };
+    let mut versions: Vec<(std::time::SystemTime, PathBuf)> = std::fs::read_dir(root)
+        .map(|es| {
+            es.flatten()
+                .map(|e| e.path())
+                .filter(|p| p.is_dir())
+                .filter_map(|p| Some((used(&p)?, p)))
+                .collect()
+        })
+        .unwrap_or_default();
+    versions.sort_by(|a, b| b.0.cmp(&a.0));
+    for (_, old) in versions.into_iter().skip(KEEP) {
+        if old != dir {
+            let _ = std::fs::remove_dir_all(old);
+        }
+    }
+    dir
+}
+
+/// The file whose time records when a version's parses were last used.
+const USED: &str = "used";
+
+fn version(dirs: &[PathBuf], config: &str) -> String {
     fn walk(dir: &Path, out: &mut Vec<PathBuf>) {
         let Ok(entries) = std::fs::read_dir(dir) else {
             return;
@@ -63,6 +100,7 @@ pub(crate) fn grammar_key(dirs: &[PathBuf], config: &str) -> String {
     }
     let mut h = Hasher::new();
     h.feed(&VERSION.to_le_bytes());
+    h.feed(env!("EMDYSI_PARSER_SOURCE").as_bytes());
     h.feed(config.as_bytes());
     for d in dirs {
         let mut files = Vec::new();
@@ -81,17 +119,14 @@ pub(crate) fn grammar_key(dirs: &[PathBuf], config: &str) -> String {
     h.hex()
 }
 
-/// The key of one parse.
+/// The key of one parse, within the directory of its version.
 pub(crate) fn key(
-    grammar: &str,
     config: &ParserConfig,
     first_beam: Option<usize>,
     trees_for: usize,
     text: &str,
 ) -> String {
     let mut h = Hasher::new();
-    h.feed(env!("EMDYSI_PARSER_SOURCE").as_bytes());
-    h.feed(grammar.as_bytes());
     let roots: Vec<&str> = config.roots.iter().map(|(n, _)| n.as_str()).collect();
     let settings = format!(
         "{:?} {} {} {} {:?} {} {:?} {:?} {} {} {} {} {:?} {}",

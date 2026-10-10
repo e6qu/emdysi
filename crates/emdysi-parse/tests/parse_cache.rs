@@ -38,12 +38,23 @@ fn cached_parses_round_trip() {
         let again = mal.parse(text).unwrap();
         same(&first, &again, text);
     }
-    // Two parses of each sentence per grammar: four entries.
-    let entries = std::fs::read_dir(&dir)
-        .unwrap()
-        .flatten()
-        .flat_map(|d| std::fs::read_dir(d.path()).unwrap().flatten())
-        .count();
-    assert_eq!(entries, 4);
+    // One directory per grammar, with a parse of each sentence in it.
+    fn bins(d: &std::path::Path) -> usize {
+        std::fs::read_dir(d)
+            .unwrap()
+            .flatten()
+            .map(|e| e.path())
+            .map(|p| {
+                if p.is_dir() {
+                    bins(&p)
+                } else {
+                    usize::from(p.extension().is_some_and(|x| x == "bin"))
+                }
+            })
+            .sum()
+    }
+    let versions = std::fs::read_dir(&dir).unwrap().count();
+    assert_eq!(versions, 2);
+    assert_eq!(bins(&dir), 4);
     let _ = std::fs::remove_dir_all(&dir);
 }

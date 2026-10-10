@@ -88,9 +88,9 @@ pub struct Erg {
     /// The configuration file the grammar was loaded with, relative to
     /// [`Erg::dir`].
     pub config_file: String,
-    /// Where parses are cached, with the key of the grammar's files (see
-    /// [`Erg::cache_parses`]).
-    parse_cache: Option<(PathBuf, String)>,
+    /// Where parses are cached (see [`Erg::cache_parses`]): the directory
+    /// given, and the one for this grammar and parser in it.
+    parse_cache: Option<(PathBuf, PathBuf)>,
     /// The grammar-error ("mal-rule") variant of the grammar, loaded on
     /// first use (see [`Erg::mal`]).
     mal: std::sync::OnceLock<Option<Box<Erg>>>,
@@ -599,18 +599,19 @@ impl Erg {
     /// [`Erg::keep_dags`] is set, as the cache holds no structures; a
     /// replaced ranking model ([`Erg::model`]) must use another `dir`.
     pub fn cache_parses(&mut self, dir: &Path) {
-        let key = parse_cache::grammar_key(
+        let version = parse_cache::open(
+            dir,
             &[self.dir.clone(), self.dir.join("../emdysi")],
             &self.config_file,
         );
-        self.parse_cache = Some((dir.to_path_buf(), key));
+        self.parse_cache = Some((dir.to_path_buf(), version));
     }
 
     fn parse_with(&self, text: &str, config: &ParserConfig) -> Result<Parse, Error> {
-        let Some((dir, grammar)) = self.parse_cache.as_ref().filter(|_| !self.keep_dags) else {
+        let Some((_, dir)) = self.parse_cache.as_ref().filter(|_| !self.keep_dags) else {
             return self.parse_uncached(text, config);
         };
-        let key = parse_cache::key(grammar, config, self.first_beam, self.trees_for, text);
+        let key = parse_cache::key(config, self.first_beam, self.trees_for, text);
         if let Some(p) = parse_cache::load(dir, &key) {
             return Ok(p);
         }
