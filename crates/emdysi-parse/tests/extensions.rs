@@ -79,3 +79,19 @@ fn comparative_with_a_shared_object() {
         assert!(!strict(&erg, text), "{text}");
     }
 }
+
+#[test]
+fn collective_nouns_with_plural_agreement() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    for text in [
+        "The team are almost ready.",
+        "The staff are busy.",
+        "The family were divided.",
+        "The team is almost ready.",
+    ] {
+        assert!(strict(&erg, text), "{text}");
+    }
+    for text in ["The cat are hungry.", "Kim are ready."] {
+        assert!(!strict(&erg, text), "{text}");
+    }
+}

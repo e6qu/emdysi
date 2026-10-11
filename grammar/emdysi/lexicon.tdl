@@ -596,3 +596,287 @@ improbable_a2 := aj_cp_i-it_le &
              PHON.ONSET voc ] ].
 
 :end :instance.
+
+;;; Collective nouns with plural agreement: |The team are ready.| The
+;;; ERG has this for "class", "committee" and "government" only, as
+;;; British (type n_-_c-pl-nomcase_le, DIALECT br, e.g. committee_n2_br);
+;;; these are other common ones in the same form, with the predicate of
+;;; the ERG's own entry. "majority", "minority" and "staff" take a plural
+;;; verb in American English too, so they have no dialect.
+
+:begin :instance :status lex-entry.
+
+team_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "team" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_team_n_of_rel",
+            PHON.ONSET con ] ].
+
+staff_n_pl := n_-_c-pl-nomcase_le &
+ [ ORTH < "staff" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_staff_n_of_rel",
+            PHON.ONSET con ] ].
+
+family_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "family" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_family_n_of_rel",
+            PHON.ONSET con ] ].
+
+council_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "council" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_council_n_of_rel",
+            PHON.ONSET con ] ].
+
+board_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "board" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_board_n_of_rel",
+            PHON.ONSET con ] ].
+
+crew_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "crew" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_crew_n_of_rel",
+            PHON.ONSET con ] ].
+
+club_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "club" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_club_n_1_rel",
+            PHON.ONSET con ] ].
+
+party_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "party" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_party_n_of-to_rel",
+            PHON.ONSET con ] ].
+
+audience_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "audience" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_audience_n_1_rel",
+            PHON.ONSET voc ] ].
+
+band_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "band" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_band_n_1_rel",
+            PHON.ONSET con ] ].
+
+cabinet_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "cabinet" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_cabinet_n_1_rel",
+            PHON.ONSET con ] ].
+
+company_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "company" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_company_n_of_rel",
+            PHON.ONSET con ] ].
+
+jury_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "jury" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_jury_n_1_rel",
+            PHON.ONSET con ] ].
+
+majority_n_pl := n_-_c-pl-nomcase_le &
+ [ ORTH < "majority" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_majority_n_of_rel",
+            PHON.ONSET con ] ].
+
+public_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "public" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_public_n_1_rel",
+            PHON.ONSET con ] ].
+
+squad_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "squad" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_squad_n_of_rel",
+            PHON.ONSET con ] ].
+
+union_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "union" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_union_n_of_rel",
+            PHON.ONSET con ] ].
+
+management_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "management" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_management_n_1_rel",
+            PHON.ONSET con ] ].
+
+firm_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "firm" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_firm_n_1_rel",
+            PHON.ONSET con ] ].
+
+department_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "department" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_department_n_of_rel",
+            PHON.ONSET con ] ].
+
+group_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "group" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_group_n_of_rel",
+            PHON.ONSET con ] ].
+
+panel_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "panel" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_panel_n_of_rel",
+            PHON.ONSET con ] ].
+
+orchestra_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "orchestra" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_orchestra_n_1_rel",
+            PHON.ONSET voc ] ].
+
+choir_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "choir" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_choir_n_1_rel",
+            PHON.ONSET con ] ].
+
+army_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "army" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_army_n_of_rel",
+            PHON.ONSET voc ] ].
+
+navy_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "navy" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_navy_n_1_rel",
+            PHON.ONSET con ] ].
+
+press_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "press" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_press_n_1_rel",
+            PHON.ONSET con ] ].
+
+faculty_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "faculty" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_faculty_n_1_rel",
+            PHON.ONSET con ] ].
+
+parliament_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "parliament" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_parliament_n_1_rel",
+            PHON.ONSET con ] ].
+
+side_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "side" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_side_n_1_rel",
+            PHON.ONSET con ] ].
+
+population_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "population" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_population_n_1_rel",
+            PHON.ONSET con ] ].
+
+community_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "community" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_community_n_of_rel",
+            PHON.ONSET con ] ].
+
+minority_n_pl := n_-_c-pl-nomcase_le &
+ [ ORTH < "minority" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_minority_n_of_rel",
+            PHON.ONSET con ] ].
+
+generation_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "generation" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_generation_n_of_rel",
+            PHON.ONSET con ] ].
+
+electorate_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "electorate" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_electorate_n_1_rel",
+            PHON.ONSET voc ] ].
+
+congregation_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "congregation" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_congregation_n_of_rel",
+            PHON.ONSET con ] ].
+
+crowd_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "crowd" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_crowd_n_of_rel",
+            PHON.ONSET con ] ].
+
+gang_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "gang" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_gang_n_of_rel",
+            PHON.ONSET con ] ].
+
+regiment_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "regiment" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_regiment_n_1_rel",
+            PHON.ONSET con ] ].
+
+administration_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "administration" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_administration_n_of_rel",
+            PHON.ONSET voc ] ].
+
+association_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "association" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_association_n_of_rel",
+            PHON.ONSET voc ] ].
+
+bank_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "bank" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_bank_n_of_rel",
+            PHON.ONSET con ] ].
+
+federation_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "federation" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_federation_n_1_rel",
+            PHON.ONSET con ] ].
+
+league_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "league" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_league_n_of_rel",
+            PHON.ONSET con ] ].
+
+ministry_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "ministry" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_ministry_n_of_rel",
+            PHON.ONSET con ] ].
+
+partnership_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "partnership" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_partnership_n_1_rel",
+            PHON.ONSET con ] ].
+
+:end :instance.

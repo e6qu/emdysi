@@ -86,7 +86,13 @@ are not changed. Written for this project (MIT, see the repository's
   abstract mass nouns with "the" (*the realm of the unimaginable*, *the
   sublime*), in the form of the ERG's 23 (`n_-_m-def_le`, e.g. *the
   impossible*); *onboard* (preposition, adjective and verb); hyphenated
-  *out-of-X* adjectives (*out-of-memory kills*, *out-of-band data*). A
+  *out-of-X* adjectives (*out-of-memory kills*, *out-of-band data*);
+  collective nouns with a plural verb (*The team are ready*), which the
+  ERG allows as British for *class*, *committee* and *government* only
+  (`n_-_c-pl-nomcase_le`): 46 more in the same form, without the dialect
+  for *majority*, *minority* and *staff*. Team names (*South Africa
+  are*) are not covered: the lexicon cannot tell them from people's
+  names (*Kim are* is an error). A
   native entry replaces the ERG's generic entries for an unknown word, so
   a word the ERG lacks gets all its common uses (*inexplicable*,
   *improbable* also as adjectives; *unusual*, *unexpected* need none, the
