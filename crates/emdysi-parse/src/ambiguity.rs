@@ -97,7 +97,8 @@ pub fn interpretations(
 }
 
 /// How an EP is shown: the words it covers for a word's predicate
-/// (`telescope`), else the predicate's name (`compound`).
+/// (`telescope`), its lemma for one without them (`_to_p_rel`: `to`), else
+/// the predicate's name (`compound`).
 fn name(ep: &Ep, chars: &[char]) -> String {
     let word = ep
         .lnk
@@ -111,6 +112,11 @@ fn name(ep: &Ep, chars: &[char]) -> String {
         .filter(|w| !w.is_empty() && !w.contains(' '));
     match word {
         Some(w) if ep.pred.starts_with('_') => w,
+        None if ep.pred.starts_with('_') => ep.pred[1..]
+            .split('_')
+            .next()
+            .unwrap_or_default()
+            .to_string(),
         _ => ep
             .pred
             .trim_start_matches('_')

@@ -1,0 +1,108 @@
+;;; Two noun phrases coordinated between a pair of commas: |You, or a
+;;; controller, must delete the object.|, |Kim, and Sandy, left.|
+;;;
+;;; The ERG ties a comma on the left conjunct to the conjunction
+;;; (basic_top_coord_rule: LCONJ-DTR..PNCTPR is the right conjunct's
+;;; CONJ.CPUNCT, ppair for a two-part coordination), so that the formal
+;;; comma, which stamps no_ppair, cannot mark the left one of two
+;;; conjuncts (*|Abrams, and Browne arrived|). The informal comma
+;;; (comma_inf_pct, GENRE nonformal) can, and that is the only analysis
+;;; of a coordination set off between two commas, standard in edited
+;;; prose. This rule is basic_top_coord_rule for noun phrases
+;;; (np_coord_top_rule) with the commas on both conjuncts required and
+;;; formal, and without the tie: the pair of commas brackets the second
+;;; conjunct, and the coordinated phrase ends without punctuation.
+
+:begin :type.
+
+;;; nom_coord_rule and np_coord_rule (syntax.tdl) as the ERG has them,
+;;; except that coord_phr's identification of the mother's PUNCT.PNCTPR
+;;; with the right conjunct's is left out: the right conjunct ends in the
+;;; closing comma (no_ppair), and the bracketed phrase must be available
+;;; where a phrase without punctuation is (ppair, as a subject).
+
+nom_coord_paired_comma_rule := basic_nom_coord_rule & gen_coord_phr &
+  [ SYNSEM.LOCAL.CAT.HEAD.MOD #mod,
+    LCONJ-DTR.SYNSEM.LOCAL [ CAT.HEAD.MOD #mod,
+                             CONT.HOOK.INDEX #ind ],
+    RCONJ-DTR.SYNSEM.LOCAL [ CAT.HEAD.MOD #mod,
+                             CONJ complex-conj &
+                                  [ CREL basic_conj_relation &
+                                         [ ARG1 #ind ] ] ] ].
+
+np_coord_paired_comma_base := nom_coord_paired_comma_rule &
+  [ SYNSEM nonlex_synsem &
+	   [ LOCAL [ CAT [ VAL [ SPR < synsem_min &
+				     [ --MIN just_only_deg_rel,
+				       LOCAL [ CAT [ HEAD adv,
+						     VAL.SPR *unexplist* ],
+					       CONT.HOOK.LTOP #splbl ],
+				       OPT + ] >,
+				 SPCMPS < > ] ],
+                     CONT.HOOK.INDEX conj_ref-ind &
+			             [ PNG #png ],
+                     AGR [ PNG #png ] ],
+             MODIFD notmod &
+                    [ LPERIPH #lper ],
+	     NONLOC [ SLASH.LIST #slash,
+		      REL.LIST #rel,
+		      QUE.LIST #que ] ],
+    LCONJ-DTR [ SYNSEM [ LOCAL [ CAT.VAL [ SPR *olist*,
+					   SPCMPS < > ],
+				 CONT.HOOK.LTOP #rtop ],
+                         MODIFD.LPERIPH #lper,
+			 NONLOC [ SLASH.LIST #slash,
+				  REL.LIST #rel,
+				  QUE.LIST #que ] ],
+		INFLECTD #infl ],
+    RCONJ-DTR [ SYNSEM [ LOCAL [ CAT.VAL [ SPR *olist*,
+					   SPCMPS < > ],
+                                 CONT.HOOK [ LTOP #rtop,
+                                             INDEX #ind ],
+                                 CONJ.CREL [ ARG1.SORT basic-entity-or-event,
+                                             ARG2.SORT basic-entity-or-event ],
+                                 AGR [ PNG #png ] ] ],
+                INFLECTD #infl ],
+    ORTH [ FROM #from, TO #to ],
+    C-CONT [ RELS.LIST.FIRST [ PRED udef_q_rel,
+			       LBL #splbl,
+                               ARG0 #ind & ref-ind,
+                               RSTR #harg,
+			       CFROM #from, CTO #to ],
+             HCONS <! qeq & [ HARG #harg,
+                              LARG #rtop  ] !>,
+	     ICONS <! !> ],
+    INFLECTD #infl ].
+
+np_coord_paired_comma_rule := binary_rule_right_to_left &
+                              np_coord_paired_comma_base &
+  [ SYNSEM [ LOCAL [ CONT.HOOK.INDEX #ind & [ SORT #sort ],
+                     CONJ cnil & [ LCHEAD #left ] ],
+             PUNCT [ LPUNCT #lpunct,
+                     RPUNCT no_punct,
+                     PNCTPR ppair ] ],
+    LCONJ-DTR.SYNSEM [ LOCAL local &
+                       [ CONJ conj_min & #left,
+                         CAT.HEAD.CASE #case ],
+                       MODIFD.RPERIPH bool,
+                       PUNCT [ LPUNCT #lpunct,
+                               RPUNCT comma_punct ] ],
+    RCONJ-DTR.SYNSEM [ LOCAL local &
+                       [ CONT.HOOK.INDEX #ind,
+                         CAT.HEAD.CASE #case,
+                         CONJ complex-conj &
+                              [ CHEAD #left,
+                                CREL.ARG1.SORT #sort ] ],
+                       PUNCT [ LPUNCT lital_or_pair_or_comma_or_no_punct,
+                               RPUNCT comma_punct ] ],
+    C-CONT [ HOOK.INDEX #ind & conj-ind,
+             RELS <! relation & [ ARG0 #ind ] !> ] ].
+
+:end :type.
+
+:begin :instance :status rule.
+
+np-np_crd-pc-t_c := np_coord_paired_comma_rule &
+  [ RNAME ctnp ].
+
+:end :instance.

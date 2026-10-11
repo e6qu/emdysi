@@ -658,6 +658,26 @@ the first development set takes 15 seconds instead of 38 minutes, the
 second 78 seconds instead of about three hours, and the real errors 31
 seconds.
 
+A pruned parse that finds no analysis is retried without pruning, in
+the time left; the retry was kept only if it found an analysis, so a
+retry that finished with fragments only, which proves the sentence is
+outside the grammar, was thrown away and the sentence counted as not
+searched completely (2026-10-11). It is now kept. Of the 23 real errors
+whose sentences were not searched completely, 2 now are; neither is
+claimed, as the grammar-error variant names more than one error in them
+or runs out of time. The flags on the first development set and the real
+errors caught are unchanged (6; 163).
+
+Of the 28 sentences of the coverage sample (first development set)
+without a strict reading that are not cut at *Mr.*, 10 have readings that
+use the ERG's paired comma, which it marks informal: the commas around an
+interruption (*but, unable to contain herself, began*), an alternative
+(*You, or a controller, must delete it*) or a shared object (*similar
+to, but less extreme than, the climate*). Making that comma formal, as
+`register.tdl` does for contractions, was tried and dropped (2026-10-11):
+the same comma also makes *The dog, barked* and *B knows, we arrived*
+strict, which edited English does not write.
+
 ## Stress sentences and ambiguity
 
 [`corpora/stress`](../corpora/stress/README.md) has 66 grammatical
@@ -866,3 +886,110 @@ change only adds analyses:
 | esd | 61 of 62 | 58 of 59 | 57 | 0 |
 | control | 1,292 → 1,298 of 1,305 | 1,494 of 1,582 | 1,384 | 0 |
 | sh-spec | 521 → 544 of 599 | 358 → 361 of 576 | 313 → 314 | 6 → 2 |
+
+The search without pruning that follows a pruned one ran only when the
+pruned search found no complete analysis. Pruning also loses strict
+analyses of sentences it leaves informal ones (*If you must include
+cross-references, consider putting them at the end of the text, like a
+reference, rather than in the middle.*: no strict reading of 240 pruned,
+111 strict of 646 without pruning, in 10 s). Searching again whenever
+there is no strict analysis (2026-10-11, with the grammar extensions of
+the same day; the counts include the fragments cut at *Mr.*):
+
+| | No strict reading (of 300) | Total time |
+|---|---|---|
+| Retry without a complete analysis | 35 | 837 s |
+| Retry without a strict analysis | 27 | 945 s |
+| The same, judging strictness after emdysi's root and derivation conditions | 24 | 994 s |
+
+| Then a beam twice and four times as wide before the search without one | 21 | 828 s |
+
+On a long, ambiguous sentence the search without a beam runs out of its
+budget where a wider beam finds the strict analysis, and finds it sooner,
+so the widening is faster as well. On 300 sentences of the second
+development set it leaves 46 without a strict reading, against 51 with
+the retry alone (and the extensions of the day before the widening).
+
+Of the 24 before the widening, 11 are the fragments cut at *Mr.*; the other 13 include
+gapping (*and of his judgement the highest opinion*), lists of fragments
+joined by semicolons, archaic negation (*knew not how*) and team names
+with a plural verb (*South Africa are*).
+
+### Grammar extensions of 2026-10-11
+
+Exclamations without a verb, comparatives with a shared or extracted
+object (*similar to, but less extreme than, the climate*), collective
+nouns with a plural verb, ranges of amounts (*£3,000-£5,000*), *from* and
+*to* with adjectives, a heavy object after an adjunct, and the search
+retry above. On the gold profiles, against main the same day:
+
+| Profile | Grammatical parsed | Gold tree found | Gold ranked first |
+|---|---|---|---|
+| csli | 938 of 960 (same) | 908 of 921 (same) | 885 (same) |
+| control | 1,298 → 1,297 of 1,305 | 1,494 → 1,495 of 1,582 | 1,384 → 1,383 |
+| sh-spec | 544 → 543 of 599 | 361 → 358 of 576 | 314 (same) |
+| esd, mrs, ccs | same | same | same |
+
+Ungrammatical items parsed are unchanged (csli 254 of 388, control 497 of
+527). The first comparison found larger losses, all from the
+extensions themselves: the heavy-object rule took verb phrases and
+prepositional phrases as objects (*prayed to Athena to take care of
+himself*), and the plural collective entries outranked the singular ones
+and made bare noun phrases (*Chiang became a programmer and in Devito's
+department* parsed as *Devito is departments*); both are fixed. What is
+left comes from search limits on long sentences: the parse of a
+grammatical item that main finished in time now takes 38 seconds with
+four in parallel; above a heavy shift the formal and informal phrases do
+not pack together, so the beam keeps fewer of the informal analyses the
+gold trees use; and the retry without pruning, now run on sentences with
+informal readings only, finds more readings, which can push the gold tree
+out of the first 1,000.
+
+### Checks after the extensions and the speed work
+
+On the final state of the branch (2026-10-11):
+
+| Measure | main | Here |
+|---|---|---|
+| False flags, first development set (2,498 sentences) | 6 | 6 |
+| False flags, second development set (13,442 sentences) | 83 | 84 |
+| Real errors caught (377) | 163 | 163 |
+
+| Gold profile | Grammatical parsed | Gold tree found | Gold ranked first |
+|---|---|---|---|
+| csli | 938 of 960 (same) | 908 of 921 (same) | 885 (same) |
+| control | 1,298 → 1,299 of 1,305 | 1,494 (same) of 1,582 | 1,384 → 1,382 |
+| sh-spec | 544 → 560 of 599 | 361 → 357 of 576 | 314 → 313 |
+| esd, mrs, ccs | same | same | same |
+
+Two flags on the second development set were new. *PRs welcome!* now has
+a strict reading (an exclamation without a verb) that reads the unknown
+*PRs* generically, and the grammar-error variant read it as the plural of
+a mass noun; the plural of an acronym is now a name there too, as an
+acronym already was. The other stays: *My younger sister has left all her
+friends--has eloped; has thrown herself into the power of--of Mr.
+Wickham.* is outside the grammar (verb phrases joined by a dash and a
+semicolon, without a conjunction), the search without pruning now
+finishes and proves it, and the grammar-error variant's best analysis
+makes *her friends--* the subject of *has eloped*.
+
+## Parser speed
+
+Changes to the parser that leave its results as they were, checked by
+listing every reading of every sentence (root, score, derivation) with
+`cargo run --release -p emdysi-parse --example dump` before and after
+(2026-10-11; times with other measurements running on the same machine):
+
+| Change | 60 sentences of the dev sample |
+|---|---|
+| Before | 183 s |
+| Unpack readings lazily: an edge's instantiations are made as they are needed, in the order the eager unpacking gave them (best first over the grid of daughter instantiations, bounded by the best score the rule can give) | 127 s |
+| 60 more quick-check paths, where the unifier most often failed past the ERG's 79 (learned on 30 sentences of the second development set) | 124 s |
+| The cycle check after a copy only when an arc points back | 122 s |
+| The unifier copies its sources' nodes and arcs into flat tables, so a handle is one lookup | 109 s |
+| Quick-check vectors read in one walk over a trie of the paths | 103 s |
+
+On the 300 sentences of the coverage sample, the time went from 824 s
+to 552 s; 297 of 299 sentences got the same readings, and the other two
+were cut off by the time limit before and finish now (*See paragraphs
+(c) through (h) of Section 51 ...*: 61 s, now 23 s).

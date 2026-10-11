@@ -54,6 +54,16 @@ pub fn tag(form: &str, initial: bool) -> Vec<Tag> {
     }
     let capitalized = chars[0].is_uppercase();
     if capitalized && !initial {
+        // A capitalized plural may be a family or team name: |the Bennets|,
+        // |the Giants| (grammar/emdysi/lexicon.tdl gives NNPS a plural name
+        // that needs a determiner).
+        let plural = lower.ends_with('s')
+            && !["ss", "us", "is", "'s", "’s"]
+                .iter()
+                .any(|e| lower.ends_with(e));
+        if plural {
+            return tags(&[("NNP", 0.6), ("NNPS", 0.25), ("NN", 0.15)]);
+        }
         return tags(&[("NNP", 0.8), ("NN", 0.2)]);
     }
     let mut out = if lower.ends_with("ly") {

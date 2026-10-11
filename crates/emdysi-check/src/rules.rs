@@ -1790,12 +1790,17 @@ fn named_errors(s: &crate::Sentence, alternatives: bool) -> Vec<GrammarError> {
                 .get(f + 1..t)
                 .is_some_and(|m| m.iter().all(|&c| c == 'x'))
     };
-    // An acronym (|CEL|, |RBAC|) is a name, whatever the grammar knows of it.
+    // An acronym (|CEL|, |RBAC|) or its plural (|PRs|, |APIs|) is a name,
+    // whatever the grammar knows of it.
     let acronym = |f: usize, t: usize| {
         let w: String = original
             .get(f..t)
             .map(|c| c.iter().collect())
             .unwrap_or_default();
+        let w = w
+            .strip_suffix('s')
+            .filter(|s| s.chars().count() >= 2)
+            .unwrap_or(&w);
         w.chars().count() >= 2
             && w.chars()
                 .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
@@ -1822,7 +1827,9 @@ fn named_errors(s: &crate::Sentence, alternatives: bool) -> Vec<GrammarError> {
                     .collect()
             })
             .unwrap_or_default();
-        out.retain(|e| unknown.iter().any(|&(f, t)| e.from < t && f < e.to));
+        out.retain(|e| {
+            unknown.iter().any(|&(f, t)| e.from < t && f < e.to) && !acronym(e.from, e.to)
+        });
     }
     // An alternative that is not an error (a licensed capital) leaves an
     // analysis without one.

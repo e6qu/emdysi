@@ -96,6 +96,82 @@ pub struct Erg {
     mal: std::sync::OnceLock<Option<Box<Erg>>>,
 }
 
+/// Marker rules of emdysi's grammar extensions whose marker closes a
+/// bracket (see [`Erg::licensed`]).
+const BRACKETED_MARKERS: &[&str] = &["mrk-nh_cl-pc_c", "mrk-nh_evnt-pc_c"];
+
+/// Quick-check paths beyond the ERG's (`ace/ace-erg-qc.txt`): the paths
+/// where emdysi's unifier most often found a clash that those let through,
+/// on 30 sentences of the second development set (2026-10-11). A path
+/// only lets the parser skip a unification that would fail, so more paths
+/// cannot change a result, only save time.
+const EXTRA_QC_PATHS: &[&str] = &[
+    "SYNSEM LOCAL CAT VAL SUBJ FIRST LOCAL CAT HEAD",
+    "SYNSEM NONLOC SLASH LIST FIRST CAT HEAD MINORS MIN",
+    "SYNSEM LOCAL CAT VAL COMPS FIRST LOCAL CAT HEAD VFORM",
+    "SYNSEM LOCAL CAT HEAD MOD FIRST PUNCT RPUNCT",
+    "SYNSEM LOCAL CAT VAL COMPS FIRST LOCAL CAT HEAD PRD",
+    "SYNSEM LOCAL CAT VAL SPR FIRST LOCAL CAT HEAD MINORS MIN",
+    "SYNSEM LOCAL CAT VAL COMPS FIRST LOCAL CAT HEAD MOD FIRST",
+    "SYNSEM LOCAL CAT HEAD MOD FIRST LOCAL CAT VAL SPR",
+    "SYNSEM LOCAL CAT VAL COMPS FIRST LOCAL CAT VAL SPR FIRST OPT",
+    "SYNSEM LOCAL CAT HEAD MOD FIRST LOCAL CAT HEAD MINORS ALTMIN",
+    "SYNSEM LOCAL CAT HEAD MOD FIRST MODIFD RPERIPH",
+    "SYNSEM LOCAL CAT VAL COMPS FIRST --MIN",
+    "SYNSEM NONLOC SLASH LIST FIRST CAT HEAD VFORM",
+    "SYNSEM LOCAL CAT VAL COMPS FIRST LOCAL CAT VAL SPR",
+    "SYNSEM LOCAL CAT VAL COMPS REST FIRST LOCAL CAT HEAD",
+    "SYNSEM LOCAL CAT VAL COMPS FIRST LOCAL CONT HOOK INDEX",
+    "SYNSEM LOCAL CAT VAL COMPS FIRST LOCAL CAT MC",
+    "SYNSEM NONLOC SLASH LIST FIRST CAT HEAD PRD",
+    "SYNSEM LOCAL CAT HEAD MOD FIRST NONLOC SLASH LIST",
+    "SYNSEM LOCAL CAT VAL COMPS FIRST LOCAL CAT HEAD TAM TENSE",
+    "SYNSEM LOCAL CAT VAL COMPS FIRST LOCAL CAT VAL COMPS",
+    "SYNSEM MODIFD RPERIPH",
+    "SYNSEM LOCAL CAT VAL COMPS FIRST NONLOC SLASH LIST",
+    "SYNSEM LOCAL CAT HEAD MOD FIRST LOCAL CAT VAL COMPS",
+    "SYNSEM LOCAL CAT VAL COMPS FIRST LOCAL CAT VAL SUBJ",
+    "SYNSEM LOCAL CAT VAL COMPS FIRST LOCAL CAT VAL SUBJ FIRST",
+    "SYNSEM LOCAL CAT VAL COMPS FIRST LOCAL CAT HEAD MINORS MIN",
+    "SYNSEM NONLOC SLASH LIST RESULT LIST",
+    "SYNSEM LOCAL CAT HEAD MOD FIRST LOCAL CAT MC",
+    "SYNSEM NONLOC SLASH LIST FIRST CAT HEAD MOD FIRST",
+    "SYNSEM LOCAL CONJ CPUNCT",
+    "SYNSEM LOCAL CAT HEAD MOD FIRST LOCAL CAT HEAD MOD FIRST",
+    "SYNSEM LOCAL CAT HEAD MOD FIRST LOCAL CAT HEAD AUX",
+    "SYNSEM LOCAL CAT VAL COMPS FIRST LOCAL AGR PNG PN",
+    "SYNSEM NONLOC SLASH LIST FIRST CAT MC",
+    "SYNSEM NONLOC SLASH LIST FIRST CAT HEAD MOD FIRST LOCAL CAT HEAD",
+    "SYNSEM LOCAL CAT VAL COMPS FIRST --SIND",
+    "SYNSEM LOCAL CAT HEAD MOD FIRST LOCAL CAT VAL SUBJ FIRST OPT",
+    "SYNSEM LOCAL CAT HEAD MOD FIRST MODIFD LPERIPH",
+    "SYNSEM NONLOC SLASH LIST FIRST CAT HEAD MINORS NORM",
+    "SYNSEM LOCAL CAT VAL COMPS FIRST LOCAL CAT VAL SUBJ FIRST OPT",
+    "SYNSEM LOCAL CAT VAL COMPS FIRST LOCAL CAT HEAD MINORS ALTMIN",
+    "SYNSEM LOCAL CAT VAL COMPS REST FIRST",
+    "SYNSEM LOCAL CAT VAL COMPS FIRST LOCAL CAT HEAD MINORS NORM",
+    "SYNSEM LOCAL CAT VAL SUBJ FIRST LOCAL CAT HEAD VFORM",
+    "SYNSEM LOCAL CAT HEAD MOD FIRST LOCAL CAT POSTHD",
+    "SYNSEM LOCAL CAT VAL SUBJ FIRST LOCAL CAT HEAD PRD",
+    "SYNSEM NONLOC SLASH LIST FIRST CAT HEAD INV",
+    "SYNSEM LOCAL CAT VAL SUBJ FIRST LOCAL AGR PNG PN",
+    "SYNSEM LOCAL CAT VAL COMPS FIRST LOCAL CAT HEAD MOD",
+    "SYNSEM LOCAL CAT VAL COMPS FIRST LOCAL CAT VAL SPR REST FIRST OPT",
+    "SYNSEM LOCAL CAT VAL COMPS FIRST LOCAL CAT VAL SPR FIRST --MIN",
+    "SYNSEM LOCAL AGR DIV",
+    "SYNSEM LOCAL CAT VAL COMPS FIRST LOCAL CAT VAL SPR FIRST",
+    "SYNSEM NONLOC SLASH LIST FIRST CAT HEAD CASE",
+    "SYNSEM LOCAL CAT VAL COMPS FIRST LOCAL CAT HS-LEX",
+    "SYNSEM LOCAL CAT VAL COMPS REST FIRST LOCAL CAT HEAD VFORM",
+    "SYNSEM NONLOC SLASH LIST FIRST AGR PNG PN",
+    "SYNSEM LOCAL CAT HEAD MOD FIRST LOCAL CAT HEAD VFORM",
+    "SYNSEM LOCAL CONJ LINDIV",
+];
+
+/// Degree words whose "than" phrase has a gap
+/// (`grammar/emdysi/comparatives.tdl`).
+const GAP_DEGREE_WORDS: &[&str] = &["more_deg_gap", "less_deg_gap"];
+
 /// The ACE configuration of the ERG's grammar-error variant.
 pub const MAL_CONFIG: &str = "ace/config-mal.tdl";
 
@@ -108,7 +184,10 @@ pub const DEFAULT_MODEL: &str = include_str!("../data/rank.tsv");
 /// Whether a root condition name is the ERG's strict one (formal edited
 /// text), in American or British spelling.
 pub fn is_strict(root: &str) -> bool {
-    root == "root_strict" || root == "root_strict_br"
+    matches!(
+        root.trim_end_matches("_br"),
+        "root_strict" | "root_strict_excl"
+    )
 }
 
 /// Replace `DIALECT us` in the top-level feature structure of a root
@@ -332,6 +411,13 @@ impl Erg {
             }
             None => emdysi_repp::erg(dir).map_err(err)?,
         };
+        // emdysi's tokenizer rules (grammar/emdysi/tokenizer.rpp), applied
+        // after the ERG's.
+        let mut repp = repp;
+        let ext_rpp = ext_dir.join("tokenizer.rpp");
+        if ext_rpp.exists() {
+            repp.extend(&ext_rpp).map_err(err)?;
+        }
         let mut u = Unifier::new();
         let token_mapping =
             compile_rules(&grammar, "token-mapping-rule", &mut u).map_err(|e| err(e.0))?;
@@ -361,13 +447,18 @@ impl Erg {
             token_form: path("+FORM")?,
         };
 
-        let qc = QuickCheck::parse_ace(
+        let mut qc = QuickCheck::parse_ace(
             &grammar,
             &std::fs::read_to_string(
                 setting_path("quickcheck-code").unwrap_or_else(|| dir.join("ace/ace-erg-qc.txt")),
             )
             .map_err(err)?,
         );
+        for p in EXTRA_QC_PATHS {
+            if let Some(path) = grammar.path(p) {
+                qc.add_path(path);
+            }
+        }
         let args = grammar.feat("ARGS").ok_or_else(|| err("no ARGS feature"))?;
         let spanning: HashSet<String> = ace_setting(&config_src, "spanning-only-rules")
             .into_iter()
@@ -416,6 +507,37 @@ impl Erg {
             rule.spanning_only = spanning.contains(&inst.name);
             rules.push(rule);
         }
+        // A degree word whose "than" phrase has a gap (see
+        // grammar/emdysi/comparatives.tdl) heads a phrase that only the
+        // head-complement phrase that passes the gap up may take: the ERG's
+        // own would lose the gap.
+        let rule_index = |rules: &[Rule], name: &str| rules.iter().position(|r| r.name == name);
+        if let (Some(spec), Some(passes)) = (
+            rule_index(&rules, "sp-hd_hc_c"),
+            rule_index(&rules, "hd-cmp_u-than-sl_c"),
+        ) {
+            rules[spec].sealed_heads = GAP_DEGREE_WORDS
+                .iter()
+                .filter_map(|w| grammar.instance_index.get(*w).copied())
+                .collect();
+            rules[spec].sealed_parents = vec![passes];
+        }
+        // A formal adjunct before an object takes only a heavy object (see
+        // grammar/emdysi/heavy.tdl).
+        if let Some(hcomp) = rule_index(&rules, "hd-cmp_u_c") {
+            for name in ["hd-aj_vmod-hv_c", "hd-aj_vmod-s-hv_c"] {
+                if let Some(r) = rule_index(&rules, name) {
+                    rules[r].heavy_object_parents = vec![hcomp];
+                }
+            }
+            // A sluice with a phrase is a verb's complement only (see
+            // grammar/emdysi/sluicing.tdl).
+            for name in ["cl_sluice-np_c", "cl_sluice-pp_c"] {
+                if let Some(r) = rule_index(&rules, name) {
+                    rules[r].complement_of = vec![hcomp];
+                }
+            }
+        }
 
         let mut roots = Vec::new();
         for name in ace_setting(&config_src, "parsing-roots") {
@@ -450,6 +572,28 @@ impl Erg {
                 )
         };
         let preferred_roots = roots.iter().take_while(|(n, _)| sentence_root(n)).count();
+        // emdysi's strict roots (grammar/emdysi/settings.cfg) follow them:
+        // they take phrases, and most of their readings are fragments.
+        let extra: Vec<String> = std::fs::read_to_string(dir.join("../emdysi/settings.cfg"))
+            .map(|src| ace_setting(&src, "strict-roots"))
+            .unwrap_or_default();
+        let mut at = preferred_roots;
+        for name in &extra {
+            let inst = grammar
+                .instance(name)
+                .ok_or_else(|| err(format!("no root {name}")))?;
+            let dag = grammar.expand(&inst.body, &mut u).map_err(Error)?;
+            let mut br = inst.body.clone();
+            let twin = set_dialect(&mut br, "br");
+            let mut new = vec![(name.clone(), Arc::new(dag))];
+            if twin {
+                let dag = grammar.expand(&br, &mut u).map_err(Error)?;
+                new.push((format!("{name}_br"), Arc::new(dag)));
+            }
+            let n = new.len();
+            roots.splice(at..at, new);
+            at += n;
+        }
         let deleted_daughters = ace_setting(&config_src, "deleted-daughters")
             .iter()
             .filter_map(|f| grammar.feat(f))
@@ -481,6 +625,13 @@ impl Erg {
             preferred_roots,
             unpack_beam: 100,
             fragments: true,
+            // emdysi's plural generic name (grammar/emdysi/lexicon.tdl).
+            unfiltered: grammar
+                .instance_index
+                .get("genericname_pl_def")
+                .copied()
+                .into_iter()
+                .collect(),
         };
         let lexicon = Lexicon::new(&grammar, morph, lex_paths);
         let labeler = Labeler::new(&grammar, &mut u).ok_or_else(|| err("no parse-node labels"))?;
@@ -673,7 +824,13 @@ impl Erg {
             .with_scorer(&scorer)
             .parse(&lat, items)
         };
-        let strict = |r: &ParseResult| r.readings.iter().any(|r| is_strict(&r.root));
+        // Strict as the readings returned are: under a strict root once
+        // emdysi's conditions on derivations and roots are applied.
+        let strict = |r: &ParseResult| {
+            r.readings.iter().any(|r| {
+                is_strict(&self.licensed_root(&r.root, &r.deriv)) && self.licensed(&r.deriv)
+            })
+        };
         let complete = |r: &ParseResult| r.readings.iter().any(|r| r.root != "fragment");
         // With chart pruning, a narrow beam first; the configured one only
         // when that finds no strict analysis and time remains.
@@ -705,11 +862,40 @@ impl Erg {
             }
             _ => run(config, items.clone()),
         };
+        // A wider beam, twice and then four times as wide, before searching
+        // without one: on a long, ambiguous sentence the search without a
+        // beam runs out of its budget where a wider beam finds the strict
+        // analysis (|Every day at Longbourn was now a day of anxiety; but
+        // the most anxious part of each was when the post was expected.|:
+        // none at 40, strict at 80 in 4.5 seconds; out of budget at 320 and
+        // without a beam).
+        let mut result = result;
+        if let Some(beam) = config.cell_beam {
+            for factor in [2, 4] {
+                let left = config.timeout.saturating_sub(t0.elapsed());
+                if strict(&result)
+                    || left < Duration::from_secs(1)
+                    || result.positions <= config.cell_beam_from
+                {
+                    break;
+                }
+                let wider = ParserConfig {
+                    cell_beam: Some(beam * factor),
+                    timeout: left,
+                    ..config.clone()
+                };
+                let r = run(&wider, items.clone());
+                if strict(&r) || (complete(&r) && !complete(&result)) {
+                    result = r;
+                }
+            }
+        }
         // Pruning can make a full analysis of a long sentence impossible:
-        // with no complete analysis, try again without pruning in the time
+        // with no strict analysis, try again without pruning in the time
         // left (on the AI-prose treebank, 13 of 17 sentences that got only
-        // fragments then get a full analysis within 10 seconds).
-        let result = if !complete(&result)
+        // fragments then get a full analysis within 10 seconds; pruning
+        // also loses strict analyses of sentences it leaves informal ones).
+        let result = if !strict(&result)
             && config.cell_beam.is_some()
             && result.positions > config.cell_beam_from
             && config.timeout.saturating_sub(t0.elapsed()) >= Duration::from_secs(1)
@@ -720,7 +906,19 @@ impl Erg {
                 ..config.clone()
             };
             let r = run(&exhaustive, items);
-            if complete(&r) { r } else { result }
+            // A search without pruning that finishes is kept even with
+            // fragments only: it proves the sentence is outside the
+            // grammar, which the pruned search cannot.
+            let better = if complete(&result) {
+                strict(&r)
+            } else {
+                complete(&r)
+            };
+            if better || (!r.exhausted && r.stats.pruned == 0) {
+                r
+            } else {
+                result
+            }
         } else {
             result
         };
@@ -775,11 +973,22 @@ impl Erg {
         let mut scored: Vec<(f64, Vec<String>, &emdysi_hpsg::parser::Reading)> = result
             .readings
             .iter()
+            .filter(|r| self.licensed(&r.deriv))
             .map(|r| {
                 let features = rank::features(&self.grammar, &self.rules, &r.deriv, &r.root);
                 (self.model.score(&features), features, r)
             })
             .collect();
+        // A collective noun with a plural verb (|The team are ready|, type
+        // n_-_c-pl-nomcase_le) is needed only where the verb agrees: when a
+        // strict reading does without one, readings with one say nothing
+        // more, and outrank the singular in the ranker, which saw few.
+        let plural_collective = |d: &Deriv| self.uses_le_type(d, "n_-_c-pl-nomcase_le");
+        if scored.iter().any(|(_, _, r)| {
+            is_strict(&self.licensed_root(&r.root, &r.deriv)) && !plural_collective(&r.deriv)
+        }) {
+            scored.retain(|(_, _, r)| !plural_collective(&r.deriv));
+        }
         scored.sort_by(|a, b| b.0.total_cmp(&a.0));
         let readings = scored
             .into_iter()
@@ -794,7 +1003,7 @@ impl Erg {
                         .mrs
                         .as_ref()
                         .and_then(|c| emdysi_hpsg::mrs::extract(&self.grammar, c, &r.dag)),
-                    root: r.root.clone(),
+                    root: self.licensed_root(&r.root, &r.deriv),
                     derivation: derivation(&self.grammar, &self.rules, &r.deriv, &forms),
                     // Labelling costs unifications; only the best readings get trees.
                     tree: (i < self.trees_for).then(|| {
@@ -817,6 +1026,101 @@ impl Erg {
             elapsed: t0.elapsed(),
             temperature: self.model.temperature,
         })
+    }
+
+    /// Whether a derivation meets the conditions of emdysi's grammar
+    /// extensions that their TDL cannot state, because the ERG removes the
+    /// daughters from a phrase's structure. A marker that ends in a formal
+    /// comma (`mrk-nh_cl-pc_c`, `mrk-nh_evnt-pc_c`, see
+    /// `grammar/emdysi/conjunctions.tdl`) closes a bracket that a comma
+    /// after its conjunction opens: |but, in the end, Sandy left|, not
+    /// *|and in the end, left|.
+    fn licensed(&self, d: &Deriv) -> bool {
+        let ends_in_comma = |d: &Deriv| {
+            let mut d = d;
+            loop {
+                match &d.kind {
+                    EdgeKind::Lex { inst, .. } => {
+                        return self.grammar.instances[*inst].name.starts_with("comma");
+                    }
+                    _ => match d.daughters.last() {
+                        Some(last) => d = last,
+                        None => return false,
+                    },
+                }
+            }
+        };
+        // A sluice (grammar/emdysi/sluicing.tdl) is a short wh-phrase:
+        // with a relative clause it is the clause of an embedded question
+        // (|I wonder which book he read|).
+        if let EdgeKind::Rule(ri) = &d.kind {
+            if self.rules[*ri].name.starts_with("cl_sluice-") && self.has_relative_clause(d) {
+                return false;
+            }
+        }
+        if let EdgeKind::Rule(ri) = &d.kind {
+            if BRACKETED_MARKERS.contains(&self.rules[*ri].name.as_str()) {
+                // The marker is the conjunction with its adjunct; its head,
+                // the conjunction, must carry the opening comma.
+                let opened = d
+                    .daughters
+                    .first()
+                    .and_then(|m| m.daughters.first())
+                    .is_some_and(|conj| ends_in_comma(conj));
+                if !opened {
+                    return false;
+                }
+            }
+        }
+        d.daughters.iter().all(|x| self.licensed(x))
+    }
+
+    /// Whether a derivation has a relative clause.
+    fn has_relative_clause(&self, d: &Deriv) -> bool {
+        match &d.kind {
+            EdgeKind::Rule(r) => {
+                let name = self.rules[*r].name.as_str();
+                name.starts_with("cl_rc")
+                    || name.starts_with("hdn-aj_rc")
+                    || name.starts_with("hdn-aj_redrel")
+                    || d.daughters.iter().any(|x| self.has_relative_clause(x))
+            }
+            _ => false,
+        }
+    }
+
+    /// Whether a derivation has a lexical entry of this type.
+    fn uses_le_type(&self, d: &Deriv, le_type: &str) -> bool {
+        match &d.kind {
+            EdgeKind::Lex { inst, .. } => self.le_types[*inst] == le_type,
+            _ => d.daughters.iter().any(|x| self.uses_le_type(x, le_type)),
+        }
+    }
+
+    /// The root of a reading, after the condition the root conditions of
+    /// emdysi's grammar extensions cannot state: a phrase without a verb is
+    /// strict as an exclamation (`root_strict_excl`, see
+    /// `grammar/emdysi/roots.tdl`) only if it ends in an exclamation mark,
+    /// and a formal fragment (`root_frag`) otherwise. (The parser gives a
+    /// derivation the first root it meets, so the fragment root does not
+    /// have it too.)
+    fn licensed_root(&self, root: &str, d: &Deriv) -> String {
+        if root.trim_end_matches("_br") != "root_strict_excl" {
+            return root.to_string();
+        }
+        let mut last = d;
+        while let Some(x) = last.daughters.last() {
+            last = x;
+        }
+        let bang = match &last.kind {
+            EdgeKind::Lex { inst, .. } => self.grammar.instances[*inst].name == "bang_pct",
+            _ => false,
+        };
+        if bang {
+            root.to_string()
+        } else {
+            root.replace("root_strict_excl", "root_frag")
+        }
     }
 
     /// Whether the grammar knows a word form, directly or through its

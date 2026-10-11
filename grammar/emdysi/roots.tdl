@@ -1,0 +1,23 @@
+;;; Exclamations without a verb: |What a contrast!|, |What a contrast
+;;; between him and his friend!|, |Nonsense!|
+;;;
+;;; The ERG's strict root (root_strict) takes clauses only; it analyses a
+;;; phrase without a verb as a fragment (root_frag), formal or not, which
+;;; is right for |The cat.| but not for an exclamation, standard in edited
+;;; prose. This root is root_frag for edited prose (GENRE edited, as
+;;; root_strict) with clause punctuation; settings.cfg makes it a strict
+;;; root. The punctuation's sentence force does not tell |!| from |.|
+;;; (both punct-prop-comm), so the parser keeps a reading under this root
+;;; as strict only if it ends in an exclamation mark, and as root_frag
+;;; otherwise (Erg::licensed_root).
+
+:begin :instance.
+
+root_strict_excl := sign &
+  [ SYNSEM root_frag_synsem &
+	   [ PUNCT.RPUNCT basic_clause_punct ],
+    GENRE edited,
+    DIALECT us,
+    ORTH root_orth ].
+
+:end :instance.

@@ -99,6 +99,13 @@ fn checks_and_fixes() {
         !rules_at(src4, &d4, "dog").contains(&"core.grammar-errors"),
         "{d4:?}"
     );
+    // The plural of an acronym is a name, not a plural of a mass noun.
+    let src4b = "PRs welcome!\n";
+    let d4b = checker.check(&erg, &analyze(&erg, src4b, Format::Plain, &opts));
+    assert!(
+        !rules_at(src4b, &d4b, "PRs").contains(&"core.grammar-errors"),
+        "{d4b:?}"
+    );
 
     // Checks on the semantics.
     let src5 = "This approach is better. The report was written. We did not see nothing. This shows that it works. The kitchen is larger than before.\n";

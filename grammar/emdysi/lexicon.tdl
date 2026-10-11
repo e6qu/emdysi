@@ -596,3 +596,480 @@ improbable_a2 := aj_cp_i-it_le &
              PHON.ONSET voc ] ].
 
 :end :instance.
+
+;;; Collective nouns with plural agreement: |The team are ready.| The
+;;; ERG has this for "class", "committee" and "government" only, as
+;;; British (type n_-_c-pl-nomcase_le, DIALECT br, e.g. committee_n2_br);
+;;; these are other common ones in the same form, with the predicate of
+;;; the ERG's own entry. "majority", "minority" and "staff" take a plural
+;;; verb in American English too, so they have no dialect. Unlike the
+;;; ERG's, these need an explicit determiner (SPR..--MIN explicit_q_rel):
+;;; as plurals they would otherwise make a bare noun phrase of the singular
+;;; form (|*I like team.|, |*Devito's department| read as |Devito is
+;;; departments|).
+
+:begin :instance :status lex-entry.
+
+team_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "team" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_team_n_of_rel",
+            PHON.ONSET con ] ].
+
+staff_n_pl := n_-_c-pl-nomcase_le &
+ [ ORTH < "staff" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_staff_n_of_rel",
+            PHON.ONSET con ] ].
+
+family_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "family" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_family_n_of_rel",
+            PHON.ONSET con ] ].
+
+council_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "council" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_council_n_of_rel",
+            PHON.ONSET con ] ].
+
+board_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "board" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_board_n_of_rel",
+            PHON.ONSET con ] ].
+
+crew_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "crew" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_crew_n_of_rel",
+            PHON.ONSET con ] ].
+
+club_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "club" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_club_n_1_rel",
+            PHON.ONSET con ] ].
+
+party_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "party" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_party_n_of-to_rel",
+            PHON.ONSET con ] ].
+
+audience_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "audience" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_audience_n_1_rel",
+            PHON.ONSET voc ] ].
+
+band_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "band" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_band_n_1_rel",
+            PHON.ONSET con ] ].
+
+cabinet_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "cabinet" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_cabinet_n_1_rel",
+            PHON.ONSET con ] ].
+
+company_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "company" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_company_n_of_rel",
+            PHON.ONSET con ] ].
+
+jury_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "jury" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_jury_n_1_rel",
+            PHON.ONSET con ] ].
+
+majority_n_pl := n_-_c-pl-nomcase_le &
+ [ ORTH < "majority" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_majority_n_of_rel",
+            PHON.ONSET con ] ].
+
+public_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "public" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_public_n_1_rel",
+            PHON.ONSET con ] ].
+
+squad_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "squad" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_squad_n_of_rel",
+            PHON.ONSET con ] ].
+
+union_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "union" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_union_n_of_rel",
+            PHON.ONSET con ] ].
+
+management_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "management" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_management_n_1_rel",
+            PHON.ONSET con ] ].
+
+firm_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "firm" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_firm_n_1_rel",
+            PHON.ONSET con ] ].
+
+department_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "department" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_department_n_of_rel",
+            PHON.ONSET con ] ].
+
+group_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "group" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_group_n_of_rel",
+            PHON.ONSET con ] ].
+
+panel_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "panel" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_panel_n_of_rel",
+            PHON.ONSET con ] ].
+
+orchestra_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "orchestra" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_orchestra_n_1_rel",
+            PHON.ONSET voc ] ].
+
+choir_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "choir" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_choir_n_1_rel",
+            PHON.ONSET con ] ].
+
+army_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "army" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_army_n_of_rel",
+            PHON.ONSET voc ] ].
+
+navy_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "navy" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_navy_n_1_rel",
+            PHON.ONSET con ] ].
+
+press_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "press" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_press_n_1_rel",
+            PHON.ONSET con ] ].
+
+faculty_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "faculty" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_faculty_n_1_rel",
+            PHON.ONSET con ] ].
+
+parliament_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "parliament" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_parliament_n_1_rel",
+            PHON.ONSET con ] ].
+
+side_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "side" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_side_n_1_rel",
+            PHON.ONSET con ] ].
+
+population_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "population" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_population_n_1_rel",
+            PHON.ONSET con ] ].
+
+community_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "community" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_community_n_of_rel",
+            PHON.ONSET con ] ].
+
+minority_n_pl := n_-_c-pl-nomcase_le &
+ [ ORTH < "minority" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_minority_n_of_rel",
+            PHON.ONSET con ] ].
+
+generation_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "generation" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_generation_n_of_rel",
+            PHON.ONSET con ] ].
+
+electorate_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "electorate" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_electorate_n_1_rel",
+            PHON.ONSET voc ] ].
+
+congregation_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "congregation" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_congregation_n_of_rel",
+            PHON.ONSET con ] ].
+
+crowd_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "crowd" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_crowd_n_of_rel",
+            PHON.ONSET con ] ].
+
+gang_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "gang" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_gang_n_of_rel",
+            PHON.ONSET con ] ].
+
+regiment_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "regiment" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_regiment_n_1_rel",
+            PHON.ONSET con ] ].
+
+administration_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "administration" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_administration_n_of_rel",
+            PHON.ONSET voc ] ].
+
+association_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "association" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_association_n_of_rel",
+            PHON.ONSET voc ] ].
+
+bank_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "bank" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_bank_n_of_rel",
+            PHON.ONSET con ] ].
+
+federation_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "federation" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_federation_n_1_rel",
+            PHON.ONSET con ] ].
+
+league_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "league" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_league_n_of_rel",
+            PHON.ONSET con ] ].
+
+ministry_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "ministry" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_ministry_n_of_rel",
+            PHON.ONSET con ] ].
+
+partnership_n_pl_br := n_-_c-pl-nomcase_le &
+ [ DIALECT br,
+   ORTH < "partnership" >,
+   SYNSEM [ LOCAL.CAT.VAL.SPR.FIRST.--MIN explicit_q_rel,
+            LKEYS.KEYREL.PRED "_partnership_n_1_rel",
+            PHON.ONSET con ] ].
+
+:end :instance.
+
+;;; "from" and "to" with adjectives: |The leaves range from yellowish to
+;;; bluish.|, |It went from bad to worse.| The ERG's "from ... to"
+;;; (from_to_nontemp, type p_np-pp_i-frm-to_le) takes noun phrases only.
+;;; from_to_adj is its copy for a predicative adjective phrase, and its
+;;; "to" phrase is to_prtcl_adj: a semantically empty "to" with an
+;;; adjective phrase, in the type of the ERG's "of" in |the opposite of
+;;; happy| (p_prd_ptcl-j_le), keyed _to_p_adj_rel so that nothing that
+;;; selects an ordinary "to" phrase (|belong to|) takes it.
+
+:begin :type.
+
+_to_p_adj_rel := selected_prep_rel.
+
+;; The ERG's ditrans_prep_synsem, p_ditrans_lexent and
+;; p_ditrans_from_to_lexent, for an adjective phrase as first complement:
+;; without its individual index (ARG2 overt_non_expl-ind) and nominal
+;; MINORS (MIN nonpro_rel, ALTMIN quant_rel).
+ditrans_prep_adj_synsem := prep_p_mod_synsem & norm_prep_synsem & basic_two_arg &
+  [ LOCAL [ CAT [ HEAD prep & [ PRD + ],
+                  VAL [ SPR < [ LOCAL [ CAT [ HEAD.MINORS
+                                                 [ MIN much_deg_rel,
+                                                   ALTMIN abstr_meas_nom_rel ],
+                                            VAL [ SPR *olist*,
+                                                  SPEC < synsem >,
+                                                  COMPS < > ] ],
+                                      CONT.HOOK [ LTOP #ltop,
+                                                  XARG #arg0 ] ] ] >,
+                      COMPS < [ --MIN #cmin,
+                                NONLOC.QUE.LIST *paramlist*,
+                                --SIND #objind ],
+                              [ --MIN #ocmin,
+                                LOCAL [ CAT.HEAD.TAM [ ASPECT no_aspect ],
+					CONT.HOOK.LTOP #ltop ] ] > ] ],
+	    CONT.RELS.LIST < prep_relation & #keyrel &
+                             [ ARG2 #objind,
+                               LBL #ltop,
+                               ARG0 #arg0 ], ... > ],
+    LKEYS [ KEYREL #keyrel,
+	    --COMPKEY #cmin,
+            --OCOMPKEY #ocmin ] ].
+
+p_ditrans_from_to_adj_lexent := noncqrs-m &
+  [ SYNSEM ditrans_prep_adj_synsem &
+	 [ LOCAL [ CAT.VAL.COMPS < synsem & [ LOCAL [ CONJ cnil ],
+                                            OPT - ],
+                                 synsem & [ LOCAL [ CAT [ MC na,
+							  VAL.COMPS < > ],
+						    CONT.HOOK [ LTOP #ltop,
+								INDEX non_expl,
+								XARG #xarg ] ],
+                                            NONLOC.QUE.LIST *paramlist*,
+                                            OPT -,
+                                            PUNCT.LPUNCT no_punct ] >,
+                   CONT.HOOK [ LTOP #ltop,
+			       XARG #xarg ] ],
+           LKEYS [ KEYREL.LBL #ltop,
+                   --COMPKEY #cmin,
+                   --+COMPKEY #cmin,
+                   --OCOMPKEY #ocmin,
+                   --+OCOMPKEY #ocmin ] ] ].
+
+;; The "to" phrase is semantically empty (to_prtcl_adj), so this "from"
+;; also contributes the relation of "to", as the ERG's "to" does with a
+;; noun phrase: |range from yellow to blue| means the same either way.
+p_ap-pp_i-frm-to_le := p_ditrans_from_to_adj_lexent &
+  [ SYNSEM [ LOCAL [ CAT.VAL.COMPS < [ OPT -,
+				       LOCAL [ CAT [ HEAD adj & [ PRD + ],
+						     VAL.COMPS < > ],
+					       CONT.HOOK.LTOP #ltop ] ],
+				     [ LOCAL.CONT.HOOK.INDEX #toind ] >,
+                     CONT [ HOOK.LTOP #ltop,
+			    RELS <! relation & [ ARG1 #arg1 ],
+				    [ PRED _to_p_rel,
+				      LBL #ltop,
+				      ARG0 event,
+				      ARG1 #arg1,
+				      ARG2 #toind ] !>,
+                            HCONS <! !>,
+			    ICONS <! !> ] ] ] ].
+
+:end :type.
+
+:begin :instance :status lex-entry.
+
+from_to_adj := p_ap-pp_i-frm-to_le &
+ [ ORTH < "from" >,
+   SYNSEM [ LKEYS [ --OCOMPKEY _to_p_adj_rel,
+                    KEYREL.PRED _from_p_time_rel ],
+            PHON.ONSET con ] ].
+
+to_prtcl_adj := p_prd_ptcl-j_le &
+ [ ORTH < "to" >,
+   SYNSEM [ LKEYS.KEYREL.PRED _to_p_adj_rel,
+            PHON.ONSET con ] ].
+
+:end :instance.
+
+;;; Older units of time, in the form of the ERG's |fortnight|
+;;; (n_-_c-nday_le): |about a twelvemonth ago|, |a sennight later|.
+
+:begin :instance :status lex-entry.
+
+twelvemonth_n1 := n_-_c-nday_le &
+ [ ORTH < "twelvemonth" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_twelvemonth_n_1_rel",
+            PHON.ONSET con ] ].
+
+sennight_n1 := n_-_c-nday_le &
+ [ ORTH < "sennight" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_sennight_n_1_rel",
+            PHON.ONSET con ] ].
+
+:end :instance.
+
+;;; Unknown plural names with a determiner: |The Bennets were able to eat.|,
+;;; |the elder Miss Bennets|. The ERG makes an unknown name tagged NNPS
+;;; singular (genericname_pl, type n_-_pn-unk_le: "the tagger is not
+;;; always right with the NNPS tag"), so a family or a team takes no plural
+;;; verb. This generic entry is plural, in the ERG's type for plural names
+;;; with a determiner (n_-_pn-pl-def_le, |The Giants play today.|), so a
+;;; bare singular name (|*Kubernetes are|) still does not agree. The
+;;; ERG's lexical filter generic_name+ne_name_lfr would remove it beside the
+;;; generic singular name of the same word (its comment means to keep
+;;; plurals, but the singular is not yet inflected for number), so the
+;;; parser exempts it from lexical filtering (ParserConfig::unfiltered).
+
+:begin :type.
+
+n_-_pn-pl-def-unk_le := n_-_pn-pl-def_le & basic_unknown_word &
+  [ SYNSEM [ LKEYS.KEYREL.CARG #carg,
+	     PHON.ONSET unk_onset ],
+    TOKENS.+LIST < [ +CARG #carg ] > ].
+
+:end :type.
+
+:begin :instance :status generic-lex-entry.
+
+genericname_pl_def := n_-_pn-pl-def-unk_le &
+  [ ORTH < "_generic_nnps_" >,
+    TOKENS.+LIST < [ +TNT.+TAGS.FIRST "NNPS" ] > ].
+
+:end :instance.

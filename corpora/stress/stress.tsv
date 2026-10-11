@@ -67,3 +67,19 @@ other	This is the land of the free and the home of the brave.	Adjectives as plur
 other	The meek shall inherit the earth.	
 other	And his sisters are charming women.	Sentence-initial conjunction.
 other	But I knew I should persuade you at last.	
+other	You, or a controller, must delete the object.	Coordination between paired commas (grammar/emdysi/coordination.tdl).
+other	The kubelet, or the API server, rejects the request.	
+other	Kim, and Sandy, left.	
+other	Kim stayed, but, in the end, Sandy left.	An adjunct between commas after a conjunction (grammar/emdysi/conjunctions.tdl).
+other	Bennet did not reply, but, unable to wait, began scolding.	
+other	What a contrast between him and his friend!	An exclamation without a verb (grammar/emdysi/roots.tdl).
+other	It is similar to, but less extreme than, the climate.	A comparative with more or less whose object is shared (grammar/emdysi/comparatives.tdl).
+other	Who is Kim less tall than?	A comparative with more or less whose object is extracted (grammar/emdysi/comparatives.tdl).
+other	The team are almost at the point of no return.	A collective noun with a plural verb, British (grammar/emdysi/lexicon.tdl).
+other	Customers earn 3% on balances of £3,000-£5,000.	A range of amounts with currency signs (grammar/emdysi/tokenizer.rpp).
+other	In color, the leaves show a great variety of greens, ranging from yellowish to bluish.	From and to with adjectives (grammar/emdysi/lexicon.tdl).
+other	People without children express through their disapproval all their hatred of modern parenting.	A heavy object after an adjunct (grammar/emdysi/heavy.tdl).
+other	She could not, in her mother's presence, be what she was before.	An adjunct between commas before a verb phrase (grammar/emdysi/heavy.tdl).
+other	The subject, about a twelvemonth ago, was brought forward again.	An older unit of time (grammar/emdysi/lexicon.tdl).
+other	The elder Miss Bennets alone were still able to eat, drink, and sleep.	A plural family name (grammar/emdysi/lexicon.tdl).
+other	They walked on, without knowing in what direction.	A sluice with a phrase (grammar/emdysi/sluicing.tdl).

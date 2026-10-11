@@ -1,0 +1,86 @@
+;;; Sluicing with a phrase: |They walked on, without knowing in what
+;;; direction.|, |I do not know with whom.|, |nobody knows which one|. The
+;;; ERG has a sluice only for a single wh-word (what_cp, who_cp, how_cp:
+;;; type x_-_who-cp_le, x_-_wh-cp_le): a clause whose verb is elided
+;;; (ellipsis_rel), asked about the wh-word. These unary rules make the
+;;; same clause from a wh-phrase: a noun phrase (cl_sluice-np_c), or a
+;;; prepositional phrase, which modifies the elided event
+;;; (cl_sluice-pp_c). The wh-phrase has no modifier after its head, so
+;;; that |which version you use| stays an embedded question, and the
+;;; parser lets the clause be only a verb's complement (Rule::complement_of,
+;;; set up in Erg::load_config), as the single-word sluices are.
+
+:begin :type.
+
+sluice := unary_ctype.
+
+basic_sluice_phrase := basic_basic_unary_phrase & phrasal &
+  [ SYNSEM [ LOCAL [ CAT [ HEAD verb & [ INV -,
+					 VFORM fin,
+					 AUX +,
+					 MOD < >,
+					 MINORS [ MIN verb_aspect_rel,
+						  ALTMIN ellipsis_rel ] ],
+			   VAL [ SUBJ < >,
+				 SPR < unexpressed & [ --MIN deg_rel ] >,
+				 COMPS < >,
+				 SPCMPS < > ],
+			   MC -,
+			   POSTHD bool,
+			   --SLASHED.BOOL - ],
+		     CONT.HOOK [ LTOP #ltop,
+				 INDEX #event & [ SF ques ] ],
+		     CONJ cnil ],
+	     NONLOC [ SLASH.LIST < >,
+		      REL.LIST < >,
+		      QUE.LIST < > ],
+	     PUNCT #punct,
+	     LEX - ],
+    ARGS < [ INFLECTD +,
+	     SYNSEM phr_synsem &
+		    [ MODIFD notmod_or_lmod,
+		      LOCAL [ CAT.VAL [ COMPS < >,
+					SPR *olist* ],
+			      CONJ cnil ],
+		      NONLOC [ SLASH.LIST < >,
+			       REL.LIST < >,
+			       QUE.LIST < [ ] > ],
+		      PUNCT #punct ] ] >,
+    ORTH [ FROM #from, TO #to ],
+    C-CONT [ HOOK [ LTOP #ltop,
+		    INDEX #event ],
+	     RELS <! arg1_relation & [ PRED ellipsis_rel,
+				       LBL #ltop,
+				       ARG0 #event,
+				       CFROM #from,
+				       CTO #to ] !>,
+	     HCONS <! !>,
+	     ICONS <! !> ],
+    INFLECTD + ].
+
+sluice_np_phrase := basic_sluice_phrase &
+  [ ARGS < [ SYNSEM.LOCAL.CAT.HEAD supnoun ] > ].
+
+sluice_pp_phrase := basic_sluice_phrase &
+  [ SYNSEM.LOCAL.CONT.HOOK [ LTOP #ltop,
+			     INDEX #event ],
+    ARGS < [ SYNSEM.LOCAL [ CAT.HEAD prep &
+				     [ MOD < [ LOCAL intersective_mod &
+					       [ CONT.HOOK [ LTOP #ltop,
+							     INDEX #event ] ] ] > ],
+			    CONT.HOOK.LTOP #ltop ] ] > ].
+
+sluice_np_rule := rule & sluice_np_phrase.
+sluice_pp_rule := rule & sluice_pp_phrase.
+
+:end :type.
+
+:begin :instance :status rule.
+
+cl_sluice-np_c := sluice_np_rule &
+  [ RNAME sluice ].
+
+cl_sluice-pp_c := sluice_pp_rule &
+  [ RNAME sluice ].
+
+:end :instance.

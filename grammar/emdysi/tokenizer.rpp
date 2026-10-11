@@ -1,0 +1,9 @@
+;;; emdysi's rules for the tokenizer, applied after the ERG's
+;;; (grammar/erg/rpp/tokenizer.rpp), before the input is split into tokens.
+;;;
+;;; A range of amounts with a currency sign on both ends: |£3,000-£5,000|,
+;;; |$10-$20|. The ERG splits a range of numbers (|10-20|, its group #2)
+;;; and a hyphen between a word and a currency sign (|$8-to-$9|), but not
+;;; between a number and a currency sign.
+
+!([0-9])[–-]([#$€¢£¥]) ?([0-9])	\1 – \2 \3
