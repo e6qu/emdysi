@@ -902,7 +902,15 @@ the same day; the counts include the fragments cut at *Mr.*):
 | Retry without a strict analysis | 27 | 945 s |
 | The same, judging strictness after emdysi's root and derivation conditions | 24 | 994 s |
 
-Of the 24, 11 are the fragments cut at *Mr.*; the other 13 include
+| Then a beam twice and four times as wide before the search without one | 21 | 828 s |
+
+On a long, ambiguous sentence the search without a beam runs out of its
+budget where a wider beam finds the strict analysis, and finds it sooner,
+so the widening is faster as well. On 300 sentences of the second
+development set it leaves 46 without a strict reading, against 51 with
+the retry alone (and the extensions of the day before the widening).
+
+Of the 24 before the widening, 11 are the fragments cut at *Mr.*; the other 13 include
 gapping (*and of his judgement the highest opinion*), lists of fragments
 joined by semicolons, archaic negation (*knew not how*) and team names
 with a plural verb (*South Africa are*).
