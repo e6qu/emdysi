@@ -108,6 +108,8 @@ pub struct Repp {
     main: String,
     tokenizer: Option<Regex>,
     active: HashSet<String>,
+    /// Modules applied after the main one (see [`Repp::extend`]).
+    extensions: Vec<String>,
 }
 
 impl Repp {
@@ -120,6 +122,7 @@ impl Repp {
             main: String::new(),
             tokenizer: None,
             active: active.iter().map(|s| s.to_string()).collect(),
+            extensions: Vec::new(),
         };
         let name = stem(main);
         repp.load_module(&name, main)?;
@@ -129,6 +132,16 @@ impl Repp {
             repp.load_module(m, &path)?;
         }
         Ok(repp)
+    }
+
+    /// Add a module of rewrite rules applied after the main module, before
+    /// the input is split into tokens (e.g. a grammar's own extensions to
+    /// a tokenizer it does not change).
+    pub fn extend(&mut self, path: &Path) -> Result<(), Error> {
+        let name = format!("extension:{}", path.display());
+        self.load_module(&name, path)?;
+        self.extensions.push(name);
+        Ok(())
     }
 
     fn load_module(&mut self, name: &str, path: &Path) -> Result<(), Error> {
@@ -237,6 +250,9 @@ impl Repp {
     pub fn rewrite(&self, input: &str) -> Tracked {
         let mut t = Tracked::new(input);
         self.apply_module(&self.main, &mut t, None);
+        for ext in &self.extensions {
+            self.apply_module(ext, &mut t, None);
+        }
         t
     }
 
@@ -245,6 +261,9 @@ impl Repp {
         let mut t = Tracked::new(input);
         let mut trace = Vec::new();
         self.apply_module(&self.main, &mut t, Some(&mut trace));
+        for ext in &self.extensions {
+            self.apply_module(ext, &mut t, Some(&mut trace));
+        }
         (t, trace)
     }
 

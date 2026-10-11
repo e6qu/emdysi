@@ -343,6 +343,13 @@ impl Erg {
             }
             None => emdysi_repp::erg(dir).map_err(err)?,
         };
+        // emdysi's tokenizer rules (grammar/emdysi/tokenizer.rpp), applied
+        // after the ERG's.
+        let mut repp = repp;
+        let ext_rpp = ext_dir.join("tokenizer.rpp");
+        if ext_rpp.exists() {
+            repp.extend(&ext_rpp).map_err(err)?;
+        }
         let mut u = Unifier::new();
         let token_mapping =
             compile_rules(&grammar, "token-mapping-rule", &mut u).map_err(|e| err(e.0))?;

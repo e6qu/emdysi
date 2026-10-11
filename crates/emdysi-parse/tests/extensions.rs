@@ -95,3 +95,20 @@ fn collective_nouns_with_plural_agreement() {
         assert!(!strict(&erg, text), "{text}");
     }
 }
+
+#[test]
+fn ranges_of_amounts() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let forms: Vec<String> = erg
+        .tokens("£3,000-£5,000")
+        .into_iter()
+        .map(|t| t.form)
+        .collect();
+    assert_eq!(forms, ["£", "3,000", "–", "£", "5,000"]);
+    for text in [
+        "They earn 3% on balances of £3,000-£5,000.",
+        "It costs $10-$20.",
+    ] {
+        assert!(strict(&erg, text), "{text}");
+    }
+}

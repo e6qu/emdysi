@@ -76,3 +76,4 @@ other	What a contrast between him and his friend!	An exclamation without a verb 
 other	It is similar to, but less extreme than, the climate.	A comparative with more or less whose object is shared (grammar/emdysi/comparatives.tdl).
 other	Who is Kim less tall than?	A comparative with more or less whose object is extracted (grammar/emdysi/comparatives.tdl).
 other	The team are almost at the point of no return.	A collective noun with a plural verb, British (grammar/emdysi/lexicon.tdl).
+other	Customers earn 3% on balances of £3,000-£5,000.	A range of amounts with currency signs (grammar/emdysi/tokenizer.rpp).

@@ -5,6 +5,10 @@ TDL files loaded after the ERG (`grammar/erg`), in file-name order, by
 are not changed. Written for this project (MIT, see the repository's
 `LICENSE`), in the ERG's conventions and on its types.
 
+- `tokenizer.rpp`: rules for the tokenizer, applied after the ERG's
+  (`grammar/erg/rpp/tokenizer.rpp`). A range of amounts with a currency
+  sign on both ends (*£3,000-£5,000*, *$10-$20*) is split like the ERG
+  splits *10-20*; the ERG left *10-$* as one token.
 - `adjectives.tdl`: comma-separated adjectives before a noun (*a
   selfish, hypocritical woman*, *a long, cold, dark night*): the ERG
   admits the comma only as its informal comma entry (`comma_inf_pct`);
