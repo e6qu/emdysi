@@ -900,3 +900,9 @@ the same day; the counts include the fragments cut at *Mr.*):
 |---|---|---|
 | Retry without a complete analysis | 35 | 837 s |
 | Retry without a strict analysis | 27 | 945 s |
+| The same, judging strictness after emdysi's root and derivation conditions | 24 | 994 s |
+
+Of the 24, 11 are the fragments cut at *Mr.*; the other 13 include
+gapping (*and of his judgement the highest opinion*), lists of fragments
+joined by semicolons, archaic negation (*knew not how*) and team names
+with a plural verb (*South Africa are*).
