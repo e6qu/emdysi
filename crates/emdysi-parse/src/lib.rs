@@ -760,10 +760,11 @@ impl Erg {
             _ => run(config, items.clone()),
         };
         // Pruning can make a full analysis of a long sentence impossible:
-        // with no complete analysis, try again without pruning in the time
+        // with no strict analysis, try again without pruning in the time
         // left (on the AI-prose treebank, 13 of 17 sentences that got only
-        // fragments then get a full analysis within 10 seconds).
-        let result = if !complete(&result)
+        // fragments then get a full analysis within 10 seconds; pruning
+        // also loses strict analyses of sentences it leaves informal ones).
+        let result = if !strict(&result)
             && config.cell_beam.is_some()
             && result.positions > config.cell_beam_from
             && config.timeout.saturating_sub(t0.elapsed()) >= Duration::from_secs(1)
@@ -777,7 +778,12 @@ impl Erg {
             // A search without pruning that finishes is kept even with
             // fragments only: it proves the sentence is outside the
             // grammar, which the pruned search cannot.
-            if complete(&r) || (!r.exhausted && r.stats.pruned == 0) {
+            let better = if complete(&result) {
+                strict(&r)
+            } else {
+                complete(&r)
+            };
+            if better || (!r.exhausted && r.stats.pruned == 0) {
                 r
             } else {
                 result
