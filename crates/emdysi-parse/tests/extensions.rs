@@ -133,6 +133,8 @@ fn heavy_object_after_an_adjunct() {
     for text in [
         "People express through their disapproval all their hatred of modern parenting.",
         "We saw yesterday all the cats that we had fed.",
+        "He could, in her presence, be rude.",
+        "The subject, about a twelvemonth ago, was brought forward.",
     ] {
         assert!(strict(&erg, text), "{text}");
     }

@@ -90,7 +90,9 @@ are not changed. Written for this project (MIT, see the repository's
   `hd-aj_vmod-hv_c` and `hd-aj_vmod-s-hv_c` are formal copies, which the
   parser lets take only an object longer than the adjunct and at least
   five tokens long (`Rule::heavy_object_parents`). *We saw yesterday the
-  cats* stays informal.
+  cats* stays informal. An adjunct set off by a pair of commas is formal
+  whatever follows it (*He could, in her presence, be rude.*):
+  `hd-aj_vmod-pc_c` and `hd-aj_vmod-s-pc_c`.
 - `lexicon.tdl`: adjectives used as plural nouns for people with "the"
   (*the brave*, *the free*, *the meek*), in the form of the ERG's 94 such
   entries (type `n_-_c-pl-def_le`, e.g. *the poor*); adjectives used as
@@ -112,7 +114,8 @@ are not changed. Written for this project (MIT, see the repository's
   adjective phrase whose *to* phrase is a semantically empty *to*
   (`to_prtcl_adj`, keyed apart so that *belong to* cannot take it); it
   contributes the *to* relation itself, so *range from yellow to blue*
-  means the same with its adjectives as with its nouns. A
+  means the same with its adjectives as with its nouns; the older units
+  of time *twelvemonth* and *sennight*, in the form of *fortnight*. A
   native entry replaces the ERG's generic entries for an unknown word, so
   a word the ERG lacks gets all its common uses (*inexplicable*,
   *improbable* also as adjectives; *unusual*, *unexpected* need none, the

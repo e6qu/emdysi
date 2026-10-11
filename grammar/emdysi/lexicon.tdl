@@ -1027,3 +1027,20 @@ to_prtcl_adj := p_prd_ptcl-j_le &
             PHON.ONSET con ] ].
 
 :end :instance.
+
+;;; Older units of time, in the form of the ERG's |fortnight|
+;;; (n_-_c-nday_le): |about a twelvemonth ago|, |a sennight later|.
+
+:begin :instance :status lex-entry.
+
+twelvemonth_n1 := n_-_c-nday_le &
+ [ ORTH < "twelvemonth" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_twelvemonth_n_1_rel",
+            PHON.ONSET con ] ].
+
+sennight_n1 := n_-_c-nday_le &
+ [ ORTH < "sennight" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_sennight_n_1_rel",
+            PHON.ONSET con ] ].
+
+:end :instance.
