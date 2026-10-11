@@ -139,7 +139,9 @@ variant names, the corrections tried and which the grammar accepts), run
 
 ```sh
 echo "He will makes it." | cargo run --release -p emdysi-check --example why
-``` To find which word is the problem, run `culprits`.
+```
+
+To find which word is the problem, run `culprits`.
 It replaces each word in turn by a plain word of the same shape and
 reports the replacements that give a full analysis:
 
@@ -153,6 +155,11 @@ For the grammar itself:
 - `EMDYSI_CHART_PATH="SYNSEM LOCAL CONJ"` adds a feature path to each
   edge.
 - `EMDYSI_TRACE_RULE=<rule>` traces one rule's attempts and root checks.
+  A failed unification names the daughter, the path and the clashing
+  types.
+- `EMDYSI_TRACE_FITS=<rule or entry>` (with `EMDYSI_TRACE_RULE`) says why
+  the edges of that rule or lexical entry fail the quick check for the
+  traced rule's daughters.
 - `cargo run --release -p emdysi-parse --example grammar_check -- <type|rule|word>...`
   reports inconsistent type constraints.
 

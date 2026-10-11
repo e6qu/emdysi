@@ -1247,10 +1247,12 @@ impl<'g> Parser<'g> {
         let words = self.rules.len().div_ceil(64);
         let mut fits = [vec![0u64; words], vec![0u64; words]];
         let qc = &self.chart[id].qc;
-        // EMDYSI_TRACE_FITS=<rule>: why edges built by that rule do not fit
-        // the daughters of the traced rule (EMDYSI_TRACE_RULE).
+        // EMDYSI_TRACE_FITS=<rule or lexical entry>: why edges built by that
+        // rule, or of that entry, do not fit the daughters of the traced
+        // rule (EMDYSI_TRACE_RULE).
         let built_by = match &self.chart[id].kind {
             EdgeKind::Rule(r) => Some(self.rules[*r].name.as_str()),
+            EdgeKind::Lex { inst, .. } => Some(self.g.instances[*inst].name.as_str()),
             _ => None,
         };
         let explain =
