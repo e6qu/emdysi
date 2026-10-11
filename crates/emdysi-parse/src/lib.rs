@@ -727,7 +727,13 @@ impl Erg {
             .with_scorer(&scorer)
             .parse(&lat, items)
         };
-        let strict = |r: &ParseResult| r.readings.iter().any(|r| is_strict(&r.root));
+        // Strict as the readings returned are: under a strict root once
+        // emdysi's conditions on derivations and roots are applied.
+        let strict = |r: &ParseResult| {
+            r.readings.iter().any(|r| {
+                is_strict(&self.licensed_root(&r.root, &r.deriv)) && self.licensed(&r.deriv)
+            })
+        };
         let complete = |r: &ParseResult| r.readings.iter().any(|r| r.root != "fragment");
         // With chart pruning, a narrow beam first; the configured one only
         // when that finds no strict analysis and time remains.
