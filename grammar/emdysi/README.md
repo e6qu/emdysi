@@ -24,6 +24,16 @@ are not changed. Written for this project (MIT, see the repository's
   binary rule joins the halves into a sentence whose semantics is a
   `comparative_correlative_rel` with the first half (the condition) as
   ARG1 and the second as ARG2.
+- `coordination.tdl`: two noun phrases coordinated between a pair of
+  commas (*You, or a controller, must delete the object.*, *Kim, and
+  Sandy, left.*): the ERG ties a comma on the left conjunct to the
+  conjunction so that only its informal comma can mark the left one of
+  two conjuncts (to rule out *Abrams, and Browne arrived*), which left
+  the bracketed coordination only an informal analysis.
+  `np-np_crd-pc-t_c` takes formal commas on both conjuncts, and the
+  coordinated phrase ends without punctuation; its semantics is that of
+  `np-np_crd-t_c`. *Abrams, and Browne arrived*, *The dog, barked* and *I
+  saw Kim, and Sandy.* stay without a strict analysis.
 - `dates.tdl`: US-style dates with a comma before the year (*on October
   31, 1832*): the ERG takes that comma only as its informal comma entry,
   so the date analysis was informal (the sentence kept strict readings
