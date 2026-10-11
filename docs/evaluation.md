@@ -944,3 +944,24 @@ not pack together, so the beam keeps fewer of the informal analyses the
 gold trees use; and the retry without pruning, now run on sentences with
 informal readings only, finds more readings, which can push the gold tree
 out of the first 1,000.
+
+## Parser speed
+
+Changes to the parser that leave its results as they were, checked by
+listing every reading of every sentence (root, score, derivation) with
+`cargo run --release -p emdysi-parse --example dump` before and after
+(2026-10-11; times with other measurements running on the same machine):
+
+| Change | 60 sentences of the dev sample |
+|---|---|
+| Before | 183 s |
+| Unpack readings lazily: an edge's instantiations are made as they are needed, in the order the eager unpacking gave them (best first over the grid of daughter instantiations, bounded by the best score the rule can give) | 127 s |
+| 60 more quick-check paths, where the unifier most often failed past the ERG's 79 (learned on 30 sentences of the second development set) | 124 s |
+| The cycle check after a copy only when an arc points back | 122 s |
+| The unifier copies its sources' nodes and arcs into flat tables, so a handle is one lookup | 109 s |
+| Quick-check vectors read in one walk over a trie of the paths | 103 s |
+
+On the 300 sentences of the coverage sample, the time went from 824 s
+to 552 s; 297 of 299 sentences got the same readings, and the other two
+were cut off by the time limit before and finish now (*See paragraphs
+(c) through (h) of Section 51 ...*: 61 s, now 23 s).
