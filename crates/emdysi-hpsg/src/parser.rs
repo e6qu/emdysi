@@ -23,7 +23,14 @@ use crate::unify::{Checkpoint, Unifier};
 #[derive(Debug, Clone, Default)]
 pub struct QuickCheck {
     pub paths: Vec<Vec<FeatId>>,
+    /// The paths as a trie, so that a vector is read in one walk: each node
+    /// has its arcs and the slot of the path ending there, if any.
+    trie: Vec<TrieNode>,
 }
+
+/// A node of [`QuickCheck`]'s path trie: arcs to child nodes, and the slot
+/// of the path ending here.
+type TrieNode = (Vec<(FeatId, u32)>, Option<u32>);
 
 impl QuickCheck {
     /// Read an ACE quick-check file (`PUSH(F)`, `POP`, `REC(n)` operations).
@@ -45,16 +52,55 @@ impl QuickCheck {
             }
         }
         slots.sort_by_key(|s| s.0);
-        QuickCheck {
-            paths: slots.into_iter().map(|s| s.1).collect(),
+        let mut qc = QuickCheck::default();
+        for (_, path) in slots {
+            qc.add_path(path);
         }
+        qc
+    }
+
+    /// Add a path after the others, unless it is there already.
+    pub fn add_path(&mut self, path: Vec<FeatId>) {
+        if self.paths.contains(&path) {
+            return;
+        }
+        if self.trie.is_empty() {
+            self.trie.push((Vec::new(), None));
+        }
+        let mut at = 0usize;
+        for &f in &path {
+            at = match self.trie[at].0.iter().find(|a| a.0 == f) {
+                Some(&(_, next)) => next as usize,
+                None => {
+                    let next = self.trie.len();
+                    self.trie.push((Vec::new(), None));
+                    self.trie[at].0.push((f, next as u32));
+                    next
+                }
+            };
+        }
+        self.trie[at].1 = Some(self.paths.len() as u32);
+        self.paths.push(path);
     }
 
     pub fn vector(&self, dag: &Dag, node: u32) -> Vec<TypeId> {
-        self.paths
-            .iter()
-            .map(|p| dag.follow(node, p).map_or(TOP, |n| dag.ty(n)))
-            .collect()
+        let mut out = vec![TOP; self.paths.len()];
+        if self.trie.is_empty() {
+            return out;
+        }
+        let mut stack = vec![(0u32, node)];
+        while let Some((t, n)) = stack.pop() {
+            let (arcs, slot) = &self.trie[t as usize];
+            if let Some(slot) = slot {
+                out[*slot as usize] = dag.ty(n);
+            }
+            for &(f, next) in arcs {
+                if let Some(m) = dag.arc(n, f) {
+                    stack.push((next, m));
+                }
+            }
+        }
+        out
     }
 }
 

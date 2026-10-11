@@ -456,9 +456,7 @@ impl Erg {
         );
         for p in EXTRA_QC_PATHS {
             if let Some(path) = grammar.path(p) {
-                if !qc.paths.contains(&path) {
-                    qc.paths.push(path);
-                }
+                qc.add_path(path);
             }
         }
         let args = grammar.feat("ARGS").ok_or_else(|| err("no ARGS feature"))?;
