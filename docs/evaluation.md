@@ -945,6 +945,34 @@ gold trees use; and the retry without pruning, now run on sentences with
 informal readings only, finds more readings, which can push the gold tree
 out of the first 1,000.
 
+### Checks after the extensions and the speed work
+
+On the final state of the branch (2026-10-11):
+
+| Measure | main | Here |
+|---|---|---|
+| False flags, first development set (2,498 sentences) | 6 | 6 |
+| False flags, second development set (13,442 sentences) | 83 | 84 |
+| Real errors caught (377) | 163 | 163 |
+
+| Gold profile | Grammatical parsed | Gold tree found | Gold ranked first |
+|---|---|---|---|
+| csli | 938 of 960 (same) | 908 of 921 (same) | 885 (same) |
+| control | 1,298 → 1,299 of 1,305 | 1,494 (same) of 1,582 | 1,384 → 1,382 |
+| sh-spec | 544 → 560 of 599 | 361 → 357 of 576 | 314 → 313 |
+| esd, mrs, ccs | same | same | same |
+
+Two flags on the second development set were new. *PRs welcome!* now has
+a strict reading (an exclamation without a verb) that reads the unknown
+*PRs* generically, and the grammar-error variant read it as the plural of
+a mass noun; the plural of an acronym is now a name there too, as an
+acronym already was. The other stays: *My younger sister has left all her
+friends--has eloped; has thrown herself into the power of--of Mr.
+Wickham.* is outside the grammar (verb phrases joined by a dash and a
+semicolon, without a conjunction), the search without pruning now
+finishes and proves it, and the grammar-error variant's best analysis
+makes *her friends--* the subject of *has eloped*.
+
 ## Parser speed
 
 Changes to the parser that leave its results as they were, checked by
