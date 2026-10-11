@@ -457,6 +457,13 @@ impl Erg {
                     rules[r].heavy_object_parents = vec![hcomp];
                 }
             }
+            // A sluice with a phrase is a verb's complement only (see
+            // grammar/emdysi/sluicing.tdl).
+            for name in ["cl_sluice-np_c", "cl_sluice-pp_c"] {
+                if let Some(r) = rule_index(&rules, name) {
+                    rules[r].complement_of = vec![hcomp];
+                }
+            }
         }
 
         let mut roots = Vec::new();
@@ -970,6 +977,14 @@ impl Erg {
                 }
             }
         };
+        // A sluice (grammar/emdysi/sluicing.tdl) is a short wh-phrase:
+        // with a relative clause it is the clause of an embedded question
+        // (|I wonder which book he read|).
+        if let EdgeKind::Rule(ri) = &d.kind {
+            if self.rules[*ri].name.starts_with("cl_sluice-") && self.has_relative_clause(d) {
+                return false;
+            }
+        }
         if let EdgeKind::Rule(ri) = &d.kind {
             if BRACKETED_MARKERS.contains(&self.rules[*ri].name.as_str()) {
                 // The marker is the conjunction with its adjunct; its head,
@@ -985,6 +1000,20 @@ impl Erg {
             }
         }
         d.daughters.iter().all(|x| self.licensed(x))
+    }
+
+    /// Whether a derivation has a relative clause.
+    fn has_relative_clause(&self, d: &Deriv) -> bool {
+        match &d.kind {
+            EdgeKind::Rule(r) => {
+                let name = self.rules[*r].name.as_str();
+                name.starts_with("cl_rc")
+                    || name.starts_with("hdn-aj_rc")
+                    || name.starts_with("hdn-aj_redrel")
+                    || d.daughters.iter().any(|x| self.has_relative_clause(x))
+            }
+            _ => false,
+        }
     }
 
     /// Whether a derivation has a lexical entry of this type.

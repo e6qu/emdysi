@@ -151,3 +151,15 @@ fn plural_family_names() {
         assert!(strict(&erg, text), "{text}");
     }
 }
+
+#[test]
+fn sluicing_with_a_phrase() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    for text in [
+        "They walked on, without knowing in what direction.",
+        "I do not know with whom.",
+        "Nobody knows which one.",
+    ] {
+        assert!(strict(&erg, text), "{text}");
+    }
+}

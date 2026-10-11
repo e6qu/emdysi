@@ -5,6 +5,14 @@ TDL files loaded after the ERG (`grammar/erg`), in file-name order, by
 are not changed. Written for this project (MIT, see the repository's
 `LICENSE`), in the ERG's conventions and on its types.
 
+- `sluicing.tdl`: a sluice with a phrase (*without knowing in what
+  direction*, *I do not know with whom*, *nobody knows which one*). The
+  ERG has a sluice for a single wh-word only (`what_cp`, `how_cp`); these
+  unary rules make the same elliptical question from a wh noun phrase
+  (`cl_sluice-np_c`) or prepositional phrase (`cl_sluice-pp_c`). The
+  parser lets the clause be only a verb's complement
+  (`Rule::complement_of`) and not contain a relative clause, so that *I
+  wonder which book he read* stays one embedded question.
 - `tokenizer.rpp`: rules for the tokenizer, applied after the ERG's
   (`grammar/erg/rpp/tokenizer.rpp`). A range of amounts with a currency
   sign on both ends (*£3,000-£5,000*, *$10-$20*) is split like the ERG

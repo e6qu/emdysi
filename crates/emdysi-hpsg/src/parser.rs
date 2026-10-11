@@ -80,6 +80,9 @@ pub struct Rule {
     /// longer than its own second daughter (the adjunct) and at least
     /// five positions long (about four words). Empty: no restriction.
     pub heavy_object_parents: Vec<usize>,
+    /// And another: an edge of this rule is only the second daughter of
+    /// these rules (rule indices). Empty: no restriction.
+    pub complement_of: Vec<usize>,
     dtr_qc: Vec<Vec<TypeId>>,
 }
 
@@ -114,6 +117,7 @@ impl Rule {
             sealed_heads: Vec::new(),
             sealed_parents: Vec::new(),
             heavy_object_parents: Vec::new(),
+            complement_of: Vec::new(),
             dtr_qc,
         }
     }
@@ -1451,6 +1455,9 @@ impl<'g> Parser<'g> {
                         if rule.sealed_heads.contains(inst))
                 });
             if sealed && !(i == 0 && rule.sealed_parents.contains(&ri)) {
+                return true;
+            }
+            if !rule.complement_of.is_empty() && !(i == 1 && rule.complement_of.contains(&ri)) {
                 return true;
             }
             if !rule.heavy_object_parents.is_empty() {
