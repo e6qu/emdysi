@@ -1,0 +1,100 @@
+;;; "more" and "less" with a "than" phrase whose noun phrase is shared
+;;; with another conjunct (right node raising): |similar to, but less
+;;; extreme than, the climate|. The ERG's degree words (more_deg, less_deg,
+;;; types av_pp_dg-more_le, av_pp_dg-less_le) take a "than" phrase with
+;;; nothing extracted (NONLOC non-local_none), though inflected
+;;; comparatives allow it (|similar to, but bigger than, the climate|).
+;;;
+;;; - more_deg_gap, less_deg_gap: copies whose "than" phrase has exactly
+;;;   one gap, so they add no reading where nothing is extracted.
+;;; - hd-cmp_u-than-sl_c: the ERG's head-complement phrase takes its gaps
+;;;   from its head, which has collected those of its arguments; the
+;;;   degree word's "than" phrase is not among them, so this copy of the
+;;;   phrase takes the gap from the "than" phrase instead. The parser
+;;;   allows no other phrase over the copies' phrase with the word they
+;;;   specify (Rule::sealed_heads, set up in Erg::load): under the ERG's
+;;;   rule their gap would be lost.
+
+:begin :type.
+
+more_degree_spec_gap_synsem := basic_comp_degree_wcomps_synsem &
+  [ LOCAL.CAT [ HEAD.MINORS.MIN comp_as_too_enough_rel,
+		VAL [ SPR < [ --MIN much_deg_rel ] >,
+		      SPCMPS.FIRST [ --MIN _than_p_compar_rel,
+				     LOCAL [ CAT [ HEAD prep &
+						      [ MINORS.NORM norm_rel ],
+						   VAL.COMPS < >,
+						   --SLPASS + ],
+					     CONT.HOOK [ LTOP #ltop,
+							 INDEX #ind ] ],
+				     NONLOC [ SLASH.LIST < [ ] >,
+					      REL.LIST < >,
+					      QUE.LIST < > ] ] ] ],
+    LKEYS.KEYREL [ LBL #ltop,
+		   ARG2 #ind ] ].
+
+av_pp_dg-more-gap_le := que_word &
+  [ SYNSEM more_degree_spec_gap_synsem &
+	   [ LOCAL [ CAT.HEAD.MINORS.ALTMIN more_comp_rel,
+		     CONT.RELS <! relation !> ] ] ].
+
+av_pp_dg-less-gap_le := que_word &
+  [ SYNSEM more_degree_spec_gap_synsem &
+	   [ LOCAL.CONT.RELS <! relation !> ] ].
+
+;; basic_head_comp_phrase with the gaps of the complement, not the head.
+basic_head_comp_than_slash_phrase := basic_head_comp_or_marker_phrase &
+			  head_initial & binary_punct_phrase &
+			  head_nexus_phrase & head_compositional &
+  [ SYNSEM nonlex_synsem &
+           [ LOCAL [ CAT [ POSTHD #ph,
+                           HS-LEX #hslex,
+			   --SLASHED.BOOL + ],
+		     CONJ cnil ],
+	     NONLOC.SLASH.LIST #slash,
+	     MODIFD #modifd,
+	     LEX #lex ],
+    INFLECTD #infl,
+    HD-DTR [ INFLECTD na_or_+ & #infl,
+             SYNSEM [ LOCAL [ CAT [ HEAD adj,
+				    POSTHD #ph,
+				    HC-LEX #lex,
+				    HS-LEX #hslex ] ],
+		      NONLOC.SLASH.LIST < >,
+		      MODIFD #modifd,
+                      PUNCT [ LPUNCT comma_or_hyphen_or_pair_or_no_punct,
+                              RPUNCT comma_or_rbc_or_colon_or_pair_or_no_punct,
+                              PNCTPR ppair ] ] ],
+    NH-DTR [ INFLECTD +,
+	     SYNSEM [ LOCAL.CAT.NH-LEX #lex,
+		      --MIN _than_p_compar_rel,
+		      NONLOC.SLASH.LIST #slash & < [ ] > ] ],
+    C-CONT [ RELS <! !>,
+	     HCONS <! !>,
+	     ICONS <! !> ] ].
+
+hcomp_than_slash_rule := binary_rule_left_to_right &
+  basic_head_comp_than_slash_phrase & head_comp_or_marker_phrase.
+
+:end :type.
+
+:begin :instance :status rule.
+
+hd-cmp_u-than-sl_c := hcomp_than_slash_rule &
+  [ RNAME hcp ].
+
+:end :instance.
+
+:begin :instance :status lex-entry.
+
+more_deg_gap := av_pp_dg-more-gap_le &
+  [ ORTH < "more" >,
+    SYNSEM [ LKEYS.KEYREL.PRED _more_x_comp_rel,
+	     PHON.ONSET con ] ].
+
+less_deg_gap := av_pp_dg-less-gap_le &
+  [ ORTH < "less" >,
+    SYNSEM [ LKEYS.KEYREL.PRED _less_x_comp_rel,
+	     PHON.ONSET con ] ].
+
+:end :instance.

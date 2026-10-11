@@ -64,3 +64,18 @@ fn exclamations_without_a_verb() {
         assert!(!strict(&erg, text), "{text}");
     }
 }
+
+#[test]
+fn comparative_with_a_shared_object() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    for text in [
+        "It is similar to, but less extreme than, the climate.",
+        "It is similar to and more extreme than the climate.",
+        "Who is Kim less tall than?",
+    ] {
+        assert!(strict(&erg, text), "{text}");
+    }
+    for text in ["It is less extreme than.", "It is more extreme than."] {
+        assert!(!strict(&erg, text), "{text}");
+    }
+}

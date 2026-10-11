@@ -53,6 +53,12 @@ pub struct Unifier {
     /// Added arcs: (feature, target handle, next arc in the node's list).
     comp_arcs: Vec<(FeatId, u32, u32)>,
     pub failure: Option<Failure>,
+    /// Whether to record where a unification fails, for tracing: the
+    /// clashing types in `clash_types`, and the path to them, innermost
+    /// feature first, in `clash_path`.
+    pub explain: bool,
+    pub clash_types: (TypeId, TypeId),
+    pub clash_path: Vec<FeatId>,
     /// Scratch space for copying: the queue of nodes, and the sizes of the
     /// last copy (to size the next one).
     order: Vec<u32>,
@@ -308,6 +314,10 @@ impl Unifier {
         let tb = self.rep_type(b);
         let Some(t) = self.glb(ts, ta, tb) else {
             self.failure = Some(Failure::Clash);
+            if self.explain {
+                self.clash_types = (ta, tb);
+                self.clash_path.clear();
+            }
             return false;
         };
         self.touch(a);
@@ -335,6 +345,9 @@ impl Unifier {
         for i in node.arc_start..node.arc_start + node.arc_len {
             let (f, v) = self.srcs[s].0.arcs[i as usize];
             if !self.merge_arc(a, f, base + v, ts, cons) {
+                if self.explain {
+                    self.clash_path.push(f);
+                }
                 return false;
             }
         }
@@ -342,6 +355,9 @@ impl Unifier {
         while c != NONE {
             let (f, v, next) = self.comp_arcs[c as usize];
             if !self.merge_arc(a, f, v, ts, cons) {
+                if self.explain {
+                    self.clash_path.push(f);
+                }
                 return false;
             }
             c = next;

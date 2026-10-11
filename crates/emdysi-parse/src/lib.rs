@@ -100,6 +100,10 @@ pub struct Erg {
 /// bracket (see [`Erg::licensed`]).
 const BRACKETED_MARKERS: &[&str] = &["mrk-nh_cl-pc_c", "mrk-nh_evnt-pc_c"];
 
+/// Degree words whose "than" phrase has a gap
+/// (`grammar/emdysi/comparatives.tdl`).
+const GAP_DEGREE_WORDS: &[&str] = &["more_deg_gap", "less_deg_gap"];
+
 /// The ACE configuration of the ERG's grammar-error variant.
 pub const MAL_CONFIG: &str = "ace/config-mal.tdl";
 
@@ -422,6 +426,20 @@ impl Erg {
             );
             rule.spanning_only = spanning.contains(&inst.name);
             rules.push(rule);
+        }
+        // A degree word whose "than" phrase has a gap (see
+        // grammar/emdysi/comparatives.tdl) heads a phrase that only the
+        // head-complement phrase that passes the gap up may take: the ERG's
+        // own would lose the gap.
+        let rule_index = |name: &str| rules.iter().position(|r| r.name == name);
+        if let (Some(spec), Some(passes)) =
+            (rule_index("sp-hd_hc_c"), rule_index("hd-cmp_u-than-sl_c"))
+        {
+            rules[spec].sealed_heads = GAP_DEGREE_WORDS
+                .iter()
+                .filter_map(|w| grammar.instance_index.get(*w).copied())
+                .collect();
+            rules[spec].sealed_parents = vec![passes];
         }
 
         let mut roots = Vec::new();

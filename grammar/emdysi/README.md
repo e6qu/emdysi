@@ -26,6 +26,15 @@ are not changed. Written for this project (MIT, see the repository's
   binary rule joins the halves into a sentence whose semantics is a
   `comparative_correlative_rel` with the first half (the condition) as
   ARG1 and the second as ARG2.
+- `comparatives.tdl`: *more* and *less* comparatives whose *than* has its
+  noun phrase elsewhere: shared with another conjunct (*similar to, but
+  less extreme than, the climate*) or extracted (*Who is Kim less tall
+  than?*). The ERG allows this for inflected comparatives (*bigger than*)
+  but not after its degree words *more* and *less*. The copies
+  `more_deg_gap` and `less_deg_gap` take a *than* phrase with one gap, and
+  the rule `hd-cmp_u-than-sl_c` passes that gap up, as the ERG's
+  head-complement phrase takes gaps from its head only. The parser allows
+  no other rule over their phrase (`Rule::sealed_heads`).
 - `conjunctions.tdl`: a coordinating conjunction followed by an adjunct
   between commas (*Kim stayed, but, in the end, Sandy left.*, *Bennet did
   not reply, but, unable to wait, began scolding.*): the ERG attaches the

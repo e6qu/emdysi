@@ -68,6 +68,12 @@ pub struct Rule {
     /// Has orthographic (affixation) effect.
     pub orth: bool,
     pub spanning_only: bool,
+    /// A restriction a grammar's types cannot state: an edge of this rule
+    /// whose first daughter is one of these lexical entries (instance
+    /// indices) is the first daughter of a rule in `sealed_parents` (rule
+    /// indices), or of no rule.
+    pub sealed_heads: Vec<usize>,
+    pub sealed_parents: Vec<usize>,
     dtr_qc: Vec<Vec<TypeId>>,
 }
 
@@ -99,6 +105,8 @@ impl Rule {
             lexical,
             orth,
             spanning_only: false,
+            sealed_heads: Vec::new(),
+            sealed_parents: Vec::new(),
             dtr_qc,
         }
     }
@@ -1366,8 +1374,11 @@ impl<'g> Parser<'g> {
         let t = Instant::now();
         let cons = self.g.constraint_fn();
         let h = self.u.add(self.chart[dtrs[other]].dag.clone());
+        let explain = traced(&rule.name);
+        self.u.explain = explain;
         // The rule was the first structure added.
         let ok = self.u.unify(rule.dtrs[other], h, &self.g.ts, &cons);
+        self.u.explain = false;
         self.stats.unify_time += t.elapsed();
         let dag = if ok {
             let t = Instant::now();
@@ -1386,11 +1397,24 @@ impl<'g> Parser<'g> {
                 "trace: {:?}: {}",
                 dtrs,
                 if !ok {
-                    "unification fails"
+                    let path: Vec<&str> = self
+                        .u
+                        .clash_path
+                        .iter()
+                        .rev()
+                        .map(|&f| self.g.feats.name(f))
+                        .collect();
+                    let (x, y) = self.u.clash_types;
+                    format!(
+                        "unification fails: daughter {other} {} {} vs {}",
+                        path.join(" "),
+                        self.g.ts.hier.name(x),
+                        self.g.ts.hier.name(y)
+                    )
                 } else if dag.is_none() {
-                    "cyclic"
+                    "cyclic".into()
                 } else {
-                    "ok"
+                    "ok".into()
                 }
             );
         }
@@ -1402,6 +1426,21 @@ impl<'g> Parser<'g> {
 
     /// Add the mother of a rule to the chart and the agenda.
     fn add_edge(&mut self, ri: usize, dtrs: &[usize], dag: Dag, agenda: &mut Agenda) {
+        let breaks_seal = dtrs.iter().enumerate().any(|(i, &d)| {
+            let EdgeKind::Rule(dr) = &self.chart[d].kind else {
+                return false;
+            };
+            let rule = &self.rules[*dr];
+            let sealed = !rule.sealed_heads.is_empty()
+                && self.chart[d].daughters.first().is_some_and(|&h| {
+                    matches!(&self.chart[h].kind, EdgeKind::Lex { inst, .. }
+                        if rule.sealed_heads.contains(inst))
+                });
+            sealed && !(i == 0 && rule.sealed_parents.contains(&ri))
+        });
+        if breaks_seal {
+            return;
+        }
         let start = self.chart[dtrs[0]].start;
         let end = self.chart[*dtrs.last().unwrap()].end;
         self.nodes += dag.nodes.len();
