@@ -886,3 +886,17 @@ change only adds analyses:
 | esd | 61 of 62 | 58 of 59 | 57 | 0 |
 | control | 1,292 → 1,298 of 1,305 | 1,494 of 1,582 | 1,384 | 0 |
 | sh-spec | 521 → 544 of 599 | 358 → 361 of 576 | 313 → 314 | 6 → 2 |
+
+The search without pruning that follows a pruned one ran only when the
+pruned search found no complete analysis. Pruning also loses strict
+analyses of sentences it leaves informal ones (*If you must include
+cross-references, consider putting them at the end of the text, like a
+reference, rather than in the middle.*: no strict reading of 240 pruned,
+111 strict of 646 without pruning, in 10 s). Searching again whenever
+there is no strict analysis (2026-10-11, with the grammar extensions of
+the same day; the counts include the fragments cut at *Mr.*):
+
+| | No strict reading (of 300) | Total time |
+|---|---|---|
+| Retry without a complete analysis | 35 | 837 s |
+| Retry without a strict analysis | 27 | 945 s |
