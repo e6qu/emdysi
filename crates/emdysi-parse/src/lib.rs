@@ -775,6 +775,34 @@ impl Erg {
             }
             _ => run(config, items.clone()),
         };
+        // A wider beam, twice and then four times as wide, before searching
+        // without one: on a long, ambiguous sentence the search without a
+        // beam runs out of its budget where a wider beam finds the strict
+        // analysis (|Every day at Longbourn was now a day of anxiety; but
+        // the most anxious part of each was when the post was expected.|:
+        // none at 40, strict at 80 in 4.5 seconds; out of budget at 320 and
+        // without a beam).
+        let mut result = result;
+        if let Some(beam) = config.cell_beam {
+            for factor in [2, 4] {
+                let left = config.timeout.saturating_sub(t0.elapsed());
+                if strict(&result)
+                    || left < Duration::from_secs(1)
+                    || result.positions <= config.cell_beam_from
+                {
+                    break;
+                }
+                let wider = ParserConfig {
+                    cell_beam: Some(beam * factor),
+                    timeout: left,
+                    ..config.clone()
+                };
+                let r = run(&wider, items.clone());
+                if strict(&r) || (complete(&r) && !complete(&result)) {
+                    result = r;
+                }
+            }
+        }
         // Pruning can make a full analysis of a long sentence impossible:
         // with no strict analysis, try again without pruning in the time
         // left (on the AI-prose treebank, 13 of 17 sentences that got only
