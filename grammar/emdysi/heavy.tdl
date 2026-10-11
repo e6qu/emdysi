@@ -13,16 +13,19 @@
 
 :begin :type.
 
-;; v_mod_vg_phrase with GENRE formal for nonformal, and no punctuation
-;; after the head or the adjunct: a comma there sets off a participle or
-;; an appositive, not a shifted object (|save time on commuting, allowing
+;; v_mod_vg_phrase with GENRE formal for nonformal, a noun phrase for the
+;; object (heavy shift moves noun phrases: not |prayed to Athena to take
+;; care|, |been at the scene during the trial|), and no punctuation after
+;; the head or the adjunct: a comma there sets off a participle or an
+;; appositive, not a shifted object (|save time on commuting, allowing
 ;; them to focus|).
 v_mod_vg_heavy_phrase := v_mod_phrase &
   [ SYNSEM.MODIFD notmod & [ RPERIPH bool ],
     NH-DTR.SYNSEM.PUNCT.RPUNCT no_punct,
     HD-DTR.SYNSEM [ PUNCT.RPUNCT no_punct,
 		    LOCAL [ CAT [ HEAD v_or_g_or_a_or_n,
-				  VAL.SUBJ *synlist* ],
+				  VAL [ SUBJ *synlist*,
+					COMPS.FIRST.LOCAL.CAT.HEAD supnoun ] ],
 			    CONT.HOOK #hook,
 			    CONJ cnil ],
 		    MODIFD notmod_or_lmod & [ RPERIPH na ] ],

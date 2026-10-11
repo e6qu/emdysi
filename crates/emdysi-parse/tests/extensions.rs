@@ -91,7 +91,7 @@ fn collective_nouns_with_plural_agreement() {
     ] {
         assert!(strict(&erg, text), "{text}");
     }
-    for text in ["The cat are hungry.", "Kim are ready."] {
+    for text in ["The cat are hungry.", "Kim are ready.", "I like team."] {
         assert!(!strict(&erg, text), "{text}");
     }
 }

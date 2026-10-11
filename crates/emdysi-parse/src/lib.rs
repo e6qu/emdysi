@@ -864,6 +864,16 @@ impl Erg {
                 (self.model.score(&features), features, r)
             })
             .collect();
+        // A collective noun with a plural verb (|The team are ready|, type
+        // n_-_c-pl-nomcase_le) is needed only where the verb agrees: when a
+        // strict reading does without one, readings with one say nothing
+        // more, and outrank the singular in the ranker, which saw few.
+        let plural_collective = |d: &Deriv| self.uses_le_type(d, "n_-_c-pl-nomcase_le");
+        if scored.iter().any(|(_, _, r)| {
+            is_strict(&self.licensed_root(&r.root, &r.deriv)) && !plural_collective(&r.deriv)
+        }) {
+            scored.retain(|(_, _, r)| !plural_collective(&r.deriv));
+        }
         scored.sort_by(|a, b| b.0.total_cmp(&a.0));
         let readings = scored
             .into_iter()
@@ -940,6 +950,14 @@ impl Erg {
             }
         }
         d.daughters.iter().all(|x| self.licensed(x))
+    }
+
+    /// Whether a derivation has a lexical entry of this type.
+    fn uses_le_type(&self, d: &Deriv, le_type: &str) -> bool {
+        match &d.kind {
+            EdgeKind::Lex { inst, .. } => self.le_types[*inst] == le_type,
+            _ => d.daughters.iter().any(|x| self.uses_le_type(x, le_type)),
+        }
     }
 
     /// The root of a reading, after the condition the root conditions of

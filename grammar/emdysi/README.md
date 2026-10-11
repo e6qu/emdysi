@@ -101,7 +101,10 @@ are not changed. Written for this project (MIT, see the repository's
   collective nouns with a plural verb (*The team are ready*), which the
   ERG allows as British for *class*, *committee* and *government* only
   (`n_-_c-pl-nomcase_le`): 46 more in the same form, without the dialect
-  for *majority*, *minority* and *staff*. Team names (*South Africa
+  for *majority*, *minority* and *staff*, and with an explicit
+  determiner (not a bare *team*). A reading with one is kept only when no
+  strict reading does without it, as it adds nothing where the verb does
+  not agree. Team names (*South Africa
   are*) are not covered: the lexicon cannot tell them from people's
   names (*Kim are* is an error); *from* and *to* with adjectives
   (*range from yellowish to bluish*, *went from bad to worse*): the ERG's
