@@ -115,7 +115,12 @@ are not changed. Written for this project (MIT, see the repository's
   (`to_prtcl_adj`, keyed apart so that *belong to* cannot take it); it
   contributes the *to* relation itself, so *range from yellow to blue*
   means the same with its adjectives as with its nouns; the older units
-  of time *twelvemonth* and *sennight*, in the form of *fortnight*. A
+  of time *twelvemonth* and *sennight*, in the form of *fortnight*;
+  unknown plural names with a determiner (*the Bennets were*, *the
+  Gardiners*): a generic entry for words the tagger marks NNPS, in the
+  ERG's type for plural names (`n_-_pn-pl-def_le`, *The Giants play
+  today*), exempt from the ERG's lexical filter that would remove it
+  beside the singular generic name. A
   native entry replaces the ERG's generic entries for an unknown word, so
   a word the ERG lacks gets all its common uses (*inexplicable*,
   *improbable* also as adjectives; *unusual*, *unexpected* need none, the

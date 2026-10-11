@@ -1044,3 +1044,32 @@ sennight_n1 := n_-_c-nday_le &
             PHON.ONSET con ] ].
 
 :end :instance.
+
+;;; Unknown plural names with a determiner: |The Bennets were able to eat.|,
+;;; |the elder Miss Bennets|. The ERG makes an unknown name tagged NNPS
+;;; singular (genericname_pl, type n_-_pn-unk_le: "the tagger is not
+;;; always right with the NNPS tag"), so a family or a team takes no plural
+;;; verb. This generic entry is plural, in the ERG's type for plural names
+;;; with a determiner (n_-_pn-pl-def_le, |The Giants play today.|), so a
+;;; bare singular name (|*Kubernetes are|) still does not agree. The
+;;; ERG's lexical filter generic_name+ne_name_lfr would remove it beside the
+;;; generic singular name of the same word (its comment means to keep
+;;; plurals, but the singular is not yet inflected for number), so the
+;;; parser exempts it from lexical filtering (ParserConfig::unfiltered).
+
+:begin :type.
+
+n_-_pn-pl-def-unk_le := n_-_pn-pl-def_le & basic_unknown_word &
+  [ SYNSEM [ LKEYS.KEYREL.CARG #carg,
+	     PHON.ONSET unk_onset ],
+    TOKENS.+LIST < [ +CARG #carg ] > ].
+
+:end :type.
+
+:begin :instance :status generic-lex-entry.
+
+genericname_pl_def := n_-_pn-pl-def-unk_le &
+  [ ORTH < "_generic_nnps_" >,
+    TOKENS.+LIST < [ +TNT.+TAGS.FIRST "NNPS" ] > ].
+
+:end :instance.

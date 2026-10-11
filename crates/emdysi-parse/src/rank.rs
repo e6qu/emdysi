@@ -50,6 +50,7 @@ pub const EQUIVALENT: &[(&str, &str)] = &[
     ("hd-aj_vmod-hv_c", "hd-aj_vmod_c"),
     ("hd-aj_vmod-s-hv_c", "hd-aj_vmod-s_c"),
     ("hd-aj_vmod-pc_c", "hd-aj_vmod_c"),
+    ("genericname_pl_def", "genericname_pl"),
     ("hd-aj_vmod-s-pc_c", "hd-aj_vmod-s_c"),
     ("to_prtcl_adj", "to"),
 ];

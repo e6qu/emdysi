@@ -280,6 +280,9 @@ pub struct ParserConfig {
     /// When no complete analysis is found, return a cover of the input by
     /// the largest partial analyses.
     pub fragments: bool,
+    /// Lexical entries (instance indices) that lexical filtering leaves in
+    /// place.
+    pub unfiltered: Vec<usize>,
 }
 
 /// Counters describing the work a parse did.
@@ -586,7 +589,9 @@ impl<'g> Parser<'g> {
             let mut mapper = ChartMapper::new(self.g, self.lexical_filter);
             mapper.apply(&mut flat);
             for (k, &i) in ids.iter().enumerate() {
-                if !flat.entries[k].alive {
+                let exempt = matches!(&self.chart[i].kind, EdgeKind::Lex { inst, .. }
+                    if self.config.unfiltered.contains(inst));
+                if !flat.entries[k].alive && !exempt {
                     keep.remove(&i);
                     filtered += 1;
                 }

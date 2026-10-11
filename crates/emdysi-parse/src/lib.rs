@@ -545,6 +545,13 @@ impl Erg {
             preferred_roots,
             unpack_beam: 100,
             fragments: true,
+            // emdysi's plural generic name (grammar/emdysi/lexicon.tdl).
+            unfiltered: grammar
+                .instance_index
+                .get("genericname_pl_def")
+                .copied()
+                .into_iter()
+                .collect(),
         };
         let lexicon = Lexicon::new(&grammar, morph, lex_paths);
         let labeler = Labeler::new(&grammar, &mut u).ok_or_else(|| err("no parse-node labels"))?;

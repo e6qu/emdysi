@@ -140,3 +140,14 @@ fn heavy_object_after_an_adjunct() {
     }
     assert!(!strict(&erg, "We saw yesterday the cats."));
 }
+
+#[test]
+fn plural_family_names() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    for text in [
+        "The Bennets were able to eat.",
+        "The Gardiners stayed only one night.",
+    ] {
+        assert!(strict(&erg, text), "{text}");
+    }
+}
