@@ -47,6 +47,8 @@ pub const EQUIVALENT: &[(&str, &str)] = &[
     ("more_deg_gap", "more_deg"),
     ("less_deg_gap", "less_deg"),
     ("from_to_adj", "from_to_nontemp"),
+    ("hd-aj_vmod-hv_c", "hd-aj_vmod_c"),
+    ("hd-aj_vmod-s-hv_c", "hd-aj_vmod-s_c"),
     ("to_prtcl_adj", "to"),
 ];
 

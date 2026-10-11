@@ -1,0 +1,60 @@
+;;; A heavy object after an adjunct: |people express through their
+;;; disapproval all their hatred of modern parenting|. The ERG analyses a
+;;; verb with an adjunct before its object (|B saw here a big parade|,
+;;; hd-aj_vmod_c and hd-aj_vmod-s_c) as informal in every case (GENRE
+;;; nonformal on v_mod_vg_phrase). Edited prose puts a long object last
+;;; (heavy noun phrase shift); a short one after an adjunct is informal
+;;; (|*We saw yesterday the cats.|).
+;;;
+;;; hd-aj_vmod-hv_c and hd-aj_vmod-s-hv_c are formal copies. The parser lets
+;;; their phrase take its object only if the object is longer than the
+;;; adjunct and at least five tokens long (Rule::heavy_object_parents, set
+;;; up in Erg::load_config): the grammar's types cannot count words.
+
+:begin :type.
+
+;; v_mod_vg_phrase with GENRE formal for nonformal, and no punctuation
+;; after the head or the adjunct: a comma there sets off a participle or
+;; an appositive, not a shifted object (|save time on commuting, allowing
+;; them to focus|).
+v_mod_vg_heavy_phrase := v_mod_phrase &
+  [ SYNSEM.MODIFD notmod & [ RPERIPH bool ],
+    NH-DTR.SYNSEM.PUNCT.RPUNCT no_punct,
+    HD-DTR.SYNSEM [ PUNCT.RPUNCT no_punct,
+		    LOCAL [ CAT [ HEAD v_or_g_or_a_or_n,
+				  VAL.SUBJ *synlist* ],
+			    CONT.HOOK #hook,
+			    CONJ cnil ],
+		    MODIFD notmod_or_lmod & [ RPERIPH na ] ],
+    NH-DTR.SYNSEM.LOCAL.CAT [ HEAD [ MOD.FIRST [ LOCAL.CONT.HOOK #hook,
+						 MODIFD.RPERIPH na_or_+ ] ],
+			      POSTHD + ],
+    GENRE formal ].
+
+v_mod_int_heavy_phrase := v_mod_vg_heavy_phrase & head_compositional &
+  [ NH-DTR.SYNSEM.LOCAL [ CAT.HEAD [ MOD < [ LOCAL intersective_mod ] >,
+				     MINORS.NORM no_rel ],
+			  CONT.HOOK.LTOP #ltop ],
+    C-CONT.HOOK.LTOP #ltop ].
+
+v_mod_scop_heavy_phrase := v_mod_vg_heavy_phrase &
+  [ HD-DTR.SYNSEM.LOCAL.CAT.HEAD v_or_a,
+    NH-DTR.SYNSEM.LOCAL [ CAT.HEAD [ MOD < [ LOCAL scopal_mod ] >,
+				     MINORS.NORM norm_rel ],
+			  CONT.HOOK.LTOP #ltop ],
+    C-CONT.HOOK.LTOP #ltop ].
+
+v_mod_int_heavy_rule := binary_rule_left_to_right & v_mod_int_heavy_phrase.
+v_mod_scop_heavy_rule := binary_rule_left_to_right & v_mod_scop_heavy_phrase.
+
+:end :type.
+
+:begin :instance :status rule.
+
+hd-aj_vmod-hv_c := v_mod_int_heavy_rule &
+  [ RNAME vlmi ].
+
+hd-aj_vmod-s-hv_c := v_mod_scop_heavy_rule &
+  [ RNAME vlms ].
+
+:end :instance.

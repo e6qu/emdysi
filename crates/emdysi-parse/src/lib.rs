@@ -438,15 +438,25 @@ impl Erg {
         // grammar/emdysi/comparatives.tdl) heads a phrase that only the
         // head-complement phrase that passes the gap up may take: the ERG's
         // own would lose the gap.
-        let rule_index = |name: &str| rules.iter().position(|r| r.name == name);
-        if let (Some(spec), Some(passes)) =
-            (rule_index("sp-hd_hc_c"), rule_index("hd-cmp_u-than-sl_c"))
-        {
+        let rule_index = |rules: &[Rule], name: &str| rules.iter().position(|r| r.name == name);
+        if let (Some(spec), Some(passes)) = (
+            rule_index(&rules, "sp-hd_hc_c"),
+            rule_index(&rules, "hd-cmp_u-than-sl_c"),
+        ) {
             rules[spec].sealed_heads = GAP_DEGREE_WORDS
                 .iter()
                 .filter_map(|w| grammar.instance_index.get(*w).copied())
                 .collect();
             rules[spec].sealed_parents = vec![passes];
+        }
+        // A formal adjunct before an object takes only a heavy object (see
+        // grammar/emdysi/heavy.tdl).
+        if let Some(hcomp) = rule_index(&rules, "hd-cmp_u_c") {
+            for name in ["hd-aj_vmod-hv_c", "hd-aj_vmod-s-hv_c"] {
+                if let Some(r) = rule_index(&rules, name) {
+                    rules[r].heavy_object_parents = vec![hcomp];
+                }
+            }
         }
 
         let mut roots = Vec::new();

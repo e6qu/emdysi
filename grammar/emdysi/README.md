@@ -84,6 +84,13 @@ are not changed. Written for this project (MIT, see the repository's
   count as formal: the ERG marks them informal to steer its generator,
   which leaves every sentence with a contraction without a strict
   analysis; edited prose uses them throughout.
+- `heavy.tdl`: a long object after an adjunct (*express through their
+  disapproval all their hatred of modern parenting*). The ERG marks every
+  verb-adjunct-object order informal (`hd-aj_vmod_c`, `hd-aj_vmod-s_c`);
+  `hd-aj_vmod-hv_c` and `hd-aj_vmod-s-hv_c` are formal copies, which the
+  parser lets take only an object longer than the adjunct and at least
+  five tokens long (`Rule::heavy_object_parents`). *We saw yesterday the
+  cats* stays informal.
 - `lexicon.tdl`: adjectives used as plural nouns for people with "the"
   (*the brave*, *the free*, *the meek*), in the form of the ERG's 94 such
   entries (type `n_-_c-pl-def_le`, e.g. *the poor*); adjectives used as

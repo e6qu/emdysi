@@ -126,3 +126,15 @@ fn from_and_to_with_adjectives() {
         assert!(!strict(&erg, text), "{text}");
     }
 }
+
+#[test]
+fn heavy_object_after_an_adjunct() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    for text in [
+        "People express through their disapproval all their hatred of modern parenting.",
+        "We saw yesterday all the cats that we had fed.",
+    ] {
+        assert!(strict(&erg, text), "{text}");
+    }
+    assert!(!strict(&erg, "We saw yesterday the cats."));
+}

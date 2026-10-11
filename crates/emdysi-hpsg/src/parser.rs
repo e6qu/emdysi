@@ -74,6 +74,12 @@ pub struct Rule {
     /// indices), or of no rule.
     pub sealed_heads: Vec<usize>,
     pub sealed_parents: Vec<usize>,
+    /// Another such restriction, for a phrase of a head and an adjunct that
+    /// still lacks its object: it is the first daughter only of these
+    /// rules (rule indices), and only with a second daughter (the object)
+    /// longer than its own second daughter (the adjunct) and at least
+    /// five positions long (about four words). Empty: no restriction.
+    pub heavy_object_parents: Vec<usize>,
     dtr_qc: Vec<Vec<TypeId>>,
 }
 
@@ -107,6 +113,7 @@ impl Rule {
             spanning_only: false,
             sealed_heads: Vec::new(),
             sealed_parents: Vec::new(),
+            heavy_object_parents: Vec::new(),
             dtr_qc,
         }
     }
@@ -1438,7 +1445,20 @@ impl<'g> Parser<'g> {
                     matches!(&self.chart[h].kind, EdgeKind::Lex { inst, .. }
                         if rule.sealed_heads.contains(inst))
                 });
-            sealed && !(i == 0 && rule.sealed_parents.contains(&ri))
+            if sealed && !(i == 0 && rule.sealed_parents.contains(&ri)) {
+                return true;
+            }
+            if !rule.heavy_object_parents.is_empty() {
+                let span = |e: usize| self.chart[e].end - self.chart[e].start;
+                let heavy = i == 0
+                    && rule.heavy_object_parents.contains(&ri)
+                    && dtrs.get(1).is_some_and(|&o| {
+                        let adjunct = self.chart[d].daughters.get(1).map_or(0, |&a| span(a));
+                        span(o) >= 5 && span(o) > adjunct
+                    });
+                return !heavy;
+            }
+            false
         });
         if breaks_seal {
             return;
