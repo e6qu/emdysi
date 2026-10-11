@@ -1,0 +1,119 @@
+;;; A coordinating conjunction followed by a bracketed adjunct: |Kim
+;;; stayed, but, in the end, Sandy left.|, |Bennet did not reply, but,
+;;; unable to wait, began scolding.|
+;;;
+;;; The ERG attaches an adjunct to the conjunction that it follows
+;;; (conj_mod_phrase: |and yesterday|, |and probably|), with or without a
+;;; comma after the conjunction, but its marker rules
+;;; (basic_basic_head_marker_phrase) take a marker that ends in a comma
+;;; only as its informal comma entry (RPUNCT rbcomma, GENRE nonformal), so
+;;; the comma closing the bracket made these coordinations informal. The
+;;; marker phrase types below are the ERG's (syntax.tdl) with one change:
+;;; the marker is a conjunction with its adjunct (a phrase, nonlex_synsem)
+;;; and ends in a formal comma. A conjunction with a comma and no adjunct
+;;; is a word (basic_lex_synsem), so *|Kim stayed, but, Sandy left| stays
+;;; without a formal analysis.
+
+:begin :type.
+
+basic_basic_head_marker_comma_phrase := head_comp_or_marker_phrase &
+  [ SYNSEM [ LOCAL [ CAT [ HEAD #head,
+			   HC-LEX #hclex,
+                           HS-LEX #hslex,
+			   --SLASHED.BOOL #slashed ],
+		     CONJ #conj,
+		     AGR #agr ],
+	     NONLOC [ SLASH.LIST #slash ],
+	     MODIFD #modif,
+	     LEX #lex,
+             PUNCT [ LPUNCT #lpunct,
+                     RPUNCT #rpunct,
+                     PAIRED #paired,
+		     RCLSTR #rclstr ] ],
+    ARGS < [ SYNSEM nonlex_synsem &
+                    [ PUNCT [ LPUNCT #lpunct,
+			      RPUNCT comma_punct,
+			      PAIRED #paired ],
+		      LOCAL [ AGR #agr,
+			      CONT.HOOK #hook,
+			      CONJ #conj ],
+		      LEX na_or_- ] ],
+	   sign &
+	   [ SYNSEM [ LOCAL.CAT [ HEAD #head,
+				  HC-LEX #hclex,
+				  HS-LEX #hslex,
+				  --SLASHED.BOOL #slashed ],
+		      NONLOC [ SLASH.LIST #slash ],
+		      MODIFD #modif,
+		      LEX #lex,
+		      PUNCT [ RPUNCT #rpunct,
+			      RCLSTR #rclstr ] ] ] >,
+    C-CONT.HOOK #hook ].
+
+basic_head_marker_comma_phrase := basic_basic_head_marker_comma_phrase &
+  [ SYNSEM.PUNCT.PNCTPR #pnctpr,
+    ARGS.REST.FIRST.SYNSEM.PUNCT.PAIRED #pnctpr ].
+
+head_marker_comma_phrase_event := basic_head_marker_comma_phrase &
+  [ INFLECTD +,
+    SYNSEM.LOCAL [ CONT.HOOK.INDEX conj_event & [ SF #iforce ],
+                   CAT.POSTHD #ph,
+		   CONJ complex-conj & [ CREL #rel ],
+		   AGR #agr ],
+    ARGS < [ SYNSEM.LOCAL [ CAT.HEAD non_noun_or_adv,
+                            CONJ complex-conj & [ CREL #rel ] ],
+             INFLECTD + ],
+	   [ SYNSEM.LOCAL [ CAT [ HEAD non_noun_or_adv &
+                                     [ MINORS.MIN event_or_degree_or_no_rel ],
+				  VAL.COMPS *olist*,
+                                  POSTHD #ph ],
+                            CONT.HOOK.INDEX [ SF #iforce ],
+			    CONJ cnil_or_numconj,
+                            AGR #agr ],
+             INFLECTD + ] >,
+    C-CONT.RELS <! !> ].
+
+head_marker_comma_phrase_s_phr := head_marker_comma_phrase_event &
+  [ SYNSEM.LOCAL.CAT.MC #mc,
+    ARGS < [ SYNSEM.LOCAL.CONJ lex-conj & [ CREL.ARG2 #rindex ] ],
+	   [ SYNSEM.LOCAL [ CAT [ HEAD verbal &
+				       [ TAM #tam,
+					 --ADDIN [ ADDTAM #tam,
+						   ADDPN #pn ] ],
+				  VAL [ SUBJ *anti_list*,
+					SPR < > ],
+				  MC #mc ],
+			    AGR.PNG.PN #pn,
+			    CONT.HOOK [ LTOP #ltop,
+					INDEX #rindex ] ] ] >,
+    C-CONT [ HOOK.LTOP #ltop,
+	     HCONS <! !>,
+	     ICONS <! !> ] ].
+
+head_marker_comma_phrase_e_phr := head_marker_comma_phrase_event &
+  [ SYNSEM.LOCAL.CAT.MC #mc,
+    ARGS < [ SYNSEM.LOCAL [ CONT.HOOK.LTOP #ltop,
+                            CONJ.CREL.ARG2 #index ] ],
+	   [ SYNSEM.LOCAL [ CAT [ VAL.SUBJ *synlist*,
+				  MC #mc ],
+			    CONT.HOOK [ LTOP #ltop,
+			                INDEX #index ] ] ] >,
+    C-CONT [ HCONS <! !>,
+	     ICONS <! !> ] ].
+
+hmark_s_comma_rule := binary_rule_left_to_right &
+                      head_marker_comma_phrase_s_phr.
+hmark_e_comma_rule := binary_rule_left_to_right &
+                      head_marker_comma_phrase_e_phr.
+
+:end :type.
+
+:begin :instance :status rule.
+
+mrk-nh_cl-pc_c := hmark_s_comma_rule &
+  [ RNAME hmkc ].
+
+mrk-nh_evnt-pc_c := hmark_e_comma_rule &
+  [ RNAME hmke ].
+
+:end :instance.

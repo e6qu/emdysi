@@ -705,8 +705,30 @@ impl<'g> Parser<'g> {
                                 ) {
                                     self.stats.qc_filtered += 1;
                                     if traced(&self.rules[ri].name) {
+                                        // The first path whose types clash.
+                                        let at = (0..self.qc.paths.len()).find(|&i| {
+                                            let y = self.chart[c].qc.get(i).copied().unwrap_or(TOP);
+                                            let x = qc_other[i];
+                                            y != TOP
+                                                && x != TOP
+                                                && x != UNSET
+                                                && !self.u.compatible(&self.g.ts, &[x], &[y])
+                                        });
+                                        let why = at.map(|i| {
+                                            let path: Vec<&str> = self.qc.paths[i]
+                                                .iter()
+                                                .map(|&f| self.g.feats.name(f))
+                                                .collect();
+                                            format!(
+                                                ": {} {} vs {}",
+                                                path.join(" "),
+                                                self.g.ts.hier.name(qc_other[i]),
+                                                self.g.ts.hier.name(self.chart[c].qc[i])
+                                            )
+                                        });
                                         eprintln!(
-                                            "trace: edge {c} quick-check fails as daughter {other} with edge {id}"
+                                            "trace: edge {c} quick-check fails as daughter {other} with edge {id}{}",
+                                            why.unwrap_or_default()
                                         );
                                     }
                                     continue;
@@ -1217,10 +1239,41 @@ impl<'g> Parser<'g> {
         let words = self.rules.len().div_ceil(64);
         let mut fits = [vec![0u64; words], vec![0u64; words]];
         let qc = &self.chart[id].qc;
+        // EMDYSI_TRACE_FITS=<rule>: why edges built by that rule do not fit
+        // the daughters of the traced rule (EMDYSI_TRACE_RULE).
+        let built_by = match &self.chart[id].kind {
+            EdgeKind::Rule(r) => Some(self.rules[*r].name.as_str()),
+            _ => None,
+        };
+        let explain =
+            built_by.is_some_and(|b| std::env::var("EMDYSI_TRACE_FITS").is_ok_and(|w| w == b));
         for (dqc, slots) in &self.qc_groups {
             if self.u.compatible(&self.g.ts, dqc, qc) {
                 for &(ri, pos) in slots {
                     fits[pos][ri / 64] |= 1 << (ri % 64);
+                }
+            } else if explain {
+                for &(ri, pos) in slots {
+                    if !traced(&self.rules[ri].name) {
+                        continue;
+                    }
+                    let at = (0..dqc.len().min(qc.len())).find(|&i| {
+                        dqc[i] != TOP
+                            && qc[i] != TOP
+                            && !self.u.compatible(&self.g.ts, &dqc[i..=i], &qc[i..=i])
+                    });
+                    if let Some(i) = at {
+                        let path: Vec<&str> = self.qc.paths[i]
+                            .iter()
+                            .map(|&f| self.g.feats.name(f))
+                            .collect();
+                        eprintln!(
+                            "trace: edge {id} does not fit daughter {pos}: {} {} vs {}",
+                            path.join(" "),
+                            self.g.ts.hier.name(dqc[i]),
+                            self.g.ts.hier.name(qc[i])
+                        );
+                    }
                 }
             }
         }

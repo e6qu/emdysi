@@ -96,6 +96,10 @@ pub struct Erg {
     mal: std::sync::OnceLock<Option<Box<Erg>>>,
 }
 
+/// Marker rules of emdysi's grammar extensions whose marker closes a
+/// bracket (see [`Erg::licensed`]).
+const BRACKETED_MARKERS: &[&str] = &["mrk-nh_cl-pc_c", "mrk-nh_evnt-pc_c"];
+
 /// The ACE configuration of the ERG's grammar-error variant.
 pub const MAL_CONFIG: &str = "ace/config-mal.tdl";
 
@@ -782,6 +786,7 @@ impl Erg {
         let mut scored: Vec<(f64, Vec<String>, &emdysi_hpsg::parser::Reading)> = result
             .readings
             .iter()
+            .filter(|r| self.licensed(&r.deriv))
             .map(|r| {
                 let features = rank::features(&self.grammar, &self.rules, &r.deriv, &r.root);
                 (self.model.score(&features), features, r)
@@ -824,6 +829,45 @@ impl Erg {
             elapsed: t0.elapsed(),
             temperature: self.model.temperature,
         })
+    }
+
+    /// Whether a derivation meets the conditions of emdysi's grammar
+    /// extensions that their TDL cannot state, because the ERG removes the
+    /// daughters from a phrase's structure. A marker that ends in a formal
+    /// comma (`mrk-nh_cl-pc_c`, `mrk-nh_evnt-pc_c`, see
+    /// `grammar/emdysi/conjunctions.tdl`) closes a bracket that a comma
+    /// after its conjunction opens: |but, in the end, Sandy left|, not
+    /// *|and in the end, left|.
+    fn licensed(&self, d: &Deriv) -> bool {
+        let ends_in_comma = |d: &Deriv| {
+            let mut d = d;
+            loop {
+                match &d.kind {
+                    EdgeKind::Lex { inst, .. } => {
+                        return self.grammar.instances[*inst].name.starts_with("comma");
+                    }
+                    _ => match d.daughters.last() {
+                        Some(last) => d = last,
+                        None => return false,
+                    },
+                }
+            }
+        };
+        if let EdgeKind::Rule(ri) = &d.kind {
+            if BRACKETED_MARKERS.contains(&self.rules[*ri].name.as_str()) {
+                // The marker is the conjunction with its adjunct; its head,
+                // the conjunction, must carry the opening comma.
+                let opened = d
+                    .daughters
+                    .first()
+                    .and_then(|m| m.daughters.first())
+                    .is_some_and(|conj| ends_in_comma(conj));
+                if !opened {
+                    return false;
+                }
+            }
+        }
+        d.daughters.iter().all(|x| self.licensed(x))
     }
 
     /// Whether the grammar knows a word form, directly or through its

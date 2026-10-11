@@ -33,3 +33,19 @@ fn paired_comma_coordination() {
         assert!(!strict(&erg, text), "{text}");
     }
 }
+
+#[test]
+fn bracketed_adjunct_after_conjunction() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    for text in [
+        "Kim stayed, but, in the end, Sandy left.",
+        "Kim stayed, and, in the end, left.",
+        "Bennet did not reply, but, unable to wait, began scolding.",
+        "Kim stayed, but Sandy left.",
+    ] {
+        assert!(strict(&erg, text), "{text}");
+    }
+    for text in ["Kim and, Sandy left.", "I saw Kim and, Sandy."] {
+        assert!(!strict(&erg, text), "{text}");
+    }
+}

@@ -70,3 +70,5 @@ other	But I knew I should persuade you at last.
 other	You, or a controller, must delete the object.	Coordination between paired commas (grammar/emdysi/coordination.tdl).
 other	The kubelet, or the API server, rejects the request.	
 other	Kim, and Sandy, left.	
+other	Kim stayed, but, in the end, Sandy left.	An adjunct between commas after a conjunction (grammar/emdysi/conjunctions.tdl).
+other	Bennet did not reply, but, unable to wait, began scolding.	

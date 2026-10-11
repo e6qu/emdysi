@@ -8,7 +8,9 @@ are not changed. Written for this project (MIT, see the repository's
 - `adjectives.tdl`: comma-separated adjectives before a noun (*a
   selfish, hypocritical woman*, *a long, cold, dark night*): the ERG
   admits the comma only as its informal comma entry (`comma_inf_pct`);
-  `comma_adj_pct` is the same comma for adjectives only, not informal.
+  `comma_adj_pct` is the same comma for adjectives only (not for a
+  conjunction, whose head the adjective type does not exclude: *Kim and,
+  Sandy left*), not informal.
 - `adjuncts.tdl`: fronted prepositional phrases and adverbs without a
   comma (*In 2019 we released the book.*, *Yesterday we left.*): the ERG's
   no-comma filler-head rules (`flr-hd_nwh-nc_c`, `-nmc_c`) are informal;
@@ -24,6 +26,18 @@ are not changed. Written for this project (MIT, see the repository's
   binary rule joins the halves into a sentence whose semantics is a
   `comparative_correlative_rel` with the first half (the condition) as
   ARG1 and the second as ARG2.
+- `conjunctions.tdl`: a coordinating conjunction followed by an adjunct
+  between commas (*Kim stayed, but, in the end, Sandy left.*, *Bennet did
+  not reply, but, unable to wait, began scolding.*): the ERG attaches the
+  adjunct to the conjunction (`hd-aj_cmod_c`, `hd-aj_cmod-s_c`), but its
+  marker rules take a marker ending in a comma only as the informal comma.
+  `mrk-nh_cl-pc_c` and `mrk-nh_evnt-pc_c` are the clause and verb-phrase
+  marker rules for a conjunction with its adjunct ending in a formal
+  comma. The comma after the conjunction must open the bracket: the
+  parser keeps a reading with them only if the conjunction carries a
+  comma (`Erg::licensed`, as the ERG's phrases do not keep their
+  daughters), so *Kim stayed and in the end, left* gets nothing new. *Kim
+  and, Sandy left* stays without a strict analysis.
 - `coordination.tdl`: two noun phrases coordinated between a pair of
   commas (*You, or a controller, must delete the object.*, *Kim, and
   Sandy, left.*): the ERG ties a comma on the left conjunct to the
