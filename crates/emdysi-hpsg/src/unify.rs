@@ -434,6 +434,9 @@ impl Unifier {
             nodes: Vec::with_capacity(self.last_copy.0),
             arcs: Vec::with_capacity(self.last_copy.1),
         };
+        // Whether some arc points back to a node numbered no later than its
+        // source: in breadth-first numbering, a cycle needs one.
+        let mut back = false;
         let mut i = 0;
         while i < order.len() {
             let h = order[i];
@@ -469,6 +472,7 @@ impl Unifier {
             }
             for j in start..dag.arcs.len() {
                 let target = self.copy_target(dag.arcs[j].1, cg, &mut order);
+                back |= target as usize <= i;
                 dag.arcs[j].1 = target;
             }
             dag.nodes.push(Node {
@@ -480,7 +484,7 @@ impl Unifier {
         }
         self.order = order;
         self.last_copy = (dag.nodes.len(), dag.arcs.len());
-        if is_cyclic_with(&dag, &mut self.cycle_state, &mut self.cycle_stack) {
+        if back && is_cyclic_with(&dag, &mut self.cycle_state, &mut self.cycle_stack) {
             None
         } else {
             Some(dag)
