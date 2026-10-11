@@ -49,3 +49,18 @@ fn bracketed_adjunct_after_conjunction() {
         assert!(!strict(&erg, text), "{text}");
     }
 }
+
+#[test]
+fn exclamations_without_a_verb() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    for text in [
+        "What a contrast!",
+        "What a contrast between him and his friend!",
+        "Nonsense!",
+    ] {
+        assert!(strict(&erg, text), "{text}");
+    }
+    for text in ["The cat.", "What a contrast.", "Because it failed."] {
+        assert!(!strict(&erg, text), "{text}");
+    }
+}

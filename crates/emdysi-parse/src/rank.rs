@@ -42,6 +42,7 @@ pub const EQUIVALENT: &[(&str, &str)] = &[
     ("np-np_crd-pc-t_c", "np-np_crd-t_c"),
     ("mrk-nh_cl-pc_c", "mrk-nh_cl_c"),
     ("mrk-nh_evnt-pc_c", "mrk-nh_evnt_c"),
+    ("root_strict_excl", "root_frag"),
 ];
 
 /// The ERG's name for `name` (see [`EQUIVALENT`]).
@@ -63,7 +64,7 @@ fn node_name(g: &Grammar, rules: &[Rule], d: &Deriv) -> String {
 /// Feature strings of a derivation rooted with root condition `root`.
 pub fn features(g: &Grammar, rules: &[Rule], d: &Deriv, root: &str) -> Vec<String> {
     // British-spelling twins of root conditions share their weights.
-    let root = root.strip_suffix("_br").unwrap_or(root);
+    let root = erg_name(root.strip_suffix("_br").unwrap_or(root));
     let mut out = vec![
         format!("root:{root}"),
         format!("top:{root}>{}", node_name(g, rules, d)),

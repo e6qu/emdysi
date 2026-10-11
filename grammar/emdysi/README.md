@@ -60,6 +60,13 @@ are not changed. Written for this project (MIT, see the repository's
   `settings.cfg`, which the loader reads in the syntax of ACE's
   configuration files). The conjunction's relation keeps its left
   argument unfilled.
+- `roots.tdl`: exclamations without a verb (*What a contrast!*,
+  *Nonsense!*): the ERG's strict root takes clauses only, so these were
+  formal fragments. `root_strict_excl` is its fragment root for edited
+  prose, declared a strict root in `settings.cfg`; the parser keeps a
+  reading under it as strict only if it ends in an exclamation mark
+  (`Erg::licensed_root`), as the root cannot tell *!* from *.*, and as a
+  formal fragment otherwise (*The cat.*, *Because it failed.*).
 - `register.tdl`: contracted auxiliaries (*we'll*, *it's*, *they're*)
   count as formal: the ERG marks them informal to steer its generator,
   which leaves every sentence with a contraction without a strict

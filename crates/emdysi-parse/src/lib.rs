@@ -112,7 +112,10 @@ pub const DEFAULT_MODEL: &str = include_str!("../data/rank.tsv");
 /// Whether a root condition name is the ERG's strict one (formal edited
 /// text), in American or British spelling.
 pub fn is_strict(root: &str) -> bool {
-    root == "root_strict" || root == "root_strict_br"
+    matches!(
+        root.trim_end_matches("_br"),
+        "root_strict" | "root_strict_excl"
+    )
 }
 
 /// Replace `DIALECT us` in the top-level feature structure of a root
@@ -454,6 +457,28 @@ impl Erg {
                 )
         };
         let preferred_roots = roots.iter().take_while(|(n, _)| sentence_root(n)).count();
+        // emdysi's strict roots (grammar/emdysi/settings.cfg) follow them:
+        // they take phrases, and most of their readings are fragments.
+        let extra: Vec<String> = std::fs::read_to_string(dir.join("../emdysi/settings.cfg"))
+            .map(|src| ace_setting(&src, "strict-roots"))
+            .unwrap_or_default();
+        let mut at = preferred_roots;
+        for name in &extra {
+            let inst = grammar
+                .instance(name)
+                .ok_or_else(|| err(format!("no root {name}")))?;
+            let dag = grammar.expand(&inst.body, &mut u).map_err(Error)?;
+            let mut br = inst.body.clone();
+            let twin = set_dialect(&mut br, "br");
+            let mut new = vec![(name.clone(), Arc::new(dag))];
+            if twin {
+                let dag = grammar.expand(&br, &mut u).map_err(Error)?;
+                new.push((format!("{name}_br"), Arc::new(dag)));
+            }
+            let n = new.len();
+            roots.splice(at..at, new);
+            at += n;
+        }
         let deleted_daughters = ace_setting(&config_src, "deleted-daughters")
             .iter()
             .filter_map(|f| grammar.feat(f))
@@ -806,7 +831,7 @@ impl Erg {
                         .mrs
                         .as_ref()
                         .and_then(|c| emdysi_hpsg::mrs::extract(&self.grammar, c, &r.dag)),
-                    root: r.root.clone(),
+                    root: self.licensed_root(&r.root, &r.deriv),
                     derivation: derivation(&self.grammar, &self.rules, &r.deriv, &forms),
                     // Labelling costs unifications; only the best readings get trees.
                     tree: (i < self.trees_for).then(|| {
@@ -868,6 +893,32 @@ impl Erg {
             }
         }
         d.daughters.iter().all(|x| self.licensed(x))
+    }
+
+    /// The root of a reading, after the condition the root conditions of
+    /// emdysi's grammar extensions cannot state: a phrase without a verb is
+    /// strict as an exclamation (`root_strict_excl`, see
+    /// `grammar/emdysi/roots.tdl`) only if it ends in an exclamation mark,
+    /// and a formal fragment (`root_frag`) otherwise. (The parser gives a
+    /// derivation the first root it meets, so the fragment root does not
+    /// have it too.)
+    fn licensed_root(&self, root: &str, d: &Deriv) -> String {
+        if root.trim_end_matches("_br") != "root_strict_excl" {
+            return root.to_string();
+        }
+        let mut last = d;
+        while let Some(x) = last.daughters.last() {
+            last = x;
+        }
+        let bang = match &last.kind {
+            EdgeKind::Lex { inst, .. } => self.grammar.instances[*inst].name == "bang_pct",
+            _ => false,
+        };
+        if bang {
+            root.to_string()
+        } else {
+            root.replace("root_strict_excl", "root_frag")
+        }
     }
 
     /// Whether the grammar knows a word form, directly or through its
