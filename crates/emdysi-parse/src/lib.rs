@@ -720,7 +720,14 @@ impl Erg {
                 ..config.clone()
             };
             let r = run(&exhaustive, items);
-            if complete(&r) { r } else { result }
+            // A search without pruning that finishes is kept even with
+            // fragments only: it proves the sentence is outside the
+            // grammar, which the pruned search cannot.
+            if complete(&r) || (!r.exhausted && r.stats.pruned == 0) {
+                r
+            } else {
+                result
+            }
         } else {
             result
         };
