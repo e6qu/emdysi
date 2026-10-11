@@ -31,16 +31,17 @@ pub enum Failure {
 
 /// A state of a [`Unifier`] to return to.
 pub struct Checkpoint {
-    srcs: usize,
     total: u32,
+    arcs: usize,
     comp_arcs: usize,
 }
 
 #[derive(Default)]
 pub struct Unifier {
-    srcs: Vec<(Arc<Dag>, u32)>,
-    /// The source each handle belongs to.
-    owner: Vec<u32>,
+    /// The nodes of the sources, by handle, with their arcs in `arcs`.
+    nodes: Vec<Node>,
+    /// The arcs of the sources, with targets as handles.
+    arcs: Vec<(FeatId, u32)>,
     total: u32,
     generation: u32,
     stamp: Vec<u32>,
@@ -113,7 +114,7 @@ impl Unifier {
     pub fn begin(&mut self) {
         self.logging = false;
         self.trail.clear();
-        self.srcs.clear();
+        self.arcs.clear();
         self.comp_arcs.clear();
         self.total = 0;
         self.failure = None;
@@ -124,7 +125,9 @@ impl Unifier {
         }
     }
 
-    /// Add a source DAG, returning the handle of its root.
+    /// Add a source DAG, returning the handle of its root. Its nodes and
+    /// arcs are copied into the unifier's own tables, so that following a
+    /// handle is one lookup.
     pub fn add(&mut self, dag: Arc<Dag>) -> u32 {
         let base = self.total;
         self.total += dag.nodes.len() as u32;
@@ -137,10 +140,25 @@ impl Unifier {
             self.comp.resize(n, NONE);
             self.copy.resize(n, NONE);
             self.copy_stamp.resize(n, 0);
-            self.owner.resize(n, 0);
+            self.nodes.resize(
+                n,
+                Node {
+                    ty: NONE,
+                    arc_start: 0,
+                    arc_len: 0,
+                },
+            );
         }
-        self.owner[base as usize..need].fill(self.srcs.len() as u32);
-        self.srcs.push((dag, base));
+        let arc_base = self.arcs.len() as u32;
+        for (slot, n) in self.nodes[base as usize..need].iter_mut().zip(&dag.nodes) {
+            *slot = Node {
+                ty: n.ty,
+                arc_start: arc_base + n.arc_start,
+                arc_len: n.arc_len,
+            };
+        }
+        self.arcs
+            .extend(dag.arcs.iter().map(|&(f, v)| (f, base + v)));
         base
     }
 
@@ -151,8 +169,8 @@ impl Unifier {
         self.logging = true;
         self.trail.clear();
         Checkpoint {
-            srcs: self.srcs.len(),
             total: self.total,
+            arcs: self.arcs.len(),
             comp_arcs: self.comp_arcs.len(),
         }
     }
@@ -166,7 +184,7 @@ impl Unifier {
             self.ty[i] = ty;
             self.comp[i] = comp;
         }
-        self.srcs.truncate(c.srcs);
+        self.arcs.truncate(c.arcs);
         self.total = c.total;
         self.comp_arcs.truncate(c.comp_arcs);
         self.failure = None;
@@ -193,14 +211,8 @@ impl Unifier {
     }
 
     #[inline]
-    fn src(&self, h: u32) -> (usize, u32) {
-        let s = self.owner[h as usize] as usize;
-        (s, h - self.srcs[s].1)
-    }
-
-    fn src_node(&self, h: u32) -> (usize, Node) {
-        let (s, local) = self.src(h);
-        (s, self.srcs[s].0.nodes[local as usize])
+    fn src_node(&self, h: u32) -> Node {
+        self.nodes[h as usize]
     }
 
     #[inline]
@@ -222,7 +234,7 @@ impl Unifier {
         if self.fresh(h) && self.ty[h as usize] != NONE {
             return self.ty[h as usize];
         }
-        self.src_node(h).1.ty
+        self.src_node(h).ty
     }
 
     /// Force the type of a node, bypassing GLB computation.
@@ -240,12 +252,10 @@ impl Unifier {
     /// Value of feature `f` at representative node `h`.
     #[inline]
     fn rep_arc(&self, h: u32, f: FeatId) -> Option<u32> {
-        let (s, node) = self.src_node(h);
-        let dag = &self.srcs[s].0;
-        let base = self.srcs[s].1;
-        let arcs = &dag.arcs[node.arc_start as usize..(node.arc_start + node.arc_len) as usize];
+        let node = self.src_node(h);
+        let arcs = &self.arcs[node.arc_start as usize..(node.arc_start + node.arc_len) as usize];
         if let Ok(i) = arcs.binary_search_by_key(&f, |a| a.0) {
-            return Some(base + arcs[i].1);
+            return Some(arcs[i].1);
         }
         if self.fresh(h) {
             let mut c = self.comp[h as usize];
@@ -276,13 +286,9 @@ impl Unifier {
 
     fn arcs_into(&self, h: u32, out: &mut Vec<(FeatId, u32)>) {
         out.clear();
-        let (s, node) = self.src_node(h);
-        let dag = &self.srcs[s].0;
-        let base = self.srcs[s].1;
-        out.extend(
-            dag.arcs[node.arc_start as usize..(node.arc_start + node.arc_len) as usize]
-                .iter()
-                .map(|&(f, v)| (f, base + v)),
+        let node = self.src_node(h);
+        out.extend_from_slice(
+            &self.arcs[node.arc_start as usize..(node.arc_start + node.arc_len) as usize],
         );
         if self.fresh(h) && self.comp[h as usize] != NONE {
             let mut c = self.comp[h as usize];
@@ -340,11 +346,10 @@ impl Unifier {
             }
         }
         // Move b's arcs over to a: first the source arcs, then added ones.
-        let (s, node) = self.src_node(b);
-        let base = self.srcs[s].1;
+        let node = self.src_node(b);
         for i in node.arc_start..node.arc_start + node.arc_len {
-            let (f, v) = self.srcs[s].0.arcs[i as usize];
-            if !self.merge_arc(a, f, base + v, ts, cons) {
+            let (f, v) = self.arcs[i as usize];
+            if !self.merge_arc(a, f, v, ts, cons) {
                 if self.explain {
                     self.clash_path.push(f);
                 }
@@ -443,14 +448,9 @@ impl Unifier {
             let start = dag.arcs.len();
             // Gather the arcs with their handles, sorted by feature, then
             // number the targets in that order.
-            let (s, node) = self.src_node(h);
-            let base = self.srcs[s].1;
+            let node = self.src_node(h);
             let src_arcs = node.arc_start as usize..(node.arc_start + node.arc_len) as usize;
-            dag.arcs.extend(
-                self.srcs[s].0.arcs[src_arcs]
-                    .iter()
-                    .map(|&(f, v)| (f, base + v)),
-            );
+            dag.arcs.extend_from_slice(&self.arcs[src_arcs]);
             if self.fresh(h) && self.comp[h as usize] != NONE {
                 let mut c = self.comp[h as usize];
                 while c != NONE {
