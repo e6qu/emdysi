@@ -906,3 +906,33 @@ Of the 24, 11 are the fragments cut at *Mr.*; the other 13 include
 gapping (*and of his judgement the highest opinion*), lists of fragments
 joined by semicolons, archaic negation (*knew not how*) and team names
 with a plural verb (*South Africa are*).
+
+### Grammar extensions of 2026-10-11
+
+Exclamations without a verb, comparatives with a shared or extracted
+object (*similar to, but less extreme than, the climate*), collective
+nouns with a plural verb, ranges of amounts (*£3,000-£5,000*), *from* and
+*to* with adjectives, a heavy object after an adjunct, and the search
+retry above. On the gold profiles, against main the same day:
+
+| Profile | Grammatical parsed | Gold tree found | Gold ranked first |
+|---|---|---|---|
+| csli | 938 of 960 (same) | 908 of 921 (same) | 885 (same) |
+| control | 1,298 → 1,297 of 1,305 | 1,494 → 1,495 of 1,582 | 1,384 → 1,383 |
+| sh-spec | 544 → 543 of 599 | 361 → 358 of 576 | 314 (same) |
+| esd, mrs, ccs | same | same | same |
+
+Ungrammatical items parsed are unchanged (csli 254 of 388, control 497 of
+527). The first comparison found larger losses, all from the
+extensions themselves: the heavy-object rule took verb phrases and
+prepositional phrases as objects (*prayed to Athena to take care of
+himself*), and the plural collective entries outranked the singular ones
+and made bare noun phrases (*Chiang became a programmer and in Devito's
+department* parsed as *Devito is departments*); both are fixed. What is
+left comes from search limits on long sentences: the parse of a
+grammatical item that main finished in time now takes 38 seconds with
+four in parallel; above a heavy shift the formal and informal phrases do
+not pack together, so the beam keeps fewer of the informal analyses the
+gold trees use; and the retry without pruning, now run on sentences with
+informal readings only, finds more readings, which can push the gold tree
+out of the first 1,000.
