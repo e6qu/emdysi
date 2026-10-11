@@ -658,6 +658,26 @@ the first development set takes 15 seconds instead of 38 minutes, the
 second 78 seconds instead of about three hours, and the real errors 31
 seconds.
 
+A pruned parse that finds no analysis is retried without pruning, in
+the time left; the retry was kept only if it found an analysis, so a
+retry that finished with fragments only, which proves the sentence is
+outside the grammar, was thrown away and the sentence counted as not
+searched completely (2026-10-11). It is now kept. Of the 23 real errors
+whose sentences were not searched completely, 2 now are; neither is
+claimed, as the grammar-error variant names more than one error in them
+or runs out of time. The flags on the first development set and the real
+errors caught are unchanged (6; 163).
+
+Of the 28 sentences of the coverage sample (first development set)
+without a strict reading that are not cut at *Mr.*, 10 have readings that
+use the ERG's paired comma, which it marks informal: the commas around an
+interruption (*but, unable to contain herself, began*), an alternative
+(*You, or a controller, must delete it*) or a shared object (*similar
+to, but less extreme than, the climate*). Making that comma formal, as
+`register.tdl` does for contractions, was tried and dropped (2026-10-11):
+the same comma also makes *The dog, barked* and *B knows, we arrived*
+strict, which edited English does not write.
+
 ## Stress sentences and ambiguity
 
 [`corpora/stress`](../corpora/stress/README.md) has 66 grammatical
