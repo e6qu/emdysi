@@ -220,6 +220,88 @@ struct Inst {
     score: f64,
 }
 
+/// The instantiations of edges made so far while unpacking: all at once
+/// without a scorer ([`Parser::unpack`]), on demand with one
+/// ([`Parser::lazy_inst`]).
+#[derive(Default)]
+struct Memo {
+    eager: HashMap<usize, Vec<Inst>>,
+    lazy: HashMap<usize, LazyEdge>,
+}
+
+/// One edge's instantiations, made on demand in the order
+/// [`Parser::unpack`] would give them all at once: best first, at most
+/// `unpack_beam`, merging the edge with the edges packed into it.
+struct LazyEdge {
+    out: Vec<Inst>,
+    finished: bool,
+    alts: Vec<AltGen>,
+    /// The next instantiation of each alternative, if made.
+    heads: Vec<Option<Inst>>,
+    exhausted: Vec<bool>,
+}
+
+/// The instantiations of one edge (without those packed into it).
+enum AltGen {
+    Lex(Option<Inst>),
+    Rule(RuleGen),
+    None,
+}
+
+/// The successful combinations of a rule's daughter instantiations, best
+/// first: the combinations are enumerated lazily over the grid of daughter
+/// instantiation indices, ordered by score and then by index. A
+/// combination scores the sum of its daughters' scores and the rule's
+/// local score, which depends on the rules that built the daughters, so
+/// scores are not monotone over the grid; a combination's sum plus the
+/// best local score the rule can get (`max_rule`) bounds it and the
+/// combinations after it, and a combination is tried only when no bound
+/// left can beat it.
+struct RuleGen {
+    ri: usize,
+    start: usize,
+    end: usize,
+    kids: Vec<usize>,
+    max_rule: f64,
+    /// Combinations by their bound.
+    frontier: std::collections::BinaryHeap<Cand>,
+    /// Combinations by their score.
+    ready: std::collections::BinaryHeap<Cand>,
+    seen: HashSet<Vec<usize>>,
+    found: usize,
+    /// First-daughter instantiations the rule does not unify with.
+    failed_first: HashSet<usize>,
+    started: bool,
+}
+
+/// A combination of daughter instantiation indices: higher scores first,
+/// then the lexically smaller combination (the order of a stable sort of
+/// the combinations generated in lexical order).
+#[derive(Clone)]
+struct Cand {
+    score: f64,
+    combo: Vec<usize>,
+}
+
+impl PartialEq for Cand {
+    fn eq(&self, o: &Self) -> bool {
+        self.cmp(o) == std::cmp::Ordering::Equal
+    }
+}
+impl Eq for Cand {}
+impl PartialOrd for Cand {
+    fn partial_cmp(&self, o: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(o))
+    }
+}
+impl Ord for Cand {
+    fn cmp(&self, o: &Self) -> std::cmp::Ordering {
+        self.score
+            .total_cmp(&o.score)
+            .then_with(|| o.combo.cmp(&self.combo))
+    }
+}
+
 /// A quick-check slot not computed yet.
 const UNSET: TypeId = TypeId::MAX;
 
@@ -819,14 +901,14 @@ impl<'g> Parser<'g> {
         let spanning: Vec<usize> = spanning.into_iter().map(|(_, id)| id).collect();
         let mut readings = Vec::new();
         let unpack_start = Instant::now();
-        let mut memo: HashMap<usize, Vec<Inst>> = HashMap::new();
+        let mut memo = Memo::default();
         // Two passes: readings under the preferred (strictest) root conditions,
         // then the others, so that the cap on readings does not crowd out
         // strict analyses with fragments.
         let mut taken: HashSet<(usize, usize)> = HashSet::new();
         'outer: for pass in 0..2 {
             for &id in &spanning {
-                for (k, inst) in self.unpack(id, &mut memo).into_iter().enumerate() {
+                for k in 0.. {
                     if readings.len() >= self.config.max_readings || Instant::now() > self.deadline
                     {
                         break 'outer;
@@ -834,6 +916,9 @@ impl<'g> Parser<'g> {
                     if taken.contains(&(id, k)) {
                         continue;
                     }
+                    let Some(inst) = self.inst(id, k, &mut memo) else {
+                        break;
+                    };
                     let split = self
                         .config
                         .preferred_roots
@@ -881,7 +966,7 @@ impl<'g> Parser<'g> {
     /// The fewest complete edges that together span the input (the
     /// best-scoring when tied), each with its best instantiation, as a
     /// `fragment` reading.
-    fn fragment_cover(&mut self, memo: &mut HashMap<usize, Vec<Inst>>) -> Option<Reading> {
+    fn fragment_cover(&mut self, memo: &mut Memo) -> Option<Reading> {
         let n = self.n;
         // best[j]: (pieces, score, last edge) of the best cover of 0..j.
         let mut best: Vec<Option<(usize, f64, usize)>> = vec![None; n + 1];
@@ -919,7 +1004,7 @@ impl<'g> Parser<'g> {
         let mut kids = Vec::new();
         let mut dag: Option<(usize, Arc<Dag>)> = None;
         for id in pieces {
-            let inst = self.unpack(id, memo).into_iter().next()?;
+            let inst = self.inst(id, 0, memo)?;
             let width = self.chart[id].end - self.chart[id].start;
             if dag.as_ref().is_none_or(|(w, _)| width > *w) {
                 dag = Some((width, inst.dag.clone()));
@@ -1241,6 +1326,340 @@ impl<'g> Parser<'g> {
         }
         self.stats.unpack_failed += out.iter().filter(|m| m.is_none()).count();
         out
+    }
+
+    /// The `k`th instantiation of edge `id`, best first, as
+    /// [`Parser::unpack`] lists them; with a scorer, made on demand.
+    fn inst(&mut self, id: usize, k: usize, memo: &mut Memo) -> Option<Inst> {
+        if self.scorer.is_none() {
+            return self.unpack(id, &mut memo.eager).get(k).cloned();
+        }
+        let mut e = match memo.lazy.remove(&id) {
+            Some(e) => e,
+            None => self.lazy_edge(id),
+        };
+        while e.out.len() <= k && !e.finished && Instant::now() <= self.deadline {
+            self.lazy_step(&mut e, memo);
+        }
+        let r = e.out.get(k).cloned();
+        memo.lazy.insert(id, e);
+        r
+    }
+
+    /// An edge and the edges packed into it, transitively, in the order
+    /// [`Parser::unpack`] takes them.
+    fn alternatives(&self, id: usize) -> Vec<usize> {
+        let mut alts = vec![id];
+        let mut i = 0;
+        while i < alts.len() {
+            for &p in &self.chart[alts[i]].packed {
+                if !alts.contains(&p) {
+                    alts.push(p);
+                }
+            }
+            i += 1;
+        }
+        alts
+    }
+
+    fn lazy_edge(&mut self, id: usize) -> LazyEdge {
+        let alts: Vec<AltGen> = self
+            .alternatives(id)
+            .into_iter()
+            .map(|a| self.alt_gen(a))
+            .collect();
+        let n = alts.len();
+        LazyEdge {
+            out: Vec::new(),
+            finished: false,
+            alts,
+            heads: vec![None; n],
+            exhausted: vec![false; n],
+        }
+    }
+
+    fn alt_gen(&self, a: usize) -> AltGen {
+        let e = &self.chart[a];
+        if e.lexical {
+            return AltGen::Lex(Some(Inst {
+                dag: e.dag.clone(),
+                deriv: Arc::new(self.chart_deriv(a)),
+                score: e.score,
+            }));
+        }
+        let EdgeKind::Rule(ri) = e.kind else {
+            return AltGen::None;
+        };
+        let kids = e.daughters.clone();
+        // The best local score of the rule, over the rules that can build
+        // each daughter's instantiations.
+        let max_rule = match self.scorer {
+            Some(sc) => {
+                let sets: Vec<Vec<Dtr>> = kids
+                    .iter()
+                    .map(|&d| {
+                        self.alternatives(d)
+                            .into_iter()
+                            .map(|x| match &self.chart[x].kind {
+                                EdgeKind::Lex { inst, .. } => Dtr::Lex(*inst),
+                                EdgeKind::Rule(r) => Dtr::Rule(*r),
+                                EdgeKind::Cover => Dtr::Rule(usize::MAX),
+                            })
+                            .collect()
+                    })
+                    .collect();
+                let mut best = f64::NEG_INFINITY;
+                let mut idx = vec![0; sets.len()];
+                'odometer: loop {
+                    let ds: Vec<Dtr> = idx.iter().enumerate().map(|(k, &j)| sets[k][j]).collect();
+                    best = best.max(sc.rule(ri, &ds));
+                    for k in (0..idx.len()).rev() {
+                        idx[k] += 1;
+                        if idx[k] < sets[k].len() {
+                            continue 'odometer;
+                        }
+                        idx[k] = 0;
+                    }
+                    break;
+                }
+                best
+            }
+            None => 0.0,
+        };
+        AltGen::Rule(RuleGen {
+            ri,
+            start: e.start,
+            end: e.end,
+            kids,
+            max_rule,
+            frontier: std::collections::BinaryHeap::new(),
+            ready: std::collections::BinaryHeap::new(),
+            seen: HashSet::new(),
+            found: 0,
+            failed_first: HashSet::new(),
+            started: false,
+        })
+    }
+
+    /// Make the next instantiation of an edge: the best of its
+    /// alternatives' next ones, the earlier alternative when tied (as a
+    /// stable sort of their lists, one after the other, would order them).
+    fn lazy_step(&mut self, e: &mut LazyEdge, memo: &mut Memo) {
+        for i in 0..e.alts.len() {
+            if e.heads[i].is_none() && !e.exhausted[i] {
+                let next = match &mut e.alts[i] {
+                    AltGen::Lex(inst) => inst.take(),
+                    AltGen::None => None,
+                    AltGen::Rule(r) => self.rule_next(r, memo),
+                };
+                e.exhausted[i] = next.is_none();
+                e.heads[i] = next;
+            }
+        }
+        let mut best: Option<usize> = None;
+        for i in 0..e.heads.len() {
+            if let Some(h) = &e.heads[i] {
+                let better = match best {
+                    None => true,
+                    Some(b) => h
+                        .score
+                        .total_cmp(&e.heads[b].as_ref().map_or(f64::NEG_INFINITY, |x| x.score))
+                        .is_gt(),
+                };
+                if better {
+                    best = Some(i);
+                }
+            }
+        }
+        match best {
+            Some(b) => {
+                if let Some(inst) = e.heads[b].take() {
+                    e.out.push(inst);
+                }
+                if e.out.len() >= self.config.unpack_beam.max(1) {
+                    e.finished = true;
+                }
+            }
+            None => e.finished = true,
+        }
+    }
+
+    /// The sum of the scores of a combination's daughter instantiations,
+    /// added in daughter order as [`Parser::unpack`] adds them.
+    fn combo_sum(&mut self, kids: &[usize], combo: &[usize], memo: &mut Memo) -> f64 {
+        let mut s = 0.0;
+        for (k, &j) in combo.iter().enumerate() {
+            s += self.inst(kids[k], j, memo).map_or(0.0, |i| i.score);
+        }
+        s
+    }
+
+    /// The next successful combination of a rule's daughter instantiations.
+    fn rule_next(&mut self, r: &mut RuleGen, memo: &mut Memo) -> Option<Inst> {
+        let beam = self.config.unpack_beam.max(1);
+        let n = r.kids.len();
+        if !r.started {
+            r.started = true;
+            let corner = vec![0; n];
+            if (0..n).all(|k| self.inst(r.kids[k], 0, memo).is_some()) {
+                let opt = self.combo_sum(&r.kids, &corner, memo) + r.max_rule;
+                r.seen.insert(corner.clone());
+                r.frontier.push(Cand {
+                    score: opt,
+                    combo: corner,
+                });
+            }
+        }
+        loop {
+            if r.found >= beam || Instant::now() > self.deadline {
+                return None;
+            }
+            // Score combinations until the best scored one cannot be beaten
+            // by any not yet scored.
+            loop {
+                let expand = match (r.frontier.peek(), r.ready.peek()) {
+                    (None, _) => false,
+                    (Some(_), None) => true,
+                    (Some(f), Some(c)) => c <= f,
+                };
+                if !expand {
+                    break;
+                }
+                let Some(c) = r.frontier.pop() else { break };
+                let sum = self.combo_sum(&r.kids, &c.combo, memo);
+                let score = match self.scorer {
+                    Some(sc) => {
+                        let mut ds = Vec::with_capacity(n);
+                        for (k, &j) in c.combo.iter().enumerate() {
+                            let kind = self.inst(r.kids[k], j, memo).map(|i| i.deriv.kind.clone());
+                            ds.push(match kind {
+                                Some(EdgeKind::Lex { inst, .. }) => Dtr::Lex(inst),
+                                Some(EdgeKind::Rule(x)) => Dtr::Rule(x),
+                                _ => Dtr::Rule(usize::MAX),
+                            });
+                        }
+                        sum + sc.rule(r.ri, &ds)
+                    }
+                    None => sum,
+                };
+                for k in 0..n {
+                    let mut c2 = c.combo.clone();
+                    c2[k] += 1;
+                    if !r.seen.contains(&c2) && self.inst(r.kids[k], c2[k], memo).is_some() {
+                        let opt = self.combo_sum(&r.kids, &c2, memo) + r.max_rule;
+                        r.seen.insert(c2.clone());
+                        r.frontier.push(Cand {
+                            score: opt,
+                            combo: c2,
+                        });
+                    }
+                }
+                r.ready.push(Cand {
+                    score,
+                    combo: c.combo,
+                });
+            }
+            let c = r.ready.pop()?;
+            if n == 2 && r.failed_first.contains(&c.combo[0]) {
+                self.stats.unpack_attempts += 1;
+                self.stats.unpack_failed += 1;
+                continue;
+            }
+            let kids: Vec<Inst> = c
+                .combo
+                .iter()
+                .enumerate()
+                .filter_map(|(k, &j)| self.inst(r.kids[k], j, memo))
+                .collect();
+            match self.try_combo(r.ri, &kids) {
+                Ok(m) => {
+                    r.found += 1;
+                    return Some(Inst {
+                        dag: m.clone(),
+                        deriv: Arc::new(Deriv {
+                            kind: EdgeKind::Rule(r.ri),
+                            start: r.start,
+                            end: r.end,
+                            daughters: kids.iter().map(|k| k.deriv.clone()).collect(),
+                            dag: m,
+                        }),
+                        score: c.score,
+                    });
+                }
+                Err(first_failed) => {
+                    if first_failed && n == 2 {
+                        r.failed_first.insert(c.combo[0]);
+                    }
+                }
+            }
+        }
+    }
+
+    /// The mother of rule `ri` over daughter instantiations, as
+    /// [`Parser::apply_combos`] makes it; on failure, whether the rule
+    /// already failed with the first daughter (of a binary rule).
+    fn try_combo(&mut self, ri: usize, kids: &[Inst]) -> Result<Arc<Dag>, bool> {
+        self.stats.unpack_attempts += 1;
+        let res = if self.rules[ri].dtrs.len() != 2 || kids.len() != 2 {
+            let dags: Vec<Arc<Dag>> = kids.iter().map(|k| k.dag.clone()).collect();
+            let refs: Vec<&Arc<Dag>> = dags.iter().collect();
+            let qcs: Vec<Vec<TypeId>> = dags.iter().map(|d| self.qc.vector(d, 0)).collect();
+            let qrefs: Vec<&Vec<TypeId>> = qcs.iter().collect();
+            self.apply(ri, &refs, &qrefs).map(Arc::new).ok_or(false)
+        } else {
+            let rule = &self.rules[ri];
+            let d0 = kids[0].dag.clone();
+            if !self
+                .u
+                .compatible(&self.g.ts, &rule.dtr_qc[0], &self.qc.vector(&d0, 0))
+            {
+                self.stats.qc_filtered += 1;
+                Err(true)
+            } else {
+                let t = Instant::now();
+                let cons = self.g.constraint_fn();
+                self.u.begin();
+                let r = self.u.add(rule.dag.clone());
+                let h = self.u.add(d0);
+                let ok = self.u.unify(r + rule.dtrs[0], h, &self.g.ts, &cons);
+                self.stats.unify_time += t.elapsed();
+                if !ok {
+                    self.stats.unify_failed += 1;
+                    Err(true)
+                } else {
+                    let d1 = kids[1].dag.clone();
+                    let rule = &self.rules[ri];
+                    if !self
+                        .u
+                        .compatible(&self.g.ts, &rule.dtr_qc[1], &self.qc.vector(&d1, 0))
+                    {
+                        self.stats.qc_filtered += 1;
+                        Err(false)
+                    } else {
+                        let t = Instant::now();
+                        let h = self.u.add(d1);
+                        let ok = self.u.unify(r + rule.dtrs[1], h, &self.g.ts, &cons);
+                        self.stats.unify_time += t.elapsed();
+                        if ok {
+                            let t = Instant::now();
+                            let m = self.u.copy(r, &self.config.deleted_daughters);
+                            self.stats.copy_time += t.elapsed();
+                            if m.is_none() {
+                                self.stats.cyclic += 1;
+                            }
+                            m.map(Arc::new).ok_or(false)
+                        } else {
+                            self.stats.unify_failed += 1;
+                            Err(false)
+                        }
+                    }
+                }
+            }
+        };
+        if res.is_err() {
+            self.stats.unpack_failed += 1;
+        }
+        res
     }
 
     fn chart_deriv(&self, id: usize) -> Deriv {
