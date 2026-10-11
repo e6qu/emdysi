@@ -96,7 +96,13 @@ are not changed. Written for this project (MIT, see the repository's
   (`n_-_c-pl-nomcase_le`): 46 more in the same form, without the dialect
   for *majority*, *minority* and *staff*. Team names (*South Africa
   are*) are not covered: the lexicon cannot tell them from people's
-  names (*Kim are* is an error). A
+  names (*Kim are* is an error); *from* and *to* with adjectives
+  (*range from yellowish to bluish*, *went from bad to worse*): the ERG's
+  *from ... to* takes noun phrases only. `from_to_adj` is a copy for an
+  adjective phrase whose *to* phrase is a semantically empty *to*
+  (`to_prtcl_adj`, keyed apart so that *belong to* cannot take it); it
+  contributes the *to* relation itself, so *range from yellow to blue*
+  means the same with its adjectives as with its nouns. A
   native entry replaces the ERG's generic entries for an unknown word, so
   a word the ERG lacks gets all its common uses (*inexplicable*,
   *improbable* also as adjectives; *unusual*, *unexpected* need none, the

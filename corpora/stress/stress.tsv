@@ -77,3 +77,4 @@ other	It is similar to, but less extreme than, the climate.	A comparative with m
 other	Who is Kim less tall than?	A comparative with more or less whose object is extracted (grammar/emdysi/comparatives.tdl).
 other	The team are almost at the point of no return.	A collective noun with a plural verb, British (grammar/emdysi/lexicon.tdl).
 other	Customers earn 3% on balances of £3,000-£5,000.	A range of amounts with currency signs (grammar/emdysi/tokenizer.rpp).
+other	In color, the leaves show a great variety of greens, ranging from yellowish to bluish.	From and to with adjectives (grammar/emdysi/lexicon.tdl).

@@ -880,3 +880,100 @@ partnership_n_pl_br := n_-_c-pl-nomcase_le &
             PHON.ONSET con ] ].
 
 :end :instance.
+
+;;; "from" and "to" with adjectives: |The leaves range from yellowish to
+;;; bluish.|, |It went from bad to worse.| The ERG's "from ... to"
+;;; (from_to_nontemp, type p_np-pp_i-frm-to_le) takes noun phrases only.
+;;; from_to_adj is its copy for a predicative adjective phrase, and its
+;;; "to" phrase is to_prtcl_adj: a semantically empty "to" with an
+;;; adjective phrase, in the type of the ERG's "of" in |the opposite of
+;;; happy| (p_prd_ptcl-j_le), keyed _to_p_adj_rel so that nothing that
+;;; selects an ordinary "to" phrase (|belong to|) takes it.
+
+:begin :type.
+
+_to_p_adj_rel := selected_prep_rel.
+
+;; The ERG's ditrans_prep_synsem, p_ditrans_lexent and
+;; p_ditrans_from_to_lexent, for an adjective phrase as first complement:
+;; without its individual index (ARG2 overt_non_expl-ind) and nominal
+;; MINORS (MIN nonpro_rel, ALTMIN quant_rel).
+ditrans_prep_adj_synsem := prep_p_mod_synsem & norm_prep_synsem & basic_two_arg &
+  [ LOCAL [ CAT [ HEAD prep & [ PRD + ],
+                  VAL [ SPR < [ LOCAL [ CAT [ HEAD.MINORS
+                                                 [ MIN much_deg_rel,
+                                                   ALTMIN abstr_meas_nom_rel ],
+                                            VAL [ SPR *olist*,
+                                                  SPEC < synsem >,
+                                                  COMPS < > ] ],
+                                      CONT.HOOK [ LTOP #ltop,
+                                                  XARG #arg0 ] ] ] >,
+                      COMPS < [ --MIN #cmin,
+                                NONLOC.QUE.LIST *paramlist*,
+                                --SIND #objind ],
+                              [ --MIN #ocmin,
+                                LOCAL [ CAT.HEAD.TAM [ ASPECT no_aspect ],
+					CONT.HOOK.LTOP #ltop ] ] > ] ],
+	    CONT.RELS.LIST < prep_relation & #keyrel &
+                             [ ARG2 #objind,
+                               LBL #ltop,
+                               ARG0 #arg0 ], ... > ],
+    LKEYS [ KEYREL #keyrel,
+	    --COMPKEY #cmin,
+            --OCOMPKEY #ocmin ] ].
+
+p_ditrans_from_to_adj_lexent := noncqrs-m &
+  [ SYNSEM ditrans_prep_adj_synsem &
+	 [ LOCAL [ CAT.VAL.COMPS < synsem & [ LOCAL [ CONJ cnil ],
+                                            OPT - ],
+                                 synsem & [ LOCAL [ CAT [ MC na,
+							  VAL.COMPS < > ],
+						    CONT.HOOK [ LTOP #ltop,
+								INDEX non_expl,
+								XARG #xarg ] ],
+                                            NONLOC.QUE.LIST *paramlist*,
+                                            OPT -,
+                                            PUNCT.LPUNCT no_punct ] >,
+                   CONT.HOOK [ LTOP #ltop,
+			       XARG #xarg ] ],
+           LKEYS [ KEYREL.LBL #ltop,
+                   --COMPKEY #cmin,
+                   --+COMPKEY #cmin,
+                   --OCOMPKEY #ocmin,
+                   --+OCOMPKEY #ocmin ] ] ].
+
+;; The "to" phrase is semantically empty (to_prtcl_adj), so this "from"
+;; also contributes the relation of "to", as the ERG's "to" does with a
+;; noun phrase: |range from yellow to blue| means the same either way.
+p_ap-pp_i-frm-to_le := p_ditrans_from_to_adj_lexent &
+  [ SYNSEM [ LOCAL [ CAT.VAL.COMPS < [ OPT -,
+				       LOCAL [ CAT [ HEAD adj & [ PRD + ],
+						     VAL.COMPS < > ],
+					       CONT.HOOK.LTOP #ltop ] ],
+				     [ LOCAL.CONT.HOOK.INDEX #toind ] >,
+                     CONT [ HOOK.LTOP #ltop,
+			    RELS <! relation & [ ARG1 #arg1 ],
+				    [ PRED _to_p_rel,
+				      LBL #ltop,
+				      ARG0 event,
+				      ARG1 #arg1,
+				      ARG2 #toind ] !>,
+                            HCONS <! !>,
+			    ICONS <! !> ] ] ] ].
+
+:end :type.
+
+:begin :instance :status lex-entry.
+
+from_to_adj := p_ap-pp_i-frm-to_le &
+ [ ORTH < "from" >,
+   SYNSEM [ LKEYS [ --OCOMPKEY _to_p_adj_rel,
+                    KEYREL.PRED _from_p_time_rel ],
+            PHON.ONSET con ] ].
+
+to_prtcl_adj := p_prd_ptcl-j_le &
+ [ ORTH < "to" >,
+   SYNSEM [ LKEYS.KEYREL.PRED _to_p_adj_rel,
+            PHON.ONSET con ] ].
+
+:end :instance.

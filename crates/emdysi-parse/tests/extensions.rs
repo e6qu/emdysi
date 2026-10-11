@@ -112,3 +112,17 @@ fn ranges_of_amounts() {
         assert!(strict(&erg, text), "{text}");
     }
 }
+
+#[test]
+fn from_and_to_with_adjectives() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    for text in [
+        "The leaves range from yellowish to bluish.",
+        "It went from bad to worse.",
+    ] {
+        assert!(strict(&erg, text), "{text}");
+    }
+    for text in ["It went from happy.", "It belongs to happy."] {
+        assert!(!strict(&erg, text), "{text}");
+    }
+}

@@ -46,6 +46,8 @@ pub const EQUIVALENT: &[(&str, &str)] = &[
     ("hd-cmp_u-than-sl_c", "hd-cmp_u_c"),
     ("more_deg_gap", "more_deg"),
     ("less_deg_gap", "less_deg"),
+    ("from_to_adj", "from_to_nontemp"),
+    ("to_prtcl_adj", "to"),
 ];
 
 /// The ERG's name for `name` (see [`EQUIVALENT`]).
