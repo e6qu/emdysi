@@ -993,3 +993,20 @@ On the 300 sentences of the coverage sample, the time went from 824 s
 to 552 s; 297 of 299 sentences got the same readings, and the other two
 were cut off by the time limit before and finish now (*See paragraphs
 (c) through (h) of Section 51 ...*: 61 s, now 23 s).
+
+## Phrasal compounds
+
+A run of three or more lower-case words joined by hyphens that the
+lexicon lacks (*allow-by-default*, *pay-as-you-go*) gets a token of its
+own beside the split tokens, and whole-chain words, generic or of the
+lexicon (*wait-and-see*), are preferred to readings that take the
+hyphens for dashes (2026-10-12):
+
+| Measure | Before | After |
+|---|---|---|
+| Edited-text sample, sentences without a strict reading (300) | 21 | 19 |
+| Second development set's sample (300) | 46 | 42 |
+| False flags, first development set | 6 | 6 (the same) |
+| False flags, second development set | 84 | 84 (the same) |
+| Real errors caught (377) | 163 | 163 |
+| Gold profiles | | unchanged, all six |
