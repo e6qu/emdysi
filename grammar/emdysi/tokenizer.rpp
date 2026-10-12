@@ -7,3 +7,11 @@
 ;;; between a number and a currency sign.
 
 !([0-9])[–-]([#$€¢£¥]) ?([0-9])	\1 – \2 \3
+
+;;; An amount of money with a suffix for its order of magnitude: |£2bn|,
+;;; |$1.4bn|, |€5m|, |$300k|, read as |£ 2 billion| and so on. Only after a
+;;; currency sign: |5m| alone may be metres.
+
+!([#$€¢£¥]) ?([0-9][0-9.,]*)bn([^a-zA-Z]|$)	\1 \2 billion\3
+!([#$€¢£¥]) ?([0-9][0-9.,]*)m([^a-zA-Z]|$)	\1 \2 million\3
+!([#$€¢£¥]) ?([0-9][0-9.,]*)k([^a-zA-Z]|$)	\1 \2 thousand\3

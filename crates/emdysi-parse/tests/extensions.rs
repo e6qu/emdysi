@@ -209,3 +209,15 @@ fn adjunct_between_commas_after_the_subject() {
     // A comma between a subject and its verb is not formal.
     assert!(!strict(&erg, "Kim, left."));
 }
+
+#[test]
+fn amounts_with_a_magnitude_suffix() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    for text in [
+        "Investors put £2bn into the funds.",
+        "They raised $5m last year.",
+        "They paid $300k.",
+    ] {
+        assert!(strict(&erg, text), "{text}");
+    }
+}

@@ -33,7 +33,9 @@ are not changed. Written for this project (MIT, see the repository's
 - `tokenizer.rpp`: rules for the tokenizer, applied after the ERG's
   (`grammar/erg/rpp/tokenizer.rpp`). A range of amounts with a currency
   sign on both ends (*£3,000-£5,000*, *$10-$20*) is split like the ERG
-  splits *10-20*; the ERG left *10-$* as one token.
+  splits *10-20*; the ERG left *10-$* as one token. An amount after a
+  currency sign with a suffix for its magnitude (*£2bn*, *$5m*, *$300k*)
+  is read as *£ 2 billion* and so on; *5m* alone may be metres.
 - `adjectives.tdl`: comma-separated adjectives before a noun (*a
   selfish, hypocritical woman*, *a long, cold, dark night*): the ERG
   admits the comma only as its informal comma entry (`comma_inf_pct`);
