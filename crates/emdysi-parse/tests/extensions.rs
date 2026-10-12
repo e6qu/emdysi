@@ -221,3 +221,26 @@ fn amounts_with_a_magnitude_suffix() {
         assert!(strict(&erg, text), "{text}");
     }
 }
+
+#[test]
+fn gapping() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    for text in [
+        "One came from her books, and the other from her toilette.",
+        "Kim went to Paris, and he to Rome.",
+        "Kim reads books, and Sandy magazines.",
+    ] {
+        assert!(strict(&erg, text), "{text}");
+    }
+    // A gapped clause is a conjunct after a comma, not a sentence.
+    assert!(!strict(&erg, "Sandy to Rome."));
+    let p = erg.parse("I saw Kim and Sandy in the park.").unwrap();
+    assert!(
+        !p.readings[0]
+            .nodes
+            .iter()
+            .any(|n| n.name.starts_with("cl_gap-")),
+        "{}",
+        p.readings[0].derivation
+    );
+}

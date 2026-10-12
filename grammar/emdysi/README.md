@@ -12,6 +12,15 @@ are not changed. Written for this project (MIT, see the repository's
   (`sb-hd_mc-pc_c`, `sb-hd_nmc-pc_c`) take the formal one, and the parser
   lets them build a clause only when the verb phrase begins with an
   adjunct ending in a comma (`Rule::paired_subject`).
+- `gapping.tdl`: a conjunct that leaves out the verb of the clause
+  before it (*One came from her books, and the other from her toilette.*,
+  *Kim reads books, and Sandy magazines.*). The ERG has no gapped clause;
+  these rules make one from a subject and a prepositional phrase
+  (`cl_gap-pp_c`) or noun phrase (`cl_gap-np_c`) remnant, with the elided
+  verb as an `ellipsis_rel`. The parser lets it be only the clause after a
+  coordinating conjunction (`Rule::complement_of`), after a comma, and not
+  a sentence on its own, so that *I saw Kim and Sandy in the park* keeps
+  its noun coordination.
 - `sluicing.tdl`: a sluice with a phrase (*without knowing in what
   direction*, *I do not know with whom*, *nobody knows which one*). The
   ERG has a sluice for a single wh-word only (`what_cp`, `how_cp`); these

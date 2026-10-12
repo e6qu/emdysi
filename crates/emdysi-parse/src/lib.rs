@@ -551,6 +551,21 @@ impl Erg {
                     }
                 }
             }
+            // A gapped clause is only the conjunct after a coordinating
+            // conjunction (see grammar/emdysi/gapping.tdl): it is built only
+            // right after one (type c_xp_*), and is then only the clause of
+            // the conjunction's marker phrase.
+            if let Some(marker) = rule_index(&rules, "mrk-nh_cl_c") {
+                let conjunctions: Vec<usize> = (0..grammar.instances.len())
+                    .filter(|&i| rank::lexical_type(&grammar, i).starts_with("c_xp_"))
+                    .collect();
+                for name in ["cl_gap-pp_c", "cl_gap-np_c"] {
+                    if let Some(r) = rule_index(&rules, name) {
+                        rules[r].complement_of = vec![marker];
+                        rules[r].follows = conjunctions.clone();
+                    }
+                }
+            }
             // A sluice with a phrase is a verb's complement only (see
             // grammar/emdysi/sluicing.tdl).
             for name in ["cl_sluice-np_c", "cl_sluice-pp_c"] {
@@ -876,7 +891,7 @@ impl Erg {
         // emdysi's conditions on derivations and roots are applied.
         let strict = |r: &ParseResult| {
             r.readings.iter().any(|r| {
-                is_strict(&self.licensed_root(&r.root, &r.deriv)) && self.licensed(&r.deriv)
+                is_strict(&self.licensed_root(&r.root, &r.deriv)) && self.licensed_reading(&r.deriv)
             })
         };
         let complete = |r: &ParseResult| r.readings.iter().any(|r| r.root != "fragment");
@@ -1036,7 +1051,7 @@ impl Erg {
         let mut scored: Vec<(f64, Vec<String>, &emdysi_hpsg::parser::Reading)> = result
             .readings
             .iter()
-            .filter(|r| self.licensed(&r.deriv))
+            .filter(|r| self.licensed_reading(&r.deriv))
             .map(|r| {
                 let features = rank::features(&self.grammar, &self.rules, &r.deriv, &r.root);
                 (self.model.score(&features), features, r)
@@ -1115,6 +1130,14 @@ impl Erg {
     /// `grammar/emdysi/conjunctions.tdl`) closes a bracket that a comma
     /// after its conjunction opens: |but, in the end, Sandy left|, not
     /// *|and in the end, left|.
+    /// Whether a whole reading is licensed: a gapped clause
+    /// (grammar/emdysi/gapping.tdl) is a conjunct, not a sentence.
+    fn licensed_reading(&self, d: &Deriv) -> bool {
+        let gapped =
+            matches!(&d.kind, EdgeKind::Rule(r) if self.rules[*r].name.starts_with("cl_gap-"));
+        !gapped && self.licensed(d)
+    }
+
     fn licensed(&self, d: &Deriv) -> bool {
         let ends_in_comma = |d: &Deriv| {
             let mut d = d;
@@ -1135,6 +1158,19 @@ impl Erg {
         // (|I wonder which book he read|).
         if let EdgeKind::Rule(ri) = &d.kind {
             if self.rules[*ri].name.starts_with("cl_sluice-") && self.has_relative_clause(d) {
+                return false;
+            }
+        }
+        // A gapped clause (grammar/emdysi/gapping.tdl) follows a comma and a
+        // conjunction: without the comma, |I saw Kim and Sandy in the park|
+        // would read as |Sandy was in the park|.
+        if d.daughters.len() == 2 {
+            let gapped = matches!(&d.daughters[1].kind, EdgeKind::Rule(m)
+                if self.rules[*m].name == "mrk-nh_cl_c")
+                && d.daughters[1].daughters.get(1).is_some_and(|c| {
+                    matches!(&c.kind, EdgeKind::Rule(g) if self.rules[*g].name.starts_with("cl_gap-"))
+                });
+            if gapped && !ends_in_comma(&d.daughters[0]) {
                 return false;
             }
         }

@@ -88,3 +88,4 @@ other	We prefer pay-as-you-go, not prepaid.	A phrasal compound read as one word 
 other	We chose a wait-and-see approach.	A hyphenated compound of the lexicon preferred to dashes.
 other	The committee, however, decided to wait.	A subject before an adjunct between commas (grammar/emdysi/subjects.tdl).
 other	Investors put £2bn and £1.4bn into the funds.	An amount with a magnitude suffix (grammar/emdysi/tokenizer.rpp).
+other	One came from her books, and the other from her toilette.	Gapping (grammar/emdysi/gapping.tdl).

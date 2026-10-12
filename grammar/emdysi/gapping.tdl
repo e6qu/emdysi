@@ -1,0 +1,108 @@
+;;; Gapping: a conjunct that leaves out the verb of the clause before it,
+;;; |One came from her books, and the other from her toilette.|, |Kim
+;;; likes tea, and Sandy coffee.| The ERG has no gapped clause, only an
+;;; informal run-on of a clause and a noun phrase (cl-np_runon-conj_c).
+;;; These rules make a clause from a subject and the remnant of the
+;;; predicate: a prepositional phrase modifying the elided event
+;;; (cl_gap-pp_c), or a noun phrase as its second argument (cl_gap-np_c).
+;;; The elided verb is an ellipsis_rel, as in the ERG's own ellipsis and in
+;;; sluicing.tdl. The parser lets the clause be only the conjunct after a
+;;; coordinating conjunction (Rule::complement_of, set up in
+;;; Erg::load_config), so it never stands alone, and the ERG's clause
+;;; coordination joins it to a full clause.
+
+:begin :type.
+
+basic_gapped_clause := binary_rule_left_to_right & generic_binary_phrase &
+                       non_headed_phrase & phrasal &
+  [ INFLECTD +,
+    SYNSEM [ LOCAL [ CAT [ HEAD verb & [ INV -,
+					 VFORM fin,
+					 AUX -,
+					 MINORS [ MIN v_event_rel,
+						  ALTMIN ellipsis_rel ] ],
+			   VAL [ SUBJ < >,
+				 SPR < >,
+				 COMPS < >,
+				 SPCMPS < > ],
+			   POSTHD bool,
+			   --SLASHED.BOOL - ],
+		     CONT.HOOK [ LTOP #ltop,
+				 INDEX #event & [ SF prop ],
+				 XARG #subj ],
+		     CONJ cnil ],
+	     NONLOC [ SLASH.LIST < >,
+		      REL.LIST < >,
+		      QUE.LIST < > ],
+	     PUNCT [ LPUNCT #lpunct,
+		     RPUNCT #rpunct,
+		     PAIRED #paired ],
+	     LEX - ],
+    ARGS < [ INFLECTD +,
+	     SYNSEM [ LOCAL [ CAT [ HEAD supnoun & [ CASE nom ],
+				    VAL [ SPR *olist*,
+					  COMPS < > ] ],
+			      CONT.HOOK.INDEX #subj,
+			      CONJ cnil ],
+		      NONLOC [ SLASH.LIST < >,
+			       REL.LIST < >,
+			       QUE.LIST < > ],
+		      PUNCT [ LPUNCT #lpunct,
+			      RPUNCT no_punct ] ] ],
+	   [ INFLECTD +,
+	     SYNSEM [ LOCAL [ CAT.VAL.COMPS < >,
+			      CONJ cnil ],
+		      NONLOC [ SLASH.LIST < >,
+			       REL.LIST < >,
+			       QUE.LIST < > ],
+		      PUNCT [ RPUNCT #rpunct,
+			      PAIRED #paired ] ] ] >,
+    ORTH [ FROM #from, TO #to ],
+    C-CONT [ HOOK [ LTOP #ltop,
+		    INDEX #event ],
+	     RELS.LIST < relation & [ PRED ellipsis_rel,
+				      LBL #ltop,
+				      ARG0 #event,
+				      ARG1 #subj,
+				      CFROM #from,
+				      CTO #to ], ... >,
+	     HCONS <! !>,
+	     ICONS <! !> ] ].
+
+;; The remnant a prepositional phrase, modifying the elided event.
+gapped_pp_clause := basic_gapped_clause &
+  [ ARGS < [ ],
+	   [ SYNSEM.LOCAL [ CAT.HEAD prep &
+				[ MOD < [ LOCAL intersective_mod &
+					  [ CONT.HOOK [ LTOP #ltop,
+							INDEX #event ] ],
+					  --SIND #event ] > ],
+			    CONT.HOOK.LTOP #ltop ] ] >,
+    C-CONT [ HOOK [ LTOP #ltop,
+		    INDEX #event ],
+	     RELS <! arg1_relation !> ] ].
+
+;; The remnant a noun phrase, the elided verb's second argument.
+gapped_np_clause := basic_gapped_clause &
+  [ ARGS < [ ],
+	   [ SYNSEM.LOCAL [ CAT [ HEAD supnoun & [ CASE acc ],
+				  VAL.SPR *olist* ],
+			    CONT.HOOK.INDEX #obj ] ] >,
+    C-CONT.RELS <! arg12_relation & [ ARG2 #obj ] !> ].
+
+gapped_pp_rule := rule & gapped_pp_clause.
+gapped_np_rule := rule & gapped_np_clause.
+
+gapped := unary_ctype.
+
+:end :type.
+
+:begin :instance :status rule.
+
+cl_gap-pp_c := gapped_pp_rule &
+  [ RNAME gapped ].
+
+cl_gap-np_c := gapped_np_rule &
+  [ RNAME gapped ].
+
+:end :instance.
