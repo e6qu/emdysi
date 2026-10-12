@@ -100,6 +100,14 @@ pub struct Erg {
 /// bracket (see [`Erg::licensed`]).
 const BRACKETED_MARKERS: &[&str] = &["mrk-nh_cl-pc_c", "mrk-nh_evnt-pc_c"];
 
+/// What a word for a whole phrasal compound adds to its chart score (in
+/// the ranker's units; see `Erg::phrasal_compounds`): enough that pruning
+/// and unpacking keep the readings with it beside the many that take its
+/// hyphens for dashes (a bonus of 5 still lost |We like one-size-fits-all.|
+/// among 240 such readings). The readings returned are ranked by the
+/// ranker's features, which the bonus does not change.
+const COMPOUND_BONUS: f64 = 50.0;
+
 /// Quick-check paths beyond the ERG's (`ace/ace-erg-qc.txt`): the paths
 /// where emdysi's unifier most often found a clash that those let through,
 /// on 30 sentences of the second development set (2026-10-11). A path
@@ -419,8 +427,12 @@ impl Erg {
             repp.extend(&ext_rpp).map_err(err)?;
         }
         let mut u = Unifier::new();
-        let token_mapping =
-            compile_rules(&grammar, "token-mapping-rule", &mut u).map_err(|e| err(e.0))?;
+        // emdysi's own token-mapping rules come first (see
+        // grammar/emdysi/tokens.tdl).
+        let mut token_mapping = compile_rules(&grammar, "emdysi-early-token-mapping-rule", &mut u)
+            .map_err(|e| err(e.0))?;
+        token_mapping
+            .extend(compile_rules(&grammar, "token-mapping-rule", &mut u).map_err(|e| err(e.0))?);
         let lexical_filtering =
             compile_rules(&grammar, "lexical-filtering-rule", &mut u).map_err(|e| err(e.0))?;
 
@@ -625,6 +637,7 @@ impl Erg {
             preferred_roots,
             unpack_beam: 100,
             fragments: true,
+            lexical_bonus: Vec::new(),
             // emdysi's plural generic name (grammar/emdysi/lexicon.tdl).
             unfiltered: grammar
                 .instance_index
@@ -804,6 +817,28 @@ impl Erg {
                 .collect();
             eprintln!("tokens: {}", tags.join(" "));
         }
+        // A word for a whole phrasal compound (|pay-as-you-go|, see
+        // Erg::phrasal_compounds, or an entry of the lexicon such as
+        // |wait-and-see|) outranks the readings that take its hyphens for
+        // dashes, so that pruning and unpacking keep it: the lattice's
+        // first vertices are the token boundaries.
+        let mut bonused;
+        let config = if tokens.is_empty() {
+            config
+        } else {
+            let spans: Vec<((u32, u32), f64)> = self
+                .hyphen_chains(&tokens)
+                .into_iter()
+                .map(|(a, b, _)| ((a as u32, b as u32), COMPOUND_BONUS))
+                .collect();
+            if spans.is_empty() {
+                config
+            } else {
+                bonused = config.clone();
+                bonused.lexical_bonus = spans;
+                &bonused
+            }
+        };
         let mut u = Unifier::new();
         let items = self.lexicon.instantiate(&self.grammar, &lat, &mut u);
         let n_items = items.len();
@@ -813,6 +848,9 @@ impl Erg {
             model: &self.model,
             le_types: &self.le_types,
         };
+        // The searches below (a narrow beam, wider ones, none) share the
+        // results of rule applications (see UnifyMemo).
+        let memo = std::cell::RefCell::new(emdysi_hpsg::parser::UnifyMemo::default());
         let run = |config: &ParserConfig, items: Vec<LexItem>| -> ParseResult {
             Parser::new(
                 &self.grammar,
@@ -822,6 +860,7 @@ impl Erg {
                 &self.lexical_filtering,
             )
             .with_scorer(&scorer)
+            .with_memo(&memo)
             .parse(&lat, items)
         };
         // Strict as the readings returned are: under a strict root once
@@ -832,6 +871,18 @@ impl Erg {
             })
         };
         let complete = |r: &ParseResult| r.readings.iter().any(|r| r.root != "fragment");
+        // A wider beam replaces a complete result only with a strict one.
+        // Whether a strict reading is possible at all: the grammar-error
+        // variant's roots are not strict but for root_strict_excl, which
+        // needs a final "!" (see Erg::licensed_root); there, once a search
+        // finds a complete analysis, wider ones are not tried, nor one
+        // without a beam.
+        let strict_possible = config
+            .roots
+            .iter()
+            .any(|(n, _)| is_strict(n) && n.trim_end_matches("_br") != "root_strict_excl")
+            || text.trim_end().ends_with('!');
+        let settled = |r: &ParseResult| !strict_possible && complete(r);
         // With chart pruning, a narrow beam first; the configured one only
         // when that finds no strict analysis and time remains.
         let result = match (self.first_beam, config.cell_beam) {
@@ -843,6 +894,7 @@ impl Erg {
                 let r = run(&narrow, items.clone());
                 let left = config.timeout.saturating_sub(t0.elapsed());
                 if strict(&r)
+                    || settled(&r)
                     || left < Duration::from_secs(1)
                     || r.positions <= config.cell_beam_from
                 {
@@ -874,6 +926,7 @@ impl Erg {
             for factor in [2, 4] {
                 let left = config.timeout.saturating_sub(t0.elapsed());
                 if strict(&result)
+                    || settled(&result)
                     || left < Duration::from_secs(1)
                     || result.positions <= config.cell_beam_from
                 {
@@ -896,6 +949,7 @@ impl Erg {
         // fragments then get a full analysis within 10 seconds; pruning
         // also loses strict analyses of sentences it leaves informal ones).
         let result = if !strict(&result)
+            && !settled(&result)
             && config.cell_beam.is_some()
             && result.positions > config.cell_beam_from
             && config.timeout.saturating_sub(t0.elapsed()) >= Duration::from_secs(1)
@@ -989,6 +1043,23 @@ impl Erg {
         }) {
             scored.retain(|(_, _, r)| !plural_collective(&r.deriv));
         }
+        // A phrasal compound read as one word (|pay-as-you-go|, see
+        // Erg::phrasal_compounds; |wait-and-see|, an entry of the lexicon)
+        // beats readings that take its hyphens for dashes, which the ranker
+        // often prefers.
+        let compounds: Vec<(usize, usize)> = self
+            .hyphen_chains(&tokens)
+            .into_iter()
+            .map(|(a, b, _)| (tokens[a].from, tokens[b - 1].to))
+            .collect();
+        if !compounds.is_empty() {
+            let splits = |d: &Deriv| self.splits_compound(d, &compounds, &token_span);
+            if scored.iter().any(|(_, _, r)| {
+                is_strict(&self.licensed_root(&r.root, &r.deriv)) && !splits(&r.deriv)
+            }) {
+                scored.retain(|(_, _, r)| !splits(&r.deriv));
+            }
+        }
         scored.sort_by(|a, b| b.0.total_cmp(&a.0));
         let readings = scored
             .into_iter()
@@ -1073,6 +1144,22 @@ impl Erg {
             }
         }
         d.daughters.iter().all(|x| self.licensed(x))
+    }
+
+    /// Whether a derivation has a word inside one of these character
+    /// spans but not the whole of it.
+    fn splits_compound(&self, d: &Deriv, spans: &[(usize, usize)], token_span: &TokenSpan) -> bool {
+        match &d.kind {
+            EdgeKind::Lex { tokens, .. } => token_span(tokens).is_some_and(|(f, t)| {
+                spans
+                    .iter()
+                    .any(|&(a, b)| a <= f && t <= b && (f, t) != (a, b))
+            }),
+            _ => d
+                .daughters
+                .iter()
+                .any(|x| self.splits_compound(x, spans, token_span)),
+        }
     }
 
     /// Whether a derivation has a relative clause.
@@ -1507,6 +1594,12 @@ impl Erg {
     /// The feature structure of an input token, as the token-mapping rules
     /// expect it.
     pub fn token_dag(&self, i: usize, t: &InputToken, u: &mut Unifier) -> Result<Dag, Error> {
+        self.token_dag_ids(&[i], t, u)
+    }
+
+    /// [`Erg::token_dag`] for a token standing for several input tokens
+    /// (`ids`), so that token mapping can join it with its neighbours.
+    fn token_dag_ids(&self, ids: &[usize], t: &InputToken, u: &mut Unifier) -> Result<Dag, Error> {
         let tags: Vec<String> = t.tags.iter().map(|x| tdl_string(&x.tag)).collect();
         let prbs: Vec<String> = t
             .tags
@@ -1518,7 +1611,10 @@ impl Erg {
             tdl_string(&t.form),
             tdl_string(&t.from.to_string()),
             tdl_string(&t.to.to_string()),
-            tdl_string(&i.to_string()),
+            ids.iter()
+                .map(|i| tdl_string(&i.to_string()))
+                .collect::<Vec<_>>()
+                .join(", "),
             tags.join(", "),
             prbs.join(", ")
         );
@@ -1527,6 +1623,65 @@ impl Erg {
         self.grammar
             .expand(&loaded.entries[0].def.body, u)
             .map_err(Error)
+    }
+
+    /// Phrasal compounds the lexicon does not have (|allow-by-default|,
+    /// |pay-as-you-go|): runs of three or more lower-case words joined by
+    /// hyphens with no spaces, as token ranges. The tokenizer splits them at
+    /// the hyphens, where the grammar reads each hyphen as a dash; each also
+    /// gets a token of its own, which the generic adjective and noun entries
+    /// analyse, beside the split tokens.
+    fn phrasal_compounds(&self, tokens: &[InputToken]) -> Vec<(usize, usize)> {
+        self.hyphen_chains(tokens)
+            .into_iter()
+            .filter(|c| !c.2)
+            .map(|c| (c.0, c.1))
+            .collect()
+    }
+
+    /// Runs of three or more lower-case words joined by hyphens with no
+    /// spaces, as token ranges, and whether the lexicon has the run as one
+    /// entry (|state-of-the-art|).
+    fn hyphen_chains(&self, tokens: &[InputToken]) -> Vec<(usize, usize, bool)> {
+        let word =
+            |t: &InputToken| !t.form.is_empty() && t.form.chars().all(|c| c.is_ascii_lowercase());
+        let hyphen = |i: usize| {
+            tokens[i].form == "-"
+                && tokens[i - 1].to == tokens[i].from
+                && tokens[i].to == tokens[i + 1].from
+        };
+        let mut out = Vec::new();
+        let mut i = 0;
+        while i < tokens.len() {
+            if !word(&tokens[i]) {
+                i += 1;
+                continue;
+            }
+            let mut j = i + 1;
+            while j + 1 < tokens.len() && hyphen(j) && word(&tokens[j + 1]) {
+                j += 2;
+            }
+            let words = (j - i).div_ceil(2);
+            // Not the first or last word of a longer run of letters
+            // (|re-|, a sentence-initial capital) and not a compound the
+            // lexicon has with its hyphens.
+            let attached = |k: usize| tokens.get(k).is_some_and(|t| t.form == "-");
+            if words >= 3
+                && !(i > 0 && attached(i - 1) && tokens[i - 1].to == tokens[i].from)
+                && !attached(j)
+            {
+                let forms: Vec<String> =
+                    tokens[i..j].iter().map(|t| t.form.to_lowercase()).collect();
+                let known = self
+                    .lexicon
+                    .entries_starting(&forms[0])
+                    .iter()
+                    .any(|&e| self.lexicon.entries[e].orth == forms);
+                out.push((i, j, known));
+            }
+            i = j.max(i + 1);
+        }
+        out
     }
 
     /// Build the initial token lattice and apply the token-mapping rules.
@@ -1538,17 +1693,70 @@ impl Erg {
         let mut u = Unifier::new();
         let mut lat = Lattice::default();
         let mut prev = lat.add_vertex(0.0);
+        let mut vertices = vec![prev];
         for (i, t) in tokens.iter().enumerate() {
             let next = lat.add_vertex((i + 1) as f64);
             let dag = self.token_dag(i, t, &mut u)?;
             lat.add(Arc::new(dag), prev, next);
             prev = next;
+            vertices.push(next);
         }
         let mut mapper = ChartMapper::new(&self.grammar, &self.token_mapping);
         if trace {
             mapper.trace = Some(Vec::new());
         }
         mapper.apply(&mut lat);
+        // A phrasal compound the tokenizer split gets a token of its own:
+        // the input mapped again with the compound as one token (so that
+        // the token-mapping rules treat it as a word, attaching punctuation
+        // after it), and that token added over the split ones.
+        for (start, end) in self.phrasal_compounds(tokens) {
+            let compound = InputToken {
+                form: tokens[start..end].iter().map(|t| t.form.as_str()).collect(),
+                from: tokens[start].from,
+                to: tokens[end - 1].to,
+                tags: vec![
+                    Tag {
+                        tag: "JJ".into(),
+                        prob: 0.5,
+                    },
+                    Tag {
+                        tag: "NN".into(),
+                        prob: 0.5,
+                    },
+                ],
+            };
+            let mut alt = Lattice::default();
+            let mut prev = alt.add_vertex(0.0);
+            let mut alt_vertices = vec![prev];
+            let mut k = 0;
+            while k < tokens.len() {
+                let next = alt.add_vertex(alt_vertices.len() as f64);
+                let dag = if k == start {
+                    let ids: Vec<usize> = (start..end).collect();
+                    let d = self.token_dag_ids(&ids, &compound, &mut u)?;
+                    k = end;
+                    d
+                } else {
+                    let d = self.token_dag(k, &tokens[k], &mut u)?;
+                    k += 1;
+                    d
+                };
+                alt.add(Arc::new(dag), prev, next);
+                prev = next;
+                alt_vertices.push(next);
+            }
+            ChartMapper::new(&self.grammar, &self.token_mapping).apply(&mut alt);
+            let (from, to) = (alt_vertices[start], alt_vertices[start + 1]);
+            let found: Vec<Arc<Dag>> = alt
+                .alive()
+                .filter(|(_, e)| e.start == from && e.end == to)
+                .map(|(_, e)| e.dag.clone())
+                .collect();
+            for dag in found {
+                lat.add(dag, vertices[start], vertices[end]);
+            }
+        }
         Ok((lat, mapper.trace.unwrap_or_default()))
     }
 }

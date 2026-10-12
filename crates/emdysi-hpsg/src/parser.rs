@@ -181,6 +181,37 @@ pub enum EdgeKind {
     Cover,
 }
 
+/// Results of rule applications, shared by the searches of one input (a
+/// narrow beam, then wider ones): a rule applied to daughters with the same
+/// derivations gives the same structure, or fails again, so a search after
+/// the first builds what the one before built without unifying. Keys are
+/// (rule, daughter position or 2 for both, derivation hashes); failures
+/// are kept as `None`.
+#[derive(Default)]
+pub struct UnifyMemo {
+    results: HashMap<(usize, usize, u64, u64), Option<Arc<Dag>>>,
+    /// Nodes in the structures kept, against the parser's node budget.
+    nodes: usize,
+}
+
+/// A hash of a derivation step: a lexical entry over tokens (`rule` none)
+/// or a rule over daughters' hashes.
+fn sig_of(rule: Option<usize>, parts: &[u64]) -> u64 {
+    // FNV-1a over the words, then a final mix.
+    let mut h: u64 = 0xcbf2_9ce4_8422_2325;
+    let mut feed = |x: u64| {
+        for b in x.to_le_bytes() {
+            h ^= b as u64;
+            h = h.wrapping_mul(0x0100_0000_01b3);
+        }
+    };
+    feed(rule.map_or(u64::MAX, |r| r as u64));
+    for &p in parts {
+        feed(p);
+    }
+    h ^ (h >> 29)
+}
+
 /// A daughter of a rule application, for scoring.
 #[derive(Debug, Clone, Copy)]
 pub enum Dtr {
@@ -221,6 +252,9 @@ pub struct Edge {
     parents: Vec<usize>,
     /// Model score of the best derivation found for this edge.
     pub score: f64,
+    /// A hash of the edge's derivation (rules and lexical entries), which
+    /// determines its structure: the key of [`UnifyMemo`].
+    sig: u64,
 }
 
 impl Edge {
@@ -415,6 +449,9 @@ pub struct ParserConfig {
     /// Lexical entries (instance indices) that lexical filtering leaves in
     /// place.
     pub unfiltered: Vec<usize>,
+    /// Lattice spans (start and end vertex) whose lexical edges get this
+    /// much added to their score.
+    pub lexical_bonus: Vec<((u32, u32), f64)>,
 }
 
 /// Counters describing the work a parse did.
@@ -503,6 +540,7 @@ pub struct Parser<'g> {
     scorer: Option<&'g dyn Scorer>,
     /// Stands in for the structure of a released edge.
     released: Arc<Dag>,
+    memo: Option<&'g std::cell::RefCell<UnifyMemo>>,
 }
 
 impl<'g> Parser<'g> {
@@ -575,7 +613,14 @@ impl<'g> Parser<'g> {
             nodes: 0,
             scorer: None,
             released: Arc::new(Dag::atomic(TOP)),
+            memo: None,
         }
+    }
+
+    /// Reuse and record rule applications in `memo` (see [`UnifyMemo`]).
+    pub fn with_memo(mut self, memo: &'g std::cell::RefCell<UnifyMemo>) -> Self {
+        self.memo = Some(memo);
+        self
     }
 
     pub fn parse(mut self, lat: &Lattice, items: Vec<LexItem>) -> ParseResult {
@@ -619,7 +664,17 @@ impl<'g> Parser<'g> {
             .zip(chains)
             .map(|(it, pending)| {
                 let qc = self.qc.vector(&it.dag, 0);
-                let score = self.scorer.map_or(0.0, |s| s.lexical(it.inst));
+                let bonus: f64 = self
+                    .config
+                    .lexical_bonus
+                    .iter()
+                    .filter(|(span, _)| *span == (it.start, it.end))
+                    .map(|(_, b)| b)
+                    .sum();
+                let score = self.scorer.map_or(0.0, |s| s.lexical(it.inst)) + bonus;
+                let mut parts = vec![it.inst as u64];
+                parts.extend(it.tokens.iter().map(|&t| t as u64));
+                let sig = sig_of(None, &parts);
                 Edge {
                     start: pos[&it.start],
                     end: pos[&it.end],
@@ -637,6 +692,7 @@ impl<'g> Parser<'g> {
                     packed: Vec::new(),
                     parents: Vec::new(),
                     score,
+                    sig,
                 }
             })
             .collect();
@@ -689,6 +745,7 @@ impl<'g> Parser<'g> {
                         packed: Vec::new(),
                         parents: Vec::new(),
                         score: e.score + self.scorer.map_or(0.0, |s| s.rule(ri, &[e_dtr])),
+                        sig: sig_of(Some(ri), &[e.sig]),
                     });
                 }
             }
@@ -832,27 +889,46 @@ impl<'g> Parser<'g> {
                             }
                             // Unify the rule with this daughter once, then
                             // quick-check the other daughters against the
-                            // combined structure.
-                            let Some(mut qc_other) = self.partial_qc(ri, pos, id) else {
-                                if traced(&self.rules[ri].name) {
-                                    eprintln!("trace: edge {id} fails as daughter {pos}");
-                                }
-                                continue;
-                            };
-                            // The unifier now holds the rule with this
-                            // daughter: each candidate is tried from there.
-                            let cp = self.u.checkpoint();
+                            // combined structure; not at all when a search
+                            // before this one tried every pair (see
+                            // UnifyMemo), whose results are taken from there
+                            // in the same order.
+                            let mut partial: Option<(Vec<TypeId>, Checkpoint)> = None;
+                            let mut failed = false;
                             for c in cands {
                                 if self.chart[id].state != EdgeState::Active {
                                     break;
                                 }
+                                let pair = if pos == 0 { [id, c] } else { [c, id] };
+                                if self.memo_hit(ri, &pair, &mut agenda) {
+                                    continue;
+                                }
+                                if failed {
+                                    continue;
+                                }
+                                if partial.is_none() {
+                                    let Some(q) = self.partial_qc(ri, pos, id) else {
+                                        if traced(&self.rules[ri].name) {
+                                            eprintln!("trace: edge {id} fails as daughter {pos}");
+                                        }
+                                        failed = true;
+                                        continue;
+                                    };
+                                    // The unifier now holds the rule with
+                                    // this daughter: each candidate is tried
+                                    // from there.
+                                    partial = Some((q, self.u.checkpoint()));
+                                }
+                                let Some((qc_other, cp)) = partial.as_mut() else {
+                                    continue;
+                                };
                                 let slot = self.rules[ri].dtrs[other];
                                 if !other_compatible(
                                     &mut self.u,
                                     &self.g.ts,
                                     self.qc,
                                     slot,
-                                    &mut qc_other,
+                                    qc_other,
                                     &self.chart[c].qc,
                                 ) {
                                     self.stats.qc_filtered += 1;
@@ -885,8 +961,8 @@ impl<'g> Parser<'g> {
                                     }
                                     continue;
                                 }
-                                let pair = if pos == 0 { [id, c] } else { [c, id] };
-                                self.try_other(ri, &pair, other, &cp, &mut agenda);
+                                let cp = &*cp;
+                                self.try_other(ri, &pair, other, cp, &mut agenda);
                             }
                         }
                     }
@@ -1833,8 +1909,29 @@ impl<'g> Parser<'g> {
         self.stats.attempts += 1;
         let dags: Vec<Arc<Dag>> = dtrs.iter().map(|&d| self.chart[d].dag.clone()).collect();
         if let Some(dag) = self.unify_rule(ri, &dags) {
-            self.add_edge(ri, dtrs, dag, agenda);
+            self.add_edge(ri, dtrs, Arc::new(dag), agenda);
         }
+    }
+
+    /// Apply a binary rule to two daughters from [`UnifyMemo`], if a search
+    /// before this one tried them: whether it did.
+    fn memo_hit(&mut self, ri: usize, dtrs: &[usize; 2], agenda: &mut Agenda) -> bool {
+        let Some(m) = self.memo else { return false };
+        let rule = &self.rules[ri];
+        let (start, end) = (self.chart[dtrs[0]].start, self.chart[dtrs[1]].end);
+        if rule.spanning_only && !(start == 0 && end == self.n) {
+            return true;
+        }
+        let key = (ri, 2, self.chart[dtrs[0]].sig, self.chart[dtrs[1]].sig);
+        let Some(found) = m.borrow().results.get(&key).cloned() else {
+            return false;
+        };
+        self.stats.attempts += 1;
+        match found {
+            Some(dag) => self.add_edge(ri, dtrs, dag, agenda),
+            None => self.stats.unify_failed += 1,
+        }
+        true
     }
 
     /// Try a binary rule whose daughter other than `other` is already
@@ -1854,6 +1951,7 @@ impl<'g> Parser<'g> {
             return;
         }
         self.stats.attempts += 1;
+        let key = (ri, 2, self.chart[dtrs[0]].sig, self.chart[dtrs[1]].sig);
         let t = Instant::now();
         let cons = self.g.constraint_fn();
         let h = self.u.add(self.chart[dtrs[other]].dag.clone());
@@ -1902,13 +2000,22 @@ impl<'g> Parser<'g> {
             );
         }
         self.u.rollback(cp);
+        let dag = dag.map(Arc::new);
+        if let Some(m) = self.memo {
+            let mut m = m.borrow_mut();
+            let size = dag.as_ref().map_or(0, |d| d.nodes.len());
+            if m.nodes + size <= self.config.max_nodes {
+                m.nodes += size;
+                m.results.insert(key, dag.clone());
+            }
+        }
         if let Some(dag) = dag {
             self.add_edge(ri, dtrs, dag, agenda);
         }
     }
 
     /// Add the mother of a rule to the chart and the agenda.
-    fn add_edge(&mut self, ri: usize, dtrs: &[usize], dag: Dag, agenda: &mut Agenda) {
+    fn add_edge(&mut self, ri: usize, dtrs: &[usize], dag: Arc<Dag>, agenda: &mut Agenda) {
         let breaks_seal = dtrs.iter().enumerate().any(|(i, &d)| {
             let EdgeKind::Rule(dr) = &self.chart[d].kind else {
                 return false;
@@ -1949,7 +2056,7 @@ impl<'g> Parser<'g> {
             start,
             end,
             qc: self.qc.vector(&dag, 0),
-            dag: Arc::new(dag),
+            dag,
             kind: EdgeKind::Rule(ri),
             daughters: dtrs.to_vec(),
             pending: Vec::new(),
@@ -1959,6 +2066,10 @@ impl<'g> Parser<'g> {
             packed: Vec::new(),
             parents: Vec::new(),
             score,
+            sig: sig_of(
+                Some(ri),
+                &dtrs.iter().map(|&d| self.chart[d].sig).collect::<Vec<_>>(),
+            ),
         });
         for &d in dtrs {
             self.chart[d].parents.push(id);
