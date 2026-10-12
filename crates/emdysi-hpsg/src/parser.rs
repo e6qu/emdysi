@@ -137,6 +137,9 @@ pub struct Rule {
     /// lexical entries (instance indices) right before it. Empty: no
     /// restriction.
     pub follows: Vec<usize>,
+    /// With `follows`: that word must itself come right after a word of
+    /// one of these entries (a comma). Empty: no restriction.
+    pub follows_after: Vec<usize>,
     dtr_qc: Vec<Vec<TypeId>>,
 }
 
@@ -174,6 +177,7 @@ impl Rule {
             complement_of: Vec::new(),
             paired_subject: None,
             follows: Vec::new(),
+            follows_after: Vec::new(),
             dtr_qc,
         }
     }
@@ -2059,9 +2063,15 @@ impl<'g> Parser<'g> {
         }
         if !self.rules[ri].follows.is_empty() {
             let start = self.chart[dtrs[0]].start;
+            let rule = &self.rules[ri];
             let after = self.by_end[start].iter().any(|&e| {
                 matches!(&self.chart[e].kind, EdgeKind::Lex { inst, .. }
-                    if self.rules[ri].follows.contains(inst))
+                    if rule.follows.contains(inst))
+                    && (rule.follows_after.is_empty()
+                        || self.by_end[self.chart[e].start].iter().any(|&p| {
+                            matches!(&self.chart[p].kind, EdgeKind::Lex { inst, .. }
+                                if rule.follows_after.contains(inst))
+                        }))
             });
             if !after {
                 return;

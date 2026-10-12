@@ -556,6 +556,10 @@ impl Erg {
             // right after one (type c_xp_*), and is then only the clause of
             // the conjunction's marker phrase.
             if let Some(marker) = rule_index(&rules, "mrk-nh_cl_c") {
+                // ... after a comma (see Erg::licensed).
+                let commas: Vec<usize> = (0..grammar.instances.len())
+                    .filter(|&i| grammar.instances[i].name.starts_with("comma"))
+                    .collect();
                 let conjunctions: Vec<usize> = (0..grammar.instances.len())
                     .filter(|&i| rank::lexical_type(&grammar, i).starts_with("c_xp_"))
                     .collect();
@@ -563,6 +567,7 @@ impl Erg {
                     if let Some(r) = rule_index(&rules, name) {
                         rules[r].complement_of = vec![marker];
                         rules[r].follows = conjunctions.clone();
+                        rules[r].follows_after = commas.clone();
                     }
                 }
             }
