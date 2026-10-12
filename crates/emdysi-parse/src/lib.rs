@@ -848,6 +848,9 @@ impl Erg {
             model: &self.model,
             le_types: &self.le_types,
         };
+        // The searches below (a narrow beam, wider ones, none) share the
+        // results of rule applications (see UnifyMemo).
+        let memo = std::cell::RefCell::new(emdysi_hpsg::parser::UnifyMemo::default());
         let run = |config: &ParserConfig, items: Vec<LexItem>| -> ParseResult {
             Parser::new(
                 &self.grammar,
@@ -857,6 +860,7 @@ impl Erg {
                 &self.lexical_filtering,
             )
             .with_scorer(&scorer)
+            .with_memo(&memo)
             .parse(&lat, items)
         };
         // Strict as the readings returned are: under a strict root once
@@ -867,6 +871,18 @@ impl Erg {
             })
         };
         let complete = |r: &ParseResult| r.readings.iter().any(|r| r.root != "fragment");
+        // A wider beam replaces a complete result only with a strict one.
+        // Whether a strict reading is possible at all: the grammar-error
+        // variant's roots are not strict but for root_strict_excl, which
+        // needs a final "!" (see Erg::licensed_root); there, once a search
+        // finds a complete analysis, wider ones are not tried, nor one
+        // without a beam.
+        let strict_possible = config
+            .roots
+            .iter()
+            .any(|(n, _)| is_strict(n) && n.trim_end_matches("_br") != "root_strict_excl")
+            || text.trim_end().ends_with('!');
+        let settled = |r: &ParseResult| !strict_possible && complete(r);
         // With chart pruning, a narrow beam first; the configured one only
         // when that finds no strict analysis and time remains.
         let result = match (self.first_beam, config.cell_beam) {
@@ -878,6 +894,7 @@ impl Erg {
                 let r = run(&narrow, items.clone());
                 let left = config.timeout.saturating_sub(t0.elapsed());
                 if strict(&r)
+                    || settled(&r)
                     || left < Duration::from_secs(1)
                     || r.positions <= config.cell_beam_from
                 {
@@ -909,6 +926,7 @@ impl Erg {
             for factor in [2, 4] {
                 let left = config.timeout.saturating_sub(t0.elapsed());
                 if strict(&result)
+                    || settled(&result)
                     || left < Duration::from_secs(1)
                     || result.positions <= config.cell_beam_from
                 {
@@ -931,6 +949,7 @@ impl Erg {
         // fragments then get a full analysis within 10 seconds; pruning
         // also loses strict analyses of sentences it leaves informal ones).
         let result = if !strict(&result)
+            && !settled(&result)
             && config.cell_beam.is_some()
             && result.positions > config.cell_beam_from
             && config.timeout.saturating_sub(t0.elapsed()) >= Duration::from_secs(1)
