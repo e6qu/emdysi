@@ -138,6 +138,11 @@ pub struct Options {
     /// Re-parse sentences without a strict analysis with the grammar-error
     /// variant of the grammar, to name the error.
     pub diagnose: bool,
+    /// With `diagnose`, re-parse every sentence without a strict analysis,
+    /// for its meaning (`en rewrite`) or to show it (`en parse`); otherwise
+    /// only those whose errors can be reported: a complete search found
+    /// fragments only (see `rules::grammar_errors`).
+    pub meaning: bool,
 }
 
 impl Default for Options {
@@ -149,6 +154,7 @@ impl Default for Options {
             timeout: Duration::from_secs(10),
             max_readings: 100,
             diagnose: true,
+            meaning: false,
         }
     }
 }
@@ -462,7 +468,18 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                                     })
                                 })
                             }));
-                    let mal_parse = if opts.diagnose && parse.is_some() && (!strict || generic) {
+                    // Without a strict analysis, errors are reported only when
+                    // a complete search found fragments only.
+                    let proved = parse.as_ref().is_some_and(|q| {
+                        q.complete && q.readings.iter().all(|r| r.root == "fragment")
+                    });
+                    let mal_parse = if opts.diagnose
+                        && parse.is_some()
+                        && (if strict {
+                            generic
+                        } else {
+                            proved || opts.meaning
+                        }) {
                         let masked = parser_text(text, in_list);
                         let text = masked.as_deref().unwrap_or(text);
                         erg.mal().and_then(|m| {
