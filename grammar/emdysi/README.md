@@ -5,6 +5,13 @@ TDL files loaded after the ERG (`grammar/erg`), in file-name order, by
 are not changed. Written for this project (MIT, see the repository's
 `LICENSE`), in the ERG's conventions and on its types.
 
+- `subjects.tdl`: a subject followed by an adjunct set off by commas
+  (*The committee, however, decided to wait.*). The ERG's subject-head
+  phrase takes a subject with a comma only through the informal comma
+  (`comma_inf_pct`), so every such sentence was informal; these copies
+  (`sb-hd_mc-pc_c`, `sb-hd_nmc-pc_c`) take the formal one, and the parser
+  lets them build a clause only when the verb phrase begins with an
+  adjunct ending in a comma (`Rule::paired_subject`).
 - `sluicing.tdl`: a sluice with a phrase (*without knowing in what
   direction*, *I do not know with whom*, *nobody knows which one*). The
   ERG has a sluice for a single wh-word only (`what_cp`, `how_cp`); these

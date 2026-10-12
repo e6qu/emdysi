@@ -1,0 +1,50 @@
+;;; A subject followed by an adjunct set off by commas: |Kim, indeed,
+;;; left.|, |The committee, however, decided to wait.| The ERG's subject-head
+;;; phrase (head_subj_phrase) takes a subject with a comma only through the
+;;; informal comma (comma_inf_pct, |B knows, we arrived.|, GENRE nonformal),
+;;; so every such sentence was informal. These rules take a subject ending in
+;;; the formal comma (RPUNCT comma_punct). The parser lets them build a
+;;; clause only when the head daughter is an adjunct-head phrase whose
+;;; adjunct ends in a comma (Rule::paired_subject, set up in
+;;; Erg::load_config): the commas come in a pair around the adjunct, not
+;;; between the subject and its verb (|*Kim, left.|).
+
+:begin :type.
+
+head_subj_pc_phrase := basic_head_subj_phrase &
+  [ HD-DTR.SYNSEM.LOCAL.CAT.VAL.SUBJ < #synsem >,
+    NH-DTR.SYNSEM #synsem & [ PUNCT.RPUNCT comma_punct ] ].
+
+subjh_mc_pc_rule := subjh_rule_decl & head_subj_pc_phrase & clause &
+  [ SYNSEM [ LOCAL [ CAT [ HEAD verbal &
+				[ VFORM fin,
+                                  TAM indic_tam,
+				  PRD -,
+				  CASE non_nom ],
+			   VAL.SPR *olist*,
+                           MC +,
+			 --SLASHED.BOOL - ],
+                     CONT.HOOK [ INDEX.SF #pred ] ],
+	     NONLOC.SLASH.LIST < >,
+             PUNCT.RPUNCT.PSF #pred ],
+    HD-DTR.SYNSEM.LOCAL.CAT.--SLASHED.BOOL -,
+    NH-DTR.SYNSEM.LOCAL.CAT.--SLASHED.BOOL - ].
+
+subjh_nonmc_pc_rule := subjh_rule_decl & head_subj_pc_phrase &
+  [ SYNSEM.LOCAL.CAT [ HEAD basic_verb_or_frag & [ VFORM fin_or_bse_or_prp ],
+		       MC -,
+		       --SLASHED [ OR < [ BOOL #hdsl ], [ BOOL #nhsl ] > ] ],
+    HD-DTR.SYNSEM.LOCAL.CAT.--SLASHED.BOOL #hdsl,
+    NH-DTR.SYNSEM.LOCAL.CAT.--SLASHED.BOOL #nhsl ].
+
+:end :type.
+
+:begin :instance :status rule.
+
+sb-hd_mc-pc_c := subjh_mc_pc_rule &
+  [ RNAME sbhd ].
+
+sb-hd_nmc-pc_c := subjh_nonmc_pc_rule &
+  [ RNAME sbhn ].
+
+:end :instance.
