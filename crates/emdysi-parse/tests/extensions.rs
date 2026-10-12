@@ -163,3 +163,14 @@ fn sluicing_with_a_phrase() {
         assert!(strict(&erg, text), "{text}");
     }
 }
+
+#[test]
+fn transitive_meditate() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    for text in [
+        "She meditated revenge.",
+        "Not a syllable had ever reached her of Miss Darcy's meditated elopement.",
+    ] {
+        assert!(strict(&erg, text), "{text}");
+    }
+}

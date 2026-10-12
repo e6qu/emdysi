@@ -1073,3 +1073,15 @@ genericname_pl_def := n_-_pn-pl-def-unk_le &
     TOKENS.+LIST < [ +TNT.+TAGS.FIRST "NNPS" ] > ].
 
 :end :instance.
+
+;;; Transitive "meditate", to plan (|she meditated revenge|, |Miss Darcy's
+;;; meditated elopement|): the ERG has it intransitive and with "on" only.
+
+:begin :instance :status lex-entry.
+
+meditate_v2 := v_np_le &
+ [ ORTH < "meditate" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_meditate_v_2_rel",
+            PHON.ONSET con ] ].
+
+:end :instance.

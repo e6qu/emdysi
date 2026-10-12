@@ -124,6 +124,8 @@ are not changed. Written for this project (MIT, see the repository's
   contributes the *to* relation itself, so *range from yellow to blue*
   means the same with its adjectives as with its nouns; the older units
   of time *twelvemonth* and *sennight*, in the form of *fortnight*;
+  transitive *meditate*, to plan (*Miss Darcy's meditated elopement*), which
+  the ERG has only intransitive and with *on*;
   unknown plural names with a determiner (*the Bennets were*, *the
   Gardiners*): a generic entry for words the tagger marks NNPS, in the
   ERG's type for plural names (`n_-_pn-pl-def_le`, *The Giants play
