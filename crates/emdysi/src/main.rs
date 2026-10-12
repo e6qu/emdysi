@@ -338,7 +338,7 @@ fn inputs(
 }
 
 fn run() -> Result<bool, String> {
-    let args = parse_args()?;
+    let mut args = parse_args()?;
     if args.command == "packs" {
         for p in load_packs(&args.packs)? {
             println!("{}: {}", p.name, p.description);
@@ -372,6 +372,11 @@ fn run() -> Result<bool, String> {
     let mut packs = load_packs(&args.packs)?;
     for g in &args.glossaries {
         packs.push(load_glossary(g)?);
+    }
+    // Rewriting needs the meaning of sentences without a strict analysis,
+    // and parse output shows it.
+    if args.command == "rewrite" || args.command == "parse" {
+        args.opts.meaning = true;
     }
     let docs = inputs(&args.files, args.input)?;
     let erg = Erg::load(&args.grammar).map_err(|e| format!("loading grammar: {e}"))?;

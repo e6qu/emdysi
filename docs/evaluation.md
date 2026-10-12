@@ -1010,3 +1010,28 @@ hyphens for dashes (2026-10-12):
 | False flags, second development set | 84 | 84 (the same) |
 | Real errors caught (377) | 163 | 163 |
 | Gold profiles | | unchanged, all six |
+
+### Checking speed: the grammar-error variant
+
+Timing whole documents (12 documents of the second development set,
+13,185 words, `en check` without the parse cache, four threads) showed
+that the speed-ups of the parser alone did not shorten checking: most of
+the time goes to hard sentences that search until their time limit, and
+work saved inside a search goes into searching further. The grammar-error
+variant took 45% of the parse time, most of it on sentences whose result
+`grammar_errors` never reads. It is now parsed only where its result is
+used (2026-10-12):
+
+- without a strict analysis, only when a complete search found fragments
+  only (errors are reported only then); `en rewrite` and `en parse`, which
+  use its meaning, still ask for every such sentence (`Options::meaning`);
+- with a strict analysis, only when an unknown word other than an acronym
+  or masked code could carry the error (errors there now count only
+  within such a word, not merely overlapping one).
+
+| | Before | After |
+|---|---|---|
+| The 12 documents | 8 min 24 s | 6 min 30 s |
+| Their diagnostics | | identical |
+| False flags, first and second development sets | 6, 84 | the same flags |
+| Real errors caught (377) | 163 | 163 |

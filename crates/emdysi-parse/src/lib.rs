@@ -542,6 +542,15 @@ impl Erg {
                     rules[r].heavy_object_parents = vec![hcomp];
                 }
             }
+            // A subject before an adjunct set off by commas (see
+            // grammar/emdysi/subjects.tdl).
+            if let Some(comma) = grammar.instance_index.get("comma_pct").copied() {
+                for name in ["sb-hd_mc-pc_c", "sb-hd_nmc-pc_c"] {
+                    if let Some(r) = rule_index(&rules, name) {
+                        rules[r].paired_subject = Some(comma);
+                    }
+                }
+            }
             // A sluice with a phrase is a verb's complement only (see
             // grammar/emdysi/sluicing.tdl).
             for name in ["cl_sluice-np_c", "cl_sluice-pp_c"] {

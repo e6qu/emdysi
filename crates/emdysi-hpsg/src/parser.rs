@@ -129,6 +129,10 @@ pub struct Rule {
     /// And another: an edge of this rule is only the second daughter of
     /// these rules (rule indices). Empty: no restriction.
     pub complement_of: Vec<usize>,
+    /// And another: an edge of this rule needs a head daughter built by an
+    /// adjunct-head rule (name starting `aj-hd`) whose adjunct ends in this
+    /// lexical entry (instance index), a comma.
+    pub paired_subject: Option<usize>,
     dtr_qc: Vec<Vec<TypeId>>,
 }
 
@@ -164,6 +168,7 @@ impl Rule {
             sealed_parents: Vec::new(),
             heavy_object_parents: Vec::new(),
             complement_of: Vec::new(),
+            paired_subject: None,
             dtr_qc,
         }
     }
@@ -2046,6 +2051,27 @@ impl<'g> Parser<'g> {
         });
         if breaks_seal {
             return;
+        }
+        if let Some(comma) = self.rules[ri].paired_subject {
+            let paired = dtrs.get(1).is_some_and(|&h| {
+                let EdgeKind::Rule(hr) = self.chart[h].kind else {
+                    return false;
+                };
+                if !self.rules[hr].name.starts_with("aj-hd") {
+                    return false;
+                }
+                // The rightmost word of the adjunct.
+                let Some(mut x) = self.chart[h].daughters.first().copied() else {
+                    return false;
+                };
+                while let Some(&last) = self.chart[x].daughters.last() {
+                    x = last;
+                }
+                matches!(self.chart[x].kind, EdgeKind::Lex { inst, .. } if inst == comma)
+            });
+            if !paired {
+                return;
+            }
         }
         let start = self.chart[dtrs[0]].start;
         let end = self.chart[*dtrs.last().unwrap()].end;

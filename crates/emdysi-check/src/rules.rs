@@ -1784,27 +1784,8 @@ fn named_errors(s: &crate::Sentence, alternatives: bool) -> Vec<GrammarError> {
         .unwrap_or_default()
         .chars()
         .collect();
-    let placeholder = |f: usize, t: usize| {
-        masked.get(f) == Some(&'X')
-            && masked
-                .get(f + 1..t)
-                .is_some_and(|m| m.iter().all(|&c| c == 'x'))
-    };
-    // An acronym (|CEL|, |RBAC|) or its plural (|PRs|, |APIs|) is a name,
-    // whatever the grammar knows of it.
-    let acronym = |f: usize, t: usize| {
-        let w: String = original
-            .get(f..t)
-            .map(|c| c.iter().collect())
-            .unwrap_or_default();
-        let w = w
-            .strip_suffix('s')
-            .filter(|s| s.chars().count() >= 2)
-            .unwrap_or(&w);
-        w.chars().count() >= 2
-            && w.chars()
-                .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
-    };
+    let placeholder = |f: usize, t: usize| crate::masked_code(&masked, f, t);
+    let acronym = |f: usize, t: usize| crate::acronym(&original, f, t);
     if !s.strict()
         && generic_spans
             .iter()
@@ -1814,8 +1795,9 @@ fn named_errors(s: &crate::Sentence, alternatives: bool) -> Vec<GrammarError> {
         return Vec::new();
     }
     // When the grammar has a strict analysis that treats some word as
-    // unknown (re-parsed for wrong forms such as "buyed"), only errors on
-    // those words count: elsewhere the strict analysis stands.
+    // unknown (re-parsed for wrong forms such as "buyed"), only errors
+    // within those words count, and not within an acronym or masked code
+    // (see `crate::name_like`): elsewhere the strict analysis stands.
     if s.strict() {
         let unknown: Vec<(usize, usize)> = s
             .best()
@@ -1828,7 +1810,9 @@ fn named_errors(s: &crate::Sentence, alternatives: bool) -> Vec<GrammarError> {
             })
             .unwrap_or_default();
         out.retain(|e| {
-            unknown.iter().any(|&(f, t)| e.from < t && f < e.to) && !acronym(e.from, e.to)
+            unknown
+                .iter()
+                .any(|&(f, t)| f <= e.from && e.to <= t && !acronym(f, t) && !placeholder(f, t))
         });
     }
     // An alternative that is not an error (a licensed capital) leaves an

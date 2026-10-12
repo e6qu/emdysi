@@ -145,7 +145,13 @@ pub struct Rewriter<'a> {
 impl Rewriter<'_> {
     /// Diagnostics of a single sentence, analysed on its own.
     fn check_one(&self, text: &str) -> (Analysis, Vec<Diagnostic>) {
-        let a = analyze(self.erg, text, Format::Plain, &self.options);
+        // The meaning of a candidate without a strict analysis comes from
+        // the grammar-error variant (see `meaning`).
+        let options = emdysi_check::Options {
+            meaning: true,
+            ..self.options.clone()
+        };
+        let a = analyze(self.erg, text, Format::Plain, &options);
         let d = self.checker.check(self.erg, &a);
         (a, d)
     }

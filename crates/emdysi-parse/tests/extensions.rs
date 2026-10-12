@@ -195,3 +195,17 @@ fn phrasal_compounds() {
         best.words.iter().map(|w| &w.entry).collect::<Vec<_>>()
     );
 }
+
+#[test]
+fn adjunct_between_commas_after_the_subject() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    for text in [
+        "Kim, indeed, left.",
+        "The committee, however, decided to wait.",
+        "I think that the committee, in the end, decided to wait.",
+    ] {
+        assert!(strict(&erg, text), "{text}");
+    }
+    // A comma between a subject and its verb is not formal.
+    assert!(!strict(&erg, "Kim, left."));
+}
