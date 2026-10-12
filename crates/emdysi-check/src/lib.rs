@@ -231,6 +231,31 @@ static CODE_LIKE: std::sync::LazyLock<fancy_regex::Regex> = std::sync::LazyLock:
 /// sentence's grammar, and the parser would otherwise build them into a
 /// noun phrase. Character positions are unchanged. `None` if nothing is
 /// masked.
+/// Whether characters `f..t` of a sentence masked for the parser (see
+/// [`parser_text`]) are masked code, which the parser reads as a name.
+pub(crate) fn masked_code(masked: &[char], f: usize, t: usize) -> bool {
+    masked.get(f) == Some(&'X')
+        && masked
+            .get(f + 1..t)
+            .is_some_and(|m| m.iter().all(|&c| c == 'x'))
+}
+
+/// Whether characters `f..t` of a sentence are an acronym (|CEL|, |RBAC|)
+/// or its plural (|PRs|, |APIs|): a name, whatever the grammar knows of it.
+pub(crate) fn acronym(original: &[char], f: usize, t: usize) -> bool {
+    let w: String = original
+        .get(f..t)
+        .map(|c| c.iter().collect())
+        .unwrap_or_default();
+    let w = w
+        .strip_suffix('s')
+        .filter(|s| s.chars().count() >= 2)
+        .unwrap_or(&w);
+    w.chars().count() >= 2
+        && w.chars()
+            .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
+}
+
 pub(crate) fn parser_text(text: &str, in_list: bool) -> Option<String> {
     let labelled = mask_label(text).filter(|_| in_list);
     let base = labelled.as_deref().unwrap_or(text);
@@ -417,6 +442,26 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                     // The grammar-error variant is only asked for readings
                     // with few corrections (see `rules::grammar_errors`), so
                     // a short search suffices.
+                    // With a strict analysis, an error counts only within
+                    // an unknown word other than an acronym or masked code
+                    // (see `rules::grammar_errors`): when there is none, the
+                    // grammar-error variant is not asked.
+                    let generic = generic
+                        && (!strict
+                            || parse.as_ref().is_some_and(|p| {
+                                let original: Vec<char> = sents[i].original.chars().collect();
+                                let masked: Vec<char> = parser_text(&sents[i].original, false)
+                                    .unwrap_or_default()
+                                    .chars()
+                                    .collect();
+                                p.readings.first().is_some_and(|r| {
+                                    r.words.iter().any(|w| {
+                                        w.generic
+                                            && !acronym(&original, w.from, w.to)
+                                            && !masked_code(&masked, w.from, w.to)
+                                    })
+                                })
+                            }));
                     let mal_parse = if opts.diagnose && parse.is_some() && (!strict || generic) {
                         let masked = parser_text(text, in_list);
                         let text = masked.as_deref().unwrap_or(text);
