@@ -174,3 +174,24 @@ fn transitive_meditate() {
         assert!(strict(&erg, text), "{text}");
     }
 }
+
+#[test]
+fn phrasal_compounds() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    for text in [
+        "I previously wanted allow-by-default.",
+        "We use a pay-as-you-go model.",
+        "We like one-size-fits-all.",
+    ] {
+        assert!(strict(&erg, text), "{text}");
+    }
+    // A compound the lexicon has is read as that entry, not as words
+    // joined by dashes.
+    let p = erg.parse("We chose a wait-and-see approach.").unwrap();
+    let best = &p.readings[0];
+    assert!(
+        best.words.iter().any(|w| w.entry == "wait_and_see_a2"),
+        "{:?}",
+        best.words.iter().map(|w| &w.entry).collect::<Vec<_>>()
+    );
+}

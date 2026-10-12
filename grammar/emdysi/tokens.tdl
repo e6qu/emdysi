@@ -1,0 +1,32 @@
+;;; Token-mapping rules of emdysi's, applied before the ERG's
+;;; (grammar/erg/tmr/*.tdl): status emdysi-early-token-mapping-rule.
+;;;
+;;; A phrasal compound the tokenizer split at its hyphens (|allow-by-default|)
+;;; also gets a token of its own (Erg::map_tokens). The ERG attaches a
+;;; following punctuation mark to a word with punct_suffix_clitic_tmr
+;;; (tmr/split.tdl), whose word has letters and digits only, so not to the
+;;; compound: this is that rule for a word with hyphens inside.
+
+:begin :instance :status emdysi-early-token-mapping-rule.
+
+hyphenated_punct_suffix_clitic_tmr := two_two_tmt &
+[ +INPUT < [ +FORM ^([[:alnum:]]+(-[[:alnum:]]+)+)$, +CLASS #class,
+             +TRAIT [ +UW #uw, +LB #lb1, +RB #rb1,
+		      +LD #ld, +RD [ LIST #rdlist, LAST #rdlast ] ],
+             +PRED #pred, +CARG #carg, +TNT #tnt ],
+	   [ +FORM ^([,⸴\.~\?!;”\)\]]+)$, +CLASS #classp,
+             +TRAIT [ +UW #uwp, +LB #lb2, +RB #rb2, +RD bracket_null ],
+             +PRED #predp, +CARG #cargp, +TNT #tntp ]>,
+  +OUTPUT < [ +FORM "${I1:+FORM:1}", +CLASS #class,
+              +TRAIT [ +UW #uw, +LB #lb1, +RB #rb1,
+		       +LD #ld,
+		       +RD bracket_nonnull &
+			   [ LIST < n . #rdlist >, LAST #rdlast ] ],
+              +PRED #pred, +CARG #carg, +TNT #tnt ],
+            [ +FORM "${I2:+FORM:1}", +CLASS #classp,
+              +TRAIT [ +UW #uwp, +LB #lb2, +RB #rb2,
+		       +LD bracket_null, +RD bracket_nonnull & <! n !> ],
+              +PRED #predp, +CARG #cargp, +TNT #tntp ] >,
+  +CONTEXT < > ].
+
+:end :instance.

@@ -13,6 +13,16 @@ are not changed. Written for this project (MIT, see the repository's
   parser lets the clause be only a verb's complement
   (`Rule::complement_of`) and not contain a relative clause, so that *I
   wonder which book he read* stays one embedded question.
+- `tokens.tdl`: emdysi's token-mapping rules, applied before the ERG's.
+  A phrasal compound the lexicon does not have (*allow-by-default*,
+  *pay-as-you-go*: three or more lower-case words joined by hyphens) also
+  gets a token of its own beside the split one (`Erg::phrasal_compounds`),
+  which the generic noun entry analyses; `hyphenated_punct_suffix_clitic_tmr`
+  attaches a following punctuation mark to it, as the ERG's
+  `punct_suffix_clitic_tmr` does for a word without hyphens. A whole-chain
+  word, generic or of the lexicon (*wait-and-see*), gets a bonus in the chart
+  so that pruning and unpacking keep it, and readings that take its hyphens
+  for dashes are dropped when a strict reading does without.
 - `tokenizer.rpp`: rules for the tokenizer, applied after the ERG's
   (`grammar/erg/rpp/tokenizer.rpp`). A range of amounts with a currency
   sign on both ends (*£3,000-£5,000*, *$10-$20*) is split like the ERG

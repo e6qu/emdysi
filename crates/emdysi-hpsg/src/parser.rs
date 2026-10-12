@@ -415,6 +415,9 @@ pub struct ParserConfig {
     /// Lexical entries (instance indices) that lexical filtering leaves in
     /// place.
     pub unfiltered: Vec<usize>,
+    /// Lattice spans (start and end vertex) whose lexical edges get this
+    /// much added to their score.
+    pub lexical_bonus: Vec<((u32, u32), f64)>,
 }
 
 /// Counters describing the work a parse did.
@@ -619,7 +622,14 @@ impl<'g> Parser<'g> {
             .zip(chains)
             .map(|(it, pending)| {
                 let qc = self.qc.vector(&it.dag, 0);
-                let score = self.scorer.map_or(0.0, |s| s.lexical(it.inst));
+                let bonus: f64 = self
+                    .config
+                    .lexical_bonus
+                    .iter()
+                    .filter(|(span, _)| *span == (it.start, it.end))
+                    .map(|(_, b)| b)
+                    .sum();
+                let score = self.scorer.map_or(0.0, |s| s.lexical(it.inst)) + bonus;
                 Edge {
                     start: pos[&it.start],
                     end: pos[&it.end],
