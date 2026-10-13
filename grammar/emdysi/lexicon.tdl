@@ -1174,6 +1174,18 @@ transport_n2 := n_-_c_le &
 
 :end :instance.
 
+;;; Transitive "chunk", to split into parts (|headings that chunk the FAQ
+;;; into sections|): the ERG has |chunk| as a noun only.
+
+:begin :instance :status lex-entry.
+
+chunk_v1 := v_np_le &
+ [ ORTH < "chunk" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_chunk_v_1_rel",
+            PHON.ONSET con ] ].
+
+:end :instance.
+
 ;;; |altogether| before a verb (|The evening altogether passed off
 ;;; pleasantly|, |he altogether failed|): the ERG's altogether_adv1
 ;;; (av_-_i-vp-po_le) follows its verb only. This copy precedes it, in the

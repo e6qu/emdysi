@@ -223,6 +223,7 @@ fn nouns_the_erg_lacks() {
         "This chapter is a recap of the many skills you have learned.",
         "On the decease of the incumbent, he left.",
         "It is the entail of the estate.",
+        "Use clear headings to chunk the FAQ into sections.",
     ] {
         assert!(strict(&erg, text), "{text}");
     }
