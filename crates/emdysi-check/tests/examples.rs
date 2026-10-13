@@ -24,16 +24,23 @@ fn rule_examples() {
     };
     let mut failures = Vec::new();
     let mut checked = 0;
-    for f in files {
-        let pack = Pack::parse(&std::fs::read_to_string(&f).unwrap()).unwrap();
+    let packs: Vec<Pack> = files
+        .iter()
+        .map(|f| Pack::parse(&std::fs::read_to_string(f).unwrap()).unwrap())
+        .collect();
+    for pack in &packs {
         for rule in &pack.rules {
-            let single = Pack {
-                name: pack.name.clone(),
-                description: String::new(),
-                rules: vec![rule.clone()],
-                concepts: pack.concepts.clone(),
+            // A rule over other rules' findings runs with all of them.
+            let checker = if matches!(rule.kind, emdysi_check::rules::Kind::TellDensity { .. }) {
+                Checker::new(packs.clone())
+            } else {
+                Checker::new(vec![Pack {
+                    name: pack.name.clone(),
+                    description: String::new(),
+                    rules: vec![rule.clone()],
+                    concepts: pack.concepts.clone(),
+                }])
             };
-            let checker = Checker::new(vec![single]);
             for (doc, want) in rule
                 .examples
                 .iter()

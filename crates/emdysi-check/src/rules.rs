@@ -145,6 +145,16 @@ pub enum Kind {
         replace: Option<String>,
         unless: Option<Regex>,
     },
+    /// The findings of other rules (ids starting with one of `of`), when a
+    /// document has at least `min` of them and more than `max` per `per`
+    /// words: one finding for the document. A single tell is weak
+    /// evidence; their density is the signal.
+    TellDensity {
+        of: Vec<String>,
+        per: f64,
+        max: f64,
+        min: usize,
+    },
     /// A sentence matching `first` followed, in the same paragraph, by one
     /// matching `next` (|Leadership isn't about control. It's about
     /// trust.|).
@@ -381,6 +391,12 @@ impl Rule {
                     unless,
                 }
             }
+            "tell-density" => Kind::TellDensity {
+                of: get_list(t, "of"),
+                per: num("per").unwrap_or(100.0),
+                max: num("max").ok_or_else(|| err("tell-density rule needs `max`"))?,
+                min: num("min").unwrap_or(5.0) as usize,
+            },
             "sentence-pair" => {
                 let re = |key: &str| -> Result<Regex, _> {
                     let pat = get_str(t, key)
@@ -750,6 +766,34 @@ impl Rule {
         }
     }
 
+    /// A `tell-density` rule over the findings of the other rules.
+    pub fn run_density(&self, a: &Analysis, found: &[Diagnostic], out: &mut Vec<Diagnostic>) {
+        let Kind::TellDensity { of, per, max, min } = &self.kind else {
+            return;
+        };
+        let tells = found
+            .iter()
+            .filter(|d| d.rule != self.id && of.iter().any(|p| d.rule.starts_with(p.as_str())))
+            .count();
+        let words: usize = a.sentences.iter().map(|s| s.word_count()).sum();
+        if words == 0 || tells < *min {
+            return;
+        }
+        let rate = tells as f64 * per / words as f64;
+        if rate <= *max || a.sentences.is_empty() {
+            return;
+        }
+        let n = a.sentences[0].original.trim_end().chars().count();
+        let mut d = self.diag(a, 0, 0, n, "");
+        d.message = d
+            .message
+            .replace("{count}", &tells.to_string())
+            .replace("{words}", &words.to_string())
+            .replace("{rate}", &format!("{rate:.1}"))
+            .replace("{per}", &format!("{per}"));
+        out.push(d);
+    }
+
     /// Run the rule over an analysis, with the glossary of all loaded packs.
     pub fn run(&self, erg: &Erg, a: &Analysis, g: &Glossary, out: &mut Vec<Diagnostic>) {
         self.run_with(erg, a, g, None, out);
@@ -884,6 +928,8 @@ impl Rule {
                     }
                 }
             }
+            // Run after the other rules: see `Rule::run_density`.
+            Kind::TellDensity { .. } => {}
             Kind::SentencePair { first, next } => {
                 for si in 0..a.sentences.len().saturating_sub(1) {
                     let (s, n) = (&a.sentences[si], &a.sentences[si + 1]);

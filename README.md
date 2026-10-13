@@ -89,7 +89,8 @@ The default rule packs are:
   setups such as *here's the thing*; rhetorical questions answered at once;
   runs of one-line paragraphs; closing questions to the reader; mechanical
   openers such as *Moreover*; both-sides framing; trailing participial
-  clauses, three-part lists, em-dash density, chat-assistant residue).
+  clauses, three-part lists, em-dash density, chat-assistant residue),
+  and, for a whole document, how densely these tells occur.
 - `plain-style`: passive voice, long sentences, intensifiers, wordy
   phrases, expletive *there*, tense shifts.
 - `substance`: hedged, vague and unsupported claims (*seems to*, *studies

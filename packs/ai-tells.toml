@@ -222,3 +222,20 @@ examples = [
 acceptable = [
   "The build takes ten minutes on a laptop and two on the build farm, which caches the dependencies.\n\nRun it with `make`.\n",
 ]
+
+[[rule]]
+id = "ai-tells.dense"
+kind = "tell-density"
+of = ["ai-tells.", "substance.filler", "substance.platitude", "substance.vacuous", "substance.aphorism"]
+per = 100
+max = 2.0
+min = 5
+severity = "warning"
+message = "This text has {count} marks of machine-written prose in {words} words ({rate} per {per}); any one proves little, but together they make it read as generated."
+description = "The density of the other ai-tells findings and of filler, platitudes, vacuous sentences and maxims: the constructions are common in human writing too, and what marks machine-written prose is several in a short passage (Wikipedia, Signs of AI writing)."
+examples = [
+  "In today's fast-paced world, here's the thing: it's not just a tool, it's a paradigm shift. Moreover, it is crucial to leverage these groundbreaking innovations. Ultimately, one thing is clear: the future belongs to those who embrace change.\n",
+]
+acceptable = [
+  "The build takes ten minutes on a laptop and two on the build farm, which caches the dependencies. Run it with make, and check the log for warnings.\n",
+]

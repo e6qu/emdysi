@@ -253,6 +253,7 @@ ai-tells: Vocabulary and constructions that are over-represented in machine-writ
   ai-tells.its-about (suggestion)
   ai-tells.rhetorical-question (suggestion)
   ai-tells.one-line-paragraphs (suggestion)
+  ai-tells.dense (warning)
 plain-style: Plain-language conventions: active voice, short sentences, concrete wording.
   plain-style.passive (suggestion)
   plain-style.sentence-length (suggestion)
