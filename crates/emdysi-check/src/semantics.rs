@@ -24,7 +24,10 @@
 //!   embrace change.|), with no name or number;
 //! - restatement: a sentence at least four fifths of whose content
 //!   predicates (at least four) one earlier sentence of the document
-//!   already has: a paragraph that repackages instead of advancing;
+//!   already has: a paragraph that repackages instead of advancing (in no
+//!   default pack: edited text restates more often than machine-written
+//!   text, in worked examples and before-and-after rewrites; see
+//!   evaluation.md);
 //! - aphorism: a short present-tense statement whose subject and other
 //!   nouns are bare singular nouns (|Clarity beats complexity.|,
 //!   |Communication is key.|).

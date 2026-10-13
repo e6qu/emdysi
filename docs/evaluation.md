@@ -1143,3 +1143,45 @@ of speech, rather than sentence by sentence.
 | False flags, second development set | 79 | 79 (the same) |
 | Real errors caught (377) | 163 | 163 |
 | Gold profiles | | unchanged, item for item |
+
+## AI tropes and vacuous text
+
+The `ai-tells` and `substance` rules added on 2026-10-13 (decision M21 in
+[plan.md](plan.md)), measured with `rule_rates` (`FLAGS=PATH` writes every
+finding) on the first development set's edited documents (221 documents,
+41,568 words) and the machine-written samples of `corpora/beemo`,
+`corpora/cheat` and `corpora/hh-rlhf` (600 texts, 88,334 words); findings
+per 10,000 words:
+
+| Rule | Machine-written | Edited |
+|---|---|---|
+| `ai-tells.inflated` | 20.4 | 1.4 |
+| `ai-tells.openers` | 12.7 | 1.7 |
+| `ai-tells.rhetorical-question` | 1.8 | 0.2 |
+| `ai-tells.stock-phrases` | 1.1 | 0.2 |
+| `ai-tells.signposting` | 2.2 | 0.5 |
+| `substance.filler` | 0.7 | 0.5 |
+| `substance.platitude` | 0.1 | 0 |
+| `substance.aphorism` | 0.1 | 0.2 |
+| `ai-tells.its-about` | 0.1 | 0 |
+| `ai-tells.setup`, `ai-tells.engagement`, `ai-tells.false-balance`, `ai-tells.one-line-paragraphs`, `substance.vacuous` | 0 | 0 |
+| `ai-tells.dense` (documents) | 21 of 600 | 0 of 221 |
+
+The rules for the newer tropes (setups, engagement questions, one-line
+paragraphs, sentences of abstractions) find nothing in either set: the
+machine-written samples come from 2023 models, which do not write that
+way. They rest on the patterns documented for current models (Wikipedia,
+*Signs of AI writing*) and on the examples each rule carries; measuring
+them needs prose from current models (plan M21). The edited findings were
+read one by one: the openers and inflated words are real uses (*Moreover*,
+*crucial*), the aphorism is *Community happens everywhere!*, the
+rhetorical question *Who are they?*; a rhetorical question in dialogue
+(*“How so?”*) is no longer counted.
+
+A restatement check (a sentence four fifths of whose content predicates an
+earlier sentence already has) was measured and left out of the default
+packs: it fires more often on edited text (4.8 per 10,000 words) than on
+machine-written text (1.4), because edited documents restate on purpose:
+plain-language guides show a passage before and after its rewrite, and
+reference pages repeat a sentence in each tab. The check remains available
+as `check = "restatement"` of the `semantics` kind.
