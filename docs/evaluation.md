@@ -1099,7 +1099,7 @@ missed.
 ### Mentions and lexical gaps
 
 A fresh sample of 948 sentences from both development sets (seed 11,
-none from the samples above) had 53 without a strict reading. Two causes
+none from the samples above) had 54 without a strict reading. Two causes
 recurred (2026-10-13):
 
 - A mention (*@oli-obk*, *@rust-lang/lang*) had no reading at all: the
@@ -1119,7 +1119,7 @@ and *opt-out* as nouns, and *ill-behaved*.
 |---|---|---|
 | First development set, sentences without a strict reading (300) | 9 | 9 |
 | Second development set (300) | 20 | 18 |
-| Fresh sample (948) | 53 | (being measured) |
+| Fresh sample (948) | 54 | 45 (the 5 with mentions and 4 with *provision*; none lost) |
 | False flags, first development set | 6 | 6 (the same) |
 | False flags, second development set | 84 | 79 (5 fewer, all mentions; none new) |
 | Real errors caught (377) | 163 | 163 |
