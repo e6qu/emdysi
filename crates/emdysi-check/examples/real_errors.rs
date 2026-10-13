@@ -17,7 +17,8 @@
 //! verified (`emdysi_check::assist`); one model is opened per thread.
 //! With `ORACLE` set instead, a perfect model answers: the version of a
 //! sentence the writer's correction has (an upper bound for any model).
-//! Either way the number of questions asked is reported.
+//! Either way the number of questions asked is reported. `SHARD=i/n`
+//! checks only every n-th pair, starting with the i-th.
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -95,6 +96,20 @@ fn main() {
         })
         .filter(|r| r.len() >= 6)
         .collect();
+    // SHARD=i/n: only every n-th pair, starting with the i-th (to split a
+    // long run, e.g. with a model, into parts).
+    let rows: Vec<Vec<String>> = match std::env::var("SHARD").ok().and_then(|s| {
+        let (i, n) = s.split_once('/')?;
+        Some((i.parse::<usize>().ok()?, n.parse::<usize>().ok()?))
+    }) {
+        Some((i, n)) if n > 0 => rows
+            .into_iter()
+            .enumerate()
+            .filter(|(k, _)| k % n == i)
+            .map(|(_, r)| r)
+            .collect(),
+        _ => rows,
+    };
     let core =
         Pack::parse(&std::fs::read_to_string(root.join("packs/core.toml")).unwrap()).unwrap();
     let checker = Checker::new(vec![core]);
