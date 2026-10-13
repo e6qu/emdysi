@@ -12,6 +12,15 @@ are not changed. Written for this project (MIT, see the repository's
   (`sb-hd_mc-pc_c`, `sb-hd_nmc-pc_c`) take the formal one, and the parser
   lets them build a clause only when the verb phrase begins with an
   adjunct ending in a comma (`Rule::paired_subject`).
+- `gapping.tdl`: a conjunct that leaves out the verb of the clause
+  before it (*One came from her books, and the other from her toilette.*,
+  *Kim reads books, and Sandy magazines.*). The ERG has no gapped clause;
+  these rules make one from a subject and a prepositional phrase
+  (`cl_gap-pp_c`) or noun phrase (`cl_gap-np_c`) remnant, with the elided
+  verb as an `ellipsis_rel`. The parser lets it be only the clause after a
+  coordinating conjunction (`Rule::complement_of`), after a comma, and not
+  a sentence on its own, so that *I saw Kim and Sandy in the park* keeps
+  its noun coordination.
 - `sluicing.tdl`: a sluice with a phrase (*without knowing in what
   direction*, *I do not know with whom*, *nobody knows which one*). The
   ERG has a sluice for a single wh-word only (`what_cp`, `how_cp`); these
@@ -33,7 +42,9 @@ are not changed. Written for this project (MIT, see the repository's
 - `tokenizer.rpp`: rules for the tokenizer, applied after the ERG's
   (`grammar/erg/rpp/tokenizer.rpp`). A range of amounts with a currency
   sign on both ends (*£3,000-£5,000*, *$10-$20*) is split like the ERG
-  splits *10-20*; the ERG left *10-$* as one token.
+  splits *10-20*; the ERG left *10-$* as one token. An amount after a
+  currency sign with a suffix for its magnitude (*£2bn*, *$5m*, *$300k*)
+  is read as *£ 2 billion* and so on; *5m* alone may be metres.
 - `adjectives.tdl`: comma-separated adjectives before a noun (*a
   selfish, hypocritical woman*, *a long, cold, dark night*): the ERG
   admits the comma only as its informal comma entry (`comma_inf_pct`);

@@ -133,6 +133,13 @@ pub struct Rule {
     /// adjunct-head rule (name starting `aj-hd`) whose adjunct ends in this
     /// lexical entry (instance index), a comma.
     pub paired_subject: Option<usize>,
+    /// And another: an edge of this rule needs a word of one of these
+    /// lexical entries (instance indices) right before it. Empty: no
+    /// restriction.
+    pub follows: Vec<usize>,
+    /// With `follows`: that word must itself come right after a word of
+    /// one of these entries (a comma). Empty: no restriction.
+    pub follows_after: Vec<usize>,
     dtr_qc: Vec<Vec<TypeId>>,
 }
 
@@ -169,6 +176,8 @@ impl Rule {
             heavy_object_parents: Vec::new(),
             complement_of: Vec::new(),
             paired_subject: None,
+            follows: Vec::new(),
+            follows_after: Vec::new(),
             dtr_qc,
         }
     }
@@ -2051,6 +2060,22 @@ impl<'g> Parser<'g> {
         });
         if breaks_seal {
             return;
+        }
+        if !self.rules[ri].follows.is_empty() {
+            let start = self.chart[dtrs[0]].start;
+            let rule = &self.rules[ri];
+            let after = self.by_end[start].iter().any(|&e| {
+                matches!(&self.chart[e].kind, EdgeKind::Lex { inst, .. }
+                    if rule.follows.contains(inst))
+                    && (rule.follows_after.is_empty()
+                        || self.by_end[self.chart[e].start].iter().any(|&p| {
+                            matches!(&self.chart[p].kind, EdgeKind::Lex { inst, .. }
+                                if rule.follows_after.contains(inst))
+                        }))
+            });
+            if !after {
+                return;
+            }
         }
         if let Some(comma) = self.rules[ri].paired_subject {
             let paired = dtrs.get(1).is_some_and(|&h| {
