@@ -1095,3 +1095,32 @@ missed.
 | False flags, second development set | 84 | 84 (the same) |
 | Real errors caught (377) | 163 | 163 |
 | Gold profiles | | unchanged but sh-spec: grammatical parsed 560 → 562 |
+
+### Mentions and lexical gaps
+
+A fresh sample of 948 sentences from both development sets (seed 11,
+none from the samples above) had 53 without a strict reading. Two causes
+recurred (2026-10-13):
+
+- A mention (*@oli-obk*, *@rust-lang/lang*) had no reading at all: the
+  ERG keeps an email address one token with a REPP mask, which emdysi's
+  REPP does not apply, and has nothing for mentions, so it split off the
+  `@` and split the name at dashes and slashes. `Erg::tokens` now joins
+  the pieces that touch, and the tagger tags a mention as a proper name.
+  The spelling rule had also reported the pieces (*naber* in
+  *@b-naber*).
+- *provision* with an object (*Autoscalers provision the Nodes*, *after
+  swap is provisioned*): the ERG has it only with *with*.
+
+Single sentences of the earlier samples added *oftener ... than*, *opt-in*
+and *opt-out* as nouns, and *ill-behaved*.
+
+| Measure | Before | After |
+|---|---|---|
+| First development set, sentences without a strict reading (300) | 9 | 9 |
+| Second development set (300) | 20 | 18 |
+| Fresh sample (948) | 53 | (being measured) |
+| False flags, first development set | 6 | 6 (the same) |
+| False flags, second development set | 84 | 79 (5 fewer, all mentions; none new) |
+| Real errors caught (377) | 163 | 163 |
+| Gold profiles | | unchanged, item for item |
