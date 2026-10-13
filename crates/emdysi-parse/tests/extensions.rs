@@ -213,6 +213,35 @@ fn transitive_provision() {
 }
 
 #[test]
+fn nouns_the_erg_lacks() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    for text in [
+        "We know the contents at compile time.",
+        "Compile times are long.",
+        "Proxies have replaced redirect capabilities.",
+        "When the first transports of rage were over, he returned.",
+        "This chapter is a recap of the many skills you have learned.",
+        "On the decease of the incumbent, he left.",
+        "It is the entail of the estate.",
+        "Use clear headings to chunk the FAQ into sections.",
+    ] {
+        assert!(strict(&erg, text), "{text}");
+    }
+}
+
+#[test]
+fn altogether_before_a_verb() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    for text in [
+        "He altogether failed.",
+        "The evening altogether passed off pleasantly to the whole family.",
+        "We stopped altogether.",
+    ] {
+        assert!(strict(&erg, text), "{text}");
+    }
+}
+
+#[test]
 fn mentions() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     let forms =

@@ -1130,3 +1130,72 @@ provision_v1 := v_np_le &
             PHON.ONSET con ] ].
 
 :end :instance.
+
+;;; Nouns the ERG lacks or has only as mass nouns: |compile time| (|at
+;;; compile time|, 39 times in the development corpora), in the form of
+;;; its |runtime| (n_-_mc_le); |a redirect|, |HTTP redirects|; |transport|
+;;; as a count noun, a fit of emotion (|the first transports of rage|), which
+;;; the ERG has only as a mass noun (transport_n1, n_-_m_le); nouns it has
+;;; only as verbs: |a recap of the many skills| (in the form of its
+;;; |summary|, n_pp_c-of_le), |the decease of the incumbent| (of its |death|,
+;;; n_-_mc_le), |the entail of Longbourn estate|, an entailment of property.
+
+:begin :instance :status lex-entry.
+
+compile_time_n1 := n_-_mc_le &
+ [ ORTH < "compile", "time" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_compile+time_n_1_rel",
+            PHON.ONSET con ] ].
+
+redirect_n1 := n_-_c_le &
+ [ ORTH < "redirect" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_redirect_n_1_rel",
+            PHON.ONSET con ] ].
+
+recap_n1 := n_pp_c-of_le &
+ [ ORTH < "recap" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_recap_n_of_rel",
+            PHON.ONSET con ] ].
+
+decease_n1 := n_-_mc_le &
+ [ ORTH < "decease" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_decease_n_1_rel",
+            PHON.ONSET con ] ].
+
+entail_n1 := n_-_c_le &
+ [ ORTH < "entail" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_entail_n_1_rel",
+            PHON.ONSET voc ] ].
+
+transport_n2 := n_-_c_le &
+ [ ORTH < "transport" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_transport_n_2_rel",
+            PHON.ONSET con ] ].
+
+:end :instance.
+
+;;; Transitive "chunk", to split into parts (|headings that chunk the FAQ
+;;; into sections|): the ERG has |chunk| as a noun only.
+
+:begin :instance :status lex-entry.
+
+chunk_v1 := v_np_le &
+ [ ORTH < "chunk" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_chunk_v_1_rel",
+            PHON.ONSET con ] ].
+
+:end :instance.
+
+;;; |altogether| before a verb (|The evening altogether passed off
+;;; pleasantly|, |he altogether failed|): the ERG's altogether_adv1
+;;; (av_-_i-vp-po_le) follows its verb only. This copy precedes it, in the
+;;; ERG's type for |later| in |he later left| (later_adv2, av_-_i-vp-pr_le).
+
+:begin :instance :status lex-entry.
+
+altogether_adv2 := av_-_i-vp-pr_le &
+ [ ORTH < "altogether" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_altogether_a_1_rel",
+            PHON.ONSET voc ] ].
+
+:end :instance.
