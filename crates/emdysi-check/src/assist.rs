@@ -4,7 +4,9 @@
 //!
 //! - Grammar: a sentence with no strict analysis gets candidate
 //!   corrections that change one word to another form of the same word
-//!   (|jump| to |jumps|); only those the strict grammar accepts are kept,
+//!   (|jump| to |jumps|), or a function word to another of its class
+//!   (|are| to |is|), drop one, or insert one (|the|, |of|); only those
+//!   the strict grammar accepts are kept,
 //!   and the model is asked which version of the sentence is right. An
 //!   error is reported only when the grammar accepts the correction and the
 //!   model prefers it to the original with probability `threshold` or
@@ -36,9 +38,25 @@ pub struct Correction {
 }
 
 /// Most candidate sentences parsed for one sentence.
-const MAX_CANDIDATES: usize = 24;
-/// Most corrected versions shown to the model with the original.
-const MAX_OPTIONS: usize = 5;
+const MAX_CANDIDATES: usize = 80;
+/// Most corrected versions shown to the model with the original (the
+/// decision engine takes up to ten options).
+const MAX_OPTIONS: usize = 9;
+
+/// Function words that writers drop, add or confuse with another of their
+/// class (from the real-error corpus: |are| for |is|, a missing |the|,
+/// |for| for |to|, a doubled |and|).
+const CLASSES: &[&[&str]] = &[
+    &["a", "an", "the"],
+    &["is", "are", "was", "were", "be"],
+    &["do", "does", "did"],
+    &["has", "have", "had"],
+    &["in", "on", "at", "for", "to", "of", "from", "by", "with", "into", "about"],
+    &["it", "its", "it's"],
+    &["this", "these", "that", "those"],
+];
+/// Words tried as insertions before each word.
+const INSERTED: &[&str] = &["the", "a", "of", "to", "it"];
 const PARSE_TIMEOUT: Duration = Duration::from_secs(2);
 
 const GRAMMAR_QUESTION: &str =
@@ -81,8 +99,52 @@ fn context(a: &Analysis, si: usize) -> String {
         .unwrap_or_default()
 }
 
-/// Corrections of one word to another form of it that the strict grammar
-/// accepts: (from, to, word, replacement, corrected sentence).
+/// Edits of a function word: another of its class, deletion, or one of
+/// `INSERTED` before a word; as (from, to, replaced text, replacement),
+/// in that order of preference.
+fn function_word_edits(s: &Sentence) -> Vec<(usize, usize, String, String)> {
+    let chars: Vec<char> = s.original.chars().collect();
+    let mut subs = Vec::new();
+    let mut dels = Vec::new();
+    let mut ins = Vec::new();
+    for t in &s.tokens {
+        if t.to > chars.len() {
+            continue;
+        }
+        let surface: String = chars[t.from..t.to].iter().collect();
+        let lower = surface.to_lowercase().replace('’', "'");
+        if let Some(class) = CLASSES.iter().find(|c| c.contains(&lower.as_str())) {
+            for other in class.iter().filter(|o| **o != lower) {
+                subs.push((t.from, t.to, surface.clone(), same_case(&surface, other)));
+            }
+            // The word and the space after it (or before it, at the end).
+            if chars.get(t.to) == Some(&' ') {
+                dels.push((t.from, t.to + 1, format!("{surface} "), String::new()));
+            } else if t.from > 0 && chars[t.from - 1] == ' ' {
+                dels.push((t.from - 1, t.to, format!(" {surface}"), String::new()));
+            }
+        }
+        if surface.chars().next().is_some_and(char::is_alphabetic) {
+            for w in INSERTED {
+                let w = if t.from == 0 { same_case(&surface, w) } else { w.to_string() };
+                let rest = if t.from == 0 {
+                    let mut c = surface.chars();
+                    c.next()
+                        .map(|f| f.to_lowercase().chain(c).collect::<String>())
+                        .unwrap_or_default()
+                } else {
+                    surface.clone()
+                };
+                ins.push((t.from, t.to, surface.clone(), format!("{w} {rest}")));
+            }
+        }
+    }
+    subs.into_iter().chain(dels).chain(ins).collect()
+}
+
+/// Corrections that the strict grammar accepts: one word changed to
+/// another form of itself, then the function-word edits; as (from, to,
+/// replaced text, replacement, corrected sentence).
 fn grammar_candidates(erg: &Erg, s: &Sentence) -> Vec<(usize, usize, String, String, String)> {
     let Some(best) = s.best() else {
         return Vec::new();
@@ -120,6 +182,16 @@ fn grammar_candidates(erg: &Erg, s: &Sentence) -> Vec<(usize, usize, String, Str
             if strict(erg, &fixed) {
                 out.push((w.from, w.to, surface.clone(), rep, fixed));
             }
+        }
+    }
+    for (from, to, text, rep) in function_word_edits(s) {
+        if tried >= MAX_CANDIDATES {
+            break;
+        }
+        tried += 1;
+        let fixed = replace(&s.original, from, to, &rep);
+        if strict(erg, &fixed) {
+            out.push((from, to, text, rep, fixed));
         }
     }
     out

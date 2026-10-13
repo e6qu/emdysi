@@ -1139,6 +1139,7 @@ of speech, rather than sentence by sentence.
 |---|---|---|
 | First development set, sentences without a strict reading (300) | 9 | 9 |
 | Second development set (300) | 18 | 18 |
+| Fresh sample (948) | 45 | 41 |
 | False flags, first development set | 6 | 6 (the same) |
 | False flags, second development set | 79 | 79 (the same) |
 | Real errors caught (377) | 163 | 163 |
