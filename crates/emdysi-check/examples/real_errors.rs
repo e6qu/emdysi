@@ -237,8 +237,16 @@ struct Oracle {
 }
 
 impl emdysi_check::decisions::Ask for Oracle {
-    fn ask(&mut self, _context: &str, _question: &str, options: &[&str]) -> Option<Vec<f64>> {
+    fn ask(&mut self, _context: &str, question: &str, options: &[&str]) -> Option<Vec<f64>> {
         QUESTIONS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        // Screening: the sentence is correct if the corrected text has it.
+        if let Some(sentence) = question
+            .strip_prefix(emdysi_check::assist::SCREEN_QUESTION)
+            .and_then(|q| q.split("Sentence: ").nth(1))
+        {
+            let ok = self.truth.contains(sentence.trim());
+            return Some(if ok { vec![1.0, 0.0] } else { vec![0.0, 1.0] });
+        }
         let right = options
             .iter()
             .position(|o| self.truth.contains(o.trim()))

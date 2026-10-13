@@ -94,8 +94,46 @@ fn grammar_fix_needs_the_grammar_and_the_model() {
     );
 }
 
+/// Doubts every sentence it is asked to screen, and prefers the option
+/// containing `want`.
+struct Doubts {
+    want: &'static str,
+}
+
+impl Ask for Doubts {
+    fn ask(&mut self, context: &str, question: &str, options: &[&str]) -> Option<Vec<f64>> {
+        if question.starts_with(emdysi_check::assist::SCREEN_QUESTION) {
+            return Some(vec![0.1, 0.9]);
+        }
+        Prefers {
+            want: self.want,
+            asked: Vec::new(),
+        }
+        .ask(context, question, options)
+    }
+}
+
 #[test]
-fn grammatical_sentences_are_not_asked_about() {
+fn an_error_the_grammar_accepts_needs_the_model_to_doubt_it() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let text = "He is interested on chess.\n";
+    let a = analyze(&erg, text, Format::Markdown, &opts());
+    assert!(a.sentences[0].strict());
+    let mut model = Doubts {
+        want: "interested in chess",
+    };
+    let d: Vec<Diagnostic> = core()
+        .check_with(&erg, &a, Some(&mut model))
+        .into_iter()
+        .filter(|d| d.rule == "core.grammar-fix")
+        .collect();
+    assert_eq!(d.len(), 1, "{d:?}");
+    assert_eq!(&text[d[0].range.clone()], "on");
+    assert_eq!(d[0].replacement.as_deref(), Some("in"));
+}
+
+#[test]
+fn grammatical_sentences_are_only_screened() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     let a = analyze(
         &erg,
@@ -109,7 +147,9 @@ fn grammatical_sentences_are_not_asked_about() {
     };
     let d = core().check_with(&erg, &a, Some(&mut model));
     assert!(d.is_empty(), "{d:?}");
-    assert!(model.asked.is_empty());
+    // One question: is it correct? The stand-in does not doubt it, so no
+    // corrections are tried.
+    assert_eq!(model.asked, vec![vec!["yes".to_string(), "no".to_string()]]);
 }
 
 #[test]

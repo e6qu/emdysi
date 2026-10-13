@@ -7,6 +7,8 @@
 //!   (|jump| to |jumps|), or a function word to another of its class
 //!   (|are| to |is|), drop one, or insert one (|the|, |of|); only those
 //!   the strict grammar accepts are kept,
+//!   (a sentence the grammar accepts is considered only when the model,
+//!   asked first, doubts it),
 //!   and the model is asked which version of the sentence is right. An
 //!   error is reported only when the grammar accepts the correction and the
 //!   model prefers it to the original with probability `threshold` or
@@ -51,7 +53,9 @@ const CLASSES: &[&[&str]] = &[
     &["is", "are", "was", "were", "be"],
     &["do", "does", "did"],
     &["has", "have", "had"],
-    &["in", "on", "at", "for", "to", "of", "from", "by", "with", "into", "about"],
+    &[
+        "in", "on", "at", "for", "to", "of", "from", "by", "with", "into", "about",
+    ],
     &["it", "its", "it's"],
     &["this", "these", "that", "those"],
 ];
@@ -126,7 +130,11 @@ fn function_word_edits(s: &Sentence) -> Vec<(usize, usize, String, String)> {
         }
         if surface.chars().next().is_some_and(char::is_alphabetic) {
             for w in INSERTED {
-                let w = if t.from == 0 { same_case(&surface, w) } else { w.to_string() };
+                let w = if t.from == 0 {
+                    same_case(&surface, w)
+                } else {
+                    w.to_string()
+                };
                 let rest = if t.from == 0 {
                     let mut c = surface.chars();
                     c.next()
@@ -197,13 +205,36 @@ fn grammar_candidates(erg: &Erg, s: &Sentence) -> Vec<(usize, usize, String, Str
     out
 }
 
-/// Grammar corrections chosen by the model (see the module comment).
-pub fn grammar(erg: &Erg, a: &Analysis, ask: &mut dyn Ask, threshold: f64) -> Vec<Correction> {
+/// The question that screens a sentence the grammar accepts; the sentence
+/// follows it.
+pub const SCREEN_QUESTION: &str = "Is this sentence correct English, as written?";
+
+/// Grammar corrections chosen by the model (see the module comment). A
+/// sentence the strict grammar accepts is considered only with `screen`:
+/// when the model doubts it (answers "no" with that probability or more),
+/// since an error can leave a sentence grammatical (|for| for |to|).
+pub fn grammar(
+    erg: &Erg,
+    a: &Analysis,
+    ask: &mut dyn Ask,
+    threshold: f64,
+    screen: Option<f64>,
+) -> Vec<Correction> {
     let mut out = Vec::new();
     for (si, s) in a.sentences.iter().enumerate() {
         let words = s.word_count();
-        if s.strict() || s.parse.is_none() || !(3..=30).contains(&words) {
+        if s.parse.is_none() || !(3..=40).contains(&words) {
             continue;
+        }
+        if s.strict() {
+            let Some(min) = screen else { continue };
+            let question = format!("{SCREEN_QUESTION}\n\nSentence: {}", s.original.trim());
+            let doubt = ask
+                .ask(&context(a, si), &question, &["yes", "no"])
+                .map_or(0.0, |p| p[1]);
+            if doubt < min {
+                continue;
+            }
         }
         let cands = grammar_candidates(erg, s);
         if cands.is_empty() {
