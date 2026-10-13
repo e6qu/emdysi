@@ -32,9 +32,53 @@ with the ERG port (decision D4) as the parsing core.
 | M16 | Ambiguity settled by context: a hand-judged treebank of machine-written sentences (`corpora/ai-treebank`), citations masked before parsing, readings settled by phrases the rest of the document uses (on by default), the model asked with the surrounding sentences | done; the best reading is right for 57 of 97 judged sentences in their documents, 58 with the document's phrases (no regressions). Next: more judged sentences, with right readings judged independently of the shipped ranker (see evaluation.md: better held-out rankers, log-linear or with head-word features, lose on AI prose, mostly through chart pruning); most errors are rule choices the document cannot inform (fronted adverbs, unknown participles) |
 | M17 | Precise error claims (decision D13): edited-text corpus in five genres with a false-flag evaluation; proved parse failure, shared and verified named errors, typo evidence, larger accepted vocabulary, code-like tokens masked; `core.grammar` moved to the opt-in `coverage` pack | first development set: flags 374 -> 2.0 per 1,000 sentences of edited text; second development set: 6.4 per 1,000; held-out test set (8,371 sentences, never inspected): 7.9 per 1,000, spelling the largest part. Recall on 377 real errors from documentation histories: 162. Next: more recall without false flags (agreement with irregular verbs, *was*/*were*, is now caught), spelling evidence beyond one edit, more genres |
 | M18 | Grammar extensions and ambiguity (decision D14): emdysi's own TDL files for constructions and words the ERG lacks (comparative correlatives, sentence-initial conjunctions, contractions as formal, formal counterparts of informal rules for fronted adjuncts, comma-separated adjectives and US dates, lexical entries); stress sentences; readings grouped by meaning with calibrated probabilities | done: every stress sentence gets a full analysis and no error claim; the famous ambiguous ones are reported as ambiguous |
-| M19 | Coverage of edited text: sentences without a full analysis found with `culprits`, fixed in the grammar or the search | 254 -> 261 of 300 sampled sentences of the first development set (node budget); 227 of 300 of the second. Next: the remaining gaps (parenthetical conjuncts, gapping, heavy-NP shift) and search on long sentences |
+| M19 | Coverage of edited text: sentences without a full analysis found with `culprits`, fixed in the grammar or the search | 300-sentence samples (checker segmentation): 9 of 300 without a strict reading on the first development set, 18 on the second; a fresh 948-sentence sample: 54 -> 45 with mentions and *provision*, then the lexical gaps of 2026-10-13 (*compile time*, *redirect*, ...; see evaluation.md). Grammar added: gapping, subjects before paired commas, amounts like *£2bn*, mentions as one token. Next: the recurring gaps left (locative inversion, verbless *Many thanks to X*, extraposed *than* clauses, bare names before nouns such as *Longbourn estate*), found by scanning the corpora for words used in a part of speech the lexicon lacks (`noungaps.py`-style scans, see evaluation.md) |
 | M20 | **Must have.** A small local classifier in the manner of Jev (decision D12): a 2 GB model (Gemma 4 E2B, 4-bit GGUF, or similar) used with the deterministic layers so that together they are more accurate than a much larger model alone. The grammar proposes and verifies, the model chooses in context: grammar corrections of sentences without a full analysis (`core.grammar-fix`: *The quick brown fox jump over the crazy wall.*), spelling fixes among several one-edit candidates (*chck*), close calls between readings (`--decide-readings`), the AI-prose judgements of the `decisions` pack. Used whenever a model is given (`--model`, `--server`, `--lm`) or configured once (`EMDYSI_LM`) | machinery done and tested with a stand-in model (`crates/emdysi-check/tests/assist.rs`); `real_errors` and `false_flags` take `EMDYSI_LM`. Next: download Gemma 4 E2B (the network policy of the development environment blocks Hugging Face), calibrate it (`en decide --eval`), measure recall on the 377 real errors and false flags on edited text with and without it, and against a much larger model on the same questions |
+| M21 | AI tropes and vacuous text: the tropes of machine-written prose (setups, engagement questions, mechanical openers, inflated words, both-sides framing, the not-about frame across sentences, rhetorical questions, one-line paragraphs) and their density per document (`ai-tells.dense`); filler, platitudes, and, from the semantics, sentences of abstractions, maxims and restatements (`substance`); new rule kinds `sentence-pair` and `tell-density` and the `one-line-paragraphs` check | done; word lists chosen by rates in machine-written against edited text; calibration on the first development set and the machine-written samples in evaluation.md. Next: more machine-written text from current models (the vendored samples are from 2023 models and lack the newer tropes), and the `decisions` pack with the M20 model for the judgements no pattern can make (explaining the obvious, fake specificity) |
 
 Validation: the gold derivations in `corpora/erg-gold/` (ERG `mrs` and `csli`
 test suites) are the reference for M3–M9. The engine should reproduce the
 gold tree among its analyses and reject the items marked ungrammatical.
+
+## Picking up
+
+Where the work stands, and how to resume it on another machine.
+
+1. **Build and test.** `cargo build --release --examples` then
+   `cargo test --release --workspace` (the tests load the grammar several
+   times; with less than 16 GB of memory use `-- --test-threads=1`). The
+   grammar cache lives outside the repository (see the README).
+2. **The M20 model (must have).** Download Gemma 4 E2B instruction-tuned,
+   4-bit GGUF (about 2 GB), build with `--features llama` (or serve it with
+   `llama-server` and use `--server`), and set
+   `EMDYSI_LM=gguf:/path/to/model.gguf`. Then:
+   - calibrate: `en decide --eval FILE.tsv` on questions with known answers
+     (the tiny-model script writes such files; make one from the real-error
+     corpus: original against corrected sentence), and pass the fitted
+     `--temperature`;
+   - measure recall with and without the model:
+     `cargo run --release -p emdysi-check --example real_errors -- OUT.tsv`
+     (163 of 377 without a model, 2026-10-13);
+   - measure false flags with and without it: `THREADS=4 ... --example
+     false_flags -- OUT.tsv` and `SET=dev2` (6 and 79 flags without a
+     model); with an in-process GGUF model use `THREADS=1` (one model per
+     thread);
+   - compare with a much larger model served over the same API on the same
+     questions; the aim is that grammar plus small model beats the large
+     model alone.
+   - tune `threshold` of `core.grammar-fix` and `model_threshold` of
+     `core.spelling` (0.8 now) on these numbers.
+3. **Measurement recipe for grammar changes** (every PR so far): coverage
+   on the two 300-sentence samples and the 948-sentence sample (sampling
+   script in evaluation.md, "Coverage, measured again"), the six gold
+   profiles (`--example eval`), `real_errors`, and `false_flags` on both
+   development sets; flags must not rise and gold must not change except
+   for the better. Run them one at a time: two parses at once can exhaust
+   memory.
+4. **Open items**: M19's remaining gaps; M21's calibration on newer
+   machine-written text; speed on the slowest ordinary sentences (6–8 s for
+   17-word sentences with a strict reading, e.g. *It's better to take the
+   time to rewrite to avoid needing to define a bunch of terms.*);
+   *Consistency builds trust.* is ranked as a compound noun (*consistency
+   builds*) with *trust* as the verb.
+
