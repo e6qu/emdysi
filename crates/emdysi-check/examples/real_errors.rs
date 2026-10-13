@@ -11,6 +11,10 @@
 //! same place there is a false flag. Every pair is written to OUT.tsv
 //! (default `real-errors.tsv`): kind, caught, flagged after the fix,
 //! before, after, the diagnostics' rules and messages.
+//!
+//! With `EMDYSI_LM` set to a model (a spec as for `en --lm`), spelling and
+//! grammar corrections are chosen by the model among those the grammar
+//! verified (`emdysi_check::assist`); one model is opened per thread.
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -110,6 +114,7 @@ fn main() {
             .unwrap_or_else(|| std::thread::available_parallelism().map_or(2, |n| n.get()));
         for _ in 0..threads {
             s.spawn(|| {
+                let mut lm = model();
                 loop {
                     let i = {
                         let mut n = next.lock().unwrap();
@@ -120,10 +125,15 @@ fn main() {
                     let (kind, before, after) = (&r[1], &r[4], &r[5]);
                     let (from, to) = changed_span(before, after);
                     let (afrom, ato) = changed_span(after, before);
-                    let check = |text: &str, from: usize, to: usize| -> Vec<Diagnostic> {
+                    let mut check = |text: &str, from: usize, to: usize| -> Vec<Diagnostic> {
                         let a = analyze(&erg, text, Format::Markdown, &opts);
                         checker
-                            .check(&erg, &a)
+                            .check_with(
+                                &erg,
+                                &a,
+                                lm.as_mut()
+                                    .map(|m| m as &mut dyn emdysi_check::decisions::Ask),
+                            )
                             .into_iter()
                             .filter(|d| d.range.start < to && from < d.range.end)
                             .collect()
@@ -180,4 +190,24 @@ fn main() {
         100.0 * all.caught as f64 / all.pairs.max(1) as f64,
         all.after
     );
+}
+
+/// The model named by `EMDYSI_LM` (a spec as for `en --lm`), if any, as the
+/// checker's decision model: spelling and grammar corrections are then
+/// chosen by it among those the grammar verified.
+struct ModelAsk(Box<dyn emdysi_lm::LanguageModel>);
+
+impl emdysi_check::decisions::Ask for ModelAsk {
+    fn ask(&mut self, context: &str, question: &str, options: &[&str]) -> Option<Vec<f64>> {
+        emdysi_lm::decide::Decider::new(&mut *self.0)
+            .choose(context, question, options)
+            .ok()
+    }
+}
+
+fn model() -> Option<ModelAsk> {
+    let spec = std::env::var("EMDYSI_LM")
+        .ok()
+        .filter(|s| !s.trim().is_empty())?;
+    Some(ModelAsk(emdysi_lm::open(spec.trim()).expect("EMDYSI_LM")))
 }

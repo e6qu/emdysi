@@ -14,6 +14,14 @@ acceptable = [
 ]
 
 [[rule]]
+id = "core.grammar-fix"
+kind = "assisted-grammar"
+severity = "warning"
+threshold = 0.8
+message = "'{match}' does not fit here: the grammar accepts '{replacement}' instead, and the model prefers it ({percent}%)."
+description = "With a local decision model (--model, --server, --lm or EMDYSI_LM): a sentence with no full analysis is corrected by changing one word to another form of itself (jump to jumps); the corrections the strict grammar accepts are shown to the model with the original, and one is reported when the model prefers it with probability 0.8 or more. Without a model, nothing. Catches errors the grammar alone cannot claim, such as 'The quick brown fox jump over the wall.', which it can also read as a noun phrase (a jump)."
+
+[[rule]]
 id = "core.grammar-errors"
 kind = "grammar-errors"
 severity = "warning"

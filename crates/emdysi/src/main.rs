@@ -85,14 +85,17 @@ OPTIONS:
     --timeout SECS         time limit per sentence (default 10)
     --derivations          with `parse`, also print derivation trees
     --mrs                  with `parse`, also print the semantics (MRS)
-    --model FILE.gguf      with `rewrite`, a local language model (needs a
-                           build with the `llama` feature)
-    --server URL           with `rewrite`, a model served over the
+    --model FILE.gguf      a local language model (needs a build with the
+                           `llama` feature): with `check` and `fix` it chooses
+                           among spelling and grammar corrections the grammar
+                           verified; with `rewrite` it proposes rewrites
+    --server URL           a model served over the
                            OpenAI-compatible API, e.g. MLX's `mlx_lm.server`
                            or LM Studio (http://127.0.0.1:8080)
     --server-model NAME    the model name to request from --server
     --lm SPEC              any model: FILE.gguf, http://HOST:PORT[#MODEL] or
-                           script:FILE (a scripted stand-in)
+                           script:FILE (a scripted stand-in); without one of
+                           these options, the EMDYSI_LM environment variable
     --decide-readings      with a model and `check`, `fix` or `parse`: when the
                            two best readings of a sentence are close, ask the
                            model which grouping of words is meant
@@ -473,7 +476,15 @@ fn load_model(args: &Args) -> Result<Option<Box<dyn emdysi_lm::LanguageModel>>, 
     if let Some(p) = &args.model {
         return emdysi_lm::open(&format!("gguf:{}", p.display())).map(Some);
     }
-    args.lm.as_deref().map(emdysi_lm::open).transpose()
+    if let Some(spec) = &args.lm {
+        return emdysi_lm::open(spec).map(Some);
+    }
+    // A model configured once for every command: a spec as for --lm
+    // (`gguf:FILE`, `URL`, `URL#MODEL`, `script:FILE`).
+    match std::env::var("EMDYSI_LM") {
+        Ok(spec) if !spec.trim().is_empty() => emdysi_lm::open(spec.trim()).map(Some),
+        _ => Ok(None),
+    }
 }
 
 /// Readings whose ranker scores differ by at most this much are close

@@ -131,6 +131,7 @@ dependencies = [
 name = "emdysi-check"
 version = "0.1.0"
 dependencies = [
+ "emdysi-lm",
  "emdysi-parse",
  "emdysi-text",
  "fancy-regex",

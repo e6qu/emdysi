@@ -231,6 +231,7 @@ amb.txt: 0 errors, 0 warnings, 1 suggestion
 ```text
 core: Spelling and grammaticality, from the English Resource Grammar's lexicon and rules. Every rule here claims an error, so each reports only what the grammar can establish: a complete search that found no analysis, an error every best analysis of the grammar-error variant names, a word one edit from a known word.
   core.spelling (warning)
+  core.grammar-fix (warning)
   core.grammar-errors (warning)
   core.consistency (warning)
   core.articles (warning)

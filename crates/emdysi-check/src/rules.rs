@@ -191,7 +191,14 @@ pub enum Kind {
     Spelling {
         min_length: usize,
         ignore: Vec<String>,
+        /// With a decision model, the probability at which its choice
+        /// among several suggestions becomes the fix (see `assist`).
+        model_threshold: f64,
     },
+    /// Grammar corrections the strict grammar accepts and a decision model
+    /// prefers with probability `threshold` or more (see `assist`); without
+    /// a model, nothing.
+    AssistedGrammar { threshold: f64 },
     /// Sentences without a strict (fully grammatical) analysis.
     Grammar,
     /// Specific grammatical errors, named by the grammar-error variant of
@@ -462,6 +469,10 @@ impl Rule {
                     .iter()
                     .map(|w| w.to_lowercase())
                     .collect(),
+                model_threshold: num("model_threshold").unwrap_or(0.8),
+            },
+            "assisted-grammar" => Kind::AssistedGrammar {
+                threshold: num("threshold").unwrap_or(0.8),
             },
             "grammar" => Kind::Grammar,
             "grammar-errors" => Kind::GrammarErrors,
@@ -767,6 +778,49 @@ impl Rule {
         }
     }
 
+    /// The decision model's choice among the suggestions of spelling
+    /// findings that have no fix (see `assist::spelling`).
+    fn choose_spellings(
+        &self,
+        erg: &Erg,
+        a: &Analysis,
+        ask: &mut dyn crate::decisions::Ask,
+        threshold: f64,
+        found: &mut [Diagnostic],
+    ) {
+        for d in found.iter_mut() {
+            let Some(si) = d.sentence else { continue };
+            if d.replacement.is_some() || d.suggestions.len() < 2 {
+                continue;
+            }
+            let Some(t) = a.sentences[si]
+                .tokens
+                .iter()
+                .find(|t| a.source_range(si, t.from, t.to) == d.range)
+            else {
+                continue;
+            };
+            let Some((rep, p)) =
+                crate::assist::spelling(erg, a, (si, t.from, t.to), &d.suggestions, ask, threshold)
+            else {
+                continue;
+            };
+            if let Some(first) = d.suggestions.first() {
+                d.message = d.message.replace(
+                    &format!(" Did you mean '{first}'?"),
+                    &format!(" Did you mean '{rep}'?"),
+                );
+            }
+            d.message.push_str(&format!(
+                " (chosen in context by the model, {:.0}%)",
+                p * 100.0
+            ));
+            d.suggestions.retain(|x| !x.eq_ignore_ascii_case(&rep));
+            d.suggestions.insert(0, rep.clone());
+            d.replacement = Some(rep);
+        }
+    }
+
     /// A `tell-density` rule over the findings of the other rules.
     pub fn run_density(&self, a: &Analysis, found: &[Diagnostic], out: &mut Vec<Diagnostic>) {
         let Kind::TellDensity { of, per, max, min } = &self.kind else {
@@ -815,8 +869,29 @@ impl Rule {
                 let hits = crate::decisions::run_decide(d, a, ask);
                 found.extend(hits.into_iter().map(|h| self.hit_diag(h)));
             }
+        } else if let Kind::AssistedGrammar { threshold } = &self.kind {
+            if let Some(ask) = ask {
+                for c in crate::assist::grammar(erg, a, ask, *threshold) {
+                    let mut d = self.diag(a, c.sentence, c.from, c.to, &c.text);
+                    d.message = d
+                        .message
+                        .replace("{replacement}", &c.replacement)
+                        .replace("{percent}", &format!("{:.0}", c.probability * 100.0));
+                    d.replacement = Some(c.replacement);
+                    found.push(d);
+                }
+            }
         } else {
             self.run_all(erg, a, g, &mut found);
+            if let (
+                Kind::Spelling {
+                    model_threshold, ..
+                },
+                Some(ask),
+            ) = (&self.kind, ask)
+            {
+                self.choose_spellings(erg, a, ask, *model_threshold, &mut found);
+            }
         }
         if self.scope != Scope::All {
             let lead = crate::structure::lead_blocks(a);
@@ -1096,7 +1171,9 @@ impl Rule {
                     }
                 }
             }
-            Kind::Spelling { min_length, ignore } => {
+            Kind::Spelling {
+                min_length, ignore, ..
+            } => {
                 // A word the document uses more than once is one of its
                 // terms ("kubelet"), not a typo.
                 let mut uses: HashMap<String, usize> = HashMap::new();
