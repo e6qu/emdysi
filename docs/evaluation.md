@@ -1186,3 +1186,29 @@ machine-written text (1.4), because edited documents restate on purpose:
 plain-language guides show a passage before and after its rewrite, and
 reference pages repeat a sentence in each tab. The check remains available
 as `check = "restatement"` of the `semantics` kind.
+
+## Grammar and spelling fixes with a decision model: the upper bound
+
+`core.grammar-fix` and the model's choice among spelling suggestions
+(plan M20, `emdysi_check::assist`) need a model, which could not be
+downloaded in the development environment. Their upper bound was measured
+instead with a perfect model: `real_errors` with `ORACLE=1` answers every
+question with the writer's own correction (2026-10-13).
+
+| Setting | Real errors caught | Questions | Time |
+|---|---|---|---|
+| No model | 163 of 377 (43%) | 0 | |
+| Perfect model, corrections by inflection only, no screening | 164 of 377 | 93 | |
+| Perfect model, with function-word substitution, deletion and insertion, no screening | 165 of 377 (44%) | 130 | 25 min |
+| The same with screening of sentences the grammar accepts, on a quarter (`SHARD=0/4`) | 46 of 95 (48%; grammar errors 7 of 47) | 748 | 69 min |
+
+No flag on the corrected text in any setting. Without screening the model
+can only help with sentences the grammar cannot analyse, and most real
+errors leave a sentence grammatical (*for* for *to*, a missing *the*).
+With screening, the perfect model still finds few grammar errors: either
+the correction is not among the candidates (a change of more than one
+word) or the corrected sentence is itself outside the grammar's coverage,
+so the strict grammar cannot verify it. Which of the two, error by error,
+is the next measurement; a real model will do no better than this bound,
+so raising it (candidates, coverage) comes before tuning a model. The
+candidates also cost time: a doubted sentence parses up to 80 of them.
