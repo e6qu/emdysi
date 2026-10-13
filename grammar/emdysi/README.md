@@ -158,6 +158,10 @@ are not changed. Written for this project (MIT, see the repository's
   form of the ERG's *sooner*;
   transitive *provision* (*Autoscalers provision the Nodes*), which the
   ERG has only with *with*, in the form of its *supply*;
+  nouns it lacks or has only as verbs or mass nouns: *compile time*
+  (*at compile time*), *a redirect*, *a recap of*, *the decease of*, *the
+  entail of*, *the first transports of rage*; *altogether* before a verb
+  (*he altogether failed*), which the ERG has only after one;
   unknown plural names with a determiner (*the Bennets were*, *the
   Gardiners*): a generic entry for words the tagger marks NNPS, in the
   ERG's type for plural names (`n_-_pn-pl-def_le`, *The Giants play
