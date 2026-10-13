@@ -98,7 +98,8 @@ The default rule packs are:
   phrases that add nothing: filler (*needless to say*), platitudes (*Only
   time will tell.*), sentences made only of abstractions (*The future
   belongs to those who embrace change.*) and maxims (*Clarity beats
-  complexity.*), the last two found in the grammar's semantics.
+  complexity.*) and sentences that restate an earlier one, the last three
+  found in the grammar's semantics.
 - `structure`: the main point first, a clean heading hierarchy, short
   paragraphs, specific and parallel headings and list items, procedures
   as numbered instructions.

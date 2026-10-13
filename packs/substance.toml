@@ -156,3 +156,17 @@ examples = [
 acceptable = [
   "The cache beats the database by a factor of ten.\n",
 ]
+
+[[rule]]
+id = "substance.restatement"
+kind = "semantics"
+check = "restatement"
+severity = "suggestion"
+message = "This sentence restates an earlier one ('{detail}...'); cut it or say something new."
+description = "A sentence at least four fifths of whose content words (at least four, from the grammar's semantics) one earlier sentence of the document already has: repackaging instead of advancing, as in a summary that repeats the introduction."
+examples = [
+  "The new cache reduces build times for large projects. It also adds a lock file.\n\nIn short, the new cache reduces build times for large projects.\n",
+]
+acceptable = [
+  "The new cache reduces build times for large projects. The old cache stored every artifact on disk.\n",
+]

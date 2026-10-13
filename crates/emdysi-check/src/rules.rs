@@ -475,6 +475,7 @@ impl Rule {
                     "tense-shift" => SemCheck::TenseShift,
                     "vacuous" => SemCheck::Vacuous,
                     "aphorism" => SemCheck::Aphorism,
+                    "restatement" => SemCheck::Restatement,
                     other => return Err(err(&format!("unknown semantics check {other:?}"))),
                 })
             }

@@ -22,6 +22,9 @@
 //!   adjectives and adverbs) are, all but at most one in five, abstractions
 //!   that say nothing on their own (|The future belongs to those who
 //!   embrace change.|), with no name or number;
+//! - restatement: a sentence at least four fifths of whose content
+//!   predicates (at least four) one earlier sentence of the document
+//!   already has: a paragraph that repackages instead of advancing;
 //! - aphorism: a short present-tense statement whose subject and other
 //!   nouns are bare singular nouns (|Clarity beats complexity.|,
 //!   |Communication is key.|).
@@ -41,6 +44,7 @@ pub enum SemCheck {
     TenseShift,
     Vacuous,
     Aphorism,
+    Restatement,
 }
 
 /// Abstractions that carry no content of their own in a sentence, by the
@@ -262,6 +266,47 @@ pub fn run(check: SemCheck, a: &Analysis) -> Vec<Finding> {
         }
         s.best().and_then(|r| r.mrs.as_ref())
     };
+    if check == SemCheck::Restatement {
+        let content = |m: &Mrs| -> std::collections::BTreeSet<String> {
+            m.eps
+                .iter()
+                .filter_map(|e| lemma_pos(&e.pred))
+                .filter(|(l, pos)| {
+                    matches!(*pos, "n" | "v" | "a")
+                        && !matches!(*l, "be" | "have" | "do" | "get" | "can" | "will" | "also")
+                })
+                .map(|(l, _)| l.to_lowercase())
+                .collect()
+        };
+        let sets: Vec<Option<std::collections::BTreeSet<String>>> = (0..a.sentences.len())
+            .map(|si| mrs_of(si).map(content))
+            .collect();
+        for si in 0..sets.len() {
+            let Some(cur) = &sets[si] else { continue };
+            if cur.len() < 4 {
+                continue;
+            }
+            let earlier = (0..si).find(|&e| {
+                sets[e].as_ref().is_some_and(|prev| {
+                    let shared = cur.intersection(prev).count();
+                    shared * 5 >= cur.len() * 4
+                })
+            });
+            if let Some(e) = earlier {
+                let original = &a.sentences[si].original;
+                let n = original.trim_end().chars().count();
+                let first: String = a.sentences[e].original.chars().take(60).collect();
+                out.push(Finding {
+                    sentence: si,
+                    from: 0,
+                    to: n,
+                    text: text_of(original, 0, n),
+                    detail: first.trim().to_string(),
+                });
+            }
+        }
+        return out;
+    }
     if check == SemCheck::TenseShift {
         // By paragraph: the majority tense among declarative sentences.
         let mut by_block: HashMap<usize, Vec<(usize, String)>> = HashMap::new();
@@ -534,7 +579,7 @@ pub fn run(check: SemCheck, a: &Analysis) -> Vec<Finding> {
                     push(0, n, String::new());
                 }
             }
-            SemCheck::TenseShift => unreachable!(),
+            SemCheck::TenseShift | SemCheck::Restatement => unreachable!(),
         }
     }
     out
