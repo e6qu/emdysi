@@ -126,6 +126,26 @@ The first run compiles the grammar (a few seconds) and caches it in
 in the repository; later runs load it in about a second. Parsing takes
 from tens of milliseconds to a few seconds per sentence.
 
+## Roadmap
+
+The milestones and their status are in [docs/plan.md](docs/plan.md), which
+ends with how to pick the work up. Next, in order:
+
+1. **A small local classifier with the grammar (must have, M20).** A model
+   of about 2 GB (Gemma 4 E2B, 4-bit GGUF, or similar) chooses in context
+   among the spelling and grammar corrections the grammar has verified, so
+   that the two together are more accurate than a much larger model alone.
+   The machinery is done and tested with a stand-in model; what remains is
+   to download the model, calibrate it and measure it with
+   `scripts/model-eval/run.sh` (recall on real errors, false flags on
+   edited text, against the grammar alone, a perfect model and a larger
+   model).
+2. **Coverage of edited text (M19):** the recurring gaps left in the
+   samples.
+3. **AI tropes on current models' prose (M21):** more machine-written text
+   from current models to calibrate against.
+4. **Speed** on the slowest ordinary sentences.
+
 ## Documentation
 
 | Document | Contents |

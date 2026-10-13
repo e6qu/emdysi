@@ -15,6 +15,9 @@
 //! With `EMDYSI_LM` set to a model (a spec as for `en --lm`), spelling and
 //! grammar corrections are chosen by the model among those the grammar
 //! verified (`emdysi_check::assist`); one model is opened per thread.
+//! With `ORACLE` set instead, a perfect model answers: the version of a
+//! sentence the writer's correction has (an upper bound for any model).
+//! Either way the number of questions asked is reported.
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -115,6 +118,7 @@ fn main() {
         for _ in 0..threads {
             s.spawn(|| {
                 let mut lm = model();
+                let oracle_on = std::env::var_os("ORACLE").is_some();
                 loop {
                     let i = {
                         let mut n = next.lock().unwrap();
@@ -125,15 +129,18 @@ fn main() {
                     let (kind, before, after) = (&r[1], &r[4], &r[5]);
                     let (from, to) = changed_span(before, after);
                     let (afrom, ato) = changed_span(after, before);
+                    let mut oracle = Oracle {
+                        truth: after.to_string(),
+                    };
                     let mut check = |text: &str, from: usize, to: usize| -> Vec<Diagnostic> {
                         let a = analyze(&erg, text, Format::Markdown, &opts);
+                        let ask: Option<&mut dyn emdysi_check::decisions::Ask> = if oracle_on {
+                            Some(&mut oracle)
+                        } else {
+                            lm.as_mut().map(|m| m as &mut dyn emdysi_check::decisions::Ask)
+                        };
                         checker
-                            .check_with(
-                                &erg,
-                                &a,
-                                lm.as_mut()
-                                    .map(|m| m as &mut dyn emdysi_check::decisions::Ask),
-                            )
+                            .check_with(&erg, &a, ask)
                             .into_iter()
                             .filter(|d| d.range.start < to && from < d.range.end)
                             .collect()
@@ -190,6 +197,10 @@ fn main() {
         100.0 * all.caught as f64 / all.pairs.max(1) as f64,
         all.after
     );
+    let asked = QUESTIONS.load(std::sync::atomic::Ordering::Relaxed);
+    if asked > 0 {
+        println!("\nQuestions asked of the model: {asked}.");
+    }
 }
 
 /// The model named by `EMDYSI_LM` (a spec as for `en --lm`), if any, as the
@@ -199,6 +210,7 @@ struct ModelAsk(Box<dyn emdysi_lm::LanguageModel>);
 
 impl emdysi_check::decisions::Ask for ModelAsk {
     fn ask(&mut self, context: &str, question: &str, options: &[&str]) -> Option<Vec<f64>> {
+        QUESTIONS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         emdysi_lm::decide::Decider::new(&mut *self.0)
             .choose(context, question, options)
             .ok()
@@ -210,4 +222,30 @@ fn model() -> Option<ModelAsk> {
         .ok()
         .filter(|s| !s.trim().is_empty())?;
     Some(ModelAsk(emdysi_lm::open(spec.trim()).expect("EMDYSI_LM")))
+}
+
+/// Questions asked of the model (or the oracle), for the report.
+static QUESTIONS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
+/// With `ORACLE` set, a perfect decision model: it chooses the version of
+/// a sentence that the writer's own correction has, or else the original.
+/// Recall with it is an upper bound for any model on the corrections the
+/// grammar verified.
+struct Oracle {
+    truth: String,
+}
+
+impl emdysi_check::decisions::Ask for Oracle {
+    fn ask(&mut self, _context: &str, _question: &str, options: &[&str]) -> Option<Vec<f64>> {
+        QUESTIONS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let right = options
+            .iter()
+            .position(|o| self.truth.contains(o.trim()))
+            .unwrap_or(0);
+        Some(
+            (0..options.len())
+                .map(|i| if i == right { 1.0 } else { 0.0 })
+                .collect(),
+        )
+    }
 }

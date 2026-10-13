@@ -68,6 +68,14 @@ Where the work stands, and how to resume it on another machine.
      model alone.
    - tune `threshold` of `core.grammar-fix` and `model_threshold` of
      `core.spelling` (0.8 now) on these numbers.
+
+   `scripts/model-eval/run.sh SPEC` runs all of this in order:
+   calibration on half of the real-error questions
+   (`scripts/model-eval/questions.py`, 377 questions: the sentence as
+   written against the writer's correction) and measurement on the other
+   half, recall with the grammar alone, with a perfect model (`ORACLE=1`,
+   the upper bound for any model on the corrections the grammar verifies)
+   and with the model, and false flags on both development sets.
 3. **Measurement recipe for grammar changes** (every PR so far): coverage
    on the two 300-sentence samples and the 948-sentence sample (sampling
    script in evaluation.md, "Coverage, measured again"), the six gold
