@@ -201,6 +201,46 @@ fn hyphenated_words() {
 }
 
 #[test]
+fn transitive_provision() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    for text in [
+        "Autoscalers provision the Nodes.",
+        "It must be restarted after swap is provisioned.",
+        "They provisioned the ship with food.",
+    ] {
+        assert!(strict(&erg, text), "{text}");
+    }
+}
+
+#[test]
+fn mentions() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let forms =
+        |text: &str| -> Vec<String> { erg.tokens(text).into_iter().map(|t| t.form).collect() };
+    assert_eq!(
+        forms("Thanks to @oli-obk and @rust-lang/lang."),
+        ["Thanks", "to", "@oli-obk", "and", "@rust-lang/lang", "."]
+    );
+    // A spaced dash after a mention is not part of it.
+    assert_eq!(
+        forms("Hi @epage - thanks."),
+        ["Hi", "@epage", "-", "thanks", "."]
+    );
+    // An email address stays one token, as the ERG's tokenizer leaves it.
+    assert_eq!(
+        forms("Mail kim@example.org."),
+        ["Mail", "kim@example.org", "."]
+    );
+    for text in [
+        "The RFC would benefit from formal review by @rust-lang/lang.",
+        "@makai410 has moved all the existing code into a single crate.",
+        "Thanks to @oli-obk, it works.",
+    ] {
+        assert!(strict(&erg, text), "{text}");
+    }
+}
+
+#[test]
 fn phrasal_compounds() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     for text in [

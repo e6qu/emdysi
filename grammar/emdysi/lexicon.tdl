@@ -1116,3 +1116,17 @@ oftener_comp_adv := av_pp_i-cmp_le &
             PHON.ONSET voc ] ].
 
 :end :instance.
+
+;;; Transitive "provision", to set up (|Autoscalers provision the Nodes|,
+;;; |after swap is provisioned|): the ERG has it only with "with" (|provision
+;;; the ship with food|). In the form of its |supply|, which has both
+;;; (supply_v1, v_np_le, beside supply_with_v1).
+
+:begin :instance :status lex-entry.
+
+provision_v1 := v_np_le &
+ [ ORTH < "provision" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_provision_v_1_rel",
+            PHON.ONSET con ] ].
+
+:end :instance.

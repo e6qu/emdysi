@@ -156,6 +156,8 @@ are not changed. Written for this project (MIT, see the repository's
   the ERG has only intransitive and with *on*; *oftener* with a *than*
   complement (*oftener from home than anything else could do*), in the
   form of the ERG's *sooner*;
+  transitive *provision* (*Autoscalers provision the Nodes*), which the
+  ERG has only with *with*, in the form of its *supply*;
   unknown plural names with a determiner (*the Bennets were*, *the
   Gardiners*): a generic entry for words the tagger marks NNPS, in the
   ERG's type for plural names (`n_-_pn-pl-def_le`, *The Giants play
