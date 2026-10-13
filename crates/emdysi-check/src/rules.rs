@@ -2497,28 +2497,6 @@ pub fn explain_grammar(erg: &Erg, a: &crate::Analysis, si: usize) -> String {
     out.join("\n")
 }
 
-#[cfg(test)]
-mod tests {
-    use super::number_pair;
-
-    #[test]
-    fn number_pairs() {
-        assert!(number_pair("go", "goes"));
-        assert!(number_pair("tries", "try"));
-        assert!(number_pair("was", "were"));
-        assert!(!number_pair("was", "wa"));
-        assert!(!number_pair("borrow", "borrowed"));
-        assert!(!number_pair("has", "had"));
-    }
-
-    #[test]
-    fn irregular_numbers() {
-        assert_eq!(super::irregular_number("was"), ["were"]);
-        assert_eq!(super::irregular_number("are"), ["is", "am"]);
-        assert!(super::irregular_number("went").is_empty());
-    }
-}
-
 /// A word of a phrase in a rule, split as the tokenizer splits it: with a
 /// curly apostrophe, a contraction as its own token (|here’s| is |here|
 /// |’s|, |isn’t| is |is| |n’t|) and a hyphen as its own token, so that
@@ -2545,4 +2523,26 @@ fn split_contraction(w: &str) -> Vec<String> {
         }
     }
     vec![w]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::number_pair;
+
+    #[test]
+    fn number_pairs() {
+        assert!(number_pair("go", "goes"));
+        assert!(number_pair("tries", "try"));
+        assert!(number_pair("was", "were"));
+        assert!(!number_pair("was", "wa"));
+        assert!(!number_pair("borrow", "borrowed"));
+        assert!(!number_pair("has", "had"));
+    }
+
+    #[test]
+    fn irregular_numbers() {
+        assert_eq!(super::irregular_number("was"), ["were"]);
+        assert_eq!(super::irregular_number("are"), ["is", "am"]);
+        assert!(super::irregular_number("went").is_empty());
+    }
 }
