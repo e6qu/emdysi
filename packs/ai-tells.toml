@@ -33,7 +33,7 @@ words = [
   "paradigm shift", "in a world where", "in a world of", "digital landscape",
   "unlock the full potential", "unlock new possibilities",
   "limitless possibilities", "endless possibilities", "lasting impact",
-  "navigate the complexities of", "the intersection of",
+  "navigate the complexities of",
 ]
 
 [[rule]]
@@ -208,9 +208,10 @@ kind = "structure"
 check = "one-line-paragraphs"
 max_words = 8
 min = 3
+share = 0.4
 severity = "suggestion"
 message = "One-line paragraph ({count} words); in a run of them, each line reads as a drumbeat. Join it to the paragraph it belongs to."
-description = "Dramatic single-sentence paragraphs, three or more in a document: the format of a model-written social-media post ('I was wrong.')."
+description = "Dramatic single-sentence paragraphs of at most eight words, when there are three or more and they make up at least two fifths of a document's paragraphs: the format of a model-written social-media post ('I was wrong.'). Captions, bold lines, dialogue and links do not count; on a simulation over the 654 edited documents of corpora/edited and corpora/edited-by-sa, none qualifies."
 examples = [
   "I spent ten years thinking leadership was about having all the answers.\n\nI was wrong.\n\nLeadership is about trust.\n\nIt starts with listening.\n",
 ]

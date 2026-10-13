@@ -497,6 +497,7 @@ impl Rule {
                     "one-line-paragraphs" => StructureCheck::OneLineParagraphs {
                         max_words: n("max_words", 8.0),
                         min: n("min", 3.0),
+                        share: num("share").unwrap_or(0.4),
                     },
                     "paragraph-length" => StructureCheck::ParagraphLength {
                         max_words: n("max_words", 150.0),

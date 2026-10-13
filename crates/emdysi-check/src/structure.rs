@@ -77,9 +77,14 @@ pub enum StructureCheck {
     /// Headings deeper than `max`.
     Depth { max: u8 },
     /// Paragraphs of one short sentence (at most `max_words` words), when
-    /// a document has at least `min` of them: the dramatic one-line
-    /// paragraphs of social-media posts (|I was wrong.|).
-    OneLineParagraphs { max_words: usize, min: usize },
+    /// a document has at least `min` of them and they make up at least
+    /// `share` of its paragraphs: the dramatic one-line paragraphs of
+    /// social-media posts (|I was wrong.|).
+    OneLineParagraphs {
+        max_words: usize,
+        min: usize,
+        share: f64,
+    },
     /// A run of paragraphs with no heading, list, table or code between,
     /// longer than `max_words` words or `max_paragraphs` paragraphs.
     WallOfText {
@@ -348,19 +353,32 @@ pub fn run_structure(check: &StructureCheck, erg: &emdysi_parse::Erg, a: &Analys
             }
         }
         StructureCheck::WallOfText { .. } => {}
-        StructureCheck::OneLineParagraphs { max_words, min } => {
-            let short: Vec<usize> = (0..a.blocks.len())
+        StructureCheck::OneLineParagraphs {
+            max_words,
+            min,
+            share,
+        } => {
+            let paragraphs: Vec<usize> = (0..a.blocks.len())
+                .filter(|&i| a.blocks[i].kind == BlockKind::Paragraph)
+                .collect();
+            let short: Vec<usize> = paragraphs
+                .iter()
+                .copied()
                 .filter(|&i| {
-                    let b = &a.blocks[i];
-                    let text = b.text.trim();
-                    b.kind == BlockKind::Paragraph
-                        && a.sentences.iter().filter(|s| s.block == i).count() == 1
+                    let text = a.blocks[i].text.trim();
+                    a.sentences.iter().filter(|s| s.block == i).count() == 1
                         && words(text) <= *max_words
-                        // A lead-in to a list or a code block.
-                        && !text.ends_with(':')
+                        // A sentence, not a caption (|Filename: src/main.rs|),
+                        // a bold pseudo-heading, a line of dialogue or a
+                        // link.
+                        && text
+                            .trim_end_matches(['"', '”', '’', ')'])
+                            .ends_with(['.', '!', '?'])
+                        && !text.starts_with(['"', '“', '‘', '\'', '*', '_', '['])
+                        && !text.contains("](")
                 })
                 .collect();
-            if short.len() >= *min {
+            if short.len() >= *min && short.len() as f64 >= *share * paragraphs.len() as f64 {
                 for i in short {
                     out.push(block_hit(a, i).var("count", words(&a.blocks[i].text)));
                 }
