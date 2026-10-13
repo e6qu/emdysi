@@ -1070,3 +1070,28 @@ the formal comma in place of the gold tree's informal one
 (`comma_inf_pct`). The grammar cannot make a phrase formal while it
 contains the informal comma (a phrase shares the GENRE of its
 daughters), so the new rules take the formal comma.
+
+### Gapping
+
+A conjunct that leaves out the verb of the clause before it (*One came
+from her books, and the other from her toilette.*) had no analysis: the
+ERG has no gapped clause. `grammar/emdysi/gapping.tdl` makes one from a
+subject and a prepositional or noun phrase remnant, with the elided verb
+as an `ellipsis_rel` that the remnant modifies or takes as its second
+argument. The parser builds it only right after a comma and a
+coordinating conjunction, as that conjunction's clause, and never as a
+sentence on its own (2026-10-12). Built anywhere, it filled the charts
+of long sentences: *Frequently Asked Questions (FAQs) can be
+overwhelming and leave your customers searching through a sea of
+content.* lost its strict readings to the edge budget, and the
+grammar-error variant ran out of time on a sentence whose error it then
+missed.
+
+| Measure | Before | After |
+|---|---|---|
+| First development set, sentences without a strict reading (300) | 9 | 9 |
+| Second development set (300) | 22 | 20 |
+| False flags, first development set | 6 | 6 (the same) |
+| False flags, second development set | 84 | 84 (the same) |
+| Real errors caught (377) | 163 | 163 |
+| Gold profiles | | unchanged but sh-spec: grammatical parsed 560 → 562 |
