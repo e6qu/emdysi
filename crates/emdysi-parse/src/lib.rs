@@ -744,8 +744,7 @@ impl Erg {
 
     /// Tokenize and tag a sentence.
     pub fn tokens(&self, text: &str) -> Vec<InputToken> {
-        self.repp
-            .tokenize(text)
+        join_mentions(self.repp.tokenize(text))
             .into_iter()
             .enumerate()
             .map(|(i, t)| InputToken {
@@ -1840,6 +1839,54 @@ pub fn edits(w: &str) -> Vec<String> {
             let mut n = c.clone();
             n.insert(i, a);
             out.push(s(&n));
+        }
+    }
+    out
+}
+
+/// Rejoin a mention (|@oli-obk|, |@rust-lang/lang|) into one token, as the
+/// ERG's REPP masks keep an email address one token (rpp/ne.rpp; emdysi's
+/// REPP does not apply masks). The ERG splits off an |@| before a word and
+/// splits words at dashes and slashes; the pieces of a mention touch, so
+/// they are joined while each one starts where the last ended (a spaced
+/// |@kim - thanks| stays apart).
+fn join_mentions(tokens: Vec<emdysi_repp::Token>) -> Vec<emdysi_repp::Token> {
+    let piece = |f: &str| {
+        !f.is_empty()
+            && f.chars()
+                .all(|c| c.is_ascii_alphanumeric() || matches!(c, '_' | '-' | '/'))
+    };
+    let mut out: Vec<emdysi_repp::Token> = Vec::with_capacity(tokens.len());
+    let mut i = 0;
+    while i < tokens.len() {
+        let t = &tokens[i];
+        let starts_word = out.last().is_none_or(|p| p.to < t.from);
+        // The touching pieces after the |@|, without trailing dashes or
+        // slashes (|@kim-| is a mention and a dash).
+        let mut j = i + 1;
+        while j < tokens.len() && tokens[j].from == tokens[j - 1].to && piece(&tokens[j].form) {
+            j += 1;
+        }
+        while j > i + 1 && tokens[j - 1].form.ends_with(['-', '/']) {
+            j -= 1;
+        }
+        if t.form == "@"
+            && starts_word
+            && j > i + 1
+            && tokens[i + 1]
+                .form
+                .starts_with(|c: char| c.is_ascii_alphanumeric())
+        {
+            let mut m = t.clone();
+            for n in &tokens[i + 1..j] {
+                m.form.push_str(&n.form);
+                m.to = n.to;
+            }
+            out.push(m);
+            i = j;
+        } else {
+            out.push(t.clone());
+            i += 1;
         }
     }
     out
