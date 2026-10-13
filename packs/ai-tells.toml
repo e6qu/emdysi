@@ -196,8 +196,8 @@ id = "ai-tells.rhetorical-question"
 kind = "sentence-pair"
 severity = "suggestion"
 message = "Rhetorical question answered at once ('{match}'); state the answer."
-description = "A question of one to three words answered by the next sentence: 'The result? A complete paradigm shift.'"
-pattern = "^\\W*(?:\\w+[\\s’']+){0,2}\\w+\\?\\W*$"
+description = "A question of one to three words answered by the next sentence: 'The result? A complete paradigm shift.' Not in dialogue: a question that opens with a quotation mark is a character speaking."
+pattern = "^(?:\\w+[\\s’']+){0,2}\\w+\\?\\W*$"
 next = "."
 examples = [
   "We rebuilt the pipeline. The result? A complete paradigm shift.\n",

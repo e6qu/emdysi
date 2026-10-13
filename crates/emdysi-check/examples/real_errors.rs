@@ -137,7 +137,8 @@ fn main() {
                         let ask: Option<&mut dyn emdysi_check::decisions::Ask> = if oracle_on {
                             Some(&mut oracle)
                         } else {
-                            lm.as_mut().map(|m| m as &mut dyn emdysi_check::decisions::Ask)
+                            lm.as_mut()
+                                .map(|m| m as &mut dyn emdysi_check::decisions::Ask)
                         };
                         checker
                             .check_with(&erg, &a, ask)
