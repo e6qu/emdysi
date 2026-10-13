@@ -85,12 +85,19 @@ The default rule packs are:
   by the grammar, US/GB spelling consistency, *a*/*an*, repeated words.
   Every rule here claims an error, so each reports only what it can show.
 - `ai-tells`: vocabulary, stock phrases and constructions over-represented
-  in machine-written prose (contrast frames, trailing participial clauses,
-  three-part lists, em-dash density, chat-assistant residue).
+  in machine-written prose (contrast frames, also across two sentences;
+  setups such as *here's the thing*; rhetorical questions answered at once;
+  runs of one-line paragraphs; closing questions to the reader; mechanical
+  openers such as *Moreover*; both-sides framing; trailing participial
+  clauses, three-part lists, em-dash density, chat-assistant residue).
 - `plain-style`: passive voice, long sentences, intensifiers, wordy
   phrases, expletive *there*, tense shifts.
 - `substance`: hedged, vague and unsupported claims (*seems to*, *studies
-  show* without a citation, *a number of*, *clearly*).
+  show* without a citation, *a number of*, *clearly*), and sentences and
+  phrases that add nothing: filler (*needless to say*), platitudes (*Only
+  time will tell.*), sentences made only of abstractions (*The future
+  belongs to those who embrace change.*) and maxims (*Clarity beats
+  complexity.*), the last two found in the grammar's semantics.
 - `structure`: the main point first, a clean heading hierarchy, short
   paragraphs, specific and parallel headings and list items, procedures
   as numbered instructions.

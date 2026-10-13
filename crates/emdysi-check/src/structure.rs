@@ -76,6 +76,10 @@ pub enum StructureCheck {
     LoneSubsection,
     /// Headings deeper than `max`.
     Depth { max: u8 },
+    /// Paragraphs of one short sentence (at most `max_words` words), when
+    /// a document has at least `min` of them: the dramatic one-line
+    /// paragraphs of social-media posts (|I was wrong.|).
+    OneLineParagraphs { max_words: usize, min: usize },
     /// A run of paragraphs with no heading, list, table or code between,
     /// longer than `max_words` words or `max_paragraphs` paragraphs.
     WallOfText {
@@ -344,6 +348,24 @@ pub fn run_structure(check: &StructureCheck, erg: &emdysi_parse::Erg, a: &Analys
             }
         }
         StructureCheck::WallOfText { .. } => {}
+        StructureCheck::OneLineParagraphs { max_words, min } => {
+            let short: Vec<usize> = (0..a.blocks.len())
+                .filter(|&i| {
+                    let b = &a.blocks[i];
+                    let text = b.text.trim();
+                    b.kind == BlockKind::Paragraph
+                        && a.sentences.iter().filter(|s| s.block == i).count() == 1
+                        && words(text) <= *max_words
+                        // A lead-in to a list or a code block.
+                        && !text.ends_with(':')
+                })
+                .collect();
+            if short.len() >= *min {
+                for i in short {
+                    out.push(block_hit(a, i).var("count", words(&a.blocks[i].text)));
+                }
+            }
+        }
         StructureCheck::ParagraphLength {
             max_words,
             max_sentences,

@@ -86,3 +86,73 @@ check = "bare-demonstrative"
 severity = "suggestion"
 message = "'{match}' on its own: say what it refers to ('this result', 'this change')."
 description = "A sentence that opens with 'this' or 'that' as a whole noun phrase, from the grammar's semantics; the reader must work out what it points to."
+
+[[rule]]
+id = "substance.filler"
+kind = "words"
+match = "surface"
+severity = "suggestion"
+message = "'{match}' adds nothing to the sentence; cut it."
+description = "Set phrases that carry no meaning: the sentence says the same without them."
+words = [
+  "it goes without saying that", "it goes without saying", "needless to say",
+  "the fact of the matter is", "it should be noted that",
+  "it is interesting to note that", "it's interesting to note that",
+  "as we all know", "when all is said and done", "for all intents and purposes",
+  "last but not least", "first and foremost", "each and every",
+  "cannot be overstated", "can't be overstated", "it is clear that",
+  "it is evident that", "there is no doubt that", "without a doubt",
+  "in a very real sense", "simply put", "to be honest", "at its core",
+  "it is important to remember that", "it's important to remember that",
+  "it is important to keep in mind that", "it's important to keep in mind that",
+  "plays a key role", "plays an important role", "plays a vital role",
+]
+examples = [
+  "Needless to say, the release was late.\n",
+  "Testing plays a key role in quality.\n",
+]
+acceptable = [
+  "The release was late.\n",
+]
+
+[[rule]]
+id = "substance.platitude"
+kind = "regex"
+severity = "warning"
+message = "Platitude ('{match}'): the sentence could end any text on any subject."
+description = "Stock sentences that say nothing about the subject at hand."
+pattern = "(?i)^\\W*(?:and\\s+|but\\s+|so\\s+)?(?:only time will tell|the possibilities are (?:endless|limitless)|the sky(?:'s|’s| is) the limit|the future is (?:bright|now|here)|(?:that|this) changes everything|the rest is history|it is what it is|change is the only constant|the only constant is change|knowledge is power|time is money|communication is key|teamwork makes the dream work|every journey begins with a single step)\\W*$"
+examples = [
+  "We shipped the new release. Only time will tell.\n",
+]
+acceptable = [
+  "Time will tell us whether the cache helps; we measure it next week.\n",
+]
+
+[[rule]]
+id = "substance.vacuous"
+kind = "semantics"
+check = "vacuous"
+severity = "suggestion"
+message = "This sentence is made of abstractions ({detail}); say something a reader could check or act on."
+description = "A sentence whose content words, from the grammar's semantics, are all or nearly all abstractions with no content of their own (future, change, success, potential, embrace, unlock, ...), with no name or number: 'The future belongs to those who embrace change.'"
+examples = [
+  "The future belongs to those who embrace change.\n",
+]
+acceptable = [
+  "The release adds a cache that halves the build time.\n",
+]
+
+[[rule]]
+id = "substance.aphorism"
+kind = "semantics"
+check = "aphorism"
+severity = "suggestion"
+message = "Aphorism ('{match}'): a maxim in place of a point; say what it means here."
+description = "A short present-tense statement whose subject is a bare singular noun with nothing modifying it, from the grammar's semantics: 'Clarity beats complexity.', 'Consistency builds trust.'"
+examples = [
+  "Clarity beats complexity.\n",
+]
+acceptable = [
+  "The cache beats the database by a factor of ten.\n",
+]

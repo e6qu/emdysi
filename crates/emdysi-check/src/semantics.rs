@@ -18,6 +18,13 @@
 //! - tense shift: a declarative sentence whose main verb is in a different
 //!   tense (past or present) than most declarative sentences of its
 //!   paragraph.
+//! - vacuous: a sentence whose content predicates (nouns, verbs,
+//!   adjectives and adverbs) are, all but at most one in five, abstractions
+//!   that say nothing on their own (|The future belongs to those who
+//!   embrace change.|), with no name or number;
+//! - aphorism: a short present-tense statement whose subject and other
+//!   nouns are bare singular nouns (|Clarity beats complexity.|,
+//!   |Communication is key.|).
 
 use std::collections::HashMap;
 
@@ -32,6 +39,124 @@ pub enum SemCheck {
     StackedNegation,
     BareDemonstrative,
     TenseShift,
+    Vacuous,
+    Aphorism,
+}
+
+/// Abstractions that carry no content of their own in a sentence, by the
+/// lemma of their predicate.
+const VAGUE: &[&str] = &[
+    "thing",
+    "way",
+    "world",
+    "future",
+    "change",
+    "success",
+    "value",
+    "growth",
+    "journey",
+    "potential",
+    "possibility",
+    "opportunity",
+    "challenge",
+    "innovation",
+    "impact",
+    "importance",
+    "role",
+    "key",
+    "crucial",
+    "essential",
+    "important",
+    "vital",
+    "meaningful",
+    "powerful",
+    "true",
+    "real",
+    "clear",
+    "embrace",
+    "unlock",
+    "inspire",
+    "empower",
+    "transform",
+    "redefine",
+    "matter",
+    "belong",
+    "require",
+    "create",
+    "drive",
+    "shape",
+    "connection",
+    "trust",
+    "power",
+    "adaptation",
+    "constant",
+    "landscape",
+    "era",
+    "realm",
+    "paradigm",
+    "shift",
+    "approach",
+    "aspect",
+    "factor",
+    "truly",
+    "deeply",
+    "ultimately",
+    "really",
+    "new",
+    "great",
+    "lasting",
+    "difference",
+    "people",
+    "life",
+    "today",
+    "tomorrow",
+    "progress",
+    "strength",
+    "commitment",
+    "passion",
+    "vision",
+    "purpose",
+    "mindset",
+    "excellence",
+    "heart",
+    "core",
+    "foundation",
+    "balance",
+    "stay",
+    "remain",
+    "begin",
+    "start",
+    "lead",
+    "help",
+    "make",
+    "endless",
+    "limitless",
+    "everything",
+    "something",
+    "possible",
+    "unparalleled",
+    "innovate",
+    "transformative",
+    "pivotal",
+    "vibrant",
+    "tapestry",
+    "testament",
+    "harness",
+    "foster",
+    "navigate",
+    "leverage",
+    "unique",
+    "ever-evolving",
+];
+
+/// The lemma and part of speech of a surface predicate (|_future_n_1| is
+/// |future|, |n|), or `None` for a grammar predicate.
+fn lemma_pos(pred: &str) -> Option<(&str, &str)> {
+    let rest = pred.strip_prefix('_')?;
+    let mut parts = rest.split('_');
+    let lemma = parts.next()?;
+    let pos = parts.next()?;
+    Some((lemma, pos))
 }
 
 /// A finding: sentence index, character span in the sentence, the text
@@ -298,6 +423,115 @@ pub fn run(check: SemCheck, a: &Analysis) -> Vec<Finding> {
                             push(f, t, String::new());
                         }
                     }
+                }
+            }
+            SemCheck::Vacuous => {
+                // Names, numbers and dates are content.
+                if m.eps.iter().any(|e| {
+                    matches!(
+                        e.pred.as_str(),
+                        "named"
+                            | "card"
+                            | "ord"
+                            | "yofc"
+                            | "dofm"
+                            | "mofy"
+                            | "dofw"
+                            | "numbered_hour"
+                    )
+                }) {
+                    continue;
+                }
+                let content: Vec<&str> = m
+                    .eps
+                    .iter()
+                    .filter_map(|e| lemma_pos(&e.pred))
+                    .filter(|(l, pos)| {
+                        matches!(*pos, "n" | "v" | "a")
+                            && !matches!(*l, "be" | "have" | "do" | "get" | "go" | "can" | "will")
+                    })
+                    .map(|(l, _)| l)
+                    .collect();
+                let vague = content
+                    .iter()
+                    .filter(|l| VAGUE.contains(&l.to_lowercase().as_str()))
+                    .count();
+                if content.len() >= 3 && vague * 5 >= content.len() * 4 {
+                    let n = original.trim_end().chars().count();
+                    push(0, n, format!("{vague} of {} content words", content.len()));
+                }
+            }
+            SemCheck::Aphorism => {
+                if original.split_whitespace().count() > 7 {
+                    continue;
+                }
+                let Some(index) = m.index.as_deref() else {
+                    continue;
+                };
+                let props = |v: &str| m.props.get(v).cloned().unwrap_or_default();
+                let prop =
+                    |v: &str, k: &str| props(v).into_iter().find(|(p, _)| p == k).map(|(_, x)| x);
+                if prop(index, "SF").as_deref() != Some("prop")
+                    || prop(index, "TENSE").as_deref() != Some("pres")
+                    || prop(index, "PROG").as_deref() == Some("+")
+                    || prop(index, "PERF").as_deref() == Some("+")
+                {
+                    continue;
+                }
+                if m.eps.iter().any(|e| {
+                    matches!(
+                        e.pred.as_str(),
+                        "named" | "card" | "pron" | "generic_entity"
+                    ) || e.pred.starts_with("_this_q")
+                        || e.pred.starts_with("_that_q")
+                }) {
+                    continue;
+                }
+                let Some(main) = m.eps.iter().find(|e| e.arg0() == Some(index)) else {
+                    continue;
+                };
+                let Some(subject) = main.arg("ARG1") else {
+                    continue;
+                };
+                // A bare noun phrase (udef_q) of one singular noun.
+                let bare = m
+                    .eps
+                    .iter()
+                    .any(|q| q.pred == "udef_q" && q.arg0() == Some(subject));
+                let noun = m.eps.iter().find(|e| {
+                    e.arg0() == Some(subject) && lemma_pos(&e.pred).is_some_and(|(_, p)| p == "n")
+                });
+                let singular = prop(subject, "NUM").as_deref() == Some("sg");
+                // Nothing else modifies the subject (|Clarity beats
+                // complexity|, not |Free software matters|).
+                let modified = m.eps.iter().any(|e| {
+                    e.arg("ARG1") == Some(subject)
+                        && e.arg0() != Some(index)
+                        && e.label != main.label
+                });
+                // Every other noun phrase is as bare (|beats complexity|,
+                // |starts with discomfort|), not a particular thing (|Rust
+                // prevents data races|).
+                let others_bare = m
+                    .eps
+                    .iter()
+                    .filter(|e| lemma_pos(&e.pred).is_some_and(|(_, p)| p == "n"))
+                    .filter_map(|e| e.arg0())
+                    .all(|x| {
+                        m.eps
+                            .iter()
+                            .any(|q| q.pred == "udef_q" && q.arg0() == Some(x))
+                            && prop(x, "NUM").as_deref() == Some("sg")
+                            && !m
+                                .eps
+                                .iter()
+                                .any(|c| c.pred == "compound" && c.arg("ARG1") == Some(x))
+                    });
+                if let (true, Some(_), true, false, true) =
+                    (bare, noun, singular, modified, others_bare)
+                {
+                    let n = original.trim_end().chars().count();
+                    push(0, n, String::new());
                 }
             }
             SemCheck::TenseShift => unreachable!(),
