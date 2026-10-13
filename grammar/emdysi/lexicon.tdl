@@ -516,6 +516,24 @@ opt_out_a1 := aj_-_i-att_le &
     SYNSEM [ LKEYS.KEYREL.PRED "_opt-out_a_1_rel",
              PHON.ONSET voc ] ].
 
+ill_behaved_a1 := aj_-_i_le &
+  [ ORTH < "ill", "-", "behaved" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_ill-behaved_a_1_rel",
+             PHON.ONSET voc ] ].
+
+;; |opt-in| and |opt-out| as nouns, mass or count (|via opt-out|, |an opt-in|), in the
+;; form of the ERG's |roll-out| (roll_out_n2, n_-_mc_le).
+
+opt_in_n1 := n_-_mc_le &
+  [ ORTH < "opt", "-", "in" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_opt-in_n_1_rel",
+             PHON.ONSET voc ] ].
+
+opt_out_n1 := n_-_mc_le &
+  [ ORTH < "opt", "-", "out" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_opt-out_n_1_rel",
+             PHON.ONSET voc ] ].
+
 :end :instance.
 
 ;;; Technical vocabulary the ERG lacks: |a borrow| (Rust), |swap| (memory
@@ -1083,5 +1101,18 @@ meditate_v2 := v_np_le &
  [ ORTH < "meditate" >,
    SYNSEM [ LKEYS.KEYREL.PRED "_meditate_v_2_rel",
             PHON.ONSET con ] ].
+
+:end :instance.
+
+;;; "oftener" with a "than" complement (|it drew him oftener from home than
+;;; anything else could do|), in the form of the ERG's |sooner|
+;;; (sooner_comp_adv, av_pp_i-cmp_le). The ERG's oftener_adv takes none.
+
+:begin :instance :status lex-entry.
+
+oftener_comp_adv := av_pp_i-cmp_le &
+ [ ORTH < "oftener" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_often_a_1_rel",
+            PHON.ONSET voc ] ].
 
 :end :instance.

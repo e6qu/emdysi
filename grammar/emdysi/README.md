@@ -153,7 +153,9 @@ are not changed. Written for this project (MIT, see the repository's
   means the same with its adjectives as with its nouns; the older units
   of time *twelvemonth* and *sennight*, in the form of *fortnight*;
   transitive *meditate*, to plan (*Miss Darcy's meditated elopement*), which
-  the ERG has only intransitive and with *on*;
+  the ERG has only intransitive and with *on*; *oftener* with a *than*
+  complement (*oftener from home than anything else could do*), in the
+  form of the ERG's *sooner*;
   unknown plural names with a determiner (*the Bennets were*, *the
   Gardiners*): a generic entry for words the tagger marks NNPS, in the
   ERG's type for plural names (`n_-_pn-pl-def_le`, *The Giants play
@@ -166,7 +168,8 @@ are not changed. Written for this project (MIT, see the repository's
   of nouns the ERG has only as count nouns (*too much ceremony*), one by
   one, since a bare count noun is a grammar error the checker reports;
   hyphenated compound adjectives (*in-person*, *in-memory*, *at-risk*,
-  *compile-time*, *opt-in*) in the form of the ERG's *in-house*;
+  *compile-time*, *opt-in*, *ill-behaved*) in the form of the ERG's *in-house*, and
+  *opt-in* and *opt-out* as nouns in the form of its *roll-out*;
   technical vocabulary (*a borrow*, *swap* as a mass noun, *metrics* as a
   noun modifier like *statistics*, intransitive *evaluate*,
   *out-of-the-box*). *true* and *false* as nouns (*evaluates to true*)

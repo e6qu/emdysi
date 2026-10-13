@@ -176,6 +176,31 @@ fn transitive_meditate() {
 }
 
 #[test]
+fn oftener_than() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    for text in [
+        "It drew him from home oftener than anything else could do.",
+        "Kim ran oftener than Sandy.",
+        "Kim oftener ran.",
+    ] {
+        assert!(strict(&erg, text), "{text}");
+    }
+}
+
+#[test]
+fn hyphenated_words() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    for text in [
+        "This makes it explicit via opt-out whether an impl is being applied.",
+        "We use an opt-out.",
+        "It is an opt-in feature.",
+        "An ill-behaved Pod cannot prevent leader election from succeeding.",
+    ] {
+        assert!(strict(&erg, text), "{text}");
+    }
+}
+
+#[test]
 fn phrasal_compounds() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     for text in [
