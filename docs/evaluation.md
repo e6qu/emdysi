@@ -1124,3 +1124,22 @@ and *opt-out* as nouns, and *ill-behaved*.
 | False flags, second development set | 84 | 79 (5 fewer, all mentions; none new) |
 | Real errors caught (377) | 163 | 163 |
 | Gold profiles | | unchanged, item for item |
+
+### More lexical gaps
+
+Nouns the ERG lacks or has only as verbs or mass nouns (*compile time*,
+used 39 times in the development corpora, *a redirect*, *a recap of*, *the
+decease of*, *the entail of*, *transport* as a count noun), *altogether*
+before a verb and transitive *chunk* (2026-10-13). *recap*, *decease*,
+*entail* and *chunk* were found by scanning the corpora for a word after a
+determiner (or before an object) that the lexicon has only in another part
+of speech, rather than sentence by sentence.
+
+| Measure | Before | After |
+|---|---|---|
+| First development set, sentences without a strict reading (300) | 9 | 9 |
+| Second development set (300) | 18 | 18 |
+| False flags, first development set | 6 | 6 (the same) |
+| False flags, second development set | 79 | 79 (the same) |
+| Real errors caught (377) | 163 | 163 |
+| Gold profiles | | unchanged, item for item |
