@@ -23,6 +23,10 @@ pub fn tag(form: &str, initial: bool) -> Vec<Tag> {
     if chars.is_empty() {
         return tags(&[("NN", 1.0)]);
     }
+    // A mention (|@oli-obk|, joined by Erg::tokens) names a person or team.
+    if form.len() > 1 && form.starts_with('@') && !form.contains('.') {
+        return tags(&[("NNP", 1.0)]);
+    }
     if chars.iter().all(|c| !c.is_alphanumeric()) {
         let t = match form {
             "." | "?" | "!" => ".",

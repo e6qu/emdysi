@@ -89,3 +89,6 @@ other	We chose a wait-and-see approach.	A hyphenated compound of the lexicon pre
 other	The committee, however, decided to wait.	A subject before an adjunct between commas (grammar/emdysi/subjects.tdl).
 other	Investors put £2bn and £1.4bn into the funds.	An amount with a magnitude suffix (grammar/emdysi/tokenizer.rpp).
 other	One came from her books, and the other from her toilette.	Gapping (grammar/emdysi/gapping.tdl).
+other	His affection for her drew him from home oftener than anything else could do.	"oftener" with a "than" complement (grammar/emdysi/lexicon.tdl).
+other	An ill-behaved Pod can be removed via opt-out.	Hyphenated words the ERG lacks (grammar/emdysi/lexicon.tdl).
+other	Thanks to @oli-obk, autoscalers provision the Nodes.	A mention as one token (Erg::tokens) and transitive "provision" (grammar/emdysi/lexicon.tdl).
