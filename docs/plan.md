@@ -33,7 +33,7 @@ with the ERG port (decision D4) as the parsing core.
 | M17 | Precise error claims (decision D13): edited-text corpus in five genres with a false-flag evaluation; proved parse failure, shared and verified named errors, typo evidence, larger accepted vocabulary, code-like tokens masked; `core.grammar` moved to the opt-in `coverage` pack | first development set: flags 374 -> 2.0 per 1,000 sentences of edited text; second development set: 6.4 per 1,000; held-out test set (8,371 sentences, never inspected): 7.9 per 1,000, spelling the largest part. Recall on 377 real errors from documentation histories: 162. Next: more recall without false flags (agreement with irregular verbs, *was*/*were*, is now caught), spelling evidence beyond one edit, more genres |
 | M18 | Grammar extensions and ambiguity (decision D14): emdysi's own TDL files for constructions and words the ERG lacks (comparative correlatives, sentence-initial conjunctions, contractions as formal, formal counterparts of informal rules for fronted adjuncts, comma-separated adjectives and US dates, lexical entries); stress sentences; readings grouped by meaning with calibrated probabilities | done: every stress sentence gets a full analysis and no error claim; the famous ambiguous ones are reported as ambiguous |
 | M19 | Coverage of edited text: sentences without a full analysis found with `culprits`, fixed in the grammar or the search | 300-sentence samples (checker segmentation): 9 of 300 without a strict reading on the first development set, 18 on the second; a fresh 948-sentence sample: 54 -> 45 with mentions and *provision*, then the lexical gaps of 2026-10-13 (*compile time*, *redirect*, ...; see evaluation.md). Grammar added: gapping, subjects before paired commas, amounts like *£2bn*, mentions as one token. Next: the recurring gaps left (locative inversion, verbless *Many thanks to X*, extraposed *than* clauses, bare names before nouns such as *Longbourn estate*), found by scanning the corpora for words used in a part of speech the lexicon lacks (`noungaps.py`-style scans, see evaluation.md) |
-| M20 | **Must have.** A small local classifier in the manner of Jev (decision D12): a 2 GB model (Gemma 4 E2B, 4-bit GGUF, or similar) used with the deterministic layers so that together they are more accurate than a much larger model alone. The grammar proposes and verifies, the model chooses in context: grammar corrections of sentences without a full analysis (`core.grammar-fix`: *The quick brown fox jump over the crazy wall.*), spelling fixes among several one-edit candidates (*chck*), close calls between readings (`--decide-readings`), the AI-prose judgements of the `decisions` pack. Used whenever a model is given (`--model`, `--server`, `--lm`) or configured once (`EMDYSI_LM`) | machinery done and tested with stand-in models (`crates/emdysi-check/tests/assist.rs`): corrections by inflection, by function-word substitution, deletion and insertion, verified by the strict grammar and chosen by the model; sentences the grammar accepts are screened by the model first; spelling choices among one-edit candidates; `EMDYSI_LM`. Upper bound without the model (`real_errors` with `ORACLE=1`, a perfect model): 163 -> 165 of 377 real errors without screening (most real errors leave the sentence grammatical, e.g. *for* for *to*); with screening, 46 of 95 on a quarter (48%; grammar errors 7 of 47), so the bound is set by the corrections the grammar can verify, not by the model (see evaluation.md). Next, before the model: find, for each grammar error a perfect model misses, whether the correction was not a candidate or the corrected sentence is outside the grammar's coverage, and raise the bound accordingly. Next: download Gemma 4 E2B (the development environment's network policy blocks Hugging Face) and run `scripts/model-eval/run.sh`; speed up candidate verification (each doubted sentence parses up to 80 candidates) |
+| M20 | **Must have.** A small local classifier in the manner of Jev (decision D12): a 2 GB model (Gemma 4 E2B, 4-bit GGUF, or similar) used with the deterministic layers so that together they are more accurate than a much larger model alone. The grammar proposes and verifies, the model chooses in context: grammar corrections of sentences without a full analysis (`core.grammar-fix`: *The quick brown fox jump over the crazy wall.*), spelling fixes among several one-edit candidates (*chck*), close calls between readings (`--decide-readings`), the AI-prose judgements of the `decisions` pack. Used whenever a model is given (`--model`, `--server`, `--lm`) or configured once (`EMDYSI_LM`) | machinery done and tested with stand-in models (`crates/emdysi-check/tests/assist.rs`): candidate corrections (doubled words, other forms of a word, function-word substitution, deletion and insertion, ordered by where the analysis breaks down), verified by the strict grammar and chosen by the model in rounds; sentences the grammar accepts are screened by the model first; spelling choices among one-edit candidates; `EMDYSI_LM`. Upper bound with a perfect model (`real_errors` with `ORACLE=1`): 163 of 377 real errors without a model; on a quarter, 46 -> 57 of 95 after the candidate work of 2026-10-14 (grammar errors 7 -> 18 of 47), in a third of the time. `fix_bound` shows where each grammar error's correction is lost: 52 of 199 now reachable (24 before). Next here: real-word spelling candidates (*Manger*/*Manager*, about 15 of the 51 corrections not yet among the candidates) and the 31 corrected sentences the grammar rejects (M19). Next on a machine that can download it: Gemma 4 E2B with `scripts/model-eval/run.sh` |
 | M21 | AI tropes and vacuous text: the tropes of machine-written prose (setups, engagement questions, mechanical openers, inflated words, both-sides framing, the not-about frame across sentences, rhetorical questions, one-line paragraphs) and their density per document (`ai-tells.dense`); filler, platitudes, and, from the semantics, sentences of abstractions, maxims and restatements (`substance`); new rule kinds `sentence-pair` and `tell-density` and the `one-line-paragraphs` check | done; word lists chosen by rates in machine-written against edited text; calibration on the first development set and the machine-written samples in evaluation.md. Next: more machine-written text from current models (the vendored samples are from 2023 models and lack the newer tropes), and the `decisions` pack with the M20 model for the judgements no pattern can make (explaining the obvious, fake specificity) |
 
 Validation: the gold derivations in `corpora/erg-gold/` (ERG `mrs` and `csli`
@@ -69,13 +69,17 @@ Where the work stands, and how to resume it on another machine.
    - tune `threshold` of `core.grammar-fix` and `model_threshold` of
      `core.spelling` (0.8 now) on these numbers.
 
-   A model that doubts many sentences makes checking slow: each doubted
-   sentence parses up to 80 candidate corrections (`MAX_CANDIDATES` in
-   `crates/emdysi-check/src/assist.rs`). Measure the time with the model,
-   and if needed order the candidates by the model before parsing them
-   (ask it among unverified versions first, then verify only its top
-   choices), or parse them in parallel. `SHARD=i/n` splits a
-   `real_errors` run into parts.
+   A model that doubts many sentences makes checking slower: each doubted
+   sentence parses up to 120 candidate corrections (`MAX_CANDIDATES` in
+   `crates/emdysi-check/src/assist.rs`), fewer once 27 of them parse.
+   Measure the time with the model; if it is too slow, order the
+   candidates by the model before parsing them (ask it among unverified
+   versions first, then verify only its top choices), or parse them in
+   parallel (the parse time limit is wall-clock, so not inside runs that
+   already use every core). `SHARD=i/n` splits a `real_errors` run into
+   parts; `fix_bound` (no model) shows which stage loses each grammar
+   error's correction, and should be run after any change to the
+   candidates.
 
    `scripts/model-eval/run.sh SPEC` runs all of this in order:
    calibration on half of the real-error questions
@@ -96,5 +100,10 @@ Where the work stands, and how to resume it on another machine.
    17-word sentences with a strict reading, e.g. *It's better to take the
    time to rewrite to avoid needing to define a bunch of terms.*);
    *Consistency builds trust.* is ranked as a compound noun (*consistency
-   builds*) with *trust* as the verb.
+   builds*) with *trust* as the verb; the checker reports it as ambiguous
+   (57% against 39%), which is the close call `--decide-readings` puts to
+   the model, so it is measured with the model. For M20 without a model:
+   real-word spelling candidates for grammar fixes, and the corrected
+   sentences the grammar rejects (`fix_bound`'s "corrected sentence not
+   strict").
 

@@ -134,11 +134,14 @@ ends with how to pick the work up. Next, in order:
    of about 2 GB (Gemma 4 E2B, 4-bit GGUF, or similar) chooses in context
    among the spelling and grammar corrections the grammar has verified, so
    that the two together are more accurate than a much larger model alone.
-   The machinery is done and tested with a stand-in model; what remains is
-   to download the model, calibrate it and measure it with
-   `scripts/model-eval/run.sh` (recall on real errors, false flags on
-   edited text, against the grammar alone, a perfect model and a larger
-   model).
+   The machinery is done and tested with a stand-in model. With a perfect
+   model in place of the real one, the share of real errors caught rises
+   from 48% to 60% (on a quarter of the corpus); most of what remains out of reach needs
+   real-word spelling candidates or wider grammar coverage, which can be
+   done without the model. Then: download the model, calibrate it and
+   measure it with `scripts/model-eval/run.sh` (recall on real errors,
+   false flags on edited text, against the grammar alone, a perfect model
+   and a larger model).
 2. **Coverage of edited text (M19):** the recurring gaps left in the
    samples.
 3. **AI tropes on current models' prose (M21):** more machine-written text

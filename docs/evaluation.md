@@ -1201,14 +1201,44 @@ question with the writer's own correction (2026-10-13).
 | Perfect model, corrections by inflection only, no screening | 164 of 377 | 93 | |
 | Perfect model, with function-word substitution, deletion and insertion, no screening | 165 of 377 (44%) | 130 | 25 min |
 | The same with screening of sentences the grammar accepts, on a quarter (`SHARD=0/4`) | 46 of 95 (48%; grammar errors 7 of 47) | 748 | 69 min |
+| Wider candidates, rounds and ordering (2026-10-14), the same quarter | 57 of 95 (60%; grammar errors 18 of 47) | 732 | 20 min |
 
 No flag on the corrected text in any setting. Without screening the model
 can only help with sentences the grammar cannot analyse, and most real
 errors leave a sentence grammatical (*for* for *to*, a missing *the*).
-With screening, the perfect model still finds few grammar errors: either
-the correction is not among the candidates (a change of more than one
-word) or the corrected sentence is itself outside the grammar's coverage,
-so the strict grammar cannot verify it. Which of the two, error by error,
-is the next measurement; a real model will do no better than this bound,
-so raising it (candidates, coverage) comes before tuning a model. The
-candidates also cost time: a doubted sentence parses up to 80 of them.
+
+Where the writer's correction of a grammar error is lost, by stage
+(`cargo run --release -p emdysi-check --example fix_bound`, no model
+needed; 199 grammar errors; four minutes):
+
+| Stage that loses the correction | Before (2026-10-13) | After |
+|---|---|---|
+| Not parsed, or under 3 or over 40 words | 14 | 14 |
+| Not among the candidate edits | 91 | 51 |
+| Past the edits parsed (80, now 120) | 25 | 25 |
+| The strict grammar rejects the corrected sentence | 17 | 31 |
+| Past the versions shown to the model (9, now 27) | 27 | 25 |
+| Reachable (with screening, for a sentence the grammar accepts) | 24 (11) | 52 (28) |
+| Spans two sentences | 1 | 1 |
+
+What changed: a word's base form was never a candidate (`inflections`
+leaves out the word it is given, and it was given the lemma), so
+*consumes* for *consume* could not be corrected; a noun's forms are now
+nouns only (not *filed* for *file*); more function-word classes
+(*which*/*that*, *or*/*and*, pronouns, possessives, modals) and
+insertions (*you*, *is*, *in*); doubled words dropped first; for a
+fragment reading, edits alternate with those nearest where its partial
+analyses meet (alone, that order helped 18 errors and hurt 28; mixed, it
+helps without the losses); the model sees up to 27 versions, nine at a
+time and then the choices together. Parsing stops once 27 versions
+parse, which makes the run three times faster. The oracle also now
+compares with the corrected sentences as the checker renders them: it
+never matched a sentence with a Markdown link, which understated the
+earlier bound.
+
+Of the 51 corrections still not among the candidates, about a third are
+typos that make another word (*Manger*/*Manager*, *Fore*/*For*,
+*though*/*thought*, *homogenous*/*homogeneous*), which need real-word
+spelling candidates; the rest change two or more words or a content word
+(*iteration*/*iterator*). The 31 rejected corrections are coverage gaps
+(M19). A real model can do no better than this bound.
