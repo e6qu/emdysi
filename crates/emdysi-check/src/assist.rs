@@ -23,7 +23,7 @@
 //!   fix when it is likely enough and the sentence with it parses as well
 //!   as with any other candidate.
 
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use emdysi_parse::Erg;
 
@@ -83,6 +83,10 @@ const PARSE_TIMEOUT: Duration = Duration::from_secs(2);
 const SHORT: usize = 15;
 const PER_WORD: Duration = Duration::from_millis(320);
 const LONGEST: Duration = Duration::from_secs(10);
+/// Total time for verifying the candidate corrections of one sentence: a
+/// candidate that does not parse can take its whole limit, and a doubted
+/// sentence has up to `MAX_CANDIDATES` of them.
+const BUDGET: Duration = Duration::from_secs(30);
 
 const GRAMMAR_QUESTION: &str =
     "Which version of the sentence is correct English, as the writer meant it?";
@@ -383,22 +387,29 @@ fn seams(s: &Sentence) -> Vec<usize> {
 /// a long sentence that took the checker seconds to parse would otherwise
 /// time out corrected.
 pub fn verify(erg: &Erg, s: &Sentence, e: &Edit) -> bool {
+    verify_within(erg, s, e, LONGEST)
+}
+
+/// [`verify`] within at most `most`.
+fn verify_within(erg: &Erg, s: &Sentence, e: &Edit, most: Duration) -> bool {
     let masked = s.text.chars().count() == s.original.chars().count();
     let text = if masked { &s.text } else { &s.original };
     let extra = s.word_count().saturating_sub(SHORT) as u32;
-    let limit = (PARSE_TIMEOUT + PER_WORD * extra).min(LONGEST);
+    let limit = (PARSE_TIMEOUT + PER_WORD * extra).min(LONGEST).min(most);
     strict_within(erg, &e.apply(text), limit)
 }
 
 /// The first `MAX_OPTIONS * MAX_ROUNDS` of the first `MAX_CANDIDATES`
 /// edits of `s` that the strict grammar accepts, with the corrected
-/// sentence. Parsing stops once enough are found: the model is not shown
-/// more.
+/// sentence. Parsing stops once enough are found (the model is not shown
+/// more) or when `BUDGET` is spent.
 fn grammar_candidates(erg: &Erg, s: &Sentence, focus: &[(usize, usize)]) -> Vec<(Edit, String)> {
+    let start = Instant::now();
     focused(edits(erg, s), focus)
         .into_iter()
         .take(MAX_CANDIDATES)
-        .filter(|e| verify(erg, s, e))
+        .take_while(|_| start.elapsed() + Duration::from_millis(200) < BUDGET)
+        .filter(|e| verify_within(erg, s, e, BUDGET.saturating_sub(start.elapsed())))
         .map(|e| {
             let fixed = e.apply(&s.original);
             (e, fixed)
