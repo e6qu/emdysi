@@ -1199,3 +1199,34 @@ altogether_adv2 := av_-_i-vp-pr_le &
             PHON.ONSET voc ] ].
 
 :end :instance.
+
+;;; Gaps found in the corrected sentences of real errors that the grammar
+;;; rejected (`fix_bound`, 2026-10-14): |in-built|, which the ERG has only
+;;; as |built-in| (here in the form of its |home-built|, aj_-_i_le);
+;;; |stored in the clear|, unencrypted (in the forms of |in the know|,
+;;; predicative and modifying a verb); |a delete|, a request to delete,
+;;; which the ERG has only as a verb (in the form of |a redirect|).
+
+:begin :instance :status lex-entry.
+
+in-built_a1 := aj_-_i_le &
+ [ ORTH < "in", "-", "built" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_in-built_a_1_rel",
+            PHON.ONSET voc ] ].
+
+in_the_clear_a1 := aj_-_i-prd_le &
+ [ ORTH < "in", "the", "clear" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_in+the+clear_a_1_rel",
+            PHON.ONSET voc ] ].
+
+in_the_clear_pp := pp_-_i-vm_le &
+ [ ORTH < "in", "the", "clear" >,
+   SYNSEM [ LKEYS.KEYREL.PRED _in+the+clear_a_1_rel,
+            PHON.ONSET voc ] ].
+
+delete_n1 := n_-_c_le &
+ [ ORTH < "delete" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_delete_n_1_rel",
+            PHON.ONSET con ] ].
+
+:end :instance.

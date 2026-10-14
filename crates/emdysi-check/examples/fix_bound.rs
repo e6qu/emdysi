@@ -21,7 +21,7 @@ use std::path::Path;
 use std::sync::Mutex;
 
 use emdysi_check::assist::{
-    MAX_CANDIDATES, MAX_OPTIONS, MAX_ROUNDS, edits, focused, strict, word_options,
+    MAX_CANDIDATES, MAX_OPTIONS, MAX_ROUNDS, edits, focused, verify, word_options,
 };
 use emdysi_check::*;
 use emdysi_parse::{Erg, default_grammar_dir};
@@ -109,13 +109,10 @@ fn stage(erg: &Erg, opts: &Options, before: &str, after: &str) -> (String, Strin
     if i >= MAX_CANDIDATES {
         return row("past the candidates tried", i.to_string());
     }
-    if !strict(erg, &sa) {
+    if !verify(erg, s, &es[i]) {
         return row("corrected sentence not strict", i.to_string());
     }
-    let shown = es[..i]
-        .iter()
-        .filter(|e| strict(erg, &e.apply(&s.original)))
-        .count();
+    let shown = es[..i].iter().filter(|e| verify(erg, s, e)).count();
     if shown >= MAX_OPTIONS * MAX_ROUNDS {
         return row("past the versions shown", format!("{i}/{shown}"));
     }
