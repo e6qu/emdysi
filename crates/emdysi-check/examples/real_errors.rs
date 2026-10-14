@@ -266,6 +266,12 @@ struct Oracle {
 impl emdysi_check::decisions::Ask for Oracle {
     fn ask(&mut self, _context: &str, question: &str, options: &[&str]) -> Option<Vec<f64>> {
         QUESTIONS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        if let Some(sentence) = question
+            .strip_prefix(emdysi_check::assist::LOCATE_QUESTION)
+            .and_then(|q| q.split("Sentence: ").nth(1))
+        {
+            return Some(locate(sentence.trim(), &self.truth, options));
+        }
         // Screening: the sentence is correct if the corrected text has it.
         if let Some(sentence) = question
             .strip_prefix(emdysi_check::assist::SCREEN_QUESTION)
@@ -284,4 +290,60 @@ impl emdysi_check::decisions::Ask for Oracle {
                 .collect(),
         )
     }
+}
+
+/// The perfect answer to `LOCATE_QUESTION`: the word where `sentence`
+/// first differs from the corrected sentence most like it (for an
+/// insertion, the word after the gap), as one-hot probabilities over the
+/// word labels.
+fn locate(sentence: &str, truth: &str, options: &[&str]) -> Vec<f64> {
+    let b: Vec<char> = sentence.chars().collect();
+    let common = |t: &str| {
+        let a: Vec<char> = t.chars().collect();
+        let p = b.iter().zip(&a).take_while(|(x, y)| x == y).count();
+        let s = b[p..]
+            .iter()
+            .rev()
+            .zip(a[p.min(a.len())..].iter().rev())
+            .take_while(|(x, y)| x == y)
+            .count();
+        (p + s, p)
+    };
+    let p = truth.lines().map(common).max().map_or(0, |(_, p)| p);
+    // Whitespace-separated words and their spans.
+    let mut spans = Vec::new();
+    let mut i = 0;
+    while i < b.len() {
+        if b[i].is_whitespace() {
+            i += 1;
+            continue;
+        }
+        let start = i;
+        while i < b.len() && !b[i].is_whitespace() {
+            i += 1;
+        }
+        spans.push((start, i));
+    }
+    let core = |&(f, t): &(usize, usize)| -> String {
+        b[f..t]
+            .iter()
+            .collect::<String>()
+            .trim_matches(|c: char| !c.is_alphanumeric())
+            .to_string()
+    };
+    let k = spans
+        .iter()
+        .position(|&(_, t)| p < t)
+        .unwrap_or(spans.len().saturating_sub(1));
+    let word = spans.get(k).map(core).unwrap_or_default();
+    let seen = spans[..k].iter().filter(|s| core(s) == word).count();
+    let label = if seen == 0 {
+        word
+    } else {
+        format!("{word} ({})", seen + 1)
+    };
+    let right = options.iter().position(|o| *o == label).unwrap_or(0);
+    (0..options.len())
+        .map(|i| if i == right { 1.0 } else { 0.0 })
+        .collect()
 }

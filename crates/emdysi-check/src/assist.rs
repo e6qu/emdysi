@@ -11,7 +11,8 @@
 //!   asked first, doubts it),
 //!   and the model is asked which version of the sentence is right (in
 //!   rounds of nine versions when there are more, then among the rounds'
-//!   choices). An
+//!   choices). The model is first asked which word is wrong, and the
+//!   edits at that word are tried first. An
 //!   error is reported only when the grammar accepts the correction and the
 //!   model prefers it to the original with probability `threshold` or
 //!   more. Neither alone is enough: the grammar cannot tell a noun-phrase
@@ -115,10 +116,12 @@ fn context(a: &Analysis, si: usize) -> String {
         .unwrap_or_default()
 }
 
-/// Edits of a function word: another of its class, deletion, or one of
-/// `INSERTED` before a word; as (from, to, replaced text, replacement),
-/// in that order of preference.
-fn function_word_edits(s: &Sentence) -> Vec<(usize, usize, String, String)> {
+/// A function-word edit: (from, to, replaced text, replacement).
+type WordEdit = (usize, usize, String, String);
+
+/// Edits of a function word: another of its class or deletion, then,
+/// separately, one of `INSERTED` before a word.
+fn function_word_edits(s: &Sentence) -> (Vec<WordEdit>, Vec<WordEdit>) {
     let chars: Vec<char> = s.original.chars().collect();
     let mut subs = Vec::new();
     let mut dels = Vec::new();
@@ -167,7 +170,10 @@ fn function_word_edits(s: &Sentence) -> Vec<(usize, usize, String, String)> {
             }
         }
     }
-    subs.into_iter().chain(dels).chain(ins).collect()
+    let n = subs.len() + dels.len();
+    let mut all: Vec<_> = subs.into_iter().chain(dels).chain(ins).collect();
+    let ins = all.split_off(n);
+    (all, ins)
 }
 
 /// A candidate correction of a sentence: the characters `from..to`
@@ -189,7 +195,8 @@ impl Edit {
 
 /// Every candidate correction of `s`, unverified, in order of preference:
 /// a doubled word dropped, one word changed to another listed form of
-/// itself, then the function-word edits; for a sentence without a strict
+/// itself, a function word changed or dropped, a real-word typo
+/// corrected, a function word inserted; for a sentence without a strict
 /// reading,
 /// alternating with the edits nearest where its analysis breaks down.
 pub fn edits(erg: &Erg, s: &Sentence) -> Vec<Edit> {
@@ -237,16 +244,18 @@ pub fn edits(erg: &Erg, s: &Sentence) -> Vec<Edit> {
             });
         }
     }
-    out.extend(
-        function_word_edits(s)
-            .into_iter()
-            .map(|(from, to, text, replacement)| Edit {
-                from,
-                to,
-                text,
-                replacement,
-            }),
-    );
+    let as_edit = |(from, to, text, replacement): WordEdit| Edit {
+        from,
+        to,
+        text,
+        replacement,
+    };
+    let (changed, inserted) = function_word_edits(s);
+    out.extend(changed.into_iter().map(as_edit));
+    let mut real = real_word_edits(s);
+    real.retain(|e| !out.contains(e));
+    out.extend(real);
+    out.extend(inserted.into_iter().map(as_edit));
     // A doubled word (|the the|) dropped first.
     let mut doubled = Vec::new();
     for w in s.tokens.windows(2) {
@@ -328,8 +337,8 @@ fn seams(s: &Sentence) -> Vec<usize> {
 /// edits of `s` that the strict grammar accepts, with the corrected
 /// sentence. Parsing stops once enough are found: the model is not shown
 /// more.
-fn grammar_candidates(erg: &Erg, s: &Sentence) -> Vec<(Edit, String)> {
-    edits(erg, s)
+fn grammar_candidates(erg: &Erg, s: &Sentence, focus: &[(usize, usize)]) -> Vec<(Edit, String)> {
+    focused(edits(erg, s), focus)
         .into_iter()
         .take(MAX_CANDIDATES)
         .map(|e| {
@@ -339,6 +348,138 @@ fn grammar_candidates(erg: &Erg, s: &Sentence) -> Vec<(Edit, String)> {
         .filter(|(_, fixed)| strict(erg, fixed))
         .take(MAX_OPTIONS * MAX_ROUNDS)
         .collect()
+}
+
+/// The edits that touch one of the `focus` spans first, the others after
+/// them, each in their order.
+pub fn focused(edits: Vec<Edit>, focus: &[(usize, usize)]) -> Vec<Edit> {
+    let (mut near, far): (Vec<Edit>, Vec<Edit>) = edits
+        .into_iter()
+        .partition(|e| focus.iter().any(|&(f, t)| e.from < t && f < e.to));
+    near.extend(far);
+    near
+}
+
+/// The question that asks the model where a doubted sentence goes wrong;
+/// the sentence follows it, and the options are its words
+/// ([`word_options`]).
+pub const LOCATE_QUESTION: &str =
+    "Which word of the sentence is wrong? (If a word is missing, the word just after the gap.)";
+
+/// The words of `s` the model can point at, as (from, to, label): tokens
+/// with a letter or digit, a repeated word labelled with its occurrence
+/// (|the|, |the (2)|).
+pub fn word_options(s: &Sentence) -> Vec<(usize, usize, String)> {
+    let chars: Vec<char> = s.original.chars().collect();
+    let mut out: Vec<(usize, usize, String)> = Vec::new();
+    for t in &s.tokens {
+        if t.to > chars.len() {
+            continue;
+        }
+        let surface: String = chars[t.from..t.to].iter().collect();
+        if !surface.chars().any(char::is_alphanumeric) {
+            continue;
+        }
+        let seen = out
+            .iter()
+            .filter(|o| o.2 == surface || o.2.starts_with(&format!("{surface} (")))
+            .count();
+        let label = if seen == 0 {
+            surface
+        } else {
+            format!("{surface} ({})", seen + 1)
+        };
+        out.push((t.from, t.to, label));
+    }
+    out
+}
+
+/// The word the model says is wrong, as its span (none if it cannot
+/// answer): the words in groups of ten, then the groups' choices.
+fn locate(ask: &mut dyn Ask, context: &str, s: &Sentence) -> Vec<(usize, usize)> {
+    let words = word_options(s);
+    let question = format!("{LOCATE_QUESTION}\n\nSentence: {}", s.original.trim());
+    let mut best = |group: &[usize]| -> Option<usize> {
+        let labels: Vec<&str> = group.iter().map(|&i| words[i].2.as_str()).collect();
+        let probs = ask.ask(context, &question, &labels)?;
+        let (i, _) = probs.iter().enumerate().max_by(|x, y| x.1.total_cmp(y.1))?;
+        Some(group[i])
+    };
+    let all: Vec<usize> = (0..words.len()).collect();
+    let chosen = if all.len() <= 10 {
+        best(&all)
+    } else {
+        let winners: Vec<usize> = all.chunks(10).filter_map(&mut best).collect();
+        if winners.len() > 1 {
+            best(&winners)
+        } else {
+            winners.first().copied()
+        }
+    };
+    chosen
+        .map(|i| vec![(words[i].0, words[i].1)])
+        .unwrap_or_default()
+}
+
+/// Shortest word whose real-word neighbours are tried (shorter words have
+/// many, and the function words among them have their own edits).
+const REAL_WORD_MIN: usize = 4;
+
+/// Real-word typos: each word of `REAL_WORD_MIN` letters or more replaced
+/// by the common words (the commonest tier of the word list) one edit
+/// away from it (|Manger| for |Manager|, |Fore| for |For|, |though| for
+/// |thought|): a letter dropped, added, changed, or two swapped.
+fn real_word_edits(s: &Sentence) -> Vec<Edit> {
+    let chars: Vec<char> = s.original.chars().collect();
+    let common = |w: &str| crate::dict::words().get(w).is_some_and(|&t| t <= 35);
+    let mut out = Vec::new();
+    for t in &s.tokens {
+        if t.to > chars.len() {
+            continue;
+        }
+        let surface: String = chars[t.from..t.to].iter().collect();
+        // Plain words only, not acronyms or code.
+        if surface.chars().count() < REAL_WORD_MIN
+            || !surface.chars().all(|c| c.is_ascii_alphabetic())
+            || surface.chars().skip(1).any(|c| c.is_ascii_uppercase())
+        {
+            continue;
+        }
+        let w = surface.to_lowercase();
+        let b: Vec<char> = w.chars().collect();
+        let mut near: Vec<String> = Vec::new();
+        for i in 0..=b.len() {
+            let (head, tail) = (&b[..i], &b[i..]);
+            let mut add = |v: Vec<char>| {
+                let v: String = v.into_iter().collect();
+                if v != w && !near.contains(&v) && common(&v) {
+                    near.push(v);
+                }
+            };
+            if !tail.is_empty() {
+                add([head, &tail[1..]].concat());
+            }
+            if tail.len() >= 2 {
+                add([head, &[tail[1], tail[0]], &tail[2..]].concat());
+            }
+            for c in 'a'..='z' {
+                if !tail.is_empty() && tail[0] != c {
+                    add([head, &[c], &tail[1..]].concat());
+                }
+                add([head, &[c], tail].concat());
+            }
+        }
+        near.sort();
+        for v in near {
+            out.push(Edit {
+                from: t.from,
+                to: t.to,
+                text: surface.clone(),
+                replacement: same_case(&surface, &v),
+            });
+        }
+    }
+    out
 }
 
 /// The question that screens a sentence the grammar accepts; the sentence
@@ -372,11 +513,14 @@ pub fn grammar(
                 continue;
             }
         }
-        let cands = grammar_candidates(erg, s);
+        let ctx = context(a, si);
+        // The edits at the word the model says is wrong come first: in a
+        // sentence the grammar accepts, most edits parse too.
+        let focus = locate(ask, &ctx, s);
+        let cands = grammar_candidates(erg, s, &focus);
         if cands.is_empty() {
             continue;
         }
-        let ctx = context(a, si);
         // The model's choice among the original and `group`, as (index in
         // `group`, probability), when it prefers a correction.
         let mut choose = |group: &[usize]| -> Option<(usize, f64, f64)> {

@@ -10,7 +10,9 @@
 //! (`MAX_CANDIDATES`); the strict grammar rejects the corrected sentence
 //! (coverage); it is past the versions shown to the model
 //! (`MAX_OPTIONS` in each of `MAX_ROUNDS` questions). A pair that passes them all is reachable (a sentence
-//! the grammar accepts needs screening as well). No model is needed.
+//! the grammar accepts needs screening as well). The edits are ordered as
+//! with a perfect model asked which word is wrong (`NOFOCUS` set: as
+//! without that question). No model is needed.
 //! Every pair is written to OUT.tsv (default `fix-bound.tsv`): kind,
 //! stage, the candidate's index, sentence before, sentence after.
 
@@ -18,7 +20,9 @@ use std::collections::BTreeMap;
 use std::path::Path;
 use std::sync::Mutex;
 
-use emdysi_check::assist::{MAX_CANDIDATES, MAX_OPTIONS, MAX_ROUNDS, edits, strict};
+use emdysi_check::assist::{
+    MAX_CANDIDATES, MAX_OPTIONS, MAX_ROUNDS, edits, focused, strict, word_options,
+};
 use emdysi_check::*;
 use emdysi_parse::{Erg, default_grammar_dir};
 
@@ -66,7 +70,24 @@ fn stage(erg: &Erg, opts: &Options, before: &str, after: &str) -> (String, Strin
     if s.parse.is_none() || !(3..=40).contains(&s.word_count()) {
         return row("not parsed", String::new());
     }
-    let es = edits(erg, s);
+    // The word a perfect model names as wrong (with `NOFOCUS`, none): the
+    // token where the sentences first differ, or the one after the gap.
+    let lead = s.original.chars().take_while(|c| c.is_whitespace()).count();
+    let p = lead
+        + sb.chars()
+            .zip(sa.chars())
+            .take_while(|(x, y)| x == y)
+            .count();
+    let focus: Vec<(usize, usize)> = if std::env::var_os("NOFOCUS").is_some() {
+        Vec::new()
+    } else {
+        word_options(s)
+            .into_iter()
+            .find(|w| p < w.1)
+            .map(|w| vec![(w.0, w.1)])
+            .unwrap_or_default()
+    };
+    let es = focused(edits(erg, s), &focus);
     let Some(i) = es
         .iter()
         .position(|e| e.apply(&s.original).trim() == sa.trim())

@@ -78,8 +78,9 @@ fn grammar_fix_needs_the_grammar_and_the_model() {
     assert_eq!(d.len(), 1, "{d:?}");
     assert_eq!(&text[d[0].range.clone()], "jump");
     assert_eq!(d[0].replacement.as_deref(), Some("jumps"));
-    let options = &model.asked[0];
-    assert_eq!(options[0], text.trim());
+    // The versions of the sentence, the original first (after the question
+    // that asks which word is wrong).
+    let options = model.asked.iter().find(|o| o[0] == text.trim()).unwrap();
     assert!(options.iter().all(|o| !o.contains("foxs")), "{options:?}");
     // A model that prefers the original: no claim.
     let mut model = Prefers {
@@ -130,6 +131,41 @@ fn an_error_the_grammar_accepts_needs_the_model_to_doubt_it() {
     assert_eq!(d.len(), 1, "{d:?}");
     assert_eq!(&text[d[0].range.clone()], "on");
     assert_eq!(d[0].replacement.as_deref(), Some("in"));
+}
+
+#[test]
+fn a_real_word_typo_is_corrected_at_the_word_named() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    // |Manger| is a word, so the spelling check passes it and the grammar
+    // accepts the sentence; the model doubts it and names the word.
+    let text = "The Controller Manger runs the controllers.\n";
+    let a = analyze(&erg, text, Format::Markdown, &opts());
+    struct Names;
+    impl Ask for Names {
+        fn ask(&mut self, _c: &str, question: &str, options: &[&str]) -> Option<Vec<f64>> {
+            let want = if question.starts_with(emdysi_check::assist::SCREEN_QUESTION) {
+                "no"
+            } else if question.starts_with(emdysi_check::assist::LOCATE_QUESTION) {
+                "Manger"
+            } else {
+                "Controller Manager runs"
+            };
+            Some(
+                options
+                    .iter()
+                    .map(|o| if o.contains(want) { 0.95 } else { 0.05 })
+                    .collect(),
+            )
+        }
+    }
+    let d: Vec<Diagnostic> = core()
+        .check_with(&erg, &a, Some(&mut Names))
+        .into_iter()
+        .filter(|d| d.rule == "core.grammar-fix")
+        .collect();
+    assert_eq!(d.len(), 1, "{d:?}");
+    assert_eq!(&text[d[0].range.clone()], "Manger");
+    assert_eq!(d[0].replacement.as_deref(), Some("Manager"));
 }
 
 #[test]
