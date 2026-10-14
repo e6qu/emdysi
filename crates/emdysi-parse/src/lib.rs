@@ -183,6 +183,16 @@ const GAP_DEGREE_WORDS: &[&str] = &["more_deg_gap", "less_deg_gap"];
 /// The ACE configuration of the ERG's grammar-error variant.
 pub const MAL_CONFIG: &str = "ace/config-mal.tdl";
 
+/// How much wider the unpacking beam is ([`ParserConfig::unpack_beam`])
+/// in the searches for a sentence that has no strict reading yet. Unpacking
+/// keeps the best analyses of each edge, and in a long, ambiguous sentence
+/// those a strict root needs can rank below a hundred others: |You can
+/// work around this by using a cluster autoscaling tool that is aware of
+/// Pod topology spread constraints and is also aware of the overall set of
+/// topology domains.| had only fragments after a complete search with 100,
+/// a strict reading with 300 (2026-10-14).
+const WIDE_UNPACK: usize = 3;
+
 /// Edges kept per chart cell when pruning (see [`ParserConfig::cell_beam`]).
 pub const DEFAULT_CELL_BEAM: usize = 40;
 
@@ -929,6 +939,7 @@ impl Erg {
                     r
                 } else {
                     let wide = ParserConfig {
+                        unpack_beam: config.unpack_beam * WIDE_UNPACK,
                         timeout: left,
                         ..config.clone()
                     };
@@ -942,7 +953,8 @@ impl Erg {
             }
             _ => run(config, items.clone()),
         };
-        // A wider beam, twice and then four times as wide, before searching
+        // A wider beam, twice and then four times as wide (for the chart
+        // and for unpacking), before searching
         // without one: on a long, ambiguous sentence the search without a
         // beam runs out of its budget where a wider beam finds the strict
         // analysis (|Every day at Longbourn was now a day of anxiety; but
@@ -962,6 +974,7 @@ impl Erg {
                 }
                 let wider = ParserConfig {
                     cell_beam: Some(beam * factor),
+                    unpack_beam: config.unpack_beam * factor.min(WIDE_UNPACK),
                     timeout: left,
                     ..config.clone()
                 };
@@ -984,6 +997,7 @@ impl Erg {
         {
             let exhaustive = ParserConfig {
                 cell_beam: None,
+                unpack_beam: config.unpack_beam * WIDE_UNPACK,
                 timeout: config.timeout.saturating_sub(t0.elapsed()),
                 ..config.clone()
             };

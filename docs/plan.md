@@ -105,7 +105,9 @@ Where the work stands, and how to resume it on another machine.
    the model, so it is measured with the model. For M20 without a model:
    the corrected sentences the grammar rejects (`fix_bound`'s "corrected
    sentence not strict", 30: 15 long sentences whose clauses parse, which
-   wait on the search, M8; 8 that are not sentences; see evaluation.md,
+   wait on the search, M8 (one cause found: unpacking kept too few
+   analyses per edge; the searches for a sentence without a strict
+   reading now unpack three times as wide, see evaluation.md); 8 that are not sentences; see evaluation.md,
    "The corrections the grammar rejected"). With the model: how often it names the
    wrong word (`LOCATE_QUESTION`); the bound of 286 assumes it always
    names the right one, and `NOFOCUS=1 fix_bound` gives the bound without

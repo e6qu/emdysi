@@ -1324,3 +1324,42 @@ to 120 candidates, so a quarter of `real_errors` with the oracle took
 over an hour instead of 8 minutes. Verification now has 30 seconds per
 sentence in all; the edits at the word the model names come first, so
 they are rarely the ones left out. A quarter takes 6 to 13 minutes.
+
+### Unpacking in the searches for a full analysis
+
+Of the corrected sentences the grammar rejected, the long ones parse
+clause by clause, and with a 30-word sentence (*You can work around
+this by using a cluster autoscaling tool that is aware of Pod topology
+spread constraints and is also aware of the overall set of topology
+domains.*) a complete search, without pruning and within its budgets,
+found fragments only; removing almost any one word gave a strict reading
+(2026-10-14). The chart had the strict analysis: unpacking keeps the 100
+best instantiations of each edge (`unpack_beam`), and in a long,
+ambiguous sentence those a strict root needs can rank below a hundred
+others. With 300 the sentence gets a strict reading, in 6 seconds
+instead of 20 without one.
+
+A wider beam everywhere costs ranking: more competing readings are
+unpacked, and some outrank the gold analysis. So the first search keeps
+100, and the searches the parser makes for a sentence that has no strict
+reading yet unpack three times as wide (`WIDE_UNPACK`, first with the
+configured chart beam, then twice and four times as wide, then without
+pruning); a sentence that gets a strict reading at once is parsed as
+before. The sentence above now gets one in 9 seconds, within the
+checker's 10. Four times as wide gave the same results with more
+memory: unpacked instantiations are outside the parser's node budget,
+and a run of `false_flags` on the second development set with four
+threads ran out of memory.
+
+| Measure | Before | 300 everywhere | Three times as wide in the later searches |
+|---|---|---|---|
+| Fresh 948-sentence sample, without a strict reading | 41 | 40 | 40 |
+| First and second development sets (300 each) | 9, 18 | 9, 18 | 9, 18 |
+| control: gold found, ranked first | 1,494, 1,380 | 1,480, 1,364 | 1,494, 1,380 |
+| sh-spec: gold found, ranked first | 357, 313 | 358, 311 | 360, 313 |
+| csli, esd, mrs, ccs | | the same | the same |
+| control, time | 378 s | 485 s | 386 s |
+| 948-sentence sample, one thread, no parse cache: peak memory, time | 1.8 GB, 734 s | | 2.1 GB, 771 s |
+| Real errors caught without a model (377) | 163 | | 163 (the same) |
+| False flags, first development set | 6 | | 6 (the same) |
+| False flags, second development set | 79 | | 79 (the same) |
