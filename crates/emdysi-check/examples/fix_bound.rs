@@ -9,7 +9,7 @@
 //! the candidate edits; it is past the candidates tried
 //! (`MAX_CANDIDATES`); the strict grammar rejects the corrected sentence
 //! (coverage); it is past the versions shown to the model
-//! (`MAX_OPTIONS`). A pair that passes them all is reachable (a sentence
+//! (`MAX_OPTIONS` in each of `MAX_ROUNDS` questions). A pair that passes them all is reachable (a sentence
 //! the grammar accepts needs screening as well). No model is needed.
 //! Every pair is written to OUT.tsv (default `fix-bound.tsv`): kind,
 //! stage, the candidate's index, sentence before, sentence after.
@@ -18,7 +18,7 @@ use std::collections::BTreeMap;
 use std::path::Path;
 use std::sync::Mutex;
 
-use emdysi_check::assist::{MAX_CANDIDATES, MAX_OPTIONS, edits, strict};
+use emdysi_check::assist::{MAX_CANDIDATES, MAX_OPTIONS, MAX_ROUNDS, edits, strict};
 use emdysi_check::*;
 use emdysi_parse::{Erg, default_grammar_dir};
 
@@ -39,30 +39,29 @@ fn stage(erg: &Erg, opts: &Options, before: &str, after: &str) -> (String, Strin
     let none = |st: &str| (st.to_string(), String::new(), String::new(), String::new());
     let (b, a): (Vec<char>, Vec<char>) = (before.chars().collect(), after.chars().collect());
     let (from, bto, ato) = diff(&b, &a);
-    let analysis = analyze(erg, before, Format::Markdown, opts);
-    // The sentence holding the change, by its position in the paragraph.
-    let mut found = None;
-    for s in &analysis.sentences {
-        let text = s.original.trim();
-        let Some(byte) = before.find(text) else {
-            continue;
-        };
-        let start = before[..byte].chars().count();
-        let end = start + text.chars().count();
-        if start <= from && bto <= end {
-            found = Some((s, start, end));
-            break;
-        }
-    }
-    let Some((s, start, end)) = found else {
+    // Byte offsets of the change in each paragraph.
+    let byte = |t: &[char], c: usize| t[..c].iter().map(|x| x.len_utf8()).sum::<usize>();
+    let (bf, bt) = (byte(&b, from), byte(&b, bto));
+    let (af, at) = (byte(&a, from), byte(&a, ato));
+    // The sentence holding the change, by its source range, before and
+    // after the correction (sentence text is the rendered Markdown).
+    let holding = |an: &Analysis, f: usize, t: usize| {
+        (0..an.sentences.len()).find(|&i| {
+            let r = an.sentence_source(i);
+            r.start <= f && t <= r.end
+        })
+    };
+    let ab = analyze(erg, before, Format::Markdown, opts);
+    let aa = analyze(erg, after, Format::Markdown, opts);
+    let (Some(i), Some(j)) = (holding(&ab, bf, bt), holding(&aa, af, at)) else {
         return none("spans sentences");
     };
-    let sb: String = b[start..end].iter().collect();
-    let sa: String = b[start..from]
-        .iter()
-        .chain(&a[from..ato])
-        .chain(&b[bto..end])
-        .collect();
+    let s = &ab.sentences[i];
+    let sb = s.original.trim().to_string();
+    let sa = aa.sentences[j].original.trim().to_string();
+    if sb == sa {
+        return none("not in the rendered text");
+    }
     let row = |st: &str, i: String| (st.to_string(), i, sb.clone(), sa.clone());
     if s.parse.is_none() || !(3..=40).contains(&s.word_count()) {
         return row("not parsed", String::new());
@@ -72,6 +71,18 @@ fn stage(erg: &Erg, opts: &Options, before: &str, after: &str) -> (String, Strin
         .iter()
         .position(|e| e.apply(&s.original).trim() == sa.trim())
     else {
+        if std::env::var_os("DEBUG").is_some() {
+            let words: Vec<String> = s
+                .best()
+                .map(|r| {
+                    r.words
+                        .iter()
+                        .map(|w| format!("{}:{}:{}-{}", w.lemma, w.le_type, w.from, w.to))
+                        .collect()
+                })
+                .unwrap_or_default();
+            eprintln!("{sb}\n  text: {}\n  {}", s.text, words.join(" "));
+        }
         return row("not a candidate", String::new());
     };
     if i >= MAX_CANDIDATES {
@@ -84,7 +95,7 @@ fn stage(erg: &Erg, opts: &Options, before: &str, after: &str) -> (String, Strin
         .iter()
         .filter(|e| strict(erg, &e.apply(&s.original)))
         .count();
-    if shown >= MAX_OPTIONS {
+    if shown >= MAX_OPTIONS * MAX_ROUNDS {
         return row("past the versions shown", format!("{i}/{shown}"));
     }
     if s.strict() {

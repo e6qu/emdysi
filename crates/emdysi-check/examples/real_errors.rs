@@ -144,8 +144,19 @@ fn main() {
                     let (kind, before, after) = (&r[1], &r[4], &r[5]);
                     let (from, to) = changed_span(before, after);
                     let (afrom, ato) = changed_span(after, before);
+                    // The corrected sentences as the checker sees them (the
+                    // rendered Markdown, without link targets or code marks).
                     let mut oracle = Oracle {
-                        truth: after.to_string(),
+                        truth: if oracle_on {
+                            analyze(&erg, after, Format::Markdown, &opts)
+                                .sentences
+                                .iter()
+                                .map(|s| s.original.trim().to_string())
+                                .collect::<Vec<_>>()
+                                .join("\n")
+                        } else {
+                            String::new()
+                        },
                     };
                     let mut check = |text: &str, from: usize, to: usize| -> Vec<Diagnostic> {
                         let a = analyze(&erg, text, Format::Markdown, &opts);
@@ -244,7 +255,8 @@ fn model() -> Option<ModelAsk> {
 static QUESTIONS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 
 /// With `ORACLE` set, a perfect decision model: it chooses the version of
-/// a sentence that the writer's own correction has, or else the original.
+/// a sentence that the writer's own correction has (one of the corrected
+/// paragraph's sentences), or else the original.
 /// Recall with it is an upper bound for any model on the corrections the
 /// grammar verified.
 struct Oracle {

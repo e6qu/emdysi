@@ -9,7 +9,9 @@
 //!   the strict grammar accepts are kept,
 //!   (a sentence the grammar accepts is considered only when the model,
 //!   asked first, doubts it),
-//!   and the model is asked which version of the sentence is right. An
+//!   and the model is asked which version of the sentence is right (in
+//!   rounds of nine versions when there are more, then among the rounds'
+//!   choices). An
 //!   error is reported only when the grammar accepts the correction and the
 //!   model prefers it to the original with probability `threshold` or
 //!   more. Neither alone is enough: the grammar cannot tell a noun-phrase
@@ -40,27 +42,36 @@ pub struct Correction {
 }
 
 /// Most candidate sentences parsed for one sentence.
-pub const MAX_CANDIDATES: usize = 80;
-/// Most corrected versions shown to the model with the original (the
-/// decision engine takes up to ten options).
+pub const MAX_CANDIDATES: usize = 120;
+/// Most corrected versions shown to the model with the original in one
+/// question (the decision engine takes up to ten options).
 pub const MAX_OPTIONS: usize = 9;
+/// Most questions of `MAX_OPTIONS` versions each; their choices are then
+/// put to the model together.
+pub const MAX_ROUNDS: usize = 3;
 
 /// Function words that writers drop, add or confuse with another of their
 /// class (from the real-error corpus: |are| for |is|, a missing |the|,
-/// |for| for |to|, a doubled |and|).
+/// |for| for |to|, a doubled |and|, |which| for |that|, |or| for |and|).
+/// A word may be in several classes.
 const CLASSES: &[&[&str]] = &[
     &["a", "an", "the"],
     &["is", "are", "was", "were", "be"],
     &["do", "does", "did"],
     &["has", "have", "had"],
+    &["can", "could", "should", "will", "would", "may", "must"],
     &[
-        "in", "on", "at", "for", "to", "of", "from", "by", "with", "into", "about",
+        "in", "on", "at", "for", "to", "of", "from", "by", "with", "into", "about", "as",
     ],
-    &["it", "its", "it's"],
-    &["this", "these", "that", "those"],
+    &["it", "its", "it's", "they", "them", "their"],
+    &["their", "its", "your", "our", "his", "her"],
+    &["you", "we", "they"],
+    &["this", "these", "that", "those", "the"],
+    &["which", "that", "who"],
+    &["and", "or"],
 ];
 /// Words tried as insertions before each word.
-const INSERTED: &[&str] = &["the", "a", "of", "to", "it"];
+const INSERTED: &[&str] = &["the", "a", "of", "to", "it", "you", "is", "in"];
 const PARSE_TIMEOUT: Duration = Duration::from_secs(2);
 
 const GRAMMAR_QUESTION: &str =
@@ -118,9 +129,17 @@ fn function_word_edits(s: &Sentence) -> Vec<(usize, usize, String, String)> {
         }
         let surface: String = chars[t.from..t.to].iter().collect();
         let lower = surface.to_lowercase().replace('’', "'");
-        if let Some(class) = CLASSES.iter().find(|c| c.contains(&lower.as_str())) {
-            for other in class.iter().filter(|o| **o != lower) {
-                subs.push((t.from, t.to, surface.clone(), same_case(&surface, other)));
+        let classes: Vec<_> = CLASSES
+            .iter()
+            .filter(|c| c.contains(&lower.as_str()))
+            .collect();
+        if !classes.is_empty() {
+            let mut seen = Vec::new();
+            for other in classes.iter().flat_map(|c| c.iter()) {
+                if *other != lower && !seen.contains(other) {
+                    seen.push(*other);
+                    subs.push((t.from, t.to, surface.clone(), same_case(&surface, other)));
+                }
             }
             // The word and the space after it (or before it, at the end).
             if chars.get(t.to) == Some(&' ') {
@@ -169,8 +188,10 @@ impl Edit {
 }
 
 /// Every candidate correction of `s`, unverified, in order of preference:
-/// one word changed to another listed form of itself, then the
-/// function-word edits.
+/// a doubled word dropped, one word changed to another listed form of
+/// itself, then the function-word edits; for a sentence without a strict
+/// reading,
+/// alternating with the edits nearest where its analysis breaks down.
 pub fn edits(erg: &Erg, s: &Sentence) -> Vec<Edit> {
     let Some(best) = s.best() else {
         return Vec::new();
@@ -188,7 +209,15 @@ pub fn edits(erg: &Erg, s: &Sentence) -> Vec<Edit> {
         if !surface.chars().all(char::is_alphabetic) {
             continue;
         }
-        let mut forms = erg.inflections(&w.lemma);
+        // The other forms of the word and of its lemma (`inflections`
+        // leaves out the word it is given), a noun's only as nouns.
+        let lower = surface.to_lowercase();
+        let mut forms = erg.inflections(&lower);
+        forms.push(w.lemma.to_lowercase());
+        forms.extend(erg.inflections(&w.lemma));
+        if w.le_type.starts_with("n_") {
+            forms.retain(|f| (!f.ends_with("ed") && !f.ends_with("ing")) || lower.ends_with("ing"));
+        }
         forms.sort();
         forms.dedup();
         for f in forms {
@@ -218,12 +247,87 @@ pub fn edits(erg: &Erg, s: &Sentence) -> Vec<Edit> {
                 replacement,
             }),
     );
+    // A doubled word (|the the|) dropped first.
+    let mut doubled = Vec::new();
+    for w in s.tokens.windows(2) {
+        let (a, b) = (&w[0], &w[1]);
+        if b.to > chars.len() || chars.get(a.to) != Some(&' ') || a.to + 1 != b.from {
+            continue;
+        }
+        let (x, y): (String, String) = (
+            chars[a.from..a.to].iter().collect(),
+            chars[b.from..b.to].iter().collect(),
+        );
+        if x.eq_ignore_ascii_case(&y) && x.chars().all(char::is_alphabetic) {
+            doubled.push(Edit {
+                from: a.to,
+                to: b.to,
+                text: format!(" {y}"),
+                replacement: String::new(),
+            });
+        }
+    }
+    out.retain(|e| {
+        !doubled
+            .iter()
+            .any(|d| d.apply(&s.original) == e.apply(&s.original))
+    });
+    let out: Vec<Edit> = doubled.into_iter().chain(out).collect();
+    // For a fragment reading, the edits in this order alternate with the
+    // same edits by nearness to its seams (the error is often where the
+    // partial analyses meet, but not always).
+    let seams = seams(s);
+    if !seams.is_empty() {
+        let distance = |e: &Edit| {
+            seams
+                .iter()
+                .map(|&p| {
+                    if e.from <= p && p <= e.to {
+                        0
+                    } else {
+                        p.abs_diff(e.from).min(p.abs_diff(e.to))
+                    }
+                })
+                .min()
+                .unwrap_or(0)
+        };
+        let mut near = out.clone();
+        near.sort_by_key(distance);
+        let mut merged: Vec<Edit> = Vec::with_capacity(out.len());
+        for (a, b) in out.into_iter().zip(near) {
+            for e in [a, b] {
+                if !merged.contains(&e) {
+                    merged.push(e);
+                }
+            }
+        }
+        return merged;
+    }
     out
 }
 
-/// The first `MAX_OPTIONS` of the first `MAX_CANDIDATES` edits of `s`
-/// that the strict grammar accepts, with the corrected sentence. Parsing
-/// stops once enough are found: the model is not shown more.
+/// Where the partial analyses of a sentence without a strict reading
+/// meet: the boundaries between the children of the top of its best
+/// reading (below any single-child nodes), as character positions.
+fn seams(s: &Sentence) -> Vec<usize> {
+    if s.strict() {
+        return Vec::new();
+    }
+    let Some(r) = s.best() else {
+        return Vec::new();
+    };
+    let mut i = 0;
+    while r.nodes[i].children.len() == 1 && !r.nodes[i].leaf {
+        i = r.nodes[i].children[0];
+    }
+    let kids = &r.nodes[i].children;
+    kids.windows(2).map(|w| r.nodes[w[1]].from).collect()
+}
+
+/// The first `MAX_OPTIONS * MAX_ROUNDS` of the first `MAX_CANDIDATES`
+/// edits of `s` that the strict grammar accepts, with the corrected
+/// sentence. Parsing stops once enough are found: the model is not shown
+/// more.
 fn grammar_candidates(erg: &Erg, s: &Sentence) -> Vec<(Edit, String)> {
     edits(erg, s)
         .into_iter()
@@ -233,7 +337,7 @@ fn grammar_candidates(erg: &Erg, s: &Sentence) -> Vec<(Edit, String)> {
             (e, fixed)
         })
         .filter(|(_, fixed)| strict(erg, fixed))
-        .take(MAX_OPTIONS)
+        .take(MAX_OPTIONS * MAX_ROUNDS)
         .collect()
 }
 
@@ -272,22 +376,41 @@ pub fn grammar(
         if cands.is_empty() {
             continue;
         }
-        let options: Vec<&str> = std::iter::once(s.original.trim())
-            .chain(cands.iter().map(|c| c.1.trim()))
-            .collect();
-        let Some(probs) = ask.ask(&context(a, si), GRAMMAR_QUESTION, &options) else {
+        let ctx = context(a, si);
+        // The model's choice among the original and `group`, as (index in
+        // `group`, probability), when it prefers a correction.
+        let mut choose = |group: &[usize]| -> Option<(usize, f64, f64)> {
+            let options: Vec<&str> = std::iter::once(s.original.trim())
+                .chain(group.iter().map(|&i| cands[i].1.trim()))
+                .collect();
+            let probs = ask.ask(&ctx, GRAMMAR_QUESTION, &options)?;
+            let (best, &p) = probs
+                .iter()
+                .enumerate()
+                .skip(1)
+                .max_by(|x, y| x.1.total_cmp(y.1))?;
+            Some((group[best - 1], p, probs[0]))
+        };
+        let all: Vec<usize> = (0..cands.len()).collect();
+        let chosen = if cands.len() <= MAX_OPTIONS {
+            choose(&all)
+        } else {
+            // Rounds, then the rounds' choices together.
+            let winners: Vec<usize> = all
+                .chunks(MAX_OPTIONS)
+                .filter_map(|g| choose(g).filter(|&(_, p, orig)| p > orig).map(|c| c.0))
+                .collect();
+            if winners.is_empty() {
+                None
+            } else {
+                choose(&winners)
+            }
+        };
+        let Some((best, p, orig)) = chosen else {
             continue;
         };
-        let Some((best, &p)) = probs
-            .iter()
-            .enumerate()
-            .skip(1)
-            .max_by(|x, y| x.1.total_cmp(y.1))
-        else {
-            continue;
-        };
-        if p >= threshold && p > probs[0] {
-            let e = &cands[best - 1].0;
+        if p >= threshold && p > orig {
+            let e = &cands[best].0;
             out.push(Correction {
                 sentence: si,
                 from: e.from,
