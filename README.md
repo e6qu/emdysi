@@ -136,7 +136,7 @@ ends with how to pick the work up. Next, in order:
    that the two together are more accurate than a much larger model alone.
    The machinery is done and tested with a stand-in model. With a perfect
    model in place of the real one, the share of real errors caught rises
-   from 48% to 60% (on a quarter of the corpus); most of what remains out of reach needs
+   from 43% to 53% (201 of 377); most of what remains out of reach needs
    real-word spelling candidates or wider grammar coverage, which can be
    done without the model. Then: download the model, calibrate it and
    measure it with `scripts/model-eval/run.sh` (recall on real errors,

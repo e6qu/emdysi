@@ -1202,6 +1202,7 @@ question with the writer's own correction (2026-10-13).
 | Perfect model, with function-word substitution, deletion and insertion, no screening | 165 of 377 (44%) | 130 | 25 min |
 | The same with screening of sentences the grammar accepts, on a quarter (`SHARD=0/4`) | 46 of 95 (48%; grammar errors 7 of 47) | 748 | 69 min |
 | Wider candidates, rounds and ordering (2026-10-14), the same quarter | 57 of 95 (60%; grammar errors 18 of 47) | 732 | 20 min |
+| The same on all pairs, in four quarters (`SHARD=0/4` to `3/4`) | 201 of 377 (53%; grammar errors 61 of 199, spelling 140 of 178) | 2,634 | |
 
 No flag on the corrected text in any setting. Without screening the model
 can only help with sentences the grammar cannot analyse, and most real
@@ -1231,7 +1232,10 @@ fragment reading, edits alternate with those nearest where its partial
 analyses meet (alone, that order helped 18 errors and hurt 28; mixed, it
 helps without the losses); the model sees up to 27 versions, nine at a
 time and then the choices together. Parsing stops once 27 versions
-parse, which makes the run three times faster. The oracle also now
+parse, which makes the run three times faster. (One run over all pairs
+outlasted the two-hour limit of the development environment's background
+jobs; the four quarters run separately, from the parses it had cached, in
+under an hour together.) The oracle also now
 compares with the corrected sentences as the checker renders them: it
 never matched a sentence with a Markdown link, which understated the
 earlier bound.
