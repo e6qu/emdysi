@@ -1203,6 +1203,7 @@ question with the writer's own correction (2026-10-13).
 | The same with screening of sentences the grammar accepts, on a quarter (`SHARD=0/4`) | 46 of 95 (48%; grammar errors 7 of 47) | 748 | 69 min |
 | Wider candidates, rounds and ordering (2026-10-14), the same quarter | 57 of 95 (60%; grammar errors 18 of 47) | 732 | 20 min |
 | The same on all pairs, in four quarters (`SHARD=0/4` to `3/4`) | 201 of 377 (53%; grammar errors 61 of 199, spelling 140 of 178) | 2,634 | |
+| With real-word typos and the model asked which word is wrong (2026-10-14), all pairs | 253 of 377 (67%; grammar errors 107 of 199, spelling 146 of 178) | 4,616 | 33 min |
 
 No flag on the corrected text in any setting. Without screening the model
 can only help with sentences the grammar cannot analyse, and most real
@@ -1212,15 +1213,15 @@ Where the writer's correction of a grammar error is lost, by stage
 (`cargo run --release -p emdysi-check --example fix_bound`, no model
 needed; 199 grammar errors; four minutes):
 
-| Stage that loses the correction | Before (2026-10-13) | After |
-|---|---|---|
-| Not parsed, or under 3 or over 40 words | 14 | 14 |
-| Not among the candidate edits | 91 | 51 |
-| Past the edits parsed (80, now 120) | 25 | 25 |
-| The strict grammar rejects the corrected sentence | 17 | 31 |
-| Past the versions shown to the model (9, now 27) | 27 | 25 |
-| Reachable (with screening, for a sentence the grammar accepts) | 24 (11) | 52 (28) |
-| Spans two sentences | 1 | 1 |
+| Stage that loses the correction | Before (2026-10-13) | Wider candidates | Real-word typos | Real-word typos, the model names the word |
+|---|---|---|---|---|
+| Not parsed, or under 3 or over 40 words | 14 | 14 | 14 | 14 |
+| Not among the candidate edits | 91 | 51 | 32 | 32 |
+| Past the edits parsed (80, now 120) | 25 | 25 | 38 | 0 |
+| The strict grammar rejects the corrected sentence | 17 | 31 | 32 | 52 |
+| Past the versions shown to the model (9, now 27) | 27 | 25 | 29 | 1 |
+| Reachable (with screening, for a sentence the grammar accepts) | 24 (11) | 52 (28) | 53 (28) | 99 (73) |
+| Spans two sentences | 1 | 1 | 1 | 1 |
 
 What changed: a word's base form was never a candidate (`inflections`
 leaves out the word it is given, and it was given the lemma), so
@@ -1240,9 +1241,19 @@ compares with the corrected sentences as the checker renders them: it
 never matched a sentence with a Markdown link, which understated the
 earlier bound.
 
-Of the 51 corrections still not among the candidates, about a third are
-typos that make another word (*Manger*/*Manager*, *Fore*/*For*,
-*though*/*thought*, *homogenous*/*homogeneous*), which need real-word
-spelling candidates; the rest change two or more words or a content word
-(*iteration*/*iterator*). The 31 rejected corrections are coverage gaps
-(M19). A real model can do no better than this bound.
+Real-word typos (*Manger*/*Manager*, *Fore*/*For*, *though*/*thought*,
+*serer*/*server*) are now candidates too: each word of four letters or
+more may become a common word one edit away (a letter dropped, added,
+changed, or two swapped). Alone they gain one error: almost all of them
+are in sentences the grammar accepts, where dozens of other edits parse
+as well, so the writer's correction falls past the edits parsed or the
+versions shown. So when the model doubts a sentence it is next asked
+which word is wrong (`LOCATE_QUESTION`, the words in groups of ten), and
+the edits at that word are tried first, the others after them in the
+earlier order. With a perfect model that answer is always right, so the
+last column is the bound when the model locates errors well; how well a
+2 GB model locates them is measured with the model. The 32 corrections
+still not among the candidates change two or more words or a content
+word (*iteration*/*iterator*); the 52 rejected corrections are coverage
+gaps (M19), most of them hidden before behind the caps. A real model can
+do no better than this bound.

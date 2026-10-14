@@ -153,8 +153,10 @@ calibrated model.
     word (*the the*), changing one word to another listed form of itself
     (*consumes*/*consume*), changing a function word to another of its
     class (*are*/*is*, *for*/*to*, *which*/*that*, *or*/*and*), dropping
-    one or inserting one (*the*, *of*, *to*, *you*, ...); the edits nearest
-    where the grammar's partial analyses meet are tried early. A sentence
+    one or inserting one (*the*, *of*, *to*, *you*, ...), or a real-word
+    typo for a common word one edit away (*Manger*/*Manager*); the model is
+    first asked which word is wrong, and the edits at that word are tried
+    first, then those nearest where the grammar's partial analyses meet. A sentence
     the grammar accepts is corrected the same way only when the model,
     asked first (*Is this sentence correct English, as written?*), doubts
     it with probability 0.5 or more (`screen` of `core.grammar-fix`), since
