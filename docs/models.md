@@ -16,7 +16,10 @@ or a server.
 
 ## Backends
 
-Every command that takes a model accepts one of:
+Every command that takes a model accepts one of the options below; without
+one, the `EMDYSI_LM` environment variable names the model the same way as
+`--lm` (`EMDYSI_LM=gguf:/models/gemma-4-e2b-it-Q4_K_M.gguf`,
+`EMDYSI_LM=http://127.0.0.1:8080`), so it is used by every command:
 
 | Option | Backend | Model format | Probabilities |
 |---|---|---|---|
@@ -141,6 +144,36 @@ calibrated model.
   groups words as the document does elsewhere (a heading "Sleep and
   Memory" supports *between [sleep and memory]*); `--no-context-readings`
   turns that off.
+
+- **Spelling and grammar fixes** (`check` and `fix`, whenever a model is
+  given or `EMDYSI_LM` names one; see
+  [`assist.rs`](../crates/emdysi-check/src/assist.rs)): the grammar proposes
+  and verifies, the model chooses in context.
+  - A sentence with no full analysis is corrected by dropping a doubled
+    word (*the the*), changing one word to another listed form of itself
+    (*consumes*/*consume*), changing a function word to another of its
+    class (*are*/*is*, *for*/*to*, *which*/*that*, *or*/*and*), dropping
+    one or inserting one (*the*, *of*, *to*, *you*, ...), or a real-word
+    typo for a common word one edit away (*Manger*/*Manager*); the model is
+    first asked which word is wrong, and the edits at that word are tried
+    first, then those nearest where the grammar's partial analyses meet. A sentence
+    the grammar accepts is corrected the same way only when the model,
+    asked first (*Is this sentence correct English, as written?*), doubts
+    it with probability 0.5 or more (`screen` of `core.grammar-fix`), since
+    many errors leave a sentence grammatical. Up to 120 edits are parsed,
+    and up to 27 that the strict grammar accepts are shown to the model
+    with the original (*Which version of the sentence is correct English,
+    as the writer meant it?*), nine at a time and then the choices
+    together, and `core.grammar-fix` reports one, with the fix, when the
+    model prefers it with probability 0.8 or more. *The quick brown fox jump over the
+    crazy wall.* is the case it is for: the grammar reads it as a noun
+    phrase (a jump), so it cannot claim an error alone; the model alone
+    could prefer a sentence the grammar rejects.
+  - When several known words are one edit from a misspelling (*chck*:
+    *check*, *chick*, *chuck*, ...), the model chooses one in the
+    sentence; it becomes the fix at probability 0.8 or more
+    (`model_threshold` of `core.spelling`), if the sentence with it parses
+    as well as with any other.
 
 - **Rewriting**: when the server cannot score text, the model chooses among
   the candidates that passed every check.

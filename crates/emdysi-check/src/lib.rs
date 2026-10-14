@@ -15,6 +15,7 @@ use emdysi_text::blocks::{Block, BlockKind, markdown_blocks, plain_blocks};
 use emdysi_text::segment::sentences;
 
 pub mod articles;
+pub mod assist;
 pub mod compounds;
 pub mod decisions;
 pub mod dict;
@@ -616,6 +617,16 @@ impl Checker {
                 }
             }
         }
+        // Rules over the other rules' findings.
+        let mut over = Vec::new();
+        for pack in &self.packs {
+            for rule in &pack.rules {
+                if self.enabled(&rule.id) {
+                    rule.run_density(a, &out, &mut over);
+                }
+            }
+        }
+        out.extend(over);
         out.sort_by(|x, y| {
             x.range
                 .start

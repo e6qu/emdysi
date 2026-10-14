@@ -11,6 +11,14 @@
 //! same place there is a false flag. Every pair is written to OUT.tsv
 //! (default `real-errors.tsv`): kind, caught, flagged after the fix,
 //! before, after, the diagnostics' rules and messages.
+//!
+//! With `EMDYSI_LM` set to a model (a spec as for `en --lm`), spelling and
+//! grammar corrections are chosen by the model among those the grammar
+//! verified (`emdysi_check::assist`); one model is opened per thread.
+//! With `ORACLE` set instead, a perfect model answers: the version of a
+//! sentence the writer's correction has (an upper bound for any model).
+//! Either way the number of questions asked is reported. `SHARD=i/n`
+//! checks only every n-th pair, starting with the i-th.
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -88,6 +96,20 @@ fn main() {
         })
         .filter(|r| r.len() >= 6)
         .collect();
+    // SHARD=i/n: only every n-th pair, starting with the i-th (to split a
+    // long run, e.g. with a model, into parts).
+    let rows: Vec<Vec<String>> = match std::env::var("SHARD").ok().and_then(|s| {
+        let (i, n) = s.split_once('/')?;
+        Some((i.parse::<usize>().ok()?, n.parse::<usize>().ok()?))
+    }) {
+        Some((i, n)) if n > 0 => rows
+            .into_iter()
+            .enumerate()
+            .filter(|(k, _)| k % n == i)
+            .map(|(_, r)| r)
+            .collect(),
+        _ => rows,
+    };
     let core =
         Pack::parse(&std::fs::read_to_string(root.join("packs/core.toml")).unwrap()).unwrap();
     let checker = Checker::new(vec![core]);
@@ -110,6 +132,8 @@ fn main() {
             .unwrap_or_else(|| std::thread::available_parallelism().map_or(2, |n| n.get()));
         for _ in 0..threads {
             s.spawn(|| {
+                let mut lm = model();
+                let oracle_on = std::env::var_os("ORACLE").is_some();
                 loop {
                     let i = {
                         let mut n = next.lock().unwrap();
@@ -120,10 +144,30 @@ fn main() {
                     let (kind, before, after) = (&r[1], &r[4], &r[5]);
                     let (from, to) = changed_span(before, after);
                     let (afrom, ato) = changed_span(after, before);
-                    let check = |text: &str, from: usize, to: usize| -> Vec<Diagnostic> {
+                    // The corrected sentences as the checker sees them (the
+                    // rendered Markdown, without link targets or code marks).
+                    let mut oracle = Oracle {
+                        truth: if oracle_on {
+                            analyze(&erg, after, Format::Markdown, &opts)
+                                .sentences
+                                .iter()
+                                .map(|s| s.original.trim().to_string())
+                                .collect::<Vec<_>>()
+                                .join("\n")
+                        } else {
+                            String::new()
+                        },
+                    };
+                    let mut check = |text: &str, from: usize, to: usize| -> Vec<Diagnostic> {
                         let a = analyze(&erg, text, Format::Markdown, &opts);
+                        let ask: Option<&mut dyn emdysi_check::decisions::Ask> = if oracle_on {
+                            Some(&mut oracle)
+                        } else {
+                            lm.as_mut()
+                                .map(|m| m as &mut dyn emdysi_check::decisions::Ask)
+                        };
                         checker
-                            .check(&erg, &a)
+                            .check_with(&erg, &a, ask)
                             .into_iter()
                             .filter(|d| d.range.start < to && from < d.range.end)
                             .collect()
@@ -180,4 +224,126 @@ fn main() {
         100.0 * all.caught as f64 / all.pairs.max(1) as f64,
         all.after
     );
+    let asked = QUESTIONS.load(std::sync::atomic::Ordering::Relaxed);
+    if asked > 0 {
+        println!("\nQuestions asked of the model: {asked}.");
+    }
+}
+
+/// The model named by `EMDYSI_LM` (a spec as for `en --lm`), if any, as the
+/// checker's decision model: spelling and grammar corrections are then
+/// chosen by it among those the grammar verified.
+struct ModelAsk(Box<dyn emdysi_lm::LanguageModel>);
+
+impl emdysi_check::decisions::Ask for ModelAsk {
+    fn ask(&mut self, context: &str, question: &str, options: &[&str]) -> Option<Vec<f64>> {
+        QUESTIONS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        emdysi_lm::decide::Decider::new(&mut *self.0)
+            .choose(context, question, options)
+            .ok()
+    }
+}
+
+fn model() -> Option<ModelAsk> {
+    let spec = std::env::var("EMDYSI_LM")
+        .ok()
+        .filter(|s| !s.trim().is_empty())?;
+    Some(ModelAsk(emdysi_lm::open(spec.trim()).expect("EMDYSI_LM")))
+}
+
+/// Questions asked of the model (or the oracle), for the report.
+static QUESTIONS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+
+/// With `ORACLE` set, a perfect decision model: it chooses the version of
+/// a sentence that the writer's own correction has (one of the corrected
+/// paragraph's sentences), or else the original.
+/// Recall with it is an upper bound for any model on the corrections the
+/// grammar verified.
+struct Oracle {
+    truth: String,
+}
+
+impl emdysi_check::decisions::Ask for Oracle {
+    fn ask(&mut self, _context: &str, question: &str, options: &[&str]) -> Option<Vec<f64>> {
+        QUESTIONS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        if let Some(sentence) = question
+            .strip_prefix(emdysi_check::assist::LOCATE_QUESTION)
+            .and_then(|q| q.split("Sentence: ").nth(1))
+        {
+            return Some(locate(sentence.trim(), &self.truth, options));
+        }
+        // Screening: the sentence is correct if the corrected text has it.
+        if let Some(sentence) = question
+            .strip_prefix(emdysi_check::assist::SCREEN_QUESTION)
+            .and_then(|q| q.split("Sentence: ").nth(1))
+        {
+            let ok = self.truth.contains(sentence.trim());
+            return Some(if ok { vec![1.0, 0.0] } else { vec![0.0, 1.0] });
+        }
+        let right = options
+            .iter()
+            .position(|o| self.truth.contains(o.trim()))
+            .unwrap_or(0);
+        Some(
+            (0..options.len())
+                .map(|i| if i == right { 1.0 } else { 0.0 })
+                .collect(),
+        )
+    }
+}
+
+/// The perfect answer to `LOCATE_QUESTION`: the word where `sentence`
+/// first differs from the corrected sentence most like it (for an
+/// insertion, the word after the gap), as one-hot probabilities over the
+/// word labels.
+fn locate(sentence: &str, truth: &str, options: &[&str]) -> Vec<f64> {
+    let b: Vec<char> = sentence.chars().collect();
+    let common = |t: &str| {
+        let a: Vec<char> = t.chars().collect();
+        let p = b.iter().zip(&a).take_while(|(x, y)| x == y).count();
+        let s = b[p..]
+            .iter()
+            .rev()
+            .zip(a[p.min(a.len())..].iter().rev())
+            .take_while(|(x, y)| x == y)
+            .count();
+        (p + s, p)
+    };
+    let p = truth.lines().map(common).max().map_or(0, |(_, p)| p);
+    // Whitespace-separated words and their spans.
+    let mut spans = Vec::new();
+    let mut i = 0;
+    while i < b.len() {
+        if b[i].is_whitespace() {
+            i += 1;
+            continue;
+        }
+        let start = i;
+        while i < b.len() && !b[i].is_whitespace() {
+            i += 1;
+        }
+        spans.push((start, i));
+    }
+    let core = |&(f, t): &(usize, usize)| -> String {
+        b[f..t]
+            .iter()
+            .collect::<String>()
+            .trim_matches(|c: char| !c.is_alphanumeric())
+            .to_string()
+    };
+    let k = spans
+        .iter()
+        .position(|&(_, t)| p < t)
+        .unwrap_or(spans.len().saturating_sub(1));
+    let word = spans.get(k).map(core).unwrap_or_default();
+    let seen = spans[..k].iter().filter(|s| core(s) == word).count();
+    let label = if seen == 0 {
+        word
+    } else {
+        format!("{word} ({})", seen + 1)
+    };
+    let right = options.iter().position(|o| *o == label).unwrap_or(0);
+    (0..options.len())
+        .map(|i| if i == right { 1.0 } else { 0.0 })
+        .collect()
 }

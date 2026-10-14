@@ -85,12 +85,20 @@ The default rule packs are:
   by the grammar, US/GB spelling consistency, *a*/*an*, repeated words.
   Every rule here claims an error, so each reports only what it can show.
 - `ai-tells`: vocabulary, stock phrases and constructions over-represented
-  in machine-written prose (contrast frames, trailing participial clauses,
-  three-part lists, em-dash density, chat-assistant residue).
+  in machine-written prose (contrast frames, also across two sentences;
+  setups such as *here's the thing*; rhetorical questions answered at once;
+  runs of one-line paragraphs; closing questions to the reader; mechanical
+  openers such as *Moreover*; both-sides framing; trailing participial
+  clauses, three-part lists, em-dash density, chat-assistant residue),
+  and, for a whole document, how densely these tells occur.
 - `plain-style`: passive voice, long sentences, intensifiers, wordy
   phrases, expletive *there*, tense shifts.
 - `substance`: hedged, vague and unsupported claims (*seems to*, *studies
-  show* without a citation, *a number of*, *clearly*).
+  show* without a citation, *a number of*, *clearly*), and sentences and
+  phrases that add nothing: filler (*needless to say*), platitudes (*Only
+  time will tell.*), sentences made only of abstractions (*The future
+  belongs to those who embrace change.*) and maxims (*Clarity beats
+  complexity.*), the last two found in the grammar's semantics.
 - `structure`: the main point first, a clean heading hierarchy, short
   paragraphs, specific and parallel headings and list items, procedures
   as numbered instructions.
@@ -116,6 +124,30 @@ The first run compiles the grammar (a few seconds) and caches it in
 `$EMDYSI_CACHE_DIR`, `$XDG_CACHE_HOME/emdysi` or `~/.cache/emdysi`, never
 in the repository; later runs load it in about a second. Parsing takes
 from tens of milliseconds to a few seconds per sentence.
+
+## Roadmap
+
+The milestones and their status are in [docs/plan.md](docs/plan.md), which
+ends with how to pick the work up. Next, in order:
+
+1. **A small local classifier with the grammar (must have, M20).** A model
+   of about 2 GB (Gemma 4 E2B, 4-bit GGUF, or similar) chooses in context
+   among the spelling and grammar corrections the grammar has verified, so
+   that the two together are more accurate than a much larger model alone.
+   The machinery is done and tested with a stand-in model. With a perfect
+   model in place of the real one, the share of real errors caught rises
+   from 43% to 67% (253 of 377); that assumes the model names the wrong word
+   in a sentence it doubts, which only the model's measurement can tell.
+   Most of what remains out of reach needs wider grammar coverage, which
+   can be done without the model. Then: download the model, calibrate it and
+   measure it with `scripts/model-eval/run.sh` (recall on real errors,
+   false flags on edited text, against the grammar alone, a perfect model
+   and a larger model).
+2. **Coverage of edited text (M19):** the recurring gaps left in the
+   samples.
+3. **AI tropes on current models' prose (M21):** more machine-written text
+   from current models to calibrate against.
+4. **Speed** on the slowest ordinary sentences.
 
 ## Documentation
 

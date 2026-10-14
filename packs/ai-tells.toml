@@ -15,6 +15,7 @@ words = [
   "synergy", "holistic", "transformative", "commendable", "noteworthy",
   "unwavering", "invaluable", "groundbreaking", "game-changer", "cutting-edge",
   "ever-evolving", "paramount", "elevate", "unleash", "empower", "resonate",
+  "unparalleled", "nuanced", "palpable", "nestled", "ever-changing",
 ]
 
 [[rule]]
@@ -29,6 +30,10 @@ words = [
   "navigate the complexities", "rich tapestry", "shed light on",
   "deep dive", "dive into", "at the end of the day", "stands as a",
   "serves as a reminder", "the ever-evolving landscape",
+  "paradigm shift", "in a world where", "in a world of", "digital landscape",
+  "unlock the full potential", "unlock new possibilities",
+  "limitless possibilities", "endless possibilities", "lasting impact",
+  "navigate the complexities of",
 ]
 
 [[rule]]
@@ -61,7 +66,7 @@ id = "ai-tells.not-x-but-y"
 kind = "regex"
 severity = "suggestion"
 message = "Contrast frame ('not X but Y'); state the point directly."
-pattern = "(?i)\\b(?:not|isn't|isn’t|wasn't|wasn’t|aren't|aren’t)\\s+(?:just|only|merely|simply)?\\s*[^.;:!?]{1,60}?(?:,|—|–|;)?\\s+(?:but|it's|it’s|it is)\\b"
+pattern = "(?i)\\b(?:not|isn't|isn’t|wasn't|wasn’t|aren't|aren’t)\\s+(?:just|only|merely|simply)?\\s*[^.;:!?]{1,60}?(?:(?:,|;)?\\s+|\\s*[—–]\\s*)(?:but|it's|it’s|it is)\\b"
 
 [[rule]]
 id = "ai-tells.participial-tail"
@@ -86,3 +91,151 @@ chars = ["—"]
 per = 100
 max = 1.0
 message = "Em dashes are dense here ({count} per {per} words; at most {max} suggested)."
+
+[[rule]]
+id = "ai-tells.setup"
+kind = "words"
+match = "surface"
+severity = "warning"
+message = "Setup phrase ('{match}') announces a point instead of making it."
+description = "Rhetorical setups and false profundity typical of machine-written prose (Wikipedia, Signs of AI writing): a build-up to a reveal, a claim that something changes everything, a borrowed aphorism."
+words = [
+  "here's the thing", "here’s the thing", "the real question is",
+  "the real question isn't", "the real question isn’t", "one thing is clear",
+  "one thing is certain", "changes everything", "changed everything",
+  "the future belongs to", "the only constant is", "let that sink in",
+  "make no mistake", "the truth is", "the reality is", "and here's why",
+  "and here’s why", "here's the kicker", "here’s the kicker",
+]
+examples = [
+  "But here's the thing: most teams get this wrong.\n",
+  "Ultimately, one thing is clear: the tools will improve.\n",
+]
+acceptable = [
+  "Here is the configuration file.\n",
+]
+
+[[rule]]
+id = "ai-tells.engagement"
+kind = "regex"
+severity = "warning"
+message = "Engagement bait ('{match}'): a question to the reader with no answer expected."
+description = "A closing question to the reader, as in social-media posts written by a model. Only a sentence that is the whole question (not dialogue in quotation marks)."
+pattern = "(?i)^\\s*(?:what do you think|thoughts|agree|what(?:'|’)s your take|what would you add|who else (?:agrees|feels this way))\\?\\s*$"
+examples = [
+  "Leadership is about trust.\n\nWhat do you think?\n",
+]
+acceptable = [
+  "“What do you think? It is excellent news,” said Lydia.\n",
+]
+
+[[rule]]
+id = "ai-tells.openers"
+kind = "regex"
+severity = "suggestion"
+message = "Mechanical transition ('{match}'); connect the sentences by their content, or drop it."
+description = "Sentence-initial connectives that machine-written text over-uses: in the samples of corpora/beemo, corpora/cheat and corpora/hh-rlhf, 'Moreover', 'Furthermore' and 'Additionally' open 6.4 sentences per 10,000 words against 0.9 in the edited corpora, and 'Ultimately', 'Overall' and 'Importantly' 6.3 against 0.17."
+pattern = "^\\W*(?:Moreover|Furthermore|Additionally|Ultimately|Overall|Importantly|Notably)(?=,)"
+examples = [
+  "The tool is fast. Moreover, it is easy to use.\n",
+]
+acceptable = [
+  "The tool is fast, and it is easy to use.\n",
+]
+
+[[rule]]
+id = "ai-tells.inflated"
+kind = "words"
+match = "lemma"
+severity = "suggestion"
+message = "'{match}' is a word machine-written prose leans on; say what is meant."
+description = "Words that inflate rather than inform, four to a hundred times more frequent in the machine-written samples (corpora/beemo, corpora/cheat, corpora/hh-rlhf) than in the edited corpora, per 10,000 words: crucial 2.7 against 0.27, embrace 1.6 against 0.20, leverage 1.8 against 0.40, enhance 5.5 against 0.30, optimal 1.9 against 0.02, truly 2.4 against 0.27, valuable 2.6 against 0.35, exciting 1.3 against 0.17, thrilled 0.9 against 0.02, revolutionary 0.7 against 0.02; stunning and breathtaking do not occur in the edited corpora. Robust (2.4 against 0.30) is left out: technical writing uses it in its literal sense."
+words = [
+  "crucial", "embrace", "leverage", "innovative", "exciting", "thrilled",
+  "revolutionary", "stunning", "breathtaking", "enhance", "optimal", "truly",
+  "valuable",
+]
+examples = [
+  "It is crucial to leverage these tools.\n",
+]
+acceptable = [
+  "It is important to use these tools.\n",
+]
+
+[[rule]]
+id = "ai-tells.false-balance"
+kind = "regex"
+severity = "suggestion"
+message = "Balanced both-sides frame ('{match}'); say which side the evidence supports."
+description = "Every argument made into 'while there are challenges, there are also opportunities'."
+pattern = "(?i)\\bwhile\\b[^.!?]{0,120}\\b(?:challenges|risks|concerns|drawbacks|opportunities|benefits|advantages)\\b[^.!?]{0,100}\\balso\\b"
+examples = [
+  "While these advances present exciting opportunities, they also raise crucial questions.\n",
+]
+acceptable = [
+  "While the build runs, the tests also run.\n",
+]
+
+[[rule]]
+id = "ai-tells.its-about"
+kind = "sentence-pair"
+severity = "suggestion"
+message = "Contrast across two sentences ('{match}' then 'It's about ...'); state the point directly."
+description = "The negative-then-positive frame split into two sentences: 'It's not about working harder. It's about working smarter.'"
+pattern = "(?i)\\b\\w+?(?:\\s+not|n't|n’t)\\s+(?:just\\s+|only\\s+|merely\\s+|simply\\s+|really\\s+)?about\\b.*"
+next = "(?i)^\\W*(?:it|this|that|they)(?:'s|’s|'re|’re|\\s+is|\\s+are)\\s+(?:about|really about|all about)\\b"
+examples = [
+  "Leadership isn't about control. It's about trust.\n",
+]
+acceptable = [
+  "The article is not about Rust. It covers Go.\n",
+]
+
+[[rule]]
+id = "ai-tells.rhetorical-question"
+kind = "sentence-pair"
+severity = "suggestion"
+message = "Rhetorical question answered at once ('{match}'); state the answer."
+description = "A question of one to three words answered by the next sentence: 'The result? A complete paradigm shift.' Not in dialogue: a question that opens with a quotation mark is a character speaking."
+pattern = "^(?:\\w+[\\s’']+){0,2}\\w+\\?\\W*$"
+next = "."
+examples = [
+  "We rebuilt the pipeline. The result? A complete paradigm shift.\n",
+]
+acceptable = [
+  "Why does the build fail? The linker cannot find the library, so add it to the path.\n\nDid it work?\n",
+]
+
+[[rule]]
+id = "ai-tells.one-line-paragraphs"
+kind = "structure"
+check = "one-line-paragraphs"
+max_words = 8
+min = 3
+share = 0.4
+severity = "suggestion"
+message = "One-line paragraph ({count} words); in a run of them, each line reads as a drumbeat. Join it to the paragraph it belongs to."
+description = "Dramatic single-sentence paragraphs of at most eight words, when there are three or more and they make up at least two fifths of a document's paragraphs: the format of a model-written social-media post ('I was wrong.'). Captions, bold lines, dialogue and links do not count; on a simulation over the 654 edited documents of corpora/edited and corpora/edited-by-sa, none qualifies."
+examples = [
+  "I spent ten years thinking leadership was about having all the answers.\n\nI was wrong.\n\nLeadership is about trust.\n\nIt starts with listening.\n",
+]
+acceptable = [
+  "The build takes ten minutes on a laptop and two on the build farm, which caches the dependencies.\n\nRun it with `make`.\n",
+]
+
+[[rule]]
+id = "ai-tells.dense"
+kind = "tell-density"
+of = ["ai-tells.", "substance.filler", "substance.platitude", "substance.vacuous", "substance.aphorism"]
+per = 100
+max = 2.0
+min = 5
+severity = "warning"
+message = "This text has {count} marks of machine-written prose in {words} words ({rate} per {per}); any one proves little, but together they make it read as generated."
+description = "The density of the other ai-tells findings and of filler, platitudes, vacuous sentences and maxims: the constructions are common in human writing too, and what marks machine-written prose is several in a short passage (Wikipedia, Signs of AI writing)."
+examples = [
+  "In today's fast-paced world, here's the thing: it's not just a tool, it's a paradigm shift. Moreover, it is crucial to leverage these groundbreaking innovations. Ultimately, one thing is clear: the future belongs to those who embrace change.\n",
+]
+acceptable = [
+  "The build takes ten minutes on a laptop and two on the build farm, which caches the dependencies. Run it with make, and check the log for warnings.\n",
+]

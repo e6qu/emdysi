@@ -231,6 +231,7 @@ amb.txt: 0 errors, 0 warnings, 1 suggestion
 ```text
 core: Spelling and grammaticality, from the English Resource Grammar's lexicon and rules. Every rule here claims an error, so each reports only what the grammar can establish: a complete search that found no analysis, an error every best analysis of the grammar-error variant names, a word one edit from a known word.
   core.spelling (warning)
+  core.grammar-fix (warning)
   core.grammar-errors (warning)
   core.consistency (warning)
   core.articles (warning)
@@ -245,6 +246,15 @@ ai-tells: Vocabulary and constructions that are over-represented in machine-writ
   ai-tells.participial-tail (suggestion)
   ai-tells.rule-of-three (suggestion)
   ai-tells.em-dash (suggestion)
+  ai-tells.setup (warning)
+  ai-tells.engagement (warning)
+  ai-tells.openers (suggestion)
+  ai-tells.inflated (suggestion)
+  ai-tells.false-balance (suggestion)
+  ai-tells.its-about (suggestion)
+  ai-tells.rhetorical-question (suggestion)
+  ai-tells.one-line-paragraphs (suggestion)
+  ai-tells.dense (warning)
 plain-style: Plain-language conventions: active voice, short sentences, concrete wording.
   plain-style.passive (suggestion)
   plain-style.sentence-length (suggestion)

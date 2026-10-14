@@ -8,10 +8,12 @@
 //! `\n`, `\r`), the 0-based text columns (comma-separated), the number of
 //! rows to use (default: all), and the packs to use (names in `packs/`
 //! or paths to `.toml` files, comma-separated; default: the six default
-//! packs). Texts are read as
+//! packs). With `FLAGS=PATH`, every finding is also written to PATH
+//! (column, rule, flagged text, message). Texts are read as
 //! Markdown. Prints a Markdown table.
 
 use std::collections::BTreeMap;
+use std::io::Write;
 use std::path::Path;
 use std::sync::Mutex;
 use std::time::Duration;
@@ -111,6 +113,9 @@ fn main() {
                 .filter_map(|&c| r.get(c).map(|t| (c, t.as_str())))
         })
         .collect();
+    // FLAGS=PATH writes every finding: column, rule, flagged text, message.
+    let flags = std::env::var_os("FLAGS")
+        .map(|p| Mutex::new(std::fs::File::create(p).expect("FLAGS file")));
     let next = Mutex::new(0usize);
     std::thread::scope(|s| {
         for _ in 0..std::thread::available_parallelism().map_or(2, |n| n.get()) {
@@ -125,8 +130,23 @@ fn main() {
                     let a = analyze(&erg, text, Format::Markdown, &opts);
                     let n: usize = a.sentences.iter().map(|s| s.word_count()).sum();
                     *words.lock().unwrap().entry(c).or_default() += n;
+                    let diags = checker.check(&erg, &a);
+                    if let Some(f) = &flags {
+                        let mut f = f.lock().unwrap();
+                        for d in &diags {
+                            let one_line = |x: &str| x.replace(['\n', '\t'], " ");
+                            writeln!(
+                                f,
+                                "{c}\t{}\t{}\t{}",
+                                d.rule,
+                                one_line(text.get(d.range.clone()).unwrap_or("")),
+                                one_line(&d.message)
+                            )
+                            .unwrap();
+                        }
+                    }
                     let mut cs = counts.lock().unwrap();
-                    for d in checker.check(&erg, &a) {
+                    for d in diags {
                         *cs.entry((c, d.rule)).or_default() += 1;
                     }
                 }

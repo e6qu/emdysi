@@ -1124,3 +1124,136 @@ and *opt-out* as nouns, and *ill-behaved*.
 | False flags, second development set | 84 | 79 (5 fewer, all mentions; none new) |
 | Real errors caught (377) | 163 | 163 |
 | Gold profiles | | unchanged, item for item |
+
+### More lexical gaps
+
+Nouns the ERG lacks or has only as verbs or mass nouns (*compile time*,
+used 39 times in the development corpora, *a redirect*, *a recap of*, *the
+decease of*, *the entail of*, *transport* as a count noun), *altogether*
+before a verb and transitive *chunk* (2026-10-13). *recap*, *decease*,
+*entail* and *chunk* were found by scanning the corpora for a word after a
+determiner (or before an object) that the lexicon has only in another part
+of speech, rather than sentence by sentence.
+
+| Measure | Before | After |
+|---|---|---|
+| First development set, sentences without a strict reading (300) | 9 | 9 |
+| Second development set (300) | 18 | 18 |
+| Fresh sample (948) | 45 | 41 |
+| False flags, first development set | 6 | 6 (the same) |
+| False flags, second development set | 79 | 79 (the same) |
+| Real errors caught (377) | 163 | 163 |
+| Gold profiles | | unchanged, item for item |
+
+## AI tropes and vacuous text
+
+The `ai-tells` and `substance` rules added on 2026-10-13 (decision M21 in
+[plan.md](plan.md)), measured with `rule_rates` (`FLAGS=PATH` writes every
+finding) on the first development set's edited documents (221 documents,
+41,568 words) and the machine-written samples of `corpora/beemo`,
+`corpora/cheat` and `corpora/hh-rlhf` (600 texts, 88,334 words); findings
+per 10,000 words:
+
+| Rule | Machine-written | Edited |
+|---|---|---|
+| `ai-tells.inflated` | 20.4 | 1.4 |
+| `ai-tells.openers` | 12.7 | 1.7 |
+| `ai-tells.rhetorical-question` | 1.8 | 0.2 |
+| `ai-tells.stock-phrases` | 1.1 | 0.2 |
+| `ai-tells.signposting` | 2.2 | 0.5 |
+| `substance.filler` | 0.7 | 0.5 |
+| `substance.platitude` | 0.1 | 0 |
+| `substance.aphorism` | 0.1 | 0.2 |
+| `ai-tells.its-about` | 0.1 | 0 |
+| `ai-tells.setup`, `ai-tells.engagement`, `ai-tells.false-balance`, `ai-tells.one-line-paragraphs`, `substance.vacuous` | 0 | 0 |
+| `ai-tells.dense` (documents) | 21 of 600 | 0 of 221 |
+
+The rules for the newer tropes (setups, engagement questions, one-line
+paragraphs, sentences of abstractions) find nothing in either set: the
+machine-written samples come from 2023 models, which do not write that
+way. They rest on the patterns documented for current models (Wikipedia,
+*Signs of AI writing*) and on the examples each rule carries; measuring
+them needs prose from current models (plan M21). The edited findings were
+read one by one: the openers and inflated words are real uses (*Moreover*,
+*crucial*), the aphorism is *Community happens everywhere!*, the
+rhetorical question *Who are they?*; a rhetorical question in dialogue
+(*“How so?”*) is no longer counted.
+
+A restatement check (a sentence four fifths of whose content predicates an
+earlier sentence already has) was measured and left out of the default
+packs: it fires more often on edited text (4.8 per 10,000 words) than on
+machine-written text (1.4), because edited documents restate on purpose:
+plain-language guides show a passage before and after its rewrite, and
+reference pages repeat a sentence in each tab. The check remains available
+as `check = "restatement"` of the `semantics` kind.
+
+## Grammar and spelling fixes with a decision model: the upper bound
+
+`core.grammar-fix` and the model's choice among spelling suggestions
+(plan M20, `emdysi_check::assist`) need a model, which could not be
+downloaded in the development environment. Their upper bound was measured
+instead with a perfect model: `real_errors` with `ORACLE=1` answers every
+question with the writer's own correction (2026-10-13).
+
+| Setting | Real errors caught | Questions | Time |
+|---|---|---|---|
+| No model | 163 of 377 (43%) | 0 | |
+| Perfect model, corrections by inflection only, no screening | 164 of 377 | 93 | |
+| Perfect model, with function-word substitution, deletion and insertion, no screening | 165 of 377 (44%) | 130 | 25 min |
+| The same with screening of sentences the grammar accepts, on a quarter (`SHARD=0/4`) | 46 of 95 (48%; grammar errors 7 of 47) | 748 | 69 min |
+| Wider candidates, rounds and ordering (2026-10-14), the same quarter | 57 of 95 (60%; grammar errors 18 of 47) | 732 | 20 min |
+| The same on all pairs, in four quarters (`SHARD=0/4` to `3/4`) | 201 of 377 (53%; grammar errors 61 of 199, spelling 140 of 178) | 2,634 | |
+| With real-word typos and the model asked which word is wrong (2026-10-14), all pairs | 253 of 377 (67%; grammar errors 107 of 199, spelling 146 of 178) | 4,616 | 33 min |
+
+No flag on the corrected text in any setting. Without screening the model
+can only help with sentences the grammar cannot analyse, and most real
+errors leave a sentence grammatical (*for* for *to*, a missing *the*).
+
+Where the writer's correction of a grammar error is lost, by stage
+(`cargo run --release -p emdysi-check --example fix_bound`, no model
+needed; 199 grammar errors; four minutes):
+
+| Stage that loses the correction | Before (2026-10-13) | Wider candidates | Real-word typos | Real-word typos, the model names the word |
+|---|---|---|---|---|
+| Not parsed, or under 3 or over 40 words | 14 | 14 | 14 | 14 |
+| Not among the candidate edits | 91 | 51 | 32 | 32 |
+| Past the edits parsed (80, now 120) | 25 | 25 | 38 | 0 |
+| The strict grammar rejects the corrected sentence | 17 | 31 | 32 | 52 |
+| Past the versions shown to the model (9, now 27) | 27 | 25 | 29 | 1 |
+| Reachable (with screening, for a sentence the grammar accepts) | 24 (11) | 52 (28) | 53 (28) | 99 (73) |
+| Spans two sentences | 1 | 1 | 1 | 1 |
+
+What changed: a word's base form was never a candidate (`inflections`
+leaves out the word it is given, and it was given the lemma), so
+*consumes* for *consume* could not be corrected; a noun's forms are now
+nouns only (not *filed* for *file*); more function-word classes
+(*which*/*that*, *or*/*and*, pronouns, possessives, modals) and
+insertions (*you*, *is*, *in*); doubled words dropped first; for a
+fragment reading, edits alternate with those nearest where its partial
+analyses meet (alone, that order helped 18 errors and hurt 28; mixed, it
+helps without the losses); the model sees up to 27 versions, nine at a
+time and then the choices together. Parsing stops once 27 versions
+parse, which makes the run three times faster. (One run over all pairs
+outlasted the two-hour limit of the development environment's background
+jobs; the four quarters run separately, from the parses it had cached, in
+under an hour together.) The oracle also now
+compares with the corrected sentences as the checker renders them: it
+never matched a sentence with a Markdown link, which understated the
+earlier bound.
+
+Real-word typos (*Manger*/*Manager*, *Fore*/*For*, *though*/*thought*,
+*serer*/*server*) are now candidates too: each word of four letters or
+more may become a common word one edit away (a letter dropped, added,
+changed, or two swapped). Alone they gain one error: almost all of them
+are in sentences the grammar accepts, where dozens of other edits parse
+as well, so the writer's correction falls past the edits parsed or the
+versions shown. So when the model doubts a sentence it is next asked
+which word is wrong (`LOCATE_QUESTION`, the words in groups of ten), and
+the edits at that word are tried first, the others after them in the
+earlier order. With a perfect model that answer is always right, so the
+last column is the bound when the model locates errors well; how well a
+2 GB model locates them is measured with the model. The 32 corrections
+still not among the candidates change two or more words or a content
+word (*iteration*/*iterator*); the 52 rejected corrections are coverage
+gaps (M19), most of them hidden before behind the caps. A real model can
+do no better than this bound.

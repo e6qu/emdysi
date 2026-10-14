@@ -145,6 +145,20 @@ pub enum Kind {
         replace: Option<String>,
         unless: Option<Regex>,
     },
+    /// The findings of other rules (ids starting with one of `of`), when a
+    /// document has at least `min` of them and more than `max` per `per`
+    /// words: one finding for the document. A single tell is weak
+    /// evidence; their density is the signal.
+    TellDensity {
+        of: Vec<String>,
+        per: f64,
+        max: f64,
+        min: usize,
+    },
+    /// A sentence matching `first` followed, in the same paragraph, by one
+    /// matching `next` (|Leadership isn't about control. It's about
+    /// trust.|).
+    SentencePair { first: Regex, next: Regex },
     /// Derivation nodes whose rule, lexical entry or lexical type matches.
     Construction {
         rules: Vec<Glob>,
@@ -177,7 +191,14 @@ pub enum Kind {
     Spelling {
         min_length: usize,
         ignore: Vec<String>,
+        /// With a decision model, the probability at which its choice
+        /// among several suggestions becomes the fix (see `assist`).
+        model_threshold: f64,
     },
+    /// Grammar corrections the strict grammar accepts and a decision model
+    /// prefers with probability `threshold` or more (see `assist`); without
+    /// a model, nothing.
+    AssistedGrammar { threshold: f64, screen: Option<f64> },
     /// Sentences without a strict (fully grammatical) analysis.
     Grammar,
     /// Specific grammatical errors, named by the grammar-error variant of
@@ -334,7 +355,7 @@ impl Rule {
                     .map(|w| {
                         w.to_lowercase()
                             .split_whitespace()
-                            .map(String::from)
+                            .flat_map(split_contraction)
                             .collect()
                     })
                     .filter(|v: &Vec<String>| !v.is_empty())
@@ -353,7 +374,12 @@ impl Rule {
                     .map(|m| {
                         m.iter()
                             .filter_map(|(k, v)| {
-                                v.as_str().map(|s| (k.to_lowercase(), s.to_string()))
+                                let k: Vec<String> = k
+                                    .to_lowercase()
+                                    .split_whitespace()
+                                    .flat_map(split_contraction)
+                                    .collect();
+                                v.as_str().map(|s| (k.join(" "), s.to_string()))
                             })
                             .collect()
                     })
@@ -370,6 +396,23 @@ impl Rule {
                     re,
                     replace: get_str(t, "replace"),
                     unless,
+                }
+            }
+            "tell-density" => Kind::TellDensity {
+                of: get_list(t, "of"),
+                per: num("per").unwrap_or(100.0),
+                max: num("max").ok_or_else(|| err("tell-density rule needs `max`"))?,
+                min: num("min").unwrap_or(5.0) as usize,
+            },
+            "sentence-pair" => {
+                let re = |key: &str| -> Result<Regex, _> {
+                    let pat = get_str(t, key)
+                        .ok_or_else(|| err(&format!("sentence-pair rule needs `{key}`")))?;
+                    Regex::new(&pat).map_err(|e| err(&format!("bad `{key}` pattern: {e}")))
+                };
+                Kind::SentencePair {
+                    first: re("pattern")?,
+                    next: re("next")?,
                 }
             }
             "construction" => {
@@ -426,6 +469,11 @@ impl Rule {
                     .iter()
                     .map(|w| w.to_lowercase())
                     .collect(),
+                model_threshold: num("model_threshold").unwrap_or(0.8),
+            },
+            "assisted-grammar" => Kind::AssistedGrammar {
+                threshold: num("threshold").unwrap_or(0.8),
+                screen: num("screen"),
             },
             "grammar" => Kind::Grammar,
             "grammar-errors" => Kind::GrammarErrors,
@@ -437,6 +485,9 @@ impl Rule {
                     "stacked-negation" => SemCheck::StackedNegation,
                     "bare-demonstrative" => SemCheck::BareDemonstrative,
                     "tense-shift" => SemCheck::TenseShift,
+                    "vacuous" => SemCheck::Vacuous,
+                    "aphorism" => SemCheck::Aphorism,
+                    "restatement" => SemCheck::Restatement,
                     other => return Err(err(&format!("unknown semantics check {other:?}"))),
                 })
             }
@@ -471,6 +522,11 @@ impl Rule {
                     "wall-of-text" => StructureCheck::WallOfText {
                         max_words: n("max_words", 450.0),
                         max_paragraphs: n("max_paragraphs", 5.0),
+                    },
+                    "one-line-paragraphs" => StructureCheck::OneLineParagraphs {
+                        max_words: n("max_words", 8.0),
+                        min: n("min", 3.0),
+                        share: num("share").unwrap_or(0.4),
                     },
                     "paragraph-length" => StructureCheck::ParagraphLength {
                         max_words: n("max_words", 150.0),
@@ -723,6 +779,77 @@ impl Rule {
         }
     }
 
+    /// The decision model's choice among the suggestions of spelling
+    /// findings that have no fix (see `assist::spelling`).
+    fn choose_spellings(
+        &self,
+        erg: &Erg,
+        a: &Analysis,
+        ask: &mut dyn crate::decisions::Ask,
+        threshold: f64,
+        found: &mut [Diagnostic],
+    ) {
+        for d in found.iter_mut() {
+            let Some(si) = d.sentence else { continue };
+            if d.replacement.is_some() || d.suggestions.len() < 2 {
+                continue;
+            }
+            let Some(t) = a.sentences[si]
+                .tokens
+                .iter()
+                .find(|t| a.source_range(si, t.from, t.to) == d.range)
+            else {
+                continue;
+            };
+            let Some((rep, p)) =
+                crate::assist::spelling(erg, a, (si, t.from, t.to), &d.suggestions, ask, threshold)
+            else {
+                continue;
+            };
+            if let Some(first) = d.suggestions.first() {
+                d.message = d.message.replace(
+                    &format!(" Did you mean '{first}'?"),
+                    &format!(" Did you mean '{rep}'?"),
+                );
+            }
+            d.message.push_str(&format!(
+                " (chosen in context by the model, {:.0}%)",
+                p * 100.0
+            ));
+            d.suggestions.retain(|x| !x.eq_ignore_ascii_case(&rep));
+            d.suggestions.insert(0, rep.clone());
+            d.replacement = Some(rep);
+        }
+    }
+
+    /// A `tell-density` rule over the findings of the other rules.
+    pub fn run_density(&self, a: &Analysis, found: &[Diagnostic], out: &mut Vec<Diagnostic>) {
+        let Kind::TellDensity { of, per, max, min } = &self.kind else {
+            return;
+        };
+        let tells = found
+            .iter()
+            .filter(|d| d.rule != self.id && of.iter().any(|p| d.rule.starts_with(p.as_str())))
+            .count();
+        let words: usize = a.sentences.iter().map(|s| s.word_count()).sum();
+        if words == 0 || tells < *min {
+            return;
+        }
+        let rate = tells as f64 * per / words as f64;
+        if rate <= *max || a.sentences.is_empty() {
+            return;
+        }
+        let n = a.sentences[0].original.trim_end().chars().count();
+        let mut d = self.diag(a, 0, 0, n, "");
+        d.message = d
+            .message
+            .replace("{count}", &tells.to_string())
+            .replace("{words}", &words.to_string())
+            .replace("{rate}", &format!("{rate:.1}"))
+            .replace("{per}", &format!("{per}"));
+        out.push(d);
+    }
+
     /// Run the rule over an analysis, with the glossary of all loaded packs.
     pub fn run(&self, erg: &Erg, a: &Analysis, g: &Glossary, out: &mut Vec<Diagnostic>) {
         self.run_with(erg, a, g, None, out);
@@ -743,8 +870,29 @@ impl Rule {
                 let hits = crate::decisions::run_decide(d, a, ask);
                 found.extend(hits.into_iter().map(|h| self.hit_diag(h)));
             }
+        } else if let Kind::AssistedGrammar { threshold, screen } = &self.kind {
+            if let Some(ask) = ask {
+                for c in crate::assist::grammar(erg, a, ask, *threshold, *screen) {
+                    let mut d = self.diag(a, c.sentence, c.from, c.to, &c.text);
+                    d.message = d
+                        .message
+                        .replace("{replacement}", &c.replacement)
+                        .replace("{percent}", &format!("{:.0}", c.probability * 100.0));
+                    d.replacement = Some(c.replacement);
+                    found.push(d);
+                }
+            }
         } else {
             self.run_all(erg, a, g, &mut found);
+            if let (
+                Kind::Spelling {
+                    model_threshold, ..
+                },
+                Some(ask),
+            ) = (&self.kind, ask)
+            {
+                self.choose_spellings(erg, a, ask, *model_threshold, &mut found);
+            }
         }
         if self.scope != Scope::All {
             let lead = crate::structure::lead_blocks(a);
@@ -854,6 +1002,22 @@ impl Rule {
                             d.replacement = Some(expanded);
                         }
                         out.push(d);
+                    }
+                }
+            }
+            // Run after the other rules: see `Rule::run_density`.
+            Kind::TellDensity { .. } => {}
+            Kind::SentencePair { first, next } => {
+                for si in 0..a.sentences.len().saturating_sub(1) {
+                    let (s, n) = (&a.sentences[si], &a.sentences[si + 1]);
+                    if n.block != s.block || !next.is_match(&n.original).unwrap_or(false) {
+                        continue;
+                    }
+                    if let Some(m) = first.find(&s.original).ok().flatten() {
+                        let from = s.original[..m.start()].chars().count();
+                        let to = s.original.chars().count();
+                        let text: String = s.original.chars().skip(from).collect();
+                        out.push(self.diag(a, si, from, to, text.trim_end()));
                     }
                 }
             }
@@ -1008,7 +1172,9 @@ impl Rule {
                     }
                 }
             }
-            Kind::Spelling { min_length, ignore } => {
+            Kind::Spelling {
+                min_length, ignore, ..
+            } => {
                 // A word the document uses more than once is one of its
                 // terms ("kubelet"), not a typo.
                 let mut uses: HashMap<String, usize> = HashMap::new();
@@ -1324,56 +1490,62 @@ impl Rule {
         out: &mut Vec<Diagnostic>,
     ) {
         for (si, s) in a.sentences.iter().enumerate() {
-            // Units: (lemma or surface, from, to), from the best reading when
-            // there is one, else from the tokens.
-            let units: Vec<(String, usize, usize)> = match (on, s.best()) {
-                (MatchOn::Lemma, Some(r)) => r
-                    .words
-                    .iter()
-                    .flat_map(|w| {
-                        // Multiword entries contribute one unit per word.
-                        let parts: Vec<String> =
-                            w.lemma.split_whitespace().map(String::from).collect();
-                        if parts.len() <= 1 {
-                            vec![(w.lemma.clone(), w.from, w.to)]
-                        } else {
-                            parts.into_iter().map(|p| (p, w.from, w.to)).collect()
-                        }
-                    })
-                    .collect(),
-                _ => s
-                    .tokens
-                    .iter()
-                    .map(|t| (t.form.to_lowercase(), t.from, t.to))
-                    .collect(),
+            // Units: (lemma or surface, from, to): lemmas from the best
+            // reading when there is one, and the tokens.
+            let surface: Vec<(String, usize, usize)> = s
+                .tokens
+                .iter()
+                .map(|t| (t.form.to_lowercase().replace('\'', "’"), t.from, t.to))
+                .collect();
+            let lemmas: Option<Vec<(String, usize, usize)>> = match (on, s.best()) {
+                (MatchOn::Lemma, Some(r)) => Some(
+                    r.words
+                        .iter()
+                        .flat_map(|w| {
+                            // Multiword entries contribute one unit per word.
+                            let parts: Vec<String> =
+                                w.lemma.split_whitespace().map(String::from).collect();
+                            if parts.len() <= 1 {
+                                vec![(w.lemma.clone(), w.from, w.to)]
+                            } else {
+                                parts.into_iter().map(|p| (p, w.from, w.to)).collect()
+                            }
+                        })
+                        .collect(),
+                ),
+                _ => None,
             };
-            // Overlapping matches of one rule: the longest wins ("a myriad
-            // of" over "myriad").
-            let mut found: Vec<(usize, usize, &Vec<String>)> = Vec::new();
+            // Matches as (from, to, units, item). A hyphenated item
+            // (|ever-evolving|) is matched on the tokens: the parse has its
+            // parts as separate words with their own lemmas.
+            let mut found: Vec<(usize, usize, usize, &Vec<String>)> = Vec::new();
             for item in items {
+                let units = match &lemmas {
+                    Some(l) if !item.iter().any(|w| w == "-") => l,
+                    _ => &surface,
+                };
                 if item.is_empty() || item.len() > units.len() {
                     continue;
                 }
                 for start in 0..=units.len() - item.len() {
                     if (0..item.len()).all(|k| units[start + k].0 == item[k]) {
-                        found.push((start, item.len(), item));
+                        let (from, to) = (units[start].1, units[start + item.len() - 1].2);
+                        found.push((from, to, item.len(), item));
                     }
                 }
             }
-            found.sort_by_key(|&(start, len, _)| (std::cmp::Reverse(len), start));
-            let mut used = vec![false; units.len()];
-            let mut kept = Vec::new();
-            for (start, len, item) in found {
-                if used[start..start + len].iter().any(|&u| u) {
+            // Overlapping matches of one rule: the longest wins ("a myriad
+            // of" over "myriad").
+            found.sort_by_key(|&(from, to, len, _)| (std::cmp::Reverse(len), from, to));
+            let mut kept: Vec<(usize, usize, &Vec<String>)> = Vec::new();
+            for (from, to, _, item) in found {
+                if kept.iter().any(|&(f, t, _)| from < t && f < to) {
                     continue;
                 }
-                used[start..start + len].iter_mut().for_each(|u| *u = true);
-                kept.push((start, len, item));
+                kept.push((from, to, item));
             }
-            kept.sort_by_key(|&(start, ..)| start);
-            for (start, len, item) in kept {
-                let from = units[start].1;
-                let to = units[start + len - 1].2;
+            kept.sort_by_key(|&(from, ..)| from);
+            for (from, to, item) in kept {
                 let text: String = s
                     .original
                     .chars()
@@ -2449,6 +2621,34 @@ pub fn explain_grammar(erg: &Erg, a: &crate::Analysis, si: usize) -> String {
         }
     }
     out.join("\n")
+}
+
+/// A word of a phrase in a rule, split as the tokenizer splits it: with a
+/// curly apostrophe, a contraction as its own token (|here’s| is |here|
+/// |’s|, |isn’t| is |is| |n’t|) and a hyphen as its own token, so that
+/// |here's the thing| and |fast-paced| match.
+fn split_contraction(w: &str) -> Vec<String> {
+    // |fast-paced| is |fast| |-| |paced|.
+    if w.len() > 1 && w.contains('-') && !w.starts_with('-') && !w.ends_with('-') {
+        let mut parts = Vec::new();
+        for (i, p) in w.split('-').enumerate() {
+            if i > 0 {
+                parts.push("-".to_string());
+            }
+            parts.extend(split_contraction(p));
+        }
+        return parts;
+    }
+    let w = w.replace('\'', "’");
+    if let Some(stem) = w.strip_suffix("n’t").filter(|s| !s.is_empty()) {
+        return vec![stem.to_string(), "n’t".to_string()];
+    }
+    for suffix in ["’s", "’re", "’ve", "’ll", "’d", "’m"] {
+        if let Some(stem) = w.strip_suffix(suffix).filter(|s| !s.is_empty()) {
+            return vec![stem.to_string(), suffix.to_string()];
+        }
+    }
+    vec![w]
 }
 
 #[cfg(test)]

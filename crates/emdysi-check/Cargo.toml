@@ -13,5 +13,9 @@ emdysi-text = { path = "../emdysi-text", version = "0.1.0" }
 fancy-regex = "0.19"
 quick-xml = { version = "0.41.0", default-features = false }
 
+[dev-dependencies]
+# The evaluation examples ask a model when EMDYSI_LM names one.
+emdysi-lm = { path = "../emdysi-lm", version = "0.1.0" }
+
 [lints]
 workspace = true

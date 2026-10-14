@@ -16,6 +16,10 @@
 //! sentence. Finished documents are also appended to OUT.tsv.journal, so
 //! that a rerun with the same OUT resumes an interrupted run; `THREADS`
 //! caps the documents checked at once.
+//!
+//! With `EMDYSI_LM` set to a model (a spec as for `en --lm`), spelling and
+//! grammar corrections are chosen by the model among those the grammar
+//! verified (`emdysi_check::assist`); one model is opened per thread.
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -159,6 +163,7 @@ fn main() {
             .unwrap_or_else(|| std::thread::available_parallelism().map_or(2, |n| n.get()));
         for _ in 0..threads {
             s.spawn(|| {
+                let mut lm = model();
                 loop {
                     let i = {
                         let mut n = next.lock().unwrap();
@@ -177,7 +182,12 @@ fn main() {
                         Format::Plain
                     };
                     let a = analyze(&erg, text, format, &opts);
-                    let diags = checker.check(&erg, &a);
+                    let diags = checker.check_with(
+                        &erg,
+                        &a,
+                        lm.as_mut()
+                            .map(|m| m as &mut dyn emdysi_check::decisions::Ask),
+                    );
                     let mut caught = 0;
                     let mut flags: Vec<String> = Vec::new();
                     let mut out = Vec::new();
@@ -300,4 +310,24 @@ fn main() {
         100.0 * total as f64 / all.sentences.max(1) as f64,
         t0.elapsed().as_secs_f64()
     );
+}
+
+/// The model named by `EMDYSI_LM` (a spec as for `en --lm`), if any, as the
+/// checker's decision model: spelling and grammar corrections are then
+/// chosen by it among those the grammar verified.
+struct ModelAsk(Box<dyn emdysi_lm::LanguageModel>);
+
+impl emdysi_check::decisions::Ask for ModelAsk {
+    fn ask(&mut self, context: &str, question: &str, options: &[&str]) -> Option<Vec<f64>> {
+        emdysi_lm::decide::Decider::new(&mut *self.0)
+            .choose(context, question, options)
+            .ok()
+    }
+}
+
+fn model() -> Option<ModelAsk> {
+    let spec = std::env::var("EMDYSI_LM")
+        .ok()
+        .filter(|s| !s.trim().is_empty())?;
+    Some(ModelAsk(emdysi_lm::open(spec.trim()).expect("EMDYSI_LM")))
 }
