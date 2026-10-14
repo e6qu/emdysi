@@ -1299,7 +1299,7 @@ search (M8) more than on the lexicon.
 | First development set, sentences without a strict reading (300) | 9 | 9 |
 | Second development set (300) | 18 | 18 |
 | Fresh 948-sentence sample | 41 | 41 |
-| Real errors caught without a model (377) | 163 | (pending) |
-| False flags, first development set | 6 | (pending) |
-| False flags, second development set | 79 | (pending) |
+| Real errors caught without a model (377) | 163 | 163 |
+| False flags, first development set | 6 | 6 (the same) |
+| False flags, second development set | 79 | 79 (the same) |
 | Gold profiles | | identical |
