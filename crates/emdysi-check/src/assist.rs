@@ -57,6 +57,7 @@ pub const MAX_ROUNDS: usize = 3;
 /// A word may be in several classes.
 const CLASSES: &[&[&str]] = &[
     &["a", "an", "the"],
+    &["the", "they", "then"],
     &["is", "are", "was", "were", "be"],
     &["do", "does", "did"],
     &["has", "have", "had"],
@@ -72,7 +73,9 @@ const CLASSES: &[&[&str]] = &[
     &["and", "or"],
 ];
 /// Words tried as insertions before each word.
-const INSERTED: &[&str] = &["the", "a", "of", "to", "it", "you", "is", "in"];
+const INSERTED: &[&str] = &[
+    "the", "a", "an", "of", "to", "it", "you", "we", "is", "be", "in", "on", "with",
+];
 /// Time limit for parsing a spelling candidate, and for a corrected
 /// sentence of up to `SHORT` words; longer ones get `PER_WORD` more per
 /// word, up to `LONGEST` (the checker's own limit).
@@ -249,6 +252,38 @@ pub fn edits(erg: &Erg, s: &Sentence) -> Vec<Edit> {
             out.push(Edit {
                 from: w.from,
                 to: w.to,
+                text: surface.clone(),
+                replacement: same_case(&surface, &f),
+            });
+        }
+    }
+    // The other forms of the plain words the best reading did not take as
+    // a noun or verb (in a fragment reading, |provides| may be read as
+    // anything): their listed inflections.
+    for t in &s.tokens {
+        if t.to > chars.len() || out.iter().any(|e: &Edit| e.from == t.from) {
+            continue;
+        }
+        let surface: String = chars[t.from..t.to].iter().collect();
+        if surface.chars().count() < REAL_WORD_MIN
+            || !surface.chars().all(|c| c.is_ascii_alphabetic())
+            || surface.chars().skip(1).any(|c| c.is_ascii_uppercase())
+        {
+            continue;
+        }
+        let mut forms = erg.inflections(&surface.to_lowercase());
+        forms.sort();
+        forms.dedup();
+        for f in forms {
+            if f.eq_ignore_ascii_case(&surface)
+                || f.contains(' ')
+                || crate::dict::tier(&f.to_lowercase()).is_none()
+            {
+                continue;
+            }
+            out.push(Edit {
+                from: t.from,
+                to: t.to,
                 text: surface.clone(),
                 replacement: same_case(&surface, &f),
             });
