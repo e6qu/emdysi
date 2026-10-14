@@ -73,7 +73,13 @@ const CLASSES: &[&[&str]] = &[
 ];
 /// Words tried as insertions before each word.
 const INSERTED: &[&str] = &["the", "a", "of", "to", "it", "you", "is", "in"];
+/// Time limit for parsing a spelling candidate, and for a corrected
+/// sentence of up to `SHORT` words; longer ones get `PER_WORD` more per
+/// word, up to `LONGEST` (the checker's own limit).
 const PARSE_TIMEOUT: Duration = Duration::from_secs(2);
+const SHORT: usize = 15;
+const PER_WORD: Duration = Duration::from_millis(320);
+const LONGEST: Duration = Duration::from_secs(10);
 
 const GRAMMAR_QUESTION: &str =
     "Which version of the sentence is correct English, as the writer meant it?";
@@ -103,7 +109,11 @@ fn same_case(like: &str, rep: &str) -> String {
 
 /// Whether the strict grammar accepts `text` (within a short time limit).
 pub fn strict(erg: &Erg, text: &str) -> bool {
-    erg.parse_limited(text.trim(), PARSE_TIMEOUT, 3)
+    strict_within(erg, text, PARSE_TIMEOUT)
+}
+
+fn strict_within(erg: &Erg, text: &str, limit: Duration) -> bool {
+    erg.parse_limited(text.trim(), limit, 3)
         .is_ok_and(|p| p.readings.iter().any(|r| emdysi_parse::is_strict(&r.root)))
 }
 
@@ -333,6 +343,18 @@ fn seams(s: &Sentence) -> Vec<usize> {
     kids.windows(2).map(|w| r.nodes[w[1]].from).collect()
 }
 
+/// Whether the strict grammar accepts `s` with the edit `e`, parsed as the
+/// checker parses it (inline code masked) and given time by its length:
+/// a long sentence that took the checker seconds to parse would otherwise
+/// time out corrected.
+pub fn verify(erg: &Erg, s: &Sentence, e: &Edit) -> bool {
+    let masked = s.text.chars().count() == s.original.chars().count();
+    let text = if masked { &s.text } else { &s.original };
+    let extra = s.word_count().saturating_sub(SHORT) as u32;
+    let limit = (PARSE_TIMEOUT + PER_WORD * extra).min(LONGEST);
+    strict_within(erg, &e.apply(text), limit)
+}
+
 /// The first `MAX_OPTIONS * MAX_ROUNDS` of the first `MAX_CANDIDATES`
 /// edits of `s` that the strict grammar accepts, with the corrected
 /// sentence. Parsing stops once enough are found: the model is not shown
@@ -341,11 +363,11 @@ fn grammar_candidates(erg: &Erg, s: &Sentence, focus: &[(usize, usize)]) -> Vec<
     focused(edits(erg, s), focus)
         .into_iter()
         .take(MAX_CANDIDATES)
+        .filter(|e| verify(erg, s, e))
         .map(|e| {
             let fixed = e.apply(&s.original);
             (e, fixed)
         })
-        .filter(|(_, fixed)| strict(erg, fixed))
         .take(MAX_OPTIONS * MAX_ROUNDS)
         .collect()
 }
