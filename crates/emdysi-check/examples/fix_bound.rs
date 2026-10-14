@@ -21,7 +21,7 @@ use std::path::Path;
 use std::sync::Mutex;
 
 use emdysi_check::assist::{
-    MAX_CANDIDATES, MAX_OPTIONS, MAX_ROUNDS, edits, focused, verify, word_options,
+    MAX_CANDIDATES, MAX_OPTIONS, MAX_ROUNDS, WORDS, edits, focused, verify, word_options,
 };
 use emdysi_check::*;
 use emdysi_parse::{Erg, default_grammar_dir};
@@ -67,7 +67,7 @@ fn stage(erg: &Erg, opts: &Options, before: &str, after: &str) -> (String, Strin
         return none("not in the rendered text");
     }
     let row = |st: &str, i: String| (st.to_string(), i, sb.clone(), sa.clone());
-    if s.parse.is_none() || !(3..=40).contains(&s.word_count()) {
+    if s.parse.is_none() || !WORDS.contains(&s.word_count()) {
         return row("not parsed", String::new());
     }
     // The word a perfect model names as wrong (with `NOFOCUS`, none): the

@@ -42,6 +42,10 @@ pub struct Correction {
     pub probability: f64,
 }
 
+/// Lengths of the sentences that get candidate corrections, in words. Up
+/// to 50, the seven real errors in sentences of 41 to 46 words gained
+/// nothing: their corrected sentences do not parse strictly in time.
+pub const WORDS: std::ops::RangeInclusive<usize> = 3..=40;
 /// Most candidate sentences parsed for one sentence.
 pub const MAX_CANDIDATES: usize = 120;
 /// Most corrected versions shown to the model with the original in one
@@ -568,7 +572,7 @@ pub fn grammar(
     let mut out = Vec::new();
     for (si, s) in a.sentences.iter().enumerate() {
         let words = s.word_count();
-        if s.parse.is_none() || !(3..=40).contains(&words) {
+        if s.parse.is_none() || !WORDS.contains(&words) {
             continue;
         }
         if s.strict() {
