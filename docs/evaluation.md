@@ -1257,3 +1257,49 @@ still not among the candidates change two or more words or a content
 word (*iteration*/*iterator*); the 52 rejected corrections are coverage
 gaps (M19), most of them hidden before behind the caps. A real model can
 do no better than this bound.
+
+### The corrections the grammar rejected
+
+Of the 52 corrected sentences that the strict grammar seemed to reject
+(the last `fix_bound` column above), 22 were rejected only by the
+verification: it parsed the corrected sentence raw within 2 seconds,
+while the checker parses the sentence itself with inline code masked
+within 10 (2026-10-14). Seven of the 22 parsed within 2 seconds when run
+alone, and 14 within 30. `assist::verify` now parses the masked text and
+gives a sentence 2 seconds up to 15 words and 0.32 seconds more for each
+word after, up to the checker's 10. Because the limits are wall-clock,
+a run on four busy cores can lose a long sentence that a quiet one
+keeps: `fix_bound` varies by a few sentences between runs.
+
+The other 30, by kind:
+
+| Kind | Sentences | Examples |
+|---|---|---|
+| Not a sentence | 8 | front matter; text cut at a code block (*... the CA certificate is retrieved via secure connection and then*); *You should see output similar to:* |
+| Still ungrammatical after the writer's fix | 3 | *We can can call*, *we recommend to add*, *User namespaces is* |
+| Lexical gaps | 3 | *in-built*, *stored in the clear*, *sends a delete* |
+| A verb as the name of a verb or command | 1 | *Similar to the escalate verb, ...* |
+| Long sentences whose clauses each parse | 15 | *The Kubernetes directory /etc/kubernetes is a constant in the application, since it is clearly the given path in a majority of cases, and the most intuitive location; ...* |
+
+The three lexical gaps are now entries in
+`grammar/emdysi/lexicon.tdl`: *in-built* as an adjective (the ERG has
+only *built-in*), *in the clear* as a predicate and as a verb modifier
+(in the forms of *in the know*), and *delete* as a count noun. A bare
+verb naming itself (*the escalate verb*, *the get command*) is rare in
+the edited corpora (once each for *send* and *hidden* with *operation*
+and *verb*) and is left. The long sentences parse clause by clause and
+the parser already widens its beam, then drops it, while time remains;
+with 30 seconds none of them gets a strict reading, so they wait on the
+search (M8) more than on the lexicon.
+
+| Measure | Before | After |
+|---|---|---|
+| Grammar errors whose correction a perfect model reaches (`fix_bound`, 199) | 99 | 121 (verification), about the same with the entries (3 gained, 4 lost to timing) |
+| Corrected sentences rejected | 52 | 29, then 30 (timing) |
+| First development set, sentences without a strict reading (300) | 9 | 9 |
+| Second development set (300) | 18 | 18 |
+| Fresh 948-sentence sample | 41 | 41 |
+| Real errors caught without a model (377) | 163 | (pending) |
+| False flags, first development set | 6 | (pending) |
+| False flags, second development set | 79 | (pending) |
+| Gold profiles | | identical |
