@@ -309,7 +309,14 @@ fn locate(sentence: &str, truth: &str, options: &[&str]) -> Vec<f64> {
             .count();
         (p + s, p)
     };
-    let p = truth.lines().map(common).max().map_or(0, |(_, p)| p);
+    let best = truth.lines().max_by_key(|t| common(t)).unwrap_or("");
+    let p = common(best).1;
+    // Letters added at the end of a word (|amount| to |amounts|) are a
+    // change of that word, not of the next one.
+    let extends = p > 0
+        && b[p - 1].is_alphanumeric()
+        && best.chars().nth(p).is_some_and(|c| c.is_alphanumeric())
+        && !b.get(p).is_some_and(|c| c.is_alphanumeric());
     // Whitespace-separated words and their spans.
     let mut spans = Vec::new();
     let mut i = 0;
@@ -333,7 +340,7 @@ fn locate(sentence: &str, truth: &str, options: &[&str]) -> Vec<f64> {
     };
     let k = spans
         .iter()
-        .position(|&(_, t)| p < t)
+        .position(|&(_, t)| p < t || (extends && p == t))
         .unwrap_or(spans.len().saturating_sub(1));
     let word = spans.get(k).map(core).unwrap_or_default();
     let seen = spans[..k].iter().filter(|s| core(s) == word).count();

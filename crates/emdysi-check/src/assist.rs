@@ -23,7 +23,7 @@
 //!   fix when it is likely enough and the sentence with it parses as well
 //!   as with any other candidate.
 
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use emdysi_parse::Erg;
 
@@ -57,6 +57,7 @@ pub const MAX_ROUNDS: usize = 3;
 /// A word may be in several classes.
 const CLASSES: &[&[&str]] = &[
     &["a", "an", "the"],
+    &["the", "they", "then"],
     &["is", "are", "was", "were", "be"],
     &["do", "does", "did"],
     &["has", "have", "had"],
@@ -72,7 +73,9 @@ const CLASSES: &[&[&str]] = &[
     &["and", "or"],
 ];
 /// Words tried as insertions before each word.
-const INSERTED: &[&str] = &["the", "a", "of", "to", "it", "you", "is", "in"];
+const INSERTED: &[&str] = &[
+    "the", "a", "an", "of", "to", "it", "you", "we", "is", "be", "in", "on", "with",
+];
 /// Time limit for parsing a spelling candidate, and for a corrected
 /// sentence of up to `SHORT` words; longer ones get `PER_WORD` more per
 /// word, up to `LONGEST` (the checker's own limit).
@@ -80,6 +83,10 @@ const PARSE_TIMEOUT: Duration = Duration::from_secs(2);
 const SHORT: usize = 15;
 const PER_WORD: Duration = Duration::from_millis(320);
 const LONGEST: Duration = Duration::from_secs(10);
+/// Total time for verifying the candidate corrections of one sentence: a
+/// candidate that does not parse can take its whole limit, and a doubted
+/// sentence has up to `MAX_CANDIDATES` of them.
+const BUDGET: Duration = Duration::from_secs(30);
 
 const GRAMMAR_QUESTION: &str =
     "Which version of the sentence is correct English, as the writer meant it?";
@@ -254,6 +261,38 @@ pub fn edits(erg: &Erg, s: &Sentence) -> Vec<Edit> {
             });
         }
     }
+    // The other forms of the plain words the best reading did not take as
+    // a noun or verb (in a fragment reading, |provides| may be read as
+    // anything): their listed inflections.
+    for t in &s.tokens {
+        if t.to > chars.len() || out.iter().any(|e: &Edit| e.from == t.from) {
+            continue;
+        }
+        let surface: String = chars[t.from..t.to].iter().collect();
+        if surface.chars().count() < REAL_WORD_MIN
+            || !surface.chars().all(|c| c.is_ascii_alphabetic())
+            || surface.chars().skip(1).any(|c| c.is_ascii_uppercase())
+        {
+            continue;
+        }
+        let mut forms = erg.inflections(&surface.to_lowercase());
+        forms.sort();
+        forms.dedup();
+        for f in forms {
+            if f.eq_ignore_ascii_case(&surface)
+                || f.contains(' ')
+                || crate::dict::tier(&f.to_lowercase()).is_none()
+            {
+                continue;
+            }
+            out.push(Edit {
+                from: t.from,
+                to: t.to,
+                text: surface.clone(),
+                replacement: same_case(&surface, &f),
+            });
+        }
+    }
     let as_edit = |(from, to, text, replacement): WordEdit| Edit {
         from,
         to,
@@ -348,22 +387,29 @@ fn seams(s: &Sentence) -> Vec<usize> {
 /// a long sentence that took the checker seconds to parse would otherwise
 /// time out corrected.
 pub fn verify(erg: &Erg, s: &Sentence, e: &Edit) -> bool {
+    verify_within(erg, s, e, LONGEST)
+}
+
+/// [`verify`] within at most `most`.
+fn verify_within(erg: &Erg, s: &Sentence, e: &Edit, most: Duration) -> bool {
     let masked = s.text.chars().count() == s.original.chars().count();
     let text = if masked { &s.text } else { &s.original };
     let extra = s.word_count().saturating_sub(SHORT) as u32;
-    let limit = (PARSE_TIMEOUT + PER_WORD * extra).min(LONGEST);
+    let limit = (PARSE_TIMEOUT + PER_WORD * extra).min(LONGEST).min(most);
     strict_within(erg, &e.apply(text), limit)
 }
 
 /// The first `MAX_OPTIONS * MAX_ROUNDS` of the first `MAX_CANDIDATES`
 /// edits of `s` that the strict grammar accepts, with the corrected
-/// sentence. Parsing stops once enough are found: the model is not shown
-/// more.
+/// sentence. Parsing stops once enough are found (the model is not shown
+/// more) or when `BUDGET` is spent.
 fn grammar_candidates(erg: &Erg, s: &Sentence, focus: &[(usize, usize)]) -> Vec<(Edit, String)> {
+    let start = Instant::now();
     focused(edits(erg, s), focus)
         .into_iter()
         .take(MAX_CANDIDATES)
-        .filter(|e| verify(erg, s, e))
+        .take_while(|_| start.elapsed() + Duration::from_millis(200) < BUDGET)
+        .filter(|e| verify_within(erg, s, e, BUDGET.saturating_sub(start.elapsed())))
         .map(|e| {
             let fixed = e.apply(&s.original);
             (e, fixed)

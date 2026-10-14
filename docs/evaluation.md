@@ -1204,6 +1204,7 @@ question with the writer's own correction (2026-10-13).
 | Wider candidates, rounds and ordering (2026-10-14), the same quarter | 57 of 95 (60%; grammar errors 18 of 47) | 732 | 20 min |
 | The same on all pairs, in four quarters (`SHARD=0/4` to `3/4`) | 201 of 377 (53%; grammar errors 61 of 199, spelling 140 of 178) | 2,634 | |
 | With real-word typos and the model asked which word is wrong (2026-10-14), all pairs | 253 of 377 (67%; grammar errors 107 of 199, spelling 146 of 178) | 4,616 | 33 min |
+| With verification as the checker parses (masked, time by length, 30 s per sentence), the three lexical entries, more function words and the forms of every plain word (2026-10-14), all pairs | 286 of 377 (76%; grammar errors 137 of 199, spelling 149 of 178) | 4,528 | 42 min |
 
 No flag on the corrected text in any setting. Without screening the model
 can only help with sentences the grammar cannot analyse, and most real
@@ -1299,7 +1300,27 @@ search (M8) more than on the lexicon.
 | First development set, sentences without a strict reading (300) | 9 | 9 |
 | Second development set (300) | 18 | 18 |
 | Fresh 948-sentence sample | 41 | 41 |
-| Real errors caught without a model (377) | 163 | (pending) |
-| False flags, first development set | 6 | (pending) |
-| False flags, second development set | 79 | (pending) |
+| Real errors caught without a model (377) | 163 | 163 |
+| False flags, first development set | 6 | 6 (the same) |
+| False flags, second development set | 79 | 79 (the same) |
 | Gold profiles | | identical |
+
+### More candidates, and a budget for verification
+
+The writer's corrections still not among the candidates (32) were mostly
+function words outside the lists (*an*, *we*, *be*, *on*, *with*
+inserted; *the* for *they* or *then*, too short for the real-word typos)
+and inflections of words the best reading did not take as a noun or
+verb (*provides* for *provide* in a fragment reading); these are now
+candidates. The simulated locator in `fix_bound` and in the oracle also
+named the wrong word when a correction adds letters to a word (*amount*
+to *amounts*: the first difference falls just after the word), which put
+five reachable corrections past the versions shown. With both,
+`fix_bound` reaches 128 of the 199 grammar errors (121 before).
+
+Time by length made verification slow: a candidate that does not parse
+can use its whole limit (up to 10 seconds), and a doubted sentence has up
+to 120 candidates, so a quarter of `real_errors` with the oracle took
+over an hour instead of 8 minutes. Verification now has 30 seconds per
+sentence in all; the edits at the word the model names come first, so
+they are rarely the ones left out. A quarter takes 6 to 13 minutes.

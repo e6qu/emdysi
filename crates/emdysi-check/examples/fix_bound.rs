@@ -81,9 +81,17 @@ fn stage(erg: &Erg, opts: &Options, before: &str, after: &str) -> (String, Strin
     let focus: Vec<(usize, usize)> = if std::env::var_os("NOFOCUS").is_some() {
         Vec::new()
     } else {
+        // Letters added at the end of a word (|amount| to |amounts|) are
+        // a change of that word, not of the next one.
+        let (bc, ac): (Vec<char>, Vec<char>) = (sb.chars().collect(), sa.chars().collect());
+        let q = p - lead;
+        let extends = q > 0
+            && bc[q - 1].is_alphanumeric()
+            && ac.get(q).is_some_and(|c| c.is_alphanumeric())
+            && !bc.get(q).is_some_and(|c| c.is_alphanumeric());
         word_options(s)
             .into_iter()
-            .find(|w| p < w.1)
+            .find(|w| p < w.1 || (extends && p == w.1))
             .map(|w| vec![(w.0, w.1)])
             .unwrap_or_default()
     };
