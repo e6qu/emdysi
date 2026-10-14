@@ -40,10 +40,10 @@ pub struct Correction {
 }
 
 /// Most candidate sentences parsed for one sentence.
-const MAX_CANDIDATES: usize = 80;
+pub const MAX_CANDIDATES: usize = 80;
 /// Most corrected versions shown to the model with the original (the
 /// decision engine takes up to ten options).
-const MAX_OPTIONS: usize = 9;
+pub const MAX_OPTIONS: usize = 9;
 
 /// Function words that writers drop, add or confuse with another of their
 /// class (from the real-error corpus: |are| for |is|, a missing |the|,
@@ -89,7 +89,8 @@ fn same_case(like: &str, rep: &str) -> String {
     }
 }
 
-fn strict(erg: &Erg, text: &str) -> bool {
+/// Whether the strict grammar accepts `text` (within a short time limit).
+pub fn strict(erg: &Erg, text: &str) -> bool {
     erg.parse_limited(text.trim(), PARSE_TIMEOUT, 3)
         .is_ok_and(|p| p.readings.iter().any(|r| emdysi_parse::is_strict(&r.root)))
 }
@@ -150,15 +151,31 @@ fn function_word_edits(s: &Sentence) -> Vec<(usize, usize, String, String)> {
     subs.into_iter().chain(dels).chain(ins).collect()
 }
 
-/// Corrections that the strict grammar accepts: one word changed to
-/// another form of itself, then the function-word edits; as (from, to,
-/// replaced text, replacement, corrected sentence).
-fn grammar_candidates(erg: &Erg, s: &Sentence) -> Vec<(usize, usize, String, String, String)> {
+/// A candidate correction of a sentence: the characters `from..to`
+/// (`text`) replaced by `replacement`.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Edit {
+    pub from: usize,
+    pub to: usize,
+    pub text: String,
+    pub replacement: String,
+}
+
+impl Edit {
+    /// The sentence with this edit applied.
+    pub fn apply(&self, sentence: &str) -> String {
+        replace(sentence, self.from, self.to, &self.replacement)
+    }
+}
+
+/// Every candidate correction of `s`, unverified, in order of preference:
+/// one word changed to another listed form of itself, then the
+/// function-word edits.
+pub fn edits(erg: &Erg, s: &Sentence) -> Vec<Edit> {
     let Some(best) = s.best() else {
         return Vec::new();
     };
     let chars: Vec<char> = s.original.chars().collect();
-    let mut tried = 0;
     let mut out = Vec::new();
     for w in &best.words {
         if w.generic || !(w.le_type.starts_with("v_") || w.le_type.starts_with("n_")) {
@@ -180,29 +197,44 @@ fn grammar_candidates(erg: &Erg, s: &Sentence) -> Vec<(usize, usize, String, Str
             if f.eq_ignore_ascii_case(&surface)
                 || f.contains(' ')
                 || crate::dict::tier(&f.to_lowercase()).is_none()
-                || tried >= MAX_CANDIDATES
             {
                 continue;
             }
-            tried += 1;
-            let rep = same_case(&surface, &f);
-            let fixed = replace(&s.original, w.from, w.to, &rep);
-            if strict(erg, &fixed) {
-                out.push((w.from, w.to, surface.clone(), rep, fixed));
-            }
+            out.push(Edit {
+                from: w.from,
+                to: w.to,
+                text: surface.clone(),
+                replacement: same_case(&surface, &f),
+            });
         }
     }
-    for (from, to, text, rep) in function_word_edits(s) {
-        if tried >= MAX_CANDIDATES {
-            break;
-        }
-        tried += 1;
-        let fixed = replace(&s.original, from, to, &rep);
-        if strict(erg, &fixed) {
-            out.push((from, to, text, rep, fixed));
-        }
-    }
+    out.extend(
+        function_word_edits(s)
+            .into_iter()
+            .map(|(from, to, text, replacement)| Edit {
+                from,
+                to,
+                text,
+                replacement,
+            }),
+    );
     out
+}
+
+/// The first `MAX_OPTIONS` of the first `MAX_CANDIDATES` edits of `s`
+/// that the strict grammar accepts, with the corrected sentence. Parsing
+/// stops once enough are found: the model is not shown more.
+fn grammar_candidates(erg: &Erg, s: &Sentence) -> Vec<(Edit, String)> {
+    edits(erg, s)
+        .into_iter()
+        .take(MAX_CANDIDATES)
+        .map(|e| {
+            let fixed = e.apply(&s.original);
+            (e, fixed)
+        })
+        .filter(|(_, fixed)| strict(erg, fixed))
+        .take(MAX_OPTIONS)
+        .collect()
 }
 
 /// The question that screens a sentence the grammar accepts; the sentence
@@ -241,7 +273,7 @@ pub fn grammar(
             continue;
         }
         let options: Vec<&str> = std::iter::once(s.original.trim())
-            .chain(cands.iter().take(MAX_OPTIONS).map(|c| c.4.trim()))
+            .chain(cands.iter().map(|c| c.1.trim()))
             .collect();
         let Some(probs) = ask.ask(&context(a, si), GRAMMAR_QUESTION, &options) else {
             continue;
@@ -255,13 +287,13 @@ pub fn grammar(
             continue;
         };
         if p >= threshold && p > probs[0] {
-            let (from, to, text, rep, _) = &cands[best - 1];
+            let e = &cands[best - 1].0;
             out.push(Correction {
                 sentence: si,
-                from: *from,
-                to: *to,
-                text: text.clone(),
-                replacement: rep.clone(),
+                from: e.from,
+                to: e.to,
+                text: e.text.clone(),
+                replacement: e.replacement.clone(),
                 probability: p,
             });
         }
