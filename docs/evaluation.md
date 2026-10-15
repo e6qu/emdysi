@@ -1208,6 +1208,7 @@ question with the writer's own correction (2026-10-13).
 | With wider unpacking in the parser's later searches (2026-10-15), all pairs | 290 of 377 (77%; grammar errors 141 of 199, spelling 149 of 178) | 4,487 | |
 | With corrections of sentences without final punctuation verified with a full stop (2026-10-15), all pairs | 294 of 377 (78%; grammar errors 145 of 199, spelling 149 of 178) | 4,602 | |
 | With misspellings two edits away confirmed by the model (2026-10-15), all pairs | 299 of 377 (79%; grammar errors 145 of 199, spelling 154 of 178) | 4,672 | |
+| With misspelled derivations confirmed by the model (2026-10-15), all pairs | 301 of 377 (80%; grammar errors 145 of 199, spelling 156 of 178) | 4,712 | |
 
 No flag on the corrected text in any setting. Without screening the model
 can only help with sentences the grammar cannot analyse, and most real
@@ -1397,3 +1398,26 @@ written with the suggestions, the model must prefer a suggestion.
 Without a model nothing changes (163 real errors, the same 6 and 79
 false flags); with a perfect one, spelling errors caught rise from 149
 to 154 of 178.
+
+### Misspelled derivations
+
+Some misspellings read as a known word plus an affix: *assignement* as
+*assignee* plus *-ment*, *securly* as *secure* plus *-ly*. The rule took
+such a word for a coinage unless an inflection of the base was one edit
+away, and *assignment* and *securely* are derivations (2026-10-15). A
+listed word one edit away, formed on the same base, with the edit inside
+the word, now marks it as a possible typo. Reported without a model,
+that caught four more real errors, but flagged *nestings* (one edit from
+*nestlings*) and *rationable* on the second development set; with the
+edit allowed at the end of the word as well, it also flagged coinages
+such as *flutterings*, *mortifications* and *finalish*. So, like a word
+two edits away, such a finding needs the model's confirmation. Without
+a model nothing changes; with a perfect one, spelling errors caught rise
+from 154 to 156 of 178.
+
+Of the 22 spelling errors a perfect model still misses, four are in raw
+HTML blocks (*comunications*, *indiciates*, *canot*, *fileds*), which the
+Markdown reader does not check; *witin* and *fileds* are words to the
+grammar's lexicon; the rest are more than two edits away, too short
+(*wil*, *tha*) or not typos (*perf* for *performance*, *Whoah!* for
+*Cool!*).

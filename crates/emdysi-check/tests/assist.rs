@@ -263,3 +263,22 @@ fn a_word_two_edits_away_needs_the_model() {
         None
     );
 }
+
+#[test]
+fn a_misspelled_derivation_needs_the_model() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let checker = core();
+    let text = "It works like an assignement here.\n";
+    let a = analyze(&erg, text, Format::Markdown, &opts());
+    let spelling = |d: &[Diagnostic]| d.iter().find(|d| d.rule == "core.spelling").cloned();
+    // |assignement| reads as |assignee| plus |-ment|, a coinage, but
+    // |assignment| is one edit away inside the word: a typo only the model
+    // can confirm (|nestings| is as close to |nestlings|).
+    assert_eq!(spelling(&checker.check(&erg, &a)), None);
+    let mut model = Prefers {
+        want: "an assignment here",
+        asked: Vec::new(),
+    };
+    let d = spelling(&checker.check_with(&erg, &a, Some(&mut model))).unwrap();
+    assert_eq!(d.replacement.as_deref(), Some("assignment"));
+}
