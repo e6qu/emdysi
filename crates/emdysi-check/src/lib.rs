@@ -558,6 +558,10 @@ pub struct Diagnostic {
     /// Other candidate replacements, not applied automatically.
     pub suggestions: Vec<String>,
     pub sentence: Option<usize>,
+    /// A finding too uncertain to report on its own (a word two edits from
+    /// its suggestion, which may be a rare correct word): kept only when
+    /// the decision model confirms it, dropped without one.
+    pub needs_model: bool,
 }
 
 /// Runs rule packs over analyses.
