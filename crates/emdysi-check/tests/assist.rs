@@ -169,6 +169,32 @@ fn a_real_word_typo_is_corrected_at_the_word_named() {
 }
 
 #[test]
+fn sentences_without_a_full_stop() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    // A list item the grammar accepts once it ends in a full stop is only
+    // screened: the stand-in does not doubt it, so nothing else is asked.
+    let a = analyze(&erg, "- Restart the kubelet\n", Format::Markdown, &opts());
+    let mut model = Prefers {
+        want: "Restarts",
+        asked: Vec::new(),
+    };
+    let d = core().check_with(&erg, &a, Some(&mut model));
+    assert!(!d.iter().any(|d| d.rule == "core.grammar-fix"), "{d:?}");
+    assert_eq!(model.asked, vec![vec!["yes".to_string(), "no".to_string()]]);
+    // An error in one is corrected as in a sentence with a full stop.
+    let text = "- The quick brown fox jump over the crazy wall\n";
+    let a = analyze(&erg, text, Format::Markdown, &opts());
+    let mut model = Doubts { want: "fox jumps" };
+    let d: Vec<Diagnostic> = core()
+        .check_with(&erg, &a, Some(&mut model))
+        .into_iter()
+        .filter(|d| d.rule == "core.grammar-fix")
+        .collect();
+    assert_eq!(d.len(), 1, "{d:?}");
+    assert_eq!(d[0].replacement.as_deref(), Some("jumps"));
+}
+
+#[test]
 fn grammatical_sentences_are_only_screened() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     let a = analyze(

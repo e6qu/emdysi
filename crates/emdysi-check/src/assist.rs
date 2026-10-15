@@ -400,7 +400,23 @@ fn verify_within(erg: &Erg, s: &Sentence, e: &Edit, most: Duration) -> bool {
     let text = if masked { &s.text } else { &s.original };
     let extra = s.word_count().saturating_sub(SHORT) as u32;
     let limit = (PARSE_TIMEOUT + PER_WORD * extra).min(LONGEST).min(most);
-    strict_within(erg, &e.apply(text), limit)
+    strict_within(erg, &with_full_stop(&e.apply(text)), limit)
+}
+
+/// `text` ending in a full stop: one in place of a final colon, or added
+/// when it has no final punctuation. The strict grammar wants sentence-final
+/// punctuation, and a list item or a sentence cut short by a code block
+/// (|On each node, restart the kubelet|) would otherwise never verify,
+/// whatever its correction.
+fn with_full_stop(text: &str) -> String {
+    let t = text.trim_end();
+    if let Some(head) = t.strip_suffix(':') {
+        format!("{head}.")
+    } else if t.ends_with(['.', '!', '?']) || t.ends_with(['"', '”', ')']) {
+        t.to_string()
+    } else {
+        format!("{t}.")
+    }
 }
 
 /// The first `MAX_OPTIONS * MAX_ROUNDS` of the first `MAX_CANDIDATES`
@@ -575,7 +591,18 @@ pub fn grammar(
         if s.parse.is_none() || !WORDS.contains(&words) {
             continue;
         }
-        if s.strict() {
+        // A sentence the grammar accepts once it ends in a full stop (a
+        // list item, |Restart the kubelet|) is grammatical too.
+        let grammatical = s.strict() || {
+            let text = if s.text.chars().count() == s.original.chars().count() {
+                &s.text
+            } else {
+                &s.original
+            };
+            let stopped = with_full_stop(text);
+            stopped.trim() != text.trim() && strict(erg, &stopped)
+        };
+        if grammatical {
             let Some(min) = screen else { continue };
             let question = format!("{SCREEN_QUESTION}\n\nSentence: {}", s.original.trim());
             let doubt = ask
