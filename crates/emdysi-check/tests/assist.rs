@@ -284,6 +284,45 @@ fn a_missing_object_at_the_end_is_inserted() {
 }
 
 #[test]
+fn corrections_of_two_words_and_related_words() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    // (sentence, the word the model names, the version it prefers, the
+    // replacement)
+    let cases = [
+        (
+            "The output is similar to this one.",
+            "is",
+            "output should be similar",
+            "should be",
+        ),
+        (
+            "The following is the example of the flow described in that document.",
+            "of",
+            "the example flow described",
+            "",
+        ),
+        (
+            "The value will be included in the iteration produced by filter.",
+            "iteration",
+            "the iterator produced",
+            "iterator",
+        ),
+    ];
+    for (sentence, word, want, replacement) in cases {
+        let text = format!("{sentence}\n");
+        let a = analyze(&erg, &text, Format::Markdown, &opts());
+        let mut model = NamesAndPrefers { word, want };
+        let d: Vec<Diagnostic> = core()
+            .check_with(&erg, &a, Some(&mut model))
+            .into_iter()
+            .filter(|d| d.rule == "core.grammar-fix")
+            .collect();
+        assert_eq!(d.len(), 1, "{sentence}: {d:?}");
+        assert_eq!(d[0].replacement.as_deref(), Some(replacement), "{sentence}");
+    }
+}
+
+#[test]
 fn sentences_without_a_full_stop() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     // A list item the grammar accepts once it ends in a full stop is only

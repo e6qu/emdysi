@@ -24,6 +24,32 @@ pub fn words() -> &'static HashMap<String, u8> {
     })
 }
 
+/// Common words (up to tier [`RELATED_TIER`]), lower case and alphabetic, by
+/// their first four letters.
+pub fn by_prefix(prefix: &str) -> &'static [String] {
+    static MAP: OnceLock<HashMap<String, Vec<String>>> = OnceLock::new();
+    MAP.get_or_init(|| {
+        let mut m: HashMap<String, Vec<String>> = HashMap::new();
+        for (w, &t) in words() {
+            if t <= RELATED_TIER
+                && w.chars().count() >= 4
+                && w.chars().all(|c| c.is_ascii_lowercase())
+            {
+                m.entry(w[..4].to_string()).or_default().push(w.clone());
+            }
+        }
+        for v in m.values_mut() {
+            v.sort();
+        }
+        m
+    })
+    .get(prefix)
+    .map_or(&[], Vec::as_slice)
+}
+
+/// The commonest tier [`by_prefix`] lists.
+const RELATED_TIER: u8 = 60;
+
 const RARE_WORDS: &str = include_str!("../../../data/scowl/en-70-extra.txt");
 const TECH_WORDS: &[&str] = &[
     include_str!("../../../data/cspell/software-terms.txt"),

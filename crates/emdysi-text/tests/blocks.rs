@@ -66,3 +66,20 @@ fn html_paragraphs_are_prose() {
     let blocks = markdown_blocks("<table><tr><td>cell</td></tr></table>\n");
     assert_eq!(blocks[0].kind, BlockKind::Code);
 }
+
+#[test]
+fn hugo_shortcodes() {
+    // A glossary tooltip renders as its text; other shortcodes are dropped.
+    let src = "A quota limits the {{< glossary_tooltip text=\"API resources\" term_id=\"api-resource\" >}} you create.{{< note >}}\n";
+    let blocks = markdown_blocks(src);
+    let b = &blocks[0];
+    assert_eq!(b.text, "A quota limits the API resources you create.");
+    let at = b.text.find("API").unwrap();
+    assert_eq!(&src[b.offsets[at]..b.offsets[at] + 3], "API");
+    let at = b.text.find("you").unwrap();
+    assert_eq!(&src[b.offsets[at]..b.offsets[at] + 3], "you");
+    // In inline code it stays.
+    let blocks = markdown_blocks("Write `{{< note >}}` for a note.\n");
+    assert_eq!(blocks[0].text, "Write {{< note >}} for a note.");
+    assert_eq!(blocks[0].opaque, vec![6..18]);
+}
