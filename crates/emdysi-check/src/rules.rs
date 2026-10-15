@@ -1320,7 +1320,23 @@ impl Rule {
                         if uses.get(&w.to_lowercase()).copied().unwrap_or(0) > 1 {
                             continue;
                         }
-                        let (sugg, confident) = suggestions(erg, w, 5);
+                        let (mut sugg, confident) = suggestions(erg, w, 5);
+                        // A word one edit from a word the document itself
+                        // uses (|crytographic| beside |cryptographic|) is
+                        // a typo for it, even when that word is too rare
+                        // for the word lists' common tiers.
+                        let lower = w.to_lowercase();
+                        let mut in_document: Vec<String> = emdysi_parse::edits(&lower)
+                            .into_iter()
+                            .filter(|e| *e != lower && uses.contains_key(e) && known(e))
+                            .collect();
+                        in_document.sort();
+                        in_document.dedup();
+                        let by_document = in_document.len() == 1;
+                        if by_document {
+                            sugg.retain(|x| x.to_lowercase() != in_document[0]);
+                            sugg.insert(0, in_document[0].clone());
+                        }
                         // A typo is one edit away from the word meant: an
                         // unknown word with no known word that close is a
                         // rare word, not evidence of an error.
@@ -1352,6 +1368,7 @@ impl Rule {
                                 .count()
                                 == 1;
                         if !two_edits
+                            && !by_document
                             && !sugg.first().is_some_and(|x| {
                                 edit_distance(w, x) == 1
                                     && crate::dict::tier(&x.to_lowercase()).is_some()
@@ -1374,7 +1391,7 @@ impl Rule {
                         let single = sugg.len() == 1
                             && edit_distance(w, &sugg[0]) == 1
                             && w.chars().count() >= 4;
-                        if !d.needs_model && (confident || single) {
+                        if !d.needs_model && (confident || single || by_document) {
                             d.replacement = sugg.first().cloned();
                         }
                         d.suggestions = sugg;
