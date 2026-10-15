@@ -1205,6 +1205,8 @@ question with the writer's own correction (2026-10-13).
 | The same on all pairs, in four quarters (`SHARD=0/4` to `3/4`) | 201 of 377 (53%; grammar errors 61 of 199, spelling 140 of 178) | 2,634 | |
 | With real-word typos and the model asked which word is wrong (2026-10-14), all pairs | 253 of 377 (67%; grammar errors 107 of 199, spelling 146 of 178) | 4,616 | 33 min |
 | With verification as the checker parses (masked, time by length, 30 s per sentence), the three lexical entries, more function words and the forms of every plain word (2026-10-14), all pairs | 286 of 377 (76%; grammar errors 137 of 199, spelling 149 of 178) | 4,528 | 42 min |
+| With wider unpacking in the parser's later searches (2026-10-15), all pairs | 290 of 377 (77%; grammar errors 141 of 199, spelling 149 of 178) | 4,487 | |
+| With corrections of sentences without final punctuation verified with a full stop (2026-10-15), all pairs | 294 of 377 (78%; grammar errors 145 of 199, spelling 149 of 178) | 4,602 | |
 
 No flag on the corrected text in any setting. Without screening the model
 can only help with sentences the grammar cannot analyse, and most real
@@ -1363,3 +1365,15 @@ threads ran out of memory.
 | Real errors caught without a model (377) | 163 | | 163 (the same) |
 | False flags, first development set | 6 | | 6 (the same) |
 | False flags, second development set | 79 | | 79 (the same) |
+
+### Sentences without final punctuation
+
+The strict grammar wants sentence-final punctuation, so the correction of
+a list item or of a sentence cut short by a code block (*On each node,
+restart the kubelet*) never verified, nor that of a sentence ending in
+a colon (2026-10-15). Verification now adds a full stop, or puts one in
+place of a final colon; such a sentence that parses with one counts as
+grammatical, so it gets corrections only when the model doubts it (a
+list item is not otherwise second-guessed). With a perfect model,
+`fix_bound` reaches 139 of the 199 grammar errors (134 after the wider
+unpacking, 128 before it), and `real_errors` catches 294 of 377.
