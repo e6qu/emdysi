@@ -1211,6 +1211,7 @@ question with the writer's own correction (2026-10-13).
 | With misspelled derivations confirmed by the model (2026-10-15), all pairs | 301 of 377 (80%; grammar errors 145 of 199, spelling 156 of 178) | 4,712 | |
 | With paragraphs of raw HTML read as prose (2026-10-15), all pairs | 305 of 377 (81%; grammar errors 145 of 199, spelling 160 of 178) | 4,790 | |
 | With a word one edit from a word the document uses taken for its typo (2026-10-15), all pairs | 306 of 377 (81%; grammar errors 145 of 199, spelling 161 of 178) | 4,812 | |
+| With up to four candidates two edits away, and the word as written outside the parse check (2026-10-15), all pairs | 309 of 377 (82%; grammar errors 145 of 199, spelling 164 of 178) | 4,831 | |
 
 No flag on the corrected text in any setting. Without screening the model
 can only help with sentences the grammar cannot analyse, and most real
@@ -1463,11 +1464,37 @@ typo.
 | Real errors caught with a perfect model | 305 (81%; spelling 160 of 178) | 306 (81%; spelling 161 of 178) |
 | False flags, first and second development sets | 6, 79 | 6, 79 (the same flags) |
 
-No flag on the corrected text. Of the 17 spelling errors a perfect model
-still misses, *Mananger* and *Adeliade* are capitalized, which the rule
-takes for names; *furutre*, *neccesary*, *happenening*, *ephermal*,
-*priotized*, *refacting* and *authoratitively* are two edits from the
-word meant and not found by the two-edit path (still to be looked at);
-the rest are short (*wil*, *tha*, *Nex*), three edits away (*partilar*),
-a word to the grammar's lexicon (*witin*) or not typos (*perf*, *langs*,
-*Whoah!*).
+No flag on the corrected text.
+
+### Several words two edits away
+
+A word two edits from a common word was a possible typo only when that
+was the only common word so close, and *priotized* is two edits from
+both *prioritized* and *privatized* (2026-10-15). Such a finding is for
+the model to confirm anyway, offered the word as written as well, so it
+now chooses among up to four (`TWO_EDIT_CANDIDATES`). And a choice the
+model made could still be dropped: when one option parsed strictly and
+the chosen one did not, the choice was refused, and the option with the
+word as written counted, though an unknown word parses as a generic one.
+*The new method here isn't strictly neccesary* parsed, *... strictly
+necessary, but ...* did not within its time, and the model's right
+answer was dropped. The word as written no longer counts there.
+
+| Measure | Before | After |
+|---|---|---|
+| Real errors caught without a model (377) | 167 | 167 (the same pairs) |
+| Real errors caught with a perfect model | 306 (81%; spelling 161 of 178) | 309 (82%; spelling 164 of 178) |
+| False flags, first and second development sets | 6, 79 | 6, 79 (the same flags) |
+
+The new catches are *neccesary*, *priotized* and *partilar*. Without a
+model nothing changes, since these findings need it; with one, more
+words are put to it, and only the model's measurement can tell how often
+it keeps a correct rare word.
+
+Of the 14 spelling errors a perfect model still misses, *Mananger* and
+*Adeliade* are capitalized, which the rule takes for names; *furutre* is
+two edits away but has seven letters, under `TWO_EDIT_LENGTH`;
+*happenening*, *ephermal*, *refacting* and *authoratitively* are not
+found by the two-edit path or are in sentences the oracle cannot match;
+the rest are short (*wil*, *tha*, *Nex*), a word to the grammar's lexicon
+(*witin*) or not typos (*perf*, *langs*, *Whoah!*).

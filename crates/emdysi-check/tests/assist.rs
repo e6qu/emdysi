@@ -265,6 +265,25 @@ fn a_word_two_edits_away_needs_the_model() {
 }
 
 #[test]
+fn a_word_two_edits_from_several_words_needs_the_model() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let checker = core();
+    let text = "With the priotized list feature, a second alternative can be specified.\n";
+    let a = analyze(&erg, text, Format::Markdown, &opts());
+    let spelling = |d: &[Diagnostic]| d.iter().find(|d| d.rule == "core.spelling").cloned();
+    // |priotized| is two edits from |prioritized| and from |privatized|:
+    // no finding without a model ...
+    assert_eq!(spelling(&checker.check(&erg, &a)), None);
+    // ... and the model chooses among them.
+    let mut model = Prefers {
+        want: "the prioritized list",
+        asked: Vec::new(),
+    };
+    let d = spelling(&checker.check_with(&erg, &a, Some(&mut model))).unwrap();
+    assert_eq!(d.replacement.as_deref(), Some("prioritized"));
+}
+
+#[test]
 fn a_misspelled_derivation_needs_the_model() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     let checker = core();

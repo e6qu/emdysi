@@ -705,8 +705,14 @@ pub fn spelling(
     if p < threshold {
         return None;
     }
-    let parses: Vec<bool> = cands.iter().map(|c| strict(erg, &c.1)).collect();
-    if parses.iter().any(|&b| b) && !parses[best] {
+    // The model's choice must parse if another suggestion does; the word
+    // as written, when offered, does not count: an unknown word parses as
+    // a generic one (|isn't strictly neccesary|).
+    let parses: Vec<bool> = cands
+        .iter()
+        .map(|c| c.0 != word && strict(erg, &c.1))
+        .collect();
+    if cands[best].0 != word && parses.iter().any(|&b| b) && !parses[best] {
         return None;
     }
     Some((cands[best].0.clone(), p))

@@ -1345,8 +1345,9 @@ impl Rule {
                         // "-ing" for "desugaring").
                         // Two edits away is a typo too (|neccesary|,
                         // |certicate|) when the word is long, the word meant
-                        // is common, and it is the only common word that
-                        // close; it is then a suggestion, never a fix.
+                        // is common, and few common words are that close;
+                        // the model then chooses, offered the word as
+                        // written too, and it is never a fix on its own.
                         let common = |x: &str| {
                             crate::dict::tier(&x.to_lowercase()).is_some_and(|t| t <= TWO_EDIT_TIER)
                         };
@@ -1366,7 +1367,7 @@ impl Rule {
                                 .iter()
                                 .filter(|x| edit_distance(w, x) <= 2 && common(x))
                                 .count()
-                                == 1;
+                                <= TWO_EDIT_CANDIDATES;
                         if !two_edits
                             && !by_document
                             && !sugg.first().is_some_and(|x| {
@@ -2590,6 +2591,9 @@ fn typo_cost(typed: &str, target: &str) -> f64 {
 const TWO_EDIT_LENGTH: usize = 8;
 /// Least common tier of the word meant, when it is two edits away.
 const TWO_EDIT_TIER: u8 = 50;
+/// At most this many common words two edits away: the model chooses
+/// among them (|furutre|: |furore|, |future|, |nurture|).
+const TWO_EDIT_CANDIDATES: usize = 4;
 
 fn suggestions(erg: &Erg, word: &str, max: usize) -> (Vec<String>, bool) {
     let lower = word.to_lowercase();
