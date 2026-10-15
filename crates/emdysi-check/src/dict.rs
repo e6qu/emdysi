@@ -83,7 +83,21 @@ fn accepted_words() -> &'static std::collections::HashSet<String> {
 /// Whether a word is correct though not in the main list (see
 /// [`accepted_words`]).
 pub fn accepted(word: &str) -> bool {
-    accepted_words().contains(&word.to_lowercase())
+    let set = accepted_words();
+    let w = word.to_lowercase();
+    if set.contains(&w) {
+        return true;
+    }
+    // A plural or verb form of an accepted word (|impls| from |impl|,
+    // |rebased| from |rebase|), or the singular of an accepted plural
+    // (|finalizer| from |finalizers|): the technical lists name one form.
+    let stem = |suffix: &str| w.strip_suffix(suffix).filter(|s| s.chars().count() >= 3);
+    stem("s").is_some_and(|s| set.contains(s))
+        || stem("es").is_some_and(|s| set.contains(s))
+        || stem("ed").is_some_and(|s| set.contains(s) || set.contains(&format!("{s}e")))
+        || stem("d").is_some_and(|s| s.ends_with('e') && set.contains(s))
+        || stem("ing").is_some_and(|s| set.contains(s) || set.contains(&format!("{s}e")))
+        || set.contains(&format!("{w}s"))
 }
 
 /// Commonness tier of a word form, if listed.
