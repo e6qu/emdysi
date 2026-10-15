@@ -234,3 +234,32 @@ fn spelling_fix_chosen_in_context() {
     assert_eq!(d.suggestions[0], "check");
     assert!(d.message.contains("by the model"), "{}", d.message);
 }
+
+#[test]
+fn a_word_two_edits_away_needs_the_model() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let checker = core();
+    let text = "It is neccesary to read the docs.\n";
+    let a = analyze(&erg, text, Format::Markdown, &opts());
+    let spelling = |d: &[Diagnostic]| d.iter().find(|d| d.rule == "core.spelling").cloned();
+    // |neccesary| is two edits from |necessary|: no finding without a
+    // model, since a rare correct word can be as far from a common one.
+    assert_eq!(spelling(&checker.check(&erg, &a)), None);
+    // A model that prefers the common word confirms it, with the fix.
+    let mut model = Prefers {
+        want: "is necessary to",
+        asked: Vec::new(),
+    };
+    let d = spelling(&checker.check_with(&erg, &a, Some(&mut model))).unwrap();
+    assert_eq!(d.replacement.as_deref(), Some("necessary"));
+    // The word as written is one of the options; a model that prefers it
+    // drops the finding.
+    let mut model = Prefers {
+        want: "is neccesary to",
+        asked: Vec::new(),
+    };
+    assert_eq!(
+        spelling(&checker.check_with(&erg, &a, Some(&mut model))),
+        None
+    );
+}

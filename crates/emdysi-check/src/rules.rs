@@ -764,6 +764,7 @@ impl Rule {
             replacement: h.replacement,
             suggestions: h.suggestions,
             sentence: h.sentence,
+            needs_model: false,
         }
     }
 
@@ -776,6 +777,7 @@ impl Rule {
             replacement: None,
             suggestions: Vec::new(),
             sentence: Some(s),
+            needs_model: false,
         }
     }
 
@@ -791,7 +793,7 @@ impl Rule {
     ) {
         for d in found.iter_mut() {
             let Some(si) = d.sentence else { continue };
-            if d.replacement.is_some() || d.suggestions.len() < 2 {
+            if d.replacement.is_some() || (d.suggestions.len() < 2 && !d.needs_model) {
                 continue;
             }
             let Some(t) = a.sentences[si]
@@ -801,11 +803,30 @@ impl Rule {
             else {
                 continue;
             };
+            // A finding to confirm offers the word as written too: the model
+            // may know it (|distroless|, |mebibytes|).
+            let written: String = a.sentences[si]
+                .original
+                .chars()
+                .skip(t.from)
+                .take(t.to - t.from)
+                .collect();
+            let options: Vec<String> = if d.needs_model {
+                std::iter::once(written.clone())
+                    .chain(d.suggestions.iter().cloned())
+                    .collect()
+            } else {
+                d.suggestions.clone()
+            };
             let Some((rep, p)) =
-                crate::assist::spelling(erg, a, (si, t.from, t.to), &d.suggestions, ask, threshold)
+                crate::assist::spelling(erg, a, (si, t.from, t.to), &options, ask, threshold)
             else {
                 continue;
             };
+            if rep == written {
+                continue;
+            }
+            d.needs_model = false;
             if let Some(first) = d.suggestions.first() {
                 d.message = d.message.replace(
                     &format!(" Did you mean '{first}'?"),
@@ -893,6 +914,9 @@ impl Rule {
             {
                 self.choose_spellings(erg, a, ask, *model_threshold, &mut found);
             }
+            // What only a model could confirm is not reported without one
+            // (`choose_spellings` clears the mark of what it confirms).
+            found.retain(|d| !d.needs_model);
         }
         if self.scope != Scope::All {
             let lead = crate::structure::lead_blocks(a);
@@ -1275,10 +1299,36 @@ impl Rule {
                         // ... and the word meant is a listed word, not one the
                         // grammar's morphology derives ("re-" + "sugar" +
                         // "-ing" for "desugaring").
-                        if !sugg.first().is_some_and(|x| {
-                            edit_distance(w, x) == 1
-                                && crate::dict::tier(&x.to_lowercase()).is_some()
-                        }) {
+                        // Two edits away is a typo too (|neccesary|,
+                        // |certicate|) when the word is long, the word meant
+                        // is common, and it is the only common word that
+                        // close; it is then a suggestion, never a fix.
+                        let common = |x: &str| {
+                            crate::dict::tier(&x.to_lowercase()).is_some_and(|t| t <= TWO_EDIT_TIER)
+                        };
+                        // ... and not two known words written as one
+                        // (|shockwaves|), a compound rather than a typo.
+                        let compound = (3..w.len().saturating_sub(2)).any(|i| {
+                            w.is_char_boundary(i)
+                                && crate::dict::tier(&w[..i]).is_some()
+                                && crate::dict::tier(&w[i..]).is_some()
+                        });
+                        let two_edits = !compound
+                            && w.chars().count() >= TWO_EDIT_LENGTH
+                            && sugg
+                                .first()
+                                .is_some_and(|x| edit_distance(w, x) == 2 && common(x))
+                            && sugg
+                                .iter()
+                                .filter(|x| edit_distance(w, x) <= 2 && common(x))
+                                .count()
+                                == 1;
+                        if !two_edits
+                            && !sugg.first().is_some_and(|x| {
+                                edit_distance(w, x) == 1
+                                    && crate::dict::tier(&x.to_lowercase()).is_some()
+                            })
+                        {
                             continue;
                         }
                         let mut d = self.diag(a, si, t.from, t.to, w);
@@ -1292,13 +1342,15 @@ impl Rule {
                         );
                         // Fix automatically only when one candidate is clearly
                         // the most plausible typo, or the only one.
-                        let single = sugg.len() == 1
+                        let single = !two_edits
+                            && sugg.len() == 1
                             && edit_distance(w, &sugg[0]) == 1
                             && w.chars().count() >= 4;
-                        if confident || single {
+                        if (confident && !two_edits) || single {
                             d.replacement = sugg.first().cloned();
                         }
                         d.suggestions = sugg;
+                        d.needs_model = two_edits;
                         out.push(d);
                     }
                 }
@@ -2490,6 +2542,11 @@ fn typo_cost(typed: &str, target: &str) -> f64 {
 /// Spelling suggestions: listed or grammar-known words one edit away (two
 /// if none), most plausible and most common first. The flag says whether
 /// the first suggestion is clearly the intended word.
+/// Shortest misspelling reported when the word meant is two edits away.
+const TWO_EDIT_LENGTH: usize = 8;
+/// Least common tier of the word meant, when it is two edits away.
+const TWO_EDIT_TIER: u8 = 50;
+
 fn suggestions(erg: &Erg, word: &str, max: usize) -> (Vec<String>, bool) {
     let lower = word.to_lowercase();
     let known = |w: &str| crate::dict::tier(w).is_some() || erg.known_word(w);

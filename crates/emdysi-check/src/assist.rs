@@ -265,11 +265,13 @@ pub fn edits(erg: &Erg, s: &Sentence) -> Vec<Edit> {
             });
         }
     }
-    // The other forms of the plain words the best reading did not take as
-    // a noun or verb (in a fragment reading, |provides| may be read as
-    // anything): their listed inflections.
+    // The other listed forms of every plain word, as far as the reading did
+    // not give them: a word the best reading did not take as a noun or verb
+    // (in a fragment reading, |provides| may be read as anything), or took
+    // as one where it is the other (|checks| read as a noun, for
+    // |checked|).
     for t in &s.tokens {
-        if t.to > chars.len() || out.iter().any(|e: &Edit| e.from == t.from) {
+        if t.to > chars.len() {
             continue;
         }
         let surface: String = chars[t.from..t.to].iter().collect();
@@ -283,9 +285,13 @@ pub fn edits(erg: &Erg, s: &Sentence) -> Vec<Edit> {
         forms.sort();
         forms.dedup();
         for f in forms {
+            let rep = same_case(&surface, &f);
             if f.eq_ignore_ascii_case(&surface)
                 || f.contains(' ')
                 || crate::dict::tier(&f.to_lowercase()).is_none()
+                || out
+                    .iter()
+                    .any(|e: &Edit| e.from == t.from && e.replacement == rep)
             {
                 continue;
             }
@@ -293,7 +299,7 @@ pub fn edits(erg: &Erg, s: &Sentence) -> Vec<Edit> {
                 from: t.from,
                 to: t.to,
                 text: surface.clone(),
-                replacement: same_case(&surface, &f),
+                replacement: rep,
             });
         }
     }
