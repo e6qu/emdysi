@@ -395,6 +395,35 @@ pub fn edits(erg: &Erg, s: &Sentence) -> Vec<Edit> {
     }
     let (changed, inserted) = function_word_edits(s);
     out.extend(changed.into_iter().map(as_edit));
+    // A relative pronoun and the verb after it, changed together (|which
+    // has status| for |that have status|).
+    for w in s.tokens.windows(2) {
+        let (a, b) = (&w[0], &w[1]);
+        if b.to > chars.len() || chars.get(a.to) != Some(&' ') || a.to + 1 != b.from {
+            continue;
+        }
+        let pronoun: String = chars[a.from..a.to].iter().collect();
+        let verb: String = chars[b.from..b.to].iter().collect();
+        let lower = pronoun.to_lowercase();
+        if !matches!(lower.as_str(), "which" | "that" | "who")
+            || !verb.chars().all(|c| c.is_ascii_lowercase())
+        {
+            continue;
+        }
+        for other in ["which", "that", "who"].into_iter().filter(|o| *o != lower) {
+            for f in erg.inflections(&verb) {
+                if f == verb || f.contains(' ') || crate::dict::tier(&f).is_none() {
+                    continue;
+                }
+                out.push(Edit {
+                    from: a.from,
+                    to: b.to,
+                    text: format!("{pronoun} {verb}"),
+                    replacement: format!("{} {f}", same_case(&pronoun, other)),
+                });
+            }
+        }
+    }
     let mut real = real_word_edits(s);
     real.retain(|e| !out.contains(e));
     out.extend(real);

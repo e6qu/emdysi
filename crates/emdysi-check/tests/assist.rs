@@ -302,6 +302,12 @@ fn corrections_of_two_words_and_related_words() {
             "",
         ),
         (
+            "This flag is used with all the resources which has a status.",
+            "which",
+            "resources that have a status",
+            "that have",
+        ),
+        (
             "The value will be included in the iteration produced by filter.",
             "iteration",
             "the iterator produced",
