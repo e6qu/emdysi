@@ -1207,6 +1207,7 @@ question with the writer's own correction (2026-10-13).
 | With verification as the checker parses (masked, time by length, 30 s per sentence), the three lexical entries, more function words and the forms of every plain word (2026-10-14), all pairs | 286 of 377 (76%; grammar errors 137 of 199, spelling 149 of 178) | 4,528 | 42 min |
 | With wider unpacking in the parser's later searches (2026-10-15), all pairs | 290 of 377 (77%; grammar errors 141 of 199, spelling 149 of 178) | 4,487 | |
 | With corrections of sentences without final punctuation verified with a full stop (2026-10-15), all pairs | 294 of 377 (78%; grammar errors 145 of 199, spelling 149 of 178) | 4,602 | |
+| With misspellings two edits away confirmed by the model (2026-10-15), all pairs | 299 of 377 (79%; grammar errors 145 of 199, spelling 154 of 178) | 4,672 | |
 
 No flag on the corrected text in any setting. Without screening the model
 can only help with sentences the grammar cannot analyse, and most real
@@ -1377,3 +1378,22 @@ grammatical, so it gets corrections only when the model doubts it (a
 list item is not otherwise second-guessed). With a perfect model,
 `fix_bound` reaches 139 of the 199 grammar errors (134 after the wider
 unpacking, 128 before it), and `real_errors` catches 294 of 377.
+
+### Misspellings two edits away
+
+Of the 178 spelling errors, a perfect model still missed 29, most with no
+finding at all: the spelling rule reports a word only when a listed word
+is one edit away, and *neccesary*, *certicate*, *authorative*,
+*admistrators* and *bencharmark* are two (2026-10-15). Reported without
+a model (eight letters or more, not two known words written as one, and
+exactly one common word that close), they caught six more real errors,
+but added three false flags on the second development set, on correct
+technical words (*distroless* for *distress*, *mebibytes* for
+*megabytes*, *retpoline* for *retooling*), as well as three flags on
+real typos there (*implemenent*, *borrowcking*, *modificators*). Length,
+tier and the shape of the edits did not tell the two apart, so such a
+finding needs the model (`Diagnostic::needs_model`): offered the word as
+written with the suggestions, the model must prefer a suggestion.
+Without a model nothing changes (163 real errors, the same 6 and 79
+false flags); with a perfect one, spelling errors caught rise from 149
+to 154 of 178.
