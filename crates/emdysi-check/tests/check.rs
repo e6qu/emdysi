@@ -398,3 +398,21 @@ fn grammar_corrections() {
         assert_eq!(e.suggestions, [fix], "{src}");
     }
 }
+
+#[test]
+fn a_typo_of_a_word_the_document_uses() {
+    // |cryptographic| is too rare for the common word lists, but the
+    // document uses it, so |crytographic|, one edit away, is its typo.
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let checker = Checker::new(packs());
+    let opts = Options::default();
+    let src = "We need crytographic machinery here. No other cryptographic tooling is required.\n";
+    let a = analyze(&erg, src, Format::Plain, &opts);
+    let d = checker.check(&erg, &a);
+    let sp = d
+        .iter()
+        .find(|x| x.rule == "core.spelling")
+        .unwrap_or_else(|| panic!("{d:?}"));
+    assert_eq!(&src[sp.range.clone()], "crytographic");
+    assert_eq!(sp.replacement.as_deref(), Some("cryptographic"));
+}

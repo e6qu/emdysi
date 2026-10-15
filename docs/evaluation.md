@@ -1197,7 +1197,7 @@ question with the writer's own correction (2026-10-13).
 
 | Setting | Real errors caught | Questions | Time |
 |---|---|---|---|
-| No model | 163 of 377 (43%); 166 (44%) with HTML paragraphs read as prose (2026-10-15) | 0 | |
+| No model | 163 of 377 (43%); 166 (44%) with HTML paragraphs read as prose, 167 with typos of words the document uses (2026-10-15) | 0 | |
 | Perfect model, corrections by inflection only, no screening | 164 of 377 | 93 | |
 | Perfect model, with function-word substitution, deletion and insertion, no screening | 165 of 377 (44%) | 130 | 25 min |
 | The same with screening of sentences the grammar accepts, on a quarter (`SHARD=0/4`) | 46 of 95 (48%; grammar errors 7 of 47) | 748 | 69 min |
@@ -1210,6 +1210,7 @@ question with the writer's own correction (2026-10-13).
 | With misspellings two edits away confirmed by the model (2026-10-15), all pairs | 299 of 377 (79%; grammar errors 145 of 199, spelling 154 of 178) | 4,672 | |
 | With misspelled derivations confirmed by the model (2026-10-15), all pairs | 301 of 377 (80%; grammar errors 145 of 199, spelling 156 of 178) | 4,712 | |
 | With paragraphs of raw HTML read as prose (2026-10-15), all pairs | 305 of 377 (81%; grammar errors 145 of 199, spelling 160 of 178) | 4,790 | |
+| With a word one edit from a word the document uses taken for its typo (2026-10-15), all pairs | 306 of 377 (81%; grammar errors 145 of 199, spelling 161 of 178) | 4,812 | |
 
 No flag on the corrected text in any setting. Without screening the model
 can only help with sentences the grammar cannot analyse, and most real
@@ -1445,3 +1446,28 @@ without one (*fileds*, a word to the grammar's lexicon, needs the model).
 Without a model *canot* gets *canto* first, so its fix needs the model
 too. The development sets have no HTML paragraphs, so their flags cannot
 change. No flag on the corrected text.
+
+### Typos of words the document uses
+
+A suggestion must be a listed word of the common tiers, and
+*cryptographic* is only in the rare list, so *crytographic* went
+unflagged, though the same sentence writes *cryptographic* (2026-10-15).
+A word one edit from exactly one word the document itself uses (and the
+dictionary or grammar knows) is now taken for its typo, with that word as
+the fix. A word the document uses more than once is still a term, not a
+typo.
+
+| Measure | Before | After |
+|---|---|---|
+| Real errors caught without a model (377) | 166 | 167 |
+| Real errors caught with a perfect model | 305 (81%; spelling 160 of 178) | 306 (81%; spelling 161 of 178) |
+| False flags, first and second development sets | 6, 79 | 6, 79 (the same flags) |
+
+No flag on the corrected text. Of the 17 spelling errors a perfect model
+still misses, *Mananger* and *Adeliade* are capitalized, which the rule
+takes for names; *furutre*, *neccesary*, *happenening*, *ephermal*,
+*priotized*, *refacting* and *authoratitively* are two edits from the
+word meant and not found by the two-edit path (still to be looked at);
+the rest are short (*wil*, *tha*, *Nex*), three edits away (*partilar*),
+a word to the grammar's lexicon (*witin*) or not typos (*perf*, *langs*,
+*Whoah!*).
