@@ -2609,7 +2609,7 @@ fn typo_cost(typed: &str, target: &str) -> f64 {
 /// if none), most plausible and most common first. The flag says whether
 /// the first suggestion is clearly the intended word.
 /// Shortest misspelling reported when the word meant is two edits away.
-const TWO_EDIT_LENGTH: usize = 8;
+const TWO_EDIT_LENGTH: usize = 7;
 /// Least common tier of the word meant, when it is two edits away.
 const TWO_EDIT_TIER: u8 = 50;
 /// At most this many common words two edits away: the model chooses

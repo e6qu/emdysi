@@ -1590,7 +1590,7 @@ Corrections were of one word, or one word inserted or dropped
 |---|---|---|
 | Real errors caught without a model (377) | 167 | 167 (the same pairs) |
 | Real errors caught with a perfect model | 315 (84%; grammar errors 151 of 199, spelling 164 of 178) | 326 (86%; grammar errors 159 of 199, spelling 167 of 178) |
-| False flags, first and second development sets | 6, 79 | FF |
+| False flags, first and second development sets | 6, 79 | 6, 79 (the same flags) |
 
 The new catches: *should be*, *flow* (for *of the flow*), *that have*,
 *extensible*, *iterator*, *medium*, *resides* (for *residents*), *shows*,
