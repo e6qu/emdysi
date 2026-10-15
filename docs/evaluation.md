@@ -1218,7 +1218,7 @@ question with the writer's own correction (2026-10-13).
 | With a pronoun after the last word and a word deleted with its comma (2026-10-15), all pairs | 315 of 377 (84%; grammar errors 151 of 199, spelling 164 of 178) | 4,924 | |
 | With corrections of two words, related words and Hugo shortcodes (2026-10-15), all pairs | 326 of 377 (86%; grammar errors 159 of 199, spelling 167 of 178) | 4,902 | |
 | With typos in title-cased names and 7-letter words two edits away put to the model (2026-10-15), all pairs | 328 of 377 (87%; grammar errors 159 of 199, spelling 169 of 178) | 4,942 | |
-| With clause-by-clause verification, negations and three-letter typos (2026-10-15), all pairs | 337 of 377 (89%; grammar errors 165 of 199, spelling 172 of 178) | 4,964 | |
+| With clause-by-clause verification, negations and three-letter typos (2026-10-15), all pairs | 337 of 377 (89%; grammar errors 165 of 199, spelling 172 of 178) | 4,998 | |
 
 No flag on the corrected text in any setting. Without screening the model
 can only help with sentences the grammar cannot analyse, and most real
