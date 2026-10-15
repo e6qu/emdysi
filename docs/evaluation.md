@@ -1212,6 +1212,7 @@ question with the writer's own correction (2026-10-13).
 | With paragraphs of raw HTML read as prose (2026-10-15), all pairs | 305 of 377 (81%; grammar errors 145 of 199, spelling 160 of 178) | 4,790 | |
 | With a word one edit from a word the document uses taken for its typo (2026-10-15), all pairs | 306 of 377 (81%; grammar errors 145 of 199, spelling 161 of 178) | 4,812 | |
 | With up to four candidates two edits away, and the word as written outside the parse check (2026-10-15), all pairs | 309 of 377 (82%; grammar errors 145 of 199, spelling 164 of 178) | 4,831 | |
+| With candidates for sentences without any reading (2026-10-15), all pairs | 311 of 377 (82%; grammar errors 147 of 199, spelling 164 of 178) | 4,874 | |
 
 No flag on the corrected text in any setting. Without screening the model
 can only help with sentences the grammar cannot analyse, and most real
@@ -1498,3 +1499,23 @@ two edits away but has seven letters, under `TWO_EDIT_LENGTH`;
 found by the two-edit path or are in sentences the oracle cannot match;
 the rest are short (*wil*, *tha*, *Nex*), a word to the grammar's lexicon
 (*witin*) or not typos (*perf*, *langs*, *Whoah!*).
+
+### Sentences without any reading
+
+A sentence the grammar gives no reading at all, not even a fragment
+one, got no candidate corrections: they were built from the words of
+its best reading (2026-10-15). *Binding objects link the policy to your
+cluster and provides scoping.* is such a sentence, and its correction
+(*provide*) parses. Such a sentence now gets the edits of its words
+alone (the other forms of each plain word, function words, doubled
+words); `fix_bound` finds 142 of 199 grammar errors reachable (139).
+
+| Measure | Before | After |
+|---|---|---|
+| Real errors caught without a model (377) | 167 | 167 (the same pairs) |
+| Real errors caught with a perfect model | 309 (82%; grammar errors 145 of 199) | 311 (82%; grammar errors 147 of 199) |
+| False flags, first and second development sets | 6, 79 | 6, 79 (the same flags) |
+
+The new catches are *provides* and *labelled*. No flag on the corrected
+text. *Policy objects describes ...* is fixed too when checked alone,
+but not within the time of the full run.

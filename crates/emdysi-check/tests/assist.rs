@@ -169,6 +169,41 @@ fn a_real_word_typo_is_corrected_at_the_word_named() {
 }
 
 #[test]
+fn a_sentence_without_any_reading_gets_candidates() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    // No reading at all, not even a fragment one: the candidates come from
+    // its words alone.
+    let text = "Binding objects link the policy to your cluster and provides scoping.\n";
+    let a = analyze(&erg, text, Format::Markdown, &opts());
+    assert!(a.sentences[0].best().is_none());
+    // The model names the word and prefers the correction.
+    struct Names;
+    impl Ask for Names {
+        fn ask(&mut self, _c: &str, question: &str, options: &[&str]) -> Option<Vec<f64>> {
+            let want = if question.starts_with(emdysi_check::assist::LOCATE_QUESTION) {
+                "provides"
+            } else {
+                "and provide scoping"
+            };
+            Some(
+                options
+                    .iter()
+                    .map(|o| if o.contains(want) { 0.95 } else { 0.05 })
+                    .collect(),
+            )
+        }
+    }
+    let d: Vec<Diagnostic> = core()
+        .check_with(&erg, &a, Some(&mut Names))
+        .into_iter()
+        .filter(|d| d.rule == "core.grammar-fix")
+        .collect();
+    assert_eq!(d.len(), 1, "{d:?}");
+    assert_eq!(&text[d[0].range.clone()], "provides");
+    assert_eq!(d[0].replacement.as_deref(), Some("provide"));
+}
+
+#[test]
 fn sentences_without_a_full_stop() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     // A list item the grammar accepts once it ends in a full stop is only
