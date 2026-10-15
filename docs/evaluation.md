@@ -1197,7 +1197,7 @@ question with the writer's own correction (2026-10-13).
 
 | Setting | Real errors caught | Questions | Time |
 |---|---|---|---|
-| No model | 163 of 377 (43%) | 0 | |
+| No model | 163 of 377 (43%); 166 (44%) with HTML paragraphs read as prose (2026-10-15) | 0 | |
 | Perfect model, corrections by inflection only, no screening | 164 of 377 | 93 | |
 | Perfect model, with function-word substitution, deletion and insertion, no screening | 165 of 377 (44%) | 130 | 25 min |
 | The same with screening of sentences the grammar accepts, on a quarter (`SHARD=0/4`) | 46 of 95 (48%; grammar errors 7 of 47) | 748 | 69 min |
@@ -1209,6 +1209,7 @@ question with the writer's own correction (2026-10-13).
 | With corrections of sentences without final punctuation verified with a full stop (2026-10-15), all pairs | 294 of 377 (78%; grammar errors 145 of 199, spelling 149 of 178) | 4,602 | |
 | With misspellings two edits away confirmed by the model (2026-10-15), all pairs | 299 of 377 (79%; grammar errors 145 of 199, spelling 154 of 178) | 4,672 | |
 | With misspelled derivations confirmed by the model (2026-10-15), all pairs | 301 of 377 (80%; grammar errors 145 of 199, spelling 156 of 178) | 4,712 | |
+| With paragraphs of raw HTML read as prose (2026-10-15), all pairs | 305 of 377 (81%; grammar errors 145 of 199, spelling 160 of 178) | 4,790 | |
 
 No flag on the corrected text in any setting. Without screening the model
 can only help with sentences the grammar cannot analyse, and most real
@@ -1415,9 +1416,32 @@ two edits away, such a finding needs the model's confirmation. Without
 a model nothing changes; with a perfect one, spelling errors caught rise
 from 154 to 156 of 178.
 
-Of the 22 spelling errors a perfect model still misses, four are in raw
+Of the 22 spelling errors a perfect model still missed, four were in raw
 HTML blocks (*comunications*, *indiciates*, *canot*, *fileds*), which the
-Markdown reader does not check; *witin* and *fileds* are words to the
+Markdown reader did not check; *witin* and *fileds* are words to the
 grammar's lexicon; the rest are more than two edits away, too short
 (*wil*, *tha*) or not typos (*perf* for *performance*, *Whoah!* for
 *Cool!*).
+
+### Paragraphs of raw HTML
+
+The Markdown reader made every raw HTML block an opaque block, like code.
+Generated reference pages write their prose as HTML paragraphs
+(`<p><code>caCertPath</code> is the path to ...</p>`), so their
+misspellings went unseen (2026-10-15). An HTML block made only of `<p>`
+elements with inline markup (`a`, `b`, `code`, `em`, `i`, `span`,
+`strong`, `br`) is now read as paragraphs: `<code>` is opaque, like
+inline code, the common entities are decoded, and offsets point into the
+source. Any other HTML stays opaque.
+
+| Measure | Before | After |
+|---|---|---|
+| Real errors caught without a model (377) | 163 | 166 |
+| Real errors caught with a perfect model | 301 (80%; spelling 156 of 178) | 305 (81%; spelling 160 of 178) |
+| False flags, first and second development sets | 6, 79 | 6, 79 (the same flags) |
+
+The four misspellings are now caught with a perfect model, three of them
+without one (*fileds*, a word to the grammar's lexicon, needs the model).
+Without a model *canot* gets *canto* first, so its fix needs the model
+too. The development sets have no HTML paragraphs, so their flags cannot
+change. No flag on the corrected text.

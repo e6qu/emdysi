@@ -3,7 +3,8 @@
 //! Markdown is read with pulldown-cmark: paragraphs, headings, list items,
 //! block quotes and table cells become blocks; code blocks and HTML blocks
 //! become empty `Code` blocks (so that document-structure checks see them
-//! but no prose check does); image descriptions are skipped; inline code is
+//! but no prose check does), except HTML blocks made only of paragraphs
+//! with inline markup, which are prose; image descriptions are skipped; inline code is
 //! kept but marked opaque so that checks can leave it alone. Plain text is
 //! split into paragraphs at blank lines.
 
@@ -109,6 +110,86 @@ fn finish(mut b: Block) -> Block {
     b
 }
 
+/// Inline HTML elements whose text is prose (`code` is kept opaque).
+const INLINE_HTML: &[&str] = &["a", "b", "code", "em", "i", "span", "strong", "br"];
+
+/// The paragraphs of an HTML block made only of `<p>` elements with inline
+/// markup (|<p><code>caCertPath</code> is the path ...</p>|, as in generated
+/// reference pages), as blocks; `None` for any other HTML. Entities are
+/// decoded, and each character maps to its source offset (`base` + its
+/// position in `html`).
+fn html_paragraphs(html: &str, base: usize) -> Option<Vec<Block>> {
+    let mut out = Vec::new();
+    let mut cur: Option<Block> = None;
+    let mut code_from: Option<usize> = None;
+    let mut rest = html;
+    let mut at = 0;
+    while !rest.is_empty() {
+        if let Some(tag) = rest.strip_prefix('<') {
+            let end = tag.find('>')?;
+            let inner = &tag[..end];
+            let closing = inner.starts_with('/');
+            let name: String = inner
+                .trim_start_matches('/')
+                .chars()
+                .take_while(|c| c.is_ascii_alphanumeric())
+                .collect::<String>()
+                .to_ascii_lowercase();
+            if name == "p" {
+                if closing {
+                    out.push(cur.take()?);
+                } else if cur.is_some() {
+                    return None;
+                } else {
+                    cur = Some(Block::new(BlockKind::Paragraph));
+                }
+            } else if INLINE_HTML.contains(&name.as_str()) {
+                let b = cur.as_mut()?;
+                if name == "br" {
+                    b.push(" ", None, base + at);
+                } else if name == "code" {
+                    if closing {
+                        let from = code_from.take()?;
+                        b.opaque.push(from..b.text.len());
+                    } else {
+                        code_from = Some(b.text.len());
+                    }
+                }
+            } else {
+                return None;
+            }
+            at += end + 2;
+            rest = &rest[end + 2..];
+            continue;
+        }
+        let c = rest.chars().next()?;
+        let (text, len) = if c == '&' {
+            let semi = rest.find(';').filter(|&i| i <= 8)?;
+            let decoded = match &rest[1..semi] {
+                "quot" => "\"",
+                "amp" => "&",
+                "lt" => "<",
+                "gt" => ">",
+                "apos" | "#39" => "'",
+                "nbsp" => " ",
+                _ => return None,
+            };
+            (decoded.to_string(), semi + 1)
+        } else {
+            (c.to_string(), c.len_utf8())
+        };
+        match cur.as_mut() {
+            Some(b) => b.push(&text, (len == c.len_utf8()).then_some(base + at), base + at),
+            // Only whitespace between paragraphs.
+            None if c.is_whitespace() => {}
+            None => return None,
+        }
+        at += len;
+        rest = &rest[len..];
+    }
+    (cur.is_none() && code_from.is_none() && !out.is_empty()).then_some(out)
+}
+
 /// Prose blocks of a Markdown document.
 pub fn markdown_blocks(src: &str) -> Vec<Block> {
     let opts = Options::ENABLE_TABLES
@@ -186,7 +267,21 @@ pub fn markdown_blocks(src: &str) -> Vec<Block> {
                     flush(&mut cur, &mut out);
                     cur = Some(Block::new(BlockKind::TableCell));
                 }
-                Tag::CodeBlock(_) | Tag::HtmlBlock => {
+                Tag::HtmlBlock => {
+                    flush(&mut cur, &mut out);
+                    // Paragraphs of plain HTML are prose; any other HTML
+                    // is opaque, like code.
+                    match html_paragraphs(&src[range.clone()], range.start) {
+                        Some(ps) => out.extend(ps.into_iter().map(finish)),
+                        None => {
+                            let mut b = Block::new(BlockKind::Code);
+                            b.offsets.push(range.start);
+                            out.push(b);
+                        }
+                    }
+                    skip += 1
+                }
+                Tag::CodeBlock(_) => {
                     flush(&mut cur, &mut out);
                     let mut b = Block::new(BlockKind::Code);
                     b.offsets.push(range.start);
