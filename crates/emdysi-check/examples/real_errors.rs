@@ -110,6 +110,17 @@ fn main() {
             .collect(),
         _ => rows,
     };
+    // ONLY=a|b: only the pairs whose text before the correction is one of
+    // these (to look at a few pairs).
+    let rows: Vec<Vec<String>> = match std::env::var("ONLY") {
+        Ok(only) => {
+            let only: Vec<&str> = only.split('|').collect();
+            rows.into_iter()
+                .filter(|r| only.contains(&r[2].as_str()))
+                .collect()
+        }
+        Err(_) => rows,
+    };
     let core =
         Pack::parse(&std::fs::read_to_string(root.join("packs/core.toml")).unwrap()).unwrap();
     let checker = Checker::new(vec![core]);
@@ -284,6 +295,9 @@ impl emdysi_check::decisions::Ask for Oracle {
             .iter()
             .position(|o| self.truth.contains(o.trim()))
             .unwrap_or(0);
+        if std::env::var_os("SPELLDBG").is_some() {
+            eprintln!("Q {question:?}\n  options {options:?}\n  right {right}");
+        }
         Some(
             (0..options.len())
                 .map(|i| if i == right { 1.0 } else { 0.0 })
