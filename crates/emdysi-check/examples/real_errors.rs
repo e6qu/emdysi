@@ -291,9 +291,12 @@ impl emdysi_check::decisions::Ask for Oracle {
             let ok = self.truth.contains(sentence.trim());
             return Some(if ok { vec![1.0, 0.0] } else { vec![0.0, 1.0] });
         }
+        // An option that is a whole corrected sentence, else one inside
+        // one: |will generate ...| is inside |This will generate ...|.
         let right = options
             .iter()
-            .position(|o| self.truth.contains(o.trim()))
+            .position(|o| self.truth.lines().any(|l| l == o.trim()))
+            .or_else(|| options.iter().position(|o| self.truth.contains(o.trim())))
             .unwrap_or(0);
         if std::env::var_os("SPELLDBG").is_some() {
             eprintln!("Q {question:?}\n  options {options:?}\n  right {right}");

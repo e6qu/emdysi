@@ -203,6 +203,68 @@ fn a_sentence_without_any_reading_gets_candidates() {
     assert_eq!(d[0].replacement.as_deref(), Some("provide"));
 }
 
+/// A stand-in model that names `word` as wrong and prefers the sentence
+/// with `want`.
+struct NamesAndPrefers {
+    word: &'static str,
+    want: &'static str,
+}
+
+impl Ask for NamesAndPrefers {
+    fn ask(&mut self, _c: &str, question: &str, options: &[&str]) -> Option<Vec<f64>> {
+        // It doubts the sentence when screened, too.
+        let want = if question.starts_with(emdysi_check::assist::SCREEN_QUESTION) {
+            "no"
+        } else if question.starts_with(emdysi_check::assist::LOCATE_QUESTION) {
+            self.word
+        } else {
+            self.want
+        };
+        Some(
+            options
+                .iter()
+                .map(|o| if o.contains(want) { 0.95 } else { 0.05 })
+                .collect(),
+        )
+    }
+}
+
+#[test]
+fn a_missing_first_word_is_inserted_with_a_capital() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let text = "will generate tokens that look like `02b50b05`.\n";
+    let a = analyze(&erg, text, Format::Markdown, &opts());
+    let mut model = NamesAndPrefers {
+        word: "will",
+        want: "This will generate",
+    };
+    let d: Vec<Diagnostic> = core()
+        .check_with(&erg, &a, Some(&mut model))
+        .into_iter()
+        .filter(|d| d.rule == "core.grammar-fix")
+        .collect();
+    assert_eq!(d.len(), 1, "{d:?}");
+    assert_eq!(d[0].replacement.as_deref(), Some("This will"));
+}
+
+#[test]
+fn a_sentence_adverb_written_as_its_adjective() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let text = "Additional, we are starting a new initiative.\n";
+    let a = analyze(&erg, text, Format::Markdown, &opts());
+    let mut model = NamesAndPrefers {
+        word: "Additional",
+        want: "Additionally, we",
+    };
+    let d: Vec<Diagnostic> = core()
+        .check_with(&erg, &a, Some(&mut model))
+        .into_iter()
+        .filter(|d| d.rule == "core.grammar-fix")
+        .collect();
+    assert_eq!(d.len(), 1, "{d:?}");
+    assert_eq!(d[0].replacement.as_deref(), Some("Additionally"));
+}
+
 #[test]
 fn sentences_without_a_full_stop() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
