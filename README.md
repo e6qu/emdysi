@@ -136,7 +136,7 @@ ends with how to pick the work up. Next, in order:
    that the two together are more accurate than a much larger model alone.
    The machinery is done and tested with a stand-in model. With a perfect
    model in place of the real one, the share of real errors caught rises
-   from 44% to 87% (328 of 377); that assumes the model names the wrong word
+   from 44% to 89% (337 of 377); that assumes the model names the wrong word
    in a sentence it doubts, which only the model's measurement can tell.
    Most of what remains out of reach needs wider grammar coverage, which
    can be done without the model. Then: download the model, calibrate it and
