@@ -716,7 +716,12 @@ fn locate(ask: &mut dyn Ask, context: &str, s: &Sentence) -> Vec<(usize, usize)>
     let mut best = |group: &[usize]| -> Option<usize> {
         let labels: Vec<&str> = group.iter().map(|&i| words[i].2.as_str()).collect();
         let probs = ask.ask(context, &question, &labels)?;
-        let (i, _) = probs.iter().enumerate().max_by(|x, y| x.1.total_cmp(y.1))?;
+        let (i, &p) = probs.iter().enumerate().max_by(|x, y| x.1.total_cmp(y.1))?;
+        // An answer that ties at the top names no word: the edits keep
+        // their own order rather than favour whichever word came last.
+        if probs.iter().filter(|&&q| q == p).count() > 1 {
+            return None;
+        }
         Some(group[i])
     };
     let all: Vec<usize> = (0..words.len()).collect();
