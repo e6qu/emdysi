@@ -307,6 +307,21 @@ fn corrections_of_two_words_and_related_words() {
             "resources that have a status",
             "that have",
         ),
+        // A negation (|doesn't|).
+        (
+            "If the spec of the Pod does already contain any secrets, the controller adds them.",
+            "does",
+            "Pod doesn't already contain",
+            "doesn't",
+        ),
+        // Verified clause by clause: the whole corrected sentence has no
+        // strict reading within its time, the clause with it does.
+        (
+            "Then we can create a vector to hold that enum and so, ultimately, holds different types.",
+            "holds",
+            "ultimately, hold different",
+            "hold",
+        ),
         (
             "The value will be included in the iteration produced by filter.",
             "iteration",
