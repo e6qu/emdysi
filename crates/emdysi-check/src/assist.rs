@@ -78,7 +78,8 @@ const CLASSES: &[&[&str]] = &[
 ];
 /// Words tried as insertions before each word.
 const INSERTED: &[&str] = &[
-    "the", "a", "an", "of", "to", "it", "you", "we", "is", "be", "in", "on", "with",
+    "the", "a", "an", "of", "to", "it", "you", "we", "is", "be", "in", "on", "with", "this",
+    "should",
 ];
 /// Time limit for parsing a spelling candidate, and for a corrected
 /// sentence of up to `SHORT` words; longer ones get `PER_WORD` more per
@@ -109,13 +110,18 @@ fn replace(text: &str, from: usize, to: usize, rep: &str) -> String {
 /// The replacement written with the capitalisation of `like`.
 fn same_case(like: &str, rep: &str) -> String {
     if like.chars().next().is_some_and(char::is_uppercase) {
-        let mut c = rep.chars();
-        c.next()
-            .map(|f| f.to_uppercase().chain(c).collect())
-            .unwrap_or_default()
+        capitalized(rep)
     } else {
         rep.to_string()
     }
+}
+
+/// `rep` with a capital first letter.
+fn capitalized(rep: &str) -> String {
+    let mut c = rep.chars();
+    c.next()
+        .map(|f| f.to_uppercase().chain(c).collect())
+        .unwrap_or_default()
 }
 
 /// Whether the strict grammar accepts `text` (within a short time limit).
@@ -162,7 +168,14 @@ fn function_word_edits(s: &Sentence) -> (Vec<WordEdit>, Vec<WordEdit>) {
             for other in classes.iter().flat_map(|c| c.iter()) {
                 if *other != lower && !seen.contains(other) {
                     seen.push(*other);
-                    subs.push((t.from, t.to, surface.clone(), same_case(&surface, other)));
+                    // A sentence starts with a capital, whatever the
+                    // word it starts with now.
+                    let rep = if t.from == 0 {
+                        capitalized(other)
+                    } else {
+                        same_case(&surface, other)
+                    };
+                    subs.push((t.from, t.to, surface.clone(), rep));
                 }
             }
             // The word and the space after it (or before it, at the end).
@@ -175,7 +188,7 @@ fn function_word_edits(s: &Sentence) -> (Vec<WordEdit>, Vec<WordEdit>) {
         if surface.chars().next().is_some_and(char::is_alphabetic) {
             for w in INSERTED {
                 let w = if t.from == 0 {
-                    same_case(&surface, w)
+                    capitalized(w)
                 } else {
                     w.to_string()
                 };
@@ -309,6 +322,20 @@ pub fn edits(erg: &Erg, s: &Sentence) -> Vec<Edit> {
         text,
         replacement,
     };
+    // A sentence adverb written as its adjective (|Additional, we are
+    // starting ...|): the first word, before a comma, with |-ly|.
+    if let Some(t) = s.tokens.first().filter(|t| chars.get(t.to) == Some(&',')) {
+        let surface: String = chars[t.from..t.to].iter().collect();
+        let adverb = format!("{}ly", surface.to_lowercase());
+        if surface.chars().all(char::is_alphabetic) && crate::dict::tier(&adverb).is_some() {
+            out.push(Edit {
+                from: t.from,
+                to: t.to,
+                text: surface.clone(),
+                replacement: same_case(&surface, &adverb),
+            });
+        }
+    }
     let (changed, inserted) = function_word_edits(s);
     out.extend(changed.into_iter().map(as_edit));
     let mut real = real_word_edits(s);

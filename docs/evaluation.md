@@ -1213,6 +1213,8 @@ question with the writer's own correction (2026-10-13).
 | With a word one edit from a word the document uses taken for its typo (2026-10-15), all pairs | 306 of 377 (81%; grammar errors 145 of 199, spelling 161 of 178) | 4,812 | |
 | With up to four candidates two edits away, and the word as written outside the parse check (2026-10-15), all pairs | 309 of 377 (82%; grammar errors 145 of 199, spelling 164 of 178) | 4,831 | |
 | With candidates for sentences without any reading (2026-10-15), all pairs | 311 of 377 (82%; grammar errors 147 of 199, spelling 164 of 178) | 4,874 | |
+| With the oracle matching whole sentences first (2026-10-15), all pairs | 311 of 377 (the same pairs) | 4,888 | |
+| With *this* and *should* inserted, a capital at the start of a sentence and sentence adverbs (2026-10-15), all pairs | 314 of 377 (83%; grammar errors 150 of 199, spelling 164 of 178) | 4,905 | |
 
 No flag on the corrected text in any setting. Without screening the model
 can only help with sentences the grammar cannot analyse, and most real
@@ -1519,3 +1521,30 @@ words); `fix_bound` finds 142 of 199 grammar errors reachable (139).
 The new catches are *provides* and *labelled*. No flag on the corrected
 text. *Policy objects describes ...* is fixed too when checked alone,
 but not within the time of the full run.
+
+### Words at the start of a sentence
+
+Three grammar errors had no candidate (2026-10-15). *will generate
+tokens that look like ...* lacks its subject (*This will ...*), *... must
+remain on control plane nodes and not be shared* lacks *should*, and
+*Additional, we are starting ...* wants its adverb. *this* and *should*
+are now among the words inserted; a word inserted or substituted at the
+start of a sentence is capitalized (it took the case of the word it
+went before, so the insertion was *this will ...*); and a sentence's
+first word before a comma also gets its form in *-ly* when that is a
+listed word.
+
+The perfect model took the first option inside the corrected text, and
+*will generate tokens ...* is inside *This will generate tokens ...*: it
+now takes an option that is a whole corrected sentence first. That alone
+changes nothing (311, the same pairs).
+
+| Measure | Before | After |
+|---|---|---|
+| Real errors caught without a model (377) | 167 | 167 (the candidates are only for the model) |
+| Real errors caught with a perfect model | 311 (82%; grammar errors 147 of 199) | 314 (83%; grammar errors 150 of 199) |
+
+No flag on the corrected text. *his means that ...* (for *This means*)
+stays out of reach: the segmenter does not split the sentence off
+the one before it (it starts in lower case), so the correction is two
+sentences and never verifies as one.
