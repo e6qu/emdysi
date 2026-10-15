@@ -1216,6 +1216,7 @@ question with the writer's own correction (2026-10-13).
 | With the oracle matching whole sentences first (2026-10-15), all pairs | 311 of 377 (the same pairs) | 4,888 | |
 | With *this* and *should* inserted, a capital at the start of a sentence and sentence adverbs (2026-10-15), all pairs | 314 of 377 (83%; grammar errors 150 of 199, spelling 164 of 178) | 4,905 | |
 | With a pronoun after the last word and a word deleted with its comma (2026-10-15), all pairs | 315 of 377 (84%; grammar errors 151 of 199, spelling 164 of 178) | 4,924 | |
+| With corrections of two words, related words and Hugo shortcodes (2026-10-15), all pairs | 326 of 377 (86%; grammar errors 159 of 199, spelling 167 of 178) | 4,902 | |
 
 No flag on the corrected text in any setting. Without screening the model
 can only help with sentences the grammar cannot analyse, and most real
@@ -1563,3 +1564,36 @@ grammar errors 151 of 199, from 150; the new catch is *against it*). The
 pair with *this,* is not reached: no correction of its 36-word sentence
 parses within its time.
 No flag on the corrected text; without a model nothing changes.
+
+### Corrections of two words, related words and Hugo shortcodes
+
+Corrections were of one word, or one word inserted or dropped
+(2026-10-15). Now also:
+
+- *is* or *are* becomes a modal and *be* (*The output should be similar
+  to this*); two function words together are dropped (*the example of
+  the flow* for *the example flow*); *to be* is inserted like the other
+  inserted words;
+- a relative pronoun is replaced together with another form of the verb
+  after it (*which has status* for *that have status*);
+- related words: another common word (up to tier 60) that shares the
+  word's first letters (five, or all but one of a shorter word) and is
+  at most three edits away (*iteration* for *iterator*, *extendable* for
+  *extensible*, *media* for *medium*), tried before the insertions;
+- Hugo shortcodes in Markdown: a glossary tooltip (`{{< glossary_tooltip
+  text="API resources" ... >}}`) reads as its text, and any other
+  shortcode is dropped, outside inline code, with the offsets into the
+  source kept. The real-error pairs from the Kubernetes documentation
+  have them; the development sets had them removed by `sample.py`.
+
+| Measure | Before | After |
+|---|---|---|
+| Real errors caught without a model (377) | 167 | 167 (the same pairs) |
+| Real errors caught with a perfect model | 315 (84%; grammar errors 151 of 199, spelling 164 of 178) | 326 (86%; grammar errors 159 of 199, spelling 167 of 178) |
+| False flags, first and second development sets | 6, 79 | FF |
+
+The new catches: *should be*, *flow* (for *of the flow*), *that have*,
+*extensible*, *iterator*, *medium*, *resides* (for *residents*), *shows*,
+and three misspellings the spelling rule leaves alone, corrected as
+related words: *authoritatively*, *happening*, *refactoring*. No flag on
+the corrected text.

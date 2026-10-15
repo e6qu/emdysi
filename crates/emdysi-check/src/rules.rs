@@ -1227,7 +1227,27 @@ impl Rule {
                             .tokens
                             .get(1)
                             .is_some_and(|n| n.form.chars().next().is_some_and(char::is_uppercase));
-                        let w: &String = if ti == 0
+                        // A capitalized word in a title-cased run of common
+                        // words (|Node Shutdown Mananger|) is not a name:
+                        // a possible typo, for the model to confirm.
+                        let title_case = |f: &str| {
+                            f.chars().next().is_some_and(char::is_uppercase)
+                                && f.chars().skip(1).all(char::is_lowercase)
+                        };
+                        let common_title = |n: Option<&emdysi_parse::InputToken>| {
+                            n.is_some_and(|n| {
+                                title_case(&n.form)
+                                    && crate::dict::tier(&n.form.to_lowercase())
+                                        .is_some_and(|t| t <= 50)
+                            })
+                        };
+                        let in_title = ti > 0
+                            && t.form.chars().count() >= 5
+                            && title_case(&t.form)
+                            && (common_title(s.tokens.get(ti - 1))
+                                || common_title(s.tokens.get(ti + 1)));
+                        let w: &String = if in_title
+                            || ti == 0
                             // Short capitalized words are often names
                             // (|Tage has started|, |Nuage is a platform|).
                             && t.form.chars().count() >= 7
@@ -1377,7 +1397,8 @@ impl Rule {
                         {
                             continue;
                         }
-                        let mut d = self.diag(a, si, t.from, t.to, w);
+                        let mut d =
+                            self.diag(a, si, t.from, t.to, if in_title { &t.form } else { w });
                         d.message = d.message.replace(
                             "{suggestion}",
                             &sugg
@@ -1386,7 +1407,7 @@ impl Rule {
                                 .map(|x| format!(" Did you mean '{x}'?"))
                                 .unwrap_or_default(),
                         );
-                        d.needs_model = two_edits || derived_typo;
+                        d.needs_model = two_edits || derived_typo || in_title;
                         // Fix automatically only when one candidate is clearly
                         // the most plausible typo, or the only one.
                         let single = sugg.len() == 1

@@ -444,6 +444,25 @@ fn a_word_two_edits_from_several_words_needs_the_model() {
 }
 
 #[test]
+fn a_typo_in_a_title_cased_name_needs_the_model() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let checker = core();
+    let text = "It may not be detected by the Node Shutdown Mananger in time.\n";
+    let a = analyze(&erg, text, Format::Markdown, &opts());
+    let spelling = |d: &[Diagnostic]| d.iter().find(|d| d.rule == "core.spelling").cloned();
+    // A capitalized word is taken for a name, but among title-cased
+    // common words (|Node Shutdown|) it may be a typo: only the model
+    // can tell.
+    assert_eq!(spelling(&checker.check(&erg, &a)), None);
+    let mut model = Prefers {
+        want: "Shutdown Manager in",
+        asked: Vec::new(),
+    };
+    let d = spelling(&checker.check_with(&erg, &a, Some(&mut model))).unwrap();
+    assert_eq!(d.replacement.as_deref(), Some("Manager"));
+}
+
+#[test]
 fn a_misspelled_derivation_needs_the_model() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     let checker = core();
