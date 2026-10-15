@@ -1246,7 +1246,23 @@ impl Rule {
                             && title_case(&t.form)
                             && (common_title(s.tokens.get(ti - 1))
                                 || common_title(s.tokens.get(ti + 1)));
+                        // A three-letter word one edit from one of the
+                        // commonest words (|wil|, |tha|, |Nex,| at the start)
+                        // is a possible typo, for the model to confirm.
+                        let short_typo = {
+                            let l = t.form.to_lowercase();
+                            l.chars().count() + 1 == *min_length
+                                && l.chars().all(|c| c.is_ascii_lowercase())
+                                && (ti == 0 || t.form == l)
+                                && crate::dict::tier(&l).is_none()
+                                && !erg.known_word(&l)
+                                && !crate::dict::accepted(&l)
+                                && emdysi_parse::edits(&l)
+                                    .iter()
+                                    .any(|e| crate::dict::tier(e).is_some_and(|t| t <= SHORT_TIER))
+                        };
                         let w: &String = if in_title
+                            || short_typo && ti == 0
                             || ti == 0
                             // Short capitalized words are often names
                             // (|Tage has started|, |Nuage is a platform|).
@@ -1263,7 +1279,7 @@ impl Rule {
                         };
                         // Only plain lower-case words: names, acronyms, code
                         // and numbers are out of scope.
-                        if w.chars().count() < *min_length
+                        if w.chars().count() < *min_length && !short_typo
                             || !w.chars().all(|c| c.is_lowercase() || c == '\'' || c == '-')
                             || w.contains("--")
                             || s.text
@@ -1397,8 +1413,13 @@ impl Rule {
                         {
                             continue;
                         }
-                        let mut d =
-                            self.diag(a, si, t.from, t.to, if in_title { &t.form } else { w });
+                        let mut d = self.diag(
+                            a,
+                            si,
+                            t.from,
+                            t.to,
+                            if in_title || short_typo { &t.form } else { w },
+                        );
                         d.message = d.message.replace(
                             "{suggestion}",
                             &sugg
@@ -1407,7 +1428,7 @@ impl Rule {
                                 .map(|x| format!(" Did you mean '{x}'?"))
                                 .unwrap_or_default(),
                         );
-                        d.needs_model = two_edits || derived_typo || in_title;
+                        d.needs_model = two_edits || derived_typo || in_title || short_typo;
                         // Fix automatically only when one candidate is clearly
                         // the most plausible typo, or the only one.
                         let single = sugg.len() == 1
@@ -2612,6 +2633,8 @@ fn typo_cost(typed: &str, target: &str) -> f64 {
 const TWO_EDIT_LENGTH: usize = 7;
 /// Least common tier of the word meant, when it is two edits away.
 const TWO_EDIT_TIER: u8 = 50;
+/// The tier of the words a three-letter typo may be meant for.
+const SHORT_TIER: u8 = 35;
 /// At most this many common words two edits away: the model chooses
 /// among them (|furutre|: |furore|, |future|, |nurture|).
 const TWO_EDIT_CANDIDATES: usize = 4;

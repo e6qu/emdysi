@@ -478,6 +478,23 @@ fn a_typo_in_a_title_cased_name_needs_the_model() {
 }
 
 #[test]
+fn a_three_letter_typo_needs_the_model() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let checker = core();
+    let text = "The scheduler wil start the pods.\n";
+    let a = analyze(&erg, text, Format::Markdown, &opts());
+    let spelling = |d: &[Diagnostic]| d.iter().find(|d| d.rule == "core.spelling").cloned();
+    // Too short for a finding of its own, but one edit from |will|.
+    assert_eq!(spelling(&checker.check(&erg, &a)), None);
+    let mut model = Prefers {
+        want: "scheduler will start",
+        asked: Vec::new(),
+    };
+    let d = spelling(&checker.check_with(&erg, &a, Some(&mut model))).unwrap();
+    assert_eq!(d.replacement.as_deref(), Some("will"));
+}
+
+#[test]
 fn a_misspelled_derivation_needs_the_model() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     let checker = core();
