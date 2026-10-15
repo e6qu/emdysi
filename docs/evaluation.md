@@ -1215,6 +1215,7 @@ question with the writer's own correction (2026-10-13).
 | With candidates for sentences without any reading (2026-10-15), all pairs | 311 of 377 (82%; grammar errors 147 of 199, spelling 164 of 178) | 4,874 | |
 | With the oracle matching whole sentences first (2026-10-15), all pairs | 311 of 377 (the same pairs) | 4,888 | |
 | With *this* and *should* inserted, a capital at the start of a sentence and sentence adverbs (2026-10-15), all pairs | 314 of 377 (83%; grammar errors 150 of 199, spelling 164 of 178) | 4,905 | |
+| With a pronoun after the last word and a word deleted with its comma (2026-10-15), all pairs | 315 of 377 (84%; grammar errors 151 of 199, spelling 164 of 178) | 4,924 | |
 
 No flag on the corrected text in any setting. Without screening the model
 can only help with sentences the grammar cannot analyse, and most real
@@ -1548,3 +1549,17 @@ No flag on the corrected text. *his means that ...* (for *This means*)
 stays out of reach: the segmenter does not split the sentence off
 the one before it (it starts in lower case), so the correction is two
 sentences and never verifies as one.
+
+### The end of a sentence
+
+Insertions went before a word, so nothing could be added after the last
+one: *... from the kubeconfig files and the files against* wants *it*
+(2026-10-15). *it* and *them* are now tried after the last word, before any final
+punctuation. And a
+function word was deleted with the space after it, which left the comma
+of one set off by commas (*as of this writing, this, it compiles*): it is
+now deleted with its comma. With a perfect model, 315 of 377 (84%;
+grammar errors 151 of 199, from 150; the new catch is *against it*). The
+pair with *this,* is not reached: no correction of its 36-word sentence
+parses within its time.
+No flag on the corrected text; without a model nothing changes.

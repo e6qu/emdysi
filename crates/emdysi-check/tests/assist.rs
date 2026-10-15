@@ -266,6 +266,24 @@ fn a_sentence_adverb_written_as_its_adjective() {
 }
 
 #[test]
+fn a_missing_object_at_the_end_is_inserted() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let text = "Remove the old CA from the files and the configs against.\n";
+    let a = analyze(&erg, text, Format::Markdown, &opts());
+    let mut model = NamesAndPrefers {
+        word: "against",
+        want: "configs against it.",
+    };
+    let d: Vec<Diagnostic> = core()
+        .check_with(&erg, &a, Some(&mut model))
+        .into_iter()
+        .filter(|d| d.rule == "core.grammar-fix")
+        .collect();
+    assert_eq!(d.len(), 1, "{d:?}");
+    assert_eq!(d[0].replacement.as_deref(), Some("against it"));
+}
+
+#[test]
 fn sentences_without_a_full_stop() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     // A list item the grammar accepts once it ends in a full stop is only

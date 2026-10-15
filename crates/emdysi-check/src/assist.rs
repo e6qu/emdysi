@@ -25,7 +25,7 @@
 
 use std::time::{Duration, Instant};
 
-use emdysi_parse::Erg;
+use emdysi_parse::{Erg, InputToken};
 
 use crate::decisions::Ask;
 use crate::{Analysis, Sentence};
@@ -178,8 +178,12 @@ fn function_word_edits(s: &Sentence) -> (Vec<WordEdit>, Vec<WordEdit>) {
                     subs.push((t.from, t.to, surface.clone(), rep));
                 }
             }
-            // The word and the space after it (or before it, at the end).
-            if chars.get(t.to) == Some(&' ') {
+            // The word and the space after it (or before it, at the end);
+            // with its comma, a word set off by one (|as of this writing,
+            // this, it compiles|).
+            if chars.get(t.to) == Some(&',') && chars.get(t.to + 1) == Some(&' ') {
+                dels.push((t.from, t.to + 2, format!("{surface}, "), String::new()));
+            } else if chars.get(t.to) == Some(&' ') {
                 dels.push((t.from, t.to + 1, format!("{surface} "), String::new()));
             } else if t.from > 0 && chars[t.from - 1] == ' ' {
                 dels.push((t.from - 1, t.to, format!(" {surface}"), String::new()));
@@ -202,6 +206,27 @@ fn function_word_edits(s: &Sentence) -> (Vec<WordEdit>, Vec<WordEdit>) {
                 };
                 ins.push((t.from, t.to, surface.clone(), format!("{w} {rest}")));
             }
+        }
+    }
+    // A pronoun after the last word, the object of a preposition left
+    // without one (|the files against| for |the files against it|).
+    // (The last word, before any final punctuation.)
+    let all = |t: &InputToken, f: fn(&char) -> bool| {
+        t.to <= chars.len() && chars[t.from..t.to].iter().all(f)
+    };
+    let last = s
+        .tokens
+        .iter()
+        .rposition(|t| all(t, |c| c.is_alphabetic()))
+        .filter(|&i| {
+            s.tokens[i + 1..]
+                .iter()
+                .all(|t| all(t, |c| c.is_ascii_punctuation()))
+        });
+    if let Some(t) = last.map(|i| &s.tokens[i]) {
+        let surface: String = chars[t.from..t.to].iter().collect();
+        for w in ["it", "them"] {
+            ins.push((t.from, t.to, surface.clone(), format!("{surface} {w}")));
         }
     }
     let n = subs.len() + dels.len();
