@@ -44,3 +44,25 @@ fn plain_paragraphs() {
     let r = blocks[1].source_range(0..5);
     assert_eq!(&src[r], "Four.");
 }
+
+#[test]
+fn html_paragraphs_are_prose() {
+    // A paragraph of plain HTML, as in generated reference pages: its text
+    // is prose, inline code is opaque, entities are decoded, and offsets
+    // point into the source.
+    let src = "<p><code>caCertPath</code> is the path to the &quot;CA&quot; file.</p>\n";
+    let blocks = markdown_blocks(src);
+    assert_eq!(blocks.len(), 1);
+    let b = &blocks[0];
+    assert_eq!(b.kind, BlockKind::Paragraph);
+    assert_eq!(b.text, "caCertPath is the path to the \"CA\" file.");
+    assert_eq!(b.opaque, vec![0..10]);
+    let at = b.text.find("path").unwrap();
+    assert_eq!(&src[b.offsets[at]..b.offsets[at] + 4], "path");
+    // Any other HTML stays opaque.
+    let blocks = markdown_blocks("<div class=\"x\">Not prose here.</div>\n");
+    assert_eq!(blocks.len(), 1);
+    assert_eq!(blocks[0].kind, BlockKind::Code);
+    let blocks = markdown_blocks("<table><tr><td>cell</td></tr></table>\n");
+    assert_eq!(blocks[0].kind, BlockKind::Code);
+}
