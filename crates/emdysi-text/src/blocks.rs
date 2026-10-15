@@ -102,7 +102,77 @@ pub fn plain_blocks(src: &str) -> Vec<Block> {
     out
 }
 
+/// Hugo shortcodes in `b`'s text: |{{< glossary_tooltip text="API
+/// resources" term_id="api-resource" >}}| is its `text` (prose that
+/// renders), any other (|{{< note >}}|, |{{% /tab %}}|) is dropped. The
+/// offset map and the opaque ranges follow.
+fn shortcodes(b: &mut Block) {
+    if !b.text.contains("{{") {
+        return;
+    }
+    // The byte ranges of the old text to keep, in order.
+    let mut keep: Vec<Range<usize>> = Vec::new();
+    let mut at = 0;
+    while let Some(i) = b.text[at..].find("{{").map(|i| at + i) {
+        let rest = &b.text[i + 2..];
+        // (Inside inline code, a shortcode is code: |`{{< note >}}`|.)
+        let in_code = b.is_opaque(&(i..i + 1));
+        let Some(open) = rest
+            .chars()
+            .next()
+            .filter(|c| matches!(c, '<' | '%') && !in_code)
+        else {
+            keep.push(at..i + 2);
+            at = i + 2;
+            continue;
+        };
+        let close = if open == '<' { ">}}" } else { "%}}" };
+        let Some(end) = rest.find(close).map(|e| i + 2 + e + close.len()) else {
+            break;
+        };
+        keep.push(at..i);
+        let inner = &b.text[i + 3..end - 3];
+        if inner.trim_start().starts_with("glossary_tooltip") {
+            // The value of |text="..."| (straight or curly quotes).
+            if let Some(v) = inner.find("text=").map(|v| i + 3 + v + 5) {
+                let q = b.text[v..].chars().next().unwrap_or(' ');
+                if matches!(q, '"' | '“' | '”') {
+                    let from = v + q.len_utf8();
+                    if let Some(len) = b.text[from..end].find(['"', '“', '”']) {
+                        keep.push(from..from + len);
+                    }
+                }
+            }
+        }
+        at = end;
+    }
+    keep.push(at..b.text.len());
+    let mut text = String::new();
+    let mut offsets = Vec::new();
+    // Old byte index -> new byte index, for the bytes kept.
+    let mut map = vec![None; b.text.len() + 1];
+    for r in keep.iter().filter(|r| r.start < r.end) {
+        for (k, j) in r.clone().enumerate() {
+            map[j] = Some(text.len() + k);
+        }
+        text.push_str(&b.text[r.clone()]);
+        offsets.extend_from_slice(&b.offsets[r.clone()]);
+    }
+    map[b.text.len()] = Some(text.len());
+    b.opaque = b
+        .opaque
+        .iter()
+        .filter_map(|o| {
+            let kept: Vec<usize> = o.clone().filter_map(|j| map[j]).collect();
+            Some(*kept.first()?..*kept.last()? + 1)
+        })
+        .collect();
+    b.text = text;
+    b.offsets = offsets;
+}
+
 fn finish(mut b: Block) -> Block {
+    shortcodes(&mut b);
     // Trim trailing whitespace but keep the offset map aligned.
     let trimmed = b.text.trim_end().len();
     b.text.truncate(trimmed);

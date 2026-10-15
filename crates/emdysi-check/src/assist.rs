@@ -79,7 +79,7 @@ const CLASSES: &[&[&str]] = &[
 /// Words tried as insertions before each word.
 const INSERTED: &[&str] = &[
     "the", "a", "an", "of", "to", "it", "you", "we", "is", "be", "in", "on", "with", "this",
-    "should",
+    "should", "to be",
 ];
 /// Time limit for parsing a spelling candidate, and for a corrected
 /// sentence of up to `SHORT` words; longer ones get `PER_WORD` more per
@@ -178,6 +178,15 @@ fn function_word_edits(s: &Sentence) -> (Vec<WordEdit>, Vec<WordEdit>) {
                     subs.push((t.from, t.to, surface.clone(), rep));
                 }
             }
+            // A modal before |be| (|The output is similar| for |should
+            // be similar|).
+            if matches!(lower.as_str(), "is" | "are") {
+                for m in ["should", "can", "will", "must"] {
+                    let rep = format!("{m} be");
+                    let rep = if t.from == 0 { capitalized(&rep) } else { rep };
+                    subs.push((t.from, t.to, surface.clone(), rep));
+                }
+            }
             // The word and the space after it (or before it, at the end);
             // with its comma, a word set off by one (|as of this writing,
             // this, it compiles|).
@@ -206,6 +215,29 @@ fn function_word_edits(s: &Sentence) -> (Vec<WordEdit>, Vec<WordEdit>) {
                 };
                 ins.push((t.from, t.to, surface.clone(), format!("{w} {rest}")));
             }
+        }
+    }
+    // Two function words together (|the example of the flow| for |the
+    // example flow|).
+    let function = |t: &InputToken| {
+        t.to <= chars.len() && {
+            let w: String = chars[t.from..t.to]
+                .iter()
+                .collect::<String>()
+                .to_lowercase();
+            CLASSES.iter().any(|c| c.contains(&w.as_str()))
+        }
+    };
+    for w in s.tokens.windows(2) {
+        let (a, b) = (&w[0], &w[1]);
+        if function(a)
+            && function(b)
+            && chars.get(a.to) == Some(&' ')
+            && a.to + 1 == b.from
+            && chars.get(b.to) == Some(&' ')
+        {
+            let text: String = chars[a.from..=b.to].iter().collect();
+            dels.push((a.from, b.to + 1, text, String::new()));
         }
     }
     // A pronoun after the last word, the object of a preposition left
@@ -363,9 +395,78 @@ pub fn edits(erg: &Erg, s: &Sentence) -> Vec<Edit> {
     }
     let (changed, inserted) = function_word_edits(s);
     out.extend(changed.into_iter().map(as_edit));
+    // A relative pronoun and the verb after it, changed together (|which
+    // has status| for |that have status|).
+    for w in s.tokens.windows(2) {
+        let (a, b) = (&w[0], &w[1]);
+        if b.to > chars.len() || chars.get(a.to) != Some(&' ') || a.to + 1 != b.from {
+            continue;
+        }
+        let pronoun: String = chars[a.from..a.to].iter().collect();
+        let verb: String = chars[b.from..b.to].iter().collect();
+        let lower = pronoun.to_lowercase();
+        if !matches!(lower.as_str(), "which" | "that" | "who")
+            || !verb.chars().all(|c| c.is_ascii_lowercase())
+        {
+            continue;
+        }
+        for other in ["which", "that", "who"].into_iter().filter(|o| *o != lower) {
+            for f in erg.inflections(&verb) {
+                if f == verb || f.contains(' ') || crate::dict::tier(&f).is_none() {
+                    continue;
+                }
+                out.push(Edit {
+                    from: a.from,
+                    to: b.to,
+                    text: format!("{pronoun} {verb}"),
+                    replacement: format!("{} {f}", same_case(&pronoun, other)),
+                });
+            }
+        }
+    }
     let mut real = real_word_edits(s);
     real.retain(|e| !out.contains(e));
     out.extend(real);
+    // Related words, before the insertions: another word on the same
+    // stem a few letters away (|iteration| for |iterator|, |extendable|
+    // for |extensible|, |worse| for |worst|).
+    for t in &s.tokens {
+        if t.to > chars.len() {
+            continue;
+        }
+        let surface: String = chars[t.from..t.to].iter().collect();
+        let lower = surface.to_lowercase();
+        let n = lower.chars().count();
+        if n < 5
+            || !lower.chars().all(|c| c.is_ascii_lowercase())
+            || surface.chars().skip(1).any(|c| c.is_ascii_uppercase())
+        {
+            continue;
+        }
+        let shared = n.min(6) - 1;
+        for x in crate::dict::by_prefix(&lower[..4]) {
+            let rep = same_case(&surface, x);
+            if *x == lower
+                || x.len().abs_diff(n) > 4
+                || lower
+                    .chars()
+                    .zip(x.chars())
+                    .take_while(|(a, b)| a == b)
+                    .count()
+                    < shared
+                || crate::rules::edit_distance(&lower, x) > 3
+                || out.iter().any(|e| e.from == t.from && e.replacement == rep)
+            {
+                continue;
+            }
+            out.push(Edit {
+                from: t.from,
+                to: t.to,
+                text: surface.clone(),
+                replacement: rep,
+            });
+        }
+    }
     out.extend(inserted.into_iter().map(as_edit));
     // A doubled word (|the the|) dropped first.
     let mut doubled = Vec::new();

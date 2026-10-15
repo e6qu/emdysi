@@ -284,6 +284,51 @@ fn a_missing_object_at_the_end_is_inserted() {
 }
 
 #[test]
+fn corrections_of_two_words_and_related_words() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    // (sentence, the word the model names, the version it prefers, the
+    // replacement)
+    let cases = [
+        (
+            "The output is similar to this one.",
+            "is",
+            "output should be similar",
+            "should be",
+        ),
+        (
+            "The following is the example of the flow described in that document.",
+            "of",
+            "the example flow described",
+            "",
+        ),
+        (
+            "This flag is used with all the resources which has a status.",
+            "which",
+            "resources that have a status",
+            "that have",
+        ),
+        (
+            "The value will be included in the iteration produced by filter.",
+            "iteration",
+            "the iterator produced",
+            "iterator",
+        ),
+    ];
+    for (sentence, word, want, replacement) in cases {
+        let text = format!("{sentence}\n");
+        let a = analyze(&erg, &text, Format::Markdown, &opts());
+        let mut model = NamesAndPrefers { word, want };
+        let d: Vec<Diagnostic> = core()
+            .check_with(&erg, &a, Some(&mut model))
+            .into_iter()
+            .filter(|d| d.rule == "core.grammar-fix")
+            .collect();
+        assert_eq!(d.len(), 1, "{sentence}: {d:?}");
+        assert_eq!(d[0].replacement.as_deref(), Some(replacement), "{sentence}");
+    }
+}
+
+#[test]
 fn sentences_without_a_full_stop() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     // A list item the grammar accepts once it ends in a full stop is only
@@ -396,6 +441,25 @@ fn a_word_two_edits_from_several_words_needs_the_model() {
     };
     let d = spelling(&checker.check_with(&erg, &a, Some(&mut model))).unwrap();
     assert_eq!(d.replacement.as_deref(), Some("prioritized"));
+}
+
+#[test]
+fn a_typo_in_a_title_cased_name_needs_the_model() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let checker = core();
+    let text = "It may not be detected by the Node Shutdown Mananger in time.\n";
+    let a = analyze(&erg, text, Format::Markdown, &opts());
+    let spelling = |d: &[Diagnostic]| d.iter().find(|d| d.rule == "core.spelling").cloned();
+    // A capitalized word is taken for a name, but among title-cased
+    // common words (|Node Shutdown|) it may be a typo: only the model
+    // can tell.
+    assert_eq!(spelling(&checker.check(&erg, &a)), None);
+    let mut model = Prefers {
+        want: "Shutdown Manager in",
+        asked: Vec::new(),
+    };
+    let d = spelling(&checker.check_with(&erg, &a, Some(&mut model))).unwrap();
+    assert_eq!(d.replacement.as_deref(), Some("Manager"));
 }
 
 #[test]
