@@ -1275,6 +1275,7 @@ impl Rule {
                         // that base is one edit away ("runing" for
                         // "running"); otherwise a coinage ("liveness",
                         // "mortifications").
+                        let mut derived_typo = false;
                         if let Some((base, _)) =
                             crate::terms::novel_derivation(erg, w).filter(|(b, _)| {
                                 b.chars().count() >= 4 && crate::dict::tier(b).is_some()
@@ -1284,10 +1285,37 @@ impl Rule {
                             // typo here: |destructures| is one edit from
                             // |restructures|, |liveness| from |aliveness|.)
                             let inflections = erg.inflections(&base);
-                            let misspelled = inflections.iter().any(|f| edit_distance(w, f) == 1);
-                            if !misspelled {
+                            // ... or a listed word one edit away, inside the
+                            // word, is formed on the same base (|assignement|
+                            // for |assignment|, |securly| for |securely|):
+                            // |aliveness|, one edit from |liveness|, is not.
+                            let stem: String = base.chars().take(4).collect();
+                            let by_inflection =
+                                inflections.iter().any(|f| edit_distance(w, f) == 1);
+                            let by_derivation = suggestions(erg, w, 5).0.iter().any(|x| {
+                                let x = x.to_lowercase();
+                                // The edit inside the word: one at its
+                                // end is another affix (|flutterings|,
+                                // |finalish|).
+                                let same_end = w
+                                    .chars()
+                                    .rev()
+                                    .zip(x.chars().rev())
+                                    .take_while(|(a, b)| a == b)
+                                    .count()
+                                    >= 2;
+                                edit_distance(w, &x) == 1
+                                    && same_end
+                                    && crate::dict::tier(&x).is_some()
+                                    && x.starts_with(&stem)
+                            });
+                            if !by_inflection && !by_derivation {
                                 continue;
                             }
+                            // A rare correct plural can also be one edit from
+                            // a listed word (|nestings|, |nestlings|): only
+                            // the model can tell.
+                            derived_typo = !by_inflection;
                         }
                         if uses.get(&w.to_lowercase()).copied().unwrap_or(0) > 1 {
                             continue;
@@ -1340,17 +1368,16 @@ impl Rule {
                                 .map(|x| format!(" Did you mean '{x}'?"))
                                 .unwrap_or_default(),
                         );
+                        d.needs_model = two_edits || derived_typo;
                         // Fix automatically only when one candidate is clearly
                         // the most plausible typo, or the only one.
-                        let single = !two_edits
-                            && sugg.len() == 1
+                        let single = sugg.len() == 1
                             && edit_distance(w, &sugg[0]) == 1
                             && w.chars().count() >= 4;
-                        if (confident && !two_edits) || single {
+                        if !d.needs_model && (confident || single) {
                             d.replacement = sugg.first().cloned();
                         }
                         d.suggestions = sugg;
-                        d.needs_model = two_edits;
                         out.push(d);
                     }
                 }
