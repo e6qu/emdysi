@@ -1217,6 +1217,7 @@ question with the writer's own correction (2026-10-13).
 | With *this* and *should* inserted, a capital at the start of a sentence and sentence adverbs (2026-10-15), all pairs | 314 of 377 (83%; grammar errors 150 of 199, spelling 164 of 178) | 4,905 | |
 | With a pronoun after the last word and a word deleted with its comma (2026-10-15), all pairs | 315 of 377 (84%; grammar errors 151 of 199, spelling 164 of 178) | 4,924 | |
 | With corrections of two words, related words and Hugo shortcodes (2026-10-15), all pairs | 326 of 377 (86%; grammar errors 159 of 199, spelling 167 of 178) | 4,902 | |
+| With typos in title-cased names and 7-letter words two edits away put to the model (2026-10-15), all pairs | 328 of 377 (87%; grammar errors 159 of 199, spelling 169 of 178) | 4,942 | |
 
 No flag on the corrected text in any setting. Without screening the model
 can only help with sentences the grammar cannot analyse, and most real
@@ -1497,8 +1498,8 @@ words are put to it, and only the model's measurement can tell how often
 it keeps a correct rare word.
 
 Of the 14 spelling errors a perfect model still misses, *Mananger* and
-*Adeliade* are capitalized, which the rule takes for names; *furutre* is
-two edits away but has seven letters, under `TWO_EDIT_LENGTH`;
+*Adeliade* are capitalized, which the rule takes for names; *furutre* was
+two edits away but had seven letters, under `TWO_EDIT_LENGTH` (see below);
 *happenening*, *ephermal*, *refacting* and *authoratitively* are not
 found by the two-edit path or are in sentences the oracle cannot match;
 the rest are short (*wil*, *tha*, *Nex*), a word to the grammar's lexicon
@@ -1597,3 +1598,13 @@ The new catches: *should be*, *flow* (for *of the flow*), *that have*,
 and three misspellings the spelling rule leaves alone, corrected as
 related words: *authoritatively*, *happening*, *refactoring*. No flag on
 the corrected text.
+
+Two more spelling cases go to the model. A capitalized word was taken for
+a name, but among title-cased common words (*Node Shutdown Mananger*) it
+may be a typo: it is now checked like a lower-case word, and such a
+finding needs the model. And a word two edits away is now a possible
+typo from seven letters (`TWO_EDIT_LENGTH`, eight before): *furutre* for
+*future*, offered with *furore* and *nurture*. Without a model nothing
+changes (167; the same 6 and 79 false flags); with a perfect one, 328 of
+377 (87%; spelling 169 of 178).
+
