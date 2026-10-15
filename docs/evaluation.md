@@ -1218,6 +1218,7 @@ question with the writer's own correction (2026-10-13).
 | With a pronoun after the last word and a word deleted with its comma (2026-10-15), all pairs | 315 of 377 (84%; grammar errors 151 of 199, spelling 164 of 178) | 4,924 | |
 | With corrections of two words, related words and Hugo shortcodes (2026-10-15), all pairs | 326 of 377 (86%; grammar errors 159 of 199, spelling 167 of 178) | 4,902 | |
 | With typos in title-cased names and 7-letter words two edits away put to the model (2026-10-15), all pairs | 328 of 377 (87%; grammar errors 159 of 199, spelling 169 of 178) | 4,942 | |
+| With clause-by-clause verification, negations and three-letter typos (2026-10-15), all pairs | 337 of 377 (89%; grammar errors 165 of 199, spelling 172 of 178) | 4,998 | |
 
 No flag on the corrected text in any setting. Without screening the model
 can only help with sentences the grammar cannot analyse, and most real
@@ -1607,4 +1608,33 @@ typo from seven letters (`TWO_EDIT_LENGTH`, eight before): *furutre* for
 *future*, offered with *furore* and *nurture*. Without a model nothing
 changes (167; the same 6 and 79 false flags); with a perfect one, 328 of
 377 (87%; spelling 169 of 178).
+
+### Long sentences verified clause by clause
+
+A correction was verified only if the whole corrected sentence had a
+strict reading within its time, and a long sentence whose clauses each
+parse often has none (search, M8): its corrections never reached the
+model (2026-10-15). A correction of a sentence of 12 words or more that
+fails so is now verified on the part around it, between punctuation
+marks (`verify_locally`): it must turn that part from no strict reading
+into one (*... and so, ultimately, hold different types*), the window
+growing by one mark on each side up to three times, never to the whole
+sentence. Also:
+
+- negations are substituted (*does* and *doesn't*, *is* and *isn't*,
+  *do*, *are*, *can*, *will*): *If the spec of the incoming Pod doesn't
+  already contain ...*; *within* joins the prepositions;
+- a three-letter word one edit from a word of the commonest tier (*wil*,
+  *tha*, *Nex* at the start of a sentence) is a possible typo, shorter
+  than the spelling rule's minimum, for the model to confirm.
+
+| Measure | Before | After |
+|---|---|---|
+| Real errors caught without a model (377) | 167 | 167 (the same pairs) |
+| Real errors caught with a perfect model | 328 (87%; grammar errors 159 of 199, spelling 169 of 178) | 337 (89%; grammar errors 165 of 199, spelling 172 of 178) |
+| False flags, first and second development sets | 6, 79 | 6, 79 (the same flags) |
+
+The new catches: *An*, *contribute*, *doesn't*, *hold*, *returns*,
+*then*, *Next*, *that*, *will*; none lost. No flag on the corrected
+text.
 

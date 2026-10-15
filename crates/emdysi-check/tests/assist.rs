@@ -307,6 +307,21 @@ fn corrections_of_two_words_and_related_words() {
             "resources that have a status",
             "that have",
         ),
+        // A negation (|doesn't|).
+        (
+            "If the spec of the Pod does already contain any secrets, the controller adds them.",
+            "does",
+            "Pod doesn't already contain",
+            "doesn't",
+        ),
+        // Verified clause by clause: the whole corrected sentence has no
+        // strict reading within its time, the clause with it does.
+        (
+            "Then we can create a vector to hold that enum and so, ultimately, holds different types.",
+            "holds",
+            "ultimately, hold different",
+            "hold",
+        ),
         (
             "The value will be included in the iteration produced by filter.",
             "iteration",
@@ -460,6 +475,23 @@ fn a_typo_in_a_title_cased_name_needs_the_model() {
     };
     let d = spelling(&checker.check_with(&erg, &a, Some(&mut model))).unwrap();
     assert_eq!(d.replacement.as_deref(), Some("Manager"));
+}
+
+#[test]
+fn a_three_letter_typo_needs_the_model() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let checker = core();
+    let text = "The scheduler wil start the pods.\n";
+    let a = analyze(&erg, text, Format::Markdown, &opts());
+    let spelling = |d: &[Diagnostic]| d.iter().find(|d| d.rule == "core.spelling").cloned();
+    // Too short for a finding of its own, but one edit from |will|.
+    assert_eq!(spelling(&checker.check(&erg, &a)), None);
+    let mut model = Prefers {
+        want: "scheduler will start",
+        asked: Vec::new(),
+    };
+    let d = spelling(&checker.check_with(&erg, &a, Some(&mut model))).unwrap();
+    assert_eq!(d.replacement.as_deref(), Some("will"));
 }
 
 #[test]

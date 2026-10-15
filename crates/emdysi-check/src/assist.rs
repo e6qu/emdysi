@@ -67,7 +67,7 @@ const CLASSES: &[&[&str]] = &[
     &["has", "have", "had"],
     &["can", "could", "should", "will", "would", "may", "must"],
     &[
-        "in", "on", "at", "for", "to", "of", "from", "by", "with", "into", "about", "as",
+        "in", "on", "at", "for", "to", "of", "from", "by", "with", "into", "about", "as", "within",
     ],
     &["it", "its", "it's", "they", "them", "their"],
     &["their", "its", "your", "our", "his", "her"],
@@ -75,6 +75,13 @@ const CLASSES: &[&[&str]] = &[
     &["this", "these", "that", "those", "the"],
     &["which", "that", "who"],
     &["and", "or"],
+    // A dropped or added negation (|does already contain| for |doesn't|).
+    &["does", "doesn't"],
+    &["do", "don't"],
+    &["is", "isn't"],
+    &["are", "aren't"],
+    &["can", "can't"],
+    &["will", "won't"],
 ];
 /// Words tried as insertions before each word.
 const INSERTED: &[&str] = &[
@@ -555,11 +562,71 @@ pub fn verify(erg: &Erg, s: &Sentence, e: &Edit) -> bool {
 
 /// [`verify`] within at most `most`.
 fn verify_within(erg: &Erg, s: &Sentence, e: &Edit, most: Duration) -> bool {
+    let start = Instant::now();
     let masked = s.text.chars().count() == s.original.chars().count();
     let text = if masked { &s.text } else { &s.original };
     let extra = s.word_count().saturating_sub(SHORT) as u32;
     let limit = (PARSE_TIMEOUT + PER_WORD * extra).min(LONGEST).min(most);
     strict_within(erg, &with_full_stop(&e.apply(text)), limit)
+        || s.word_count() >= LOCAL_WORDS
+            && verify_locally(erg, text, e, most.saturating_sub(start.elapsed()))
+}
+
+/// Shortest sentence whose corrections may be verified clause by clause.
+const LOCAL_WORDS: usize = 12;
+
+/// Whether `e` turns the part of `text` around it, between punctuation
+/// marks, from no strict reading into one: a long sentence whose clauses
+/// each parse can fail to parse whole within its time (search, M8), and
+/// its correction then never verifies. The window grows by one mark on
+/// each side, up to three times, and never reaches the whole sentence.
+fn verify_locally(erg: &Erg, text: &str, e: &Edit, most: Duration) -> bool {
+    let start = Instant::now();
+    let chars: Vec<char> = text.chars().collect();
+    let marks: Vec<usize> = chars
+        .iter()
+        .enumerate()
+        .filter(|(_, c)| matches!(c, ',' | ';' | ':' | '(' | ')' | '—' | '–'))
+        .map(|(i, _)| i)
+        .collect();
+    let before: Vec<usize> = marks
+        .iter()
+        .rev()
+        .filter(|&&m| m < e.from)
+        .copied()
+        .collect();
+    let after: Vec<usize> = marks.iter().filter(|&&m| m >= e.to).copied().collect();
+    for k in 0..3 {
+        // The window: after the k-th mark before the edit, up to the k-th
+        // mark after it.
+        let from = before.get(k).map_or(0, |m| m + 1);
+        let to = after.get(k).copied().unwrap_or(chars.len());
+        if from == 0 && to == chars.len() {
+            break;
+        }
+        let part: String = chars[from..to].iter().collect();
+        let fixed = Edit {
+            from: e.from - from,
+            to: e.to - from,
+            text: e.text.clone(),
+            replacement: e.replacement.clone(),
+        }
+        .apply(&part);
+        let words = part.split_whitespace().count();
+        let limit = (PARSE_TIMEOUT + PER_WORD * words.saturating_sub(SHORT) as u32)
+            .min(LONGEST)
+            .min(most.saturating_sub(start.elapsed()));
+        if limit.is_zero() {
+            return false;
+        }
+        if strict_within(erg, &with_full_stop(&fixed), limit) {
+            return !strict_within(erg, &with_full_stop(&part), limit);
+        }
+        if before.get(k).is_none() && after.get(k).is_none() {
+            break;
+        }
+    }
+    false
 }
 
 /// `text` ending in a full stop: one in place of a final colon, or added
@@ -649,7 +716,12 @@ fn locate(ask: &mut dyn Ask, context: &str, s: &Sentence) -> Vec<(usize, usize)>
     let mut best = |group: &[usize]| -> Option<usize> {
         let labels: Vec<&str> = group.iter().map(|&i| words[i].2.as_str()).collect();
         let probs = ask.ask(context, &question, &labels)?;
-        let (i, _) = probs.iter().enumerate().max_by(|x, y| x.1.total_cmp(y.1))?;
+        let (i, &p) = probs.iter().enumerate().max_by(|x, y| x.1.total_cmp(y.1))?;
+        // An answer that ties at the top names no word: the edits keep
+        // their own order rather than favour whichever word came last.
+        if probs.iter().filter(|&&q| q == p).count() > 1 {
+            return None;
+        }
         Some(group[i])
     };
     let all: Vec<usize> = (0..words.len()).collect();
