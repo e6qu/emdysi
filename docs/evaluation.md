@@ -1709,6 +1709,19 @@ And the consistency rule no longer counts *amongst*, *whilst* and
 *amidst* as British spellings: they are other words, used in American
 English too.
 
+From the false flags of the second development set:
+
+- a sentence that ends in a colon right after a subordinator (*CRDs are
+  a good fit if:*) is a lead-in to the list or block that completes it,
+  and is not parsed (no agreement error on *are*); a lead-in ending in
+  a preposition is still parsed, since *You should see the output
+  similar to:* is a real error;
+- *all-hands* is a count noun (*The all-hands has happened!*);
+- spelling skips a word the document also writes as a mention
+  (*@epage*), the plural of an ignored word (*zulips*), and command-line
+  options (*-funsigned-char*, *--dry-run*), which are now code-like
+  tokens for the parser too.
+
 Measured and rejected: reporting, without a model, a sentence without a
 strict reading for which exactly one candidate correction parses
 (`single_fix`). Of the grammar errors' sentences without one, about a
