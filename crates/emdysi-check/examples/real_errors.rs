@@ -111,12 +111,16 @@ fn main() {
         _ => rows,
     };
     // ONLY=a|b: only the pairs whose text before the correction is one of
-    // these (to look at a few pairs).
+    // these, or whose inserted text is when nothing is removed (to look at a
+    // few pairs).
     let rows: Vec<Vec<String>> = match std::env::var("ONLY") {
         Ok(only) => {
             let only: Vec<&str> = only.split('|').collect();
             rows.into_iter()
-                .filter(|r| only.contains(&r[2].as_str()))
+                .filter(|r| {
+                    let key = if r[2].is_empty() { &r[3] } else { &r[2] };
+                    only.contains(&key.as_str())
+                })
                 .collect()
         }
         Err(_) => rows,
