@@ -1207,6 +1207,16 @@ impl Rule {
                         *uses.entry(t.form.to_lowercase()).or_default() += 1;
                     }
                 }
+                // Words the document writes in lower case: a word it uses
+                // only capitalized is a name (|Aaron Turon|), not the word
+                // a typo was meant for.
+                let plain: std::collections::HashSet<&str> = a
+                    .sentences
+                    .iter()
+                    .flat_map(|s| s.tokens.iter())
+                    .map(|t| t.form.as_str())
+                    .filter(|f| f.chars().all(|c| !c.is_uppercase()))
+                    .collect();
                 // Words the document capitalizes after the start of a
                 // sentence are names.
                 let names: std::collections::HashSet<&str> = a
@@ -1364,7 +1374,7 @@ impl Rule {
                         let lower = w.to_lowercase();
                         let mut in_document: Vec<String> = emdysi_parse::edits(&lower)
                             .into_iter()
-                            .filter(|e| *e != lower && uses.contains_key(e) && known(e))
+                            .filter(|e| *e != lower && plain.contains(e.as_str()) && known(e))
                             .collect();
                         in_document.sort();
                         in_document.dedup();
@@ -2335,7 +2345,7 @@ fn candidate_fixes(
     // |researches| are count uses the grammar's lexicon lacks.
     if has(&["always singular"])
         && crate::dict::tier(&lower).is_none()
-        && !crate::dict::accepted(&lower)
+        && !crate::dict::accepted_common(&lower)
     {
         for base in erg
             .forms_by_rule(word, None)

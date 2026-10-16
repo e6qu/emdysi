@@ -69,7 +69,6 @@ fn accepted_words() -> &'static std::collections::HashSet<String> {
     SET.get_or_init(|| {
         RARE_WORDS
             .lines()
-            .chain(RARER_WORDS.lines())
             .chain(TECH_WORDS.iter().flat_map(|t| t.lines()))
             .map(|l| l.split('#').next().unwrap_or("").trim())
             .filter(|w| {
@@ -82,14 +81,51 @@ fn accepted_words() -> &'static std::collections::HashSet<String> {
     })
 }
 
+/// Whether a word is accepted without the rarest list (`en-80-extra`):
+/// for checks that a rare form would wrongly silence (|informations| is a
+/// size-80 word, but a mass noun made plural).
+pub fn accepted_common(word: &str) -> bool {
+    let w = word.to_lowercase();
+    accepted_words().contains(&w) || accepted(&w) && !rarest_words().contains(&w)
+}
+
+/// The words of ESDB size 80 beyond the other lists, lower case.
+fn rarest_words() -> &'static std::collections::HashSet<String> {
+    static SET: OnceLock<std::collections::HashSet<String>> = OnceLock::new();
+    SET.get_or_init(|| {
+        RARER_WORDS
+            .lines()
+            .filter(|l| !l.starts_with('#'))
+            .map(|l| l.trim().to_lowercase())
+            .filter(|w| !w.is_empty())
+            .collect()
+    })
+}
+
+/// The words of the technical lists, lower case.
+fn tech_words() -> &'static std::collections::HashSet<String> {
+    static SET: OnceLock<std::collections::HashSet<String>> = OnceLock::new();
+    SET.get_or_init(|| {
+        TECH_WORDS
+            .iter()
+            .flat_map(|t| t.lines())
+            .map(|l| l.split('#').next().unwrap_or("").trim().to_lowercase())
+            .filter(|w| !w.is_empty())
+            .collect()
+    })
+}
+
 /// Whether a word is correct though not in the main list (see
 /// [`accepted_words`]).
 pub fn accepted(word: &str) -> bool {
-    let set = accepted_words();
     let w = word.to_lowercase();
-    if set.contains(&w) {
+    if accepted_words().contains(&w) || rarest_words().contains(&w) {
         return true;
     }
+    // Only for the technical lists: the rare English words already list
+    // their forms, and inferring more lets typos through (|diabled| as
+    // |diable| plus |-d|).
+    let set = tech_words();
     // A plural or verb form of an accepted word (|impls| from |impl|,
     // |rebased| from |rebase|), or the singular of an accepted plural
     // (|finalizer| from |finalizers|): the technical lists name one form.
