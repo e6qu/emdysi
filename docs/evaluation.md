@@ -1673,7 +1673,7 @@ The changes:
 | False flags, second development set (13,442 sentences) | 79 | 53 |
 | False flags, held-out set (8,371 sentences) | 35 | 31 |
 | Real errors caught without a model (377) | 167 | 167 (the same pairs) |
-| Real errors caught with a perfect model | 337 | ORACLE |
+| Real errors caught with a perfect model | 337 | 337 (the same pairs) |
 
 No new flag on any set. The held-out set, not used while developing the
 checks, loses *gists*, *studier*, *corslet* and *autoscales*.
