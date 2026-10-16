@@ -265,6 +265,50 @@ fn grammar_errors_precision() {
 }
 
 #[test]
+fn mentioned_people_and_plurals_of_ignored_words_are_not_typos() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let checker = Checker::new(packs());
+    let opts = Options {
+        threads: 2,
+        ..Options::default()
+    };
+    // Before: |epage| as a typo of |page|, |zulips| of |tulips| (Rust blog).
+    let src = "Comment by @epage:\n\n\
+               Thanks to epage for the idea. We talked it over on zulips \
+               durnig the week.\n";
+    let a = analyze(&erg, src, Format::Markdown, &opts);
+    let d = checker.check(&erg, &a);
+    let spelling: Vec<&str> = d
+        .iter()
+        .filter(|x| x.rule == "core.spelling")
+        .map(|x| &src[x.range.clone()])
+        .collect();
+    assert_eq!(spelling, vec!["durnig"], "{d:?}");
+}
+
+#[test]
+fn a_lead_in_to_a_list_is_not_a_sentence() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let checker = Checker::new(packs());
+    let opts = Options {
+        threads: 2,
+        ..Options::default()
+    };
+    // Before: an agreement error on "are" (Kubernetes documentation).
+    let src = "Typically, CRDs are a good fit if:\n\n\
+               - you want to use the Kubernetes tools.\n\n\
+               The dogs is happy.\n";
+    let a = analyze(&erg, src, Format::Markdown, &opts);
+    let d = checker.check(&erg, &a);
+    let grammar: Vec<_> = d
+        .iter()
+        .filter(|x| x.rule == "core.grammar-errors")
+        .collect();
+    assert_eq!(grammar.len(), 1, "{d:?}");
+    assert_eq!(&src[grammar[0].range.clone()], "is", "{d:?}");
+}
+
+#[test]
 fn modifier_kinds() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     let pack = Pack::parse(

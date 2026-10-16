@@ -263,6 +263,32 @@ pub(crate) fn acronym(original: &[char], f: usize, t: usize) -> bool {
             .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
 }
 
+/// Whether a sentence ends in a colon right after a subordinator (|CRDs are a
+/// good fit if:|): the clause it opens is the list or block that follows, so
+/// the sentence alone is incomplete on purpose.
+fn lead_in(text: &str) -> bool {
+    let Some(rest) = text.trim_end().strip_suffix(':') else {
+        return false;
+    };
+    let last = rest
+        .rsplit(|c: char| !c.is_alphabetic())
+        .next()
+        .unwrap_or("");
+    matches!(
+        last.to_lowercase().as_str(),
+        "if" | "when"
+            | "whenever"
+            | "whether"
+            | "because"
+            | "unless"
+            | "while"
+            | "where"
+            | "although"
+            | "though"
+            | "until"
+    )
+}
+
 pub(crate) fn parser_text(text: &str, in_list: bool) -> Option<String> {
     // A comma after a sentence-initial coordinating conjunction (|And, I
     // have a deep passion for this|, |Or, why did he come?|) is dropped for
@@ -389,6 +415,8 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                                 opts.max_tokens
                             )),
                         )
+                    } else if lead_in(text) {
+                        (None, Some("a lead-in to what follows".to_string()))
                     } else {
                         let masked = parser_text(text, in_list);
                         let text = masked.as_deref().unwrap_or(text);
