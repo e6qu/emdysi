@@ -51,6 +51,7 @@ pub fn by_prefix(prefix: &str) -> &'static [String] {
 const RELATED_TIER: u8 = 60;
 
 const RARE_WORDS: &str = include_str!("../../../data/scowl/en-70-extra.txt");
+const RARER_WORDS: &str = include_str!("../../../data/scowl/en-80-extra.txt");
 const TECH_WORDS: &[&str] = &[
     include_str!("../../../data/cspell/software-terms.txt"),
     include_str!("../../../data/cspell/software-tools.txt"),
@@ -68,6 +69,7 @@ fn accepted_words() -> &'static std::collections::HashSet<String> {
     SET.get_or_init(|| {
         RARE_WORDS
             .lines()
+            .chain(RARER_WORDS.lines())
             .chain(TECH_WORDS.iter().flat_map(|t| t.lines()))
             .map(|l| l.split('#').next().unwrap_or("").trim())
             .filter(|w| {
@@ -98,6 +100,13 @@ pub fn accepted(word: &str) -> bool {
         || stem("d").is_some_and(|s| s.ends_with('e') && set.contains(s))
         || stem("ing").is_some_and(|s| set.contains(s) || set.contains(&format!("{s}e")))
         || set.contains(&format!("{w}s"))
+        // A verb whose agent noun is accepted (|autoscaled|, |autoscale|
+        // from |autoscalers|).
+        || ["ed", "es", "ing", "e", "s"].iter().any(|x| {
+            stem(x).is_some_and(|s| {
+                set.contains(&format!("{s}er")) || set.contains(&format!("{s}ers"))
+            })
+        })
 }
 
 /// Commonness tier of a word form, if listed.

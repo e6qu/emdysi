@@ -37,7 +37,7 @@ dependencies are covered separately, by `cargo deny` and
 | [Grammatical stress sentences (buffalo, garden paths, ambiguity)](#stress) | MIT | test | [`corpora/stress`](../corpora/stress) |
 | [AI-prose treebank: sentences with the right ERG reading chosen by hand](#ai-treebank) (machine-generated text) | MIT | test | [`corpora/ai-treebank`](../corpora/ai-treebank) |
 | [Corpus policy](#corpora-readme) | MIT | test | [`corpora/README.md`](../corpora/README.md) |
-| [English Speller Database (ESDB/SCOWL) word list, size 60 (and the size-70 additions), and US/GB variant pairs](#scowl) | LicenseRef-SCOWL | shipped | [`data/scowl/en-60.tsv`](../data/scowl/en-60.tsv), [`data/scowl/en-70-extra.txt`](../data/scowl/en-70-extra.txt), [`data/scowl/variants.tsv`](../data/scowl/variants.tsv), [`data/scowl/Copyright`](../data/scowl/Copyright), [`data/scowl/SOURCE.md`](../data/scowl/SOURCE.md) |
+| [English Speller Database (ESDB/SCOWL) word list, size 60 (and the size-70 and size-80 additions), and US/GB variant pairs](#scowl) | LicenseRef-SCOWL | shipped | [`data/scowl/en-60.tsv`](../data/scowl/en-60.tsv), [`data/scowl/en-70-extra.txt`](../data/scowl/en-70-extra.txt), [`data/scowl/en-80-extra.txt`](../data/scowl/en-80-extra.txt), [`data/scowl/variants.tsv`](../data/scowl/variants.tsv), [`data/scowl/Copyright`](../data/scowl/Copyright), [`data/scowl/SOURCE.md`](../data/scowl/SOURCE.md) |
 | [Generator for the US/GB variant table](#scowl-tools) | MIT | test | [`data/scowl/gen-variants.py`](../data/scowl/gen-variants.py) |
 | [Parse-ranking model weights](#rank-model) | MIT | shipped | [`crates/emdysi-parse/data/rank.tsv`](../crates/emdysi-parse/data/rank.tsv) |
 | [ERG grammar-error codes and feedback texts](#erg-errors) | MIT | shipped | [`data/erg-errors/errors.tsv`](../data/erg-errors/errors.tsv), [`data/erg-errors/SOURCE.md`](../data/erg-errors/SOURCE.md) |
@@ -230,9 +230,9 @@ Licenses: MIT License (26), Creative Commons Attribution 4.0 (3), SCOWL/ESDB per
 
 <a id="scowl"></a>
 
-### English Speller Database (ESDB/SCOWL) word list, size 60 (and the size-70 additions), and US/GB variant pairs
+### English Speller Database (ESDB/SCOWL) word list, size 60 (and the size-70 and size-80 additions), and US/GB variant pairs
 
-- **Paths:** [`data/scowl/en-60.tsv`](../data/scowl/en-60.tsv), [`data/scowl/en-70-extra.txt`](../data/scowl/en-70-extra.txt), [`data/scowl/variants.tsv`](../data/scowl/variants.tsv), [`data/scowl/Copyright`](../data/scowl/Copyright), [`data/scowl/SOURCE.md`](../data/scowl/SOURCE.md)
+- **Paths:** [`data/scowl/en-60.tsv`](../data/scowl/en-60.tsv), [`data/scowl/en-70-extra.txt`](../data/scowl/en-70-extra.txt), [`data/scowl/en-80-extra.txt`](../data/scowl/en-80-extra.txt), [`data/scowl/variants.tsv`](../data/scowl/variants.tsv), [`data/scowl/Copyright`](../data/scowl/Copyright), [`data/scowl/SOURCE.md`](../data/scowl/SOURCE.md)
 - **Upstream:** <https://github.com/en-wl/wordlist>
 - **Version:** 1e5b7d3a72f47a71da5d28686c1dd4b397178485
 - **Retrieved:** 2026-10-01
@@ -240,7 +240,7 @@ Licenses: MIT License (26), Creative Commons Attribution 4.0 (3), SCOWL/ESDB per
 - **License text:** [`data/scowl/Copyright`](../data/scowl/Copyright)
 - **Copyright:** Copyright 2000-2026 by Kevin Atkinson (ESDB); see data/scowl/Copyright for the sources ESDB is derived from
 - **Provenance:** Generated with the upstream tools (word-list 60 A,B,Z 1; no Australian spellings, which carry an additional notice). Per the Copyright file, for a generated list of size 80 or below that is not Australian English, no additional copyright applies beyond the notice before the ===.
-- **Modifications:** Generated lists, not upstream files: en-60.tsv adds each word's smallest ESDB size; en-70-extra.txt lists the size-70 words not in en-60.tsv; variants.tsv is produced by data/scowl/gen-variants.py from the same database.
+- **Modifications:** Generated lists, not upstream files: en-60.tsv adds each word's smallest ESDB size; en-70-extra.txt lists the size-70 words not in en-60.tsv; en-80-extra.txt the size-80 words in neither; variants.tsv is produced by data/scowl/gen-variants.py from the same database.
 - **Use:** shipped
 - **Details:** [`data/scowl/SOURCE.md`](../data/scowl/SOURCE.md)
 

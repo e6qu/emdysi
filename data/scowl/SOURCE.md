@@ -27,3 +27,9 @@
   "no additional copyright applies". Use: words accepted as known by the
   `spelling` rule kind (rare but correct words such as *burgesses* or
   *meteoritic*); not used for suggestions.
+- `en-80-extra.txt`: the words of ESDB size 80 in neither `en-60.tsv`
+  nor `en-70-extra.txt`, from the same database:
+  `./scowl --db scowl.db word-list 80 A,B,Z 1`, minus the words of both
+  (77,257 words). Size 80 is the largest size for which "no additional
+  copyright applies". Use: the same as `en-70-extra.txt` (*corslet*,
+  *studier*, *gists*).
