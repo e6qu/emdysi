@@ -264,7 +264,18 @@ pub(crate) fn acronym(original: &[char], f: usize, t: usize) -> bool {
 }
 
 pub(crate) fn parser_text(text: &str, in_list: bool) -> Option<String> {
-    let labelled = mask_label(text).filter(|_| in_list);
+    // A comma after a sentence-initial coordinating conjunction (|And, I
+    // have a deep passion for this|, |Or, why did he come?|) is dropped for
+    // the parser: the grammar reads a conjunction with a comma as informal,
+    // and edited prose writes it. A space keeps the offsets.
+    let unpunctuated = ["And, ", "But, ", "Or, ", "So, ", "Yet, "]
+        .iter()
+        .find(|c| text.starts_with(*c))
+        .map(|c| format!("{} {}", &c[..c.len() - 2], &text[c.len()..]));
+    let text = unpunctuated.as_deref().unwrap_or(text);
+    let labelled = mask_label(text)
+        .filter(|_| in_list)
+        .or(unpunctuated.clone());
     let base = labelled.as_deref().unwrap_or(text);
     let mut spans: Vec<(usize, usize, bool)> = CITATION
         .find_iter(base)
