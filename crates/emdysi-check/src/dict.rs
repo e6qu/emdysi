@@ -51,6 +51,7 @@ pub fn by_prefix(prefix: &str) -> &'static [String] {
 const RELATED_TIER: u8 = 60;
 
 const RARE_WORDS: &str = include_str!("../../../data/scowl/en-70-extra.txt");
+const RARER_WORDS: &str = include_str!("../../../data/scowl/en-80-extra.txt");
 const TECH_WORDS: &[&str] = &[
     include_str!("../../../data/cspell/software-terms.txt"),
     include_str!("../../../data/cspell/software-tools.txt"),
@@ -80,10 +81,68 @@ fn accepted_words() -> &'static std::collections::HashSet<String> {
     })
 }
 
+/// Whether a word is accepted without the rarest list (`en-80-extra`):
+/// for checks that a rare form would wrongly silence (|informations| is a
+/// size-80 word, but a mass noun made plural).
+pub fn accepted_common(word: &str) -> bool {
+    let w = word.to_lowercase();
+    accepted_words().contains(&w) || accepted(&w) && !rarest_words().contains(&w)
+}
+
+/// The words of ESDB size 80 beyond the other lists, lower case.
+fn rarest_words() -> &'static std::collections::HashSet<String> {
+    static SET: OnceLock<std::collections::HashSet<String>> = OnceLock::new();
+    SET.get_or_init(|| {
+        RARER_WORDS
+            .lines()
+            .filter(|l| !l.starts_with('#'))
+            .map(|l| l.trim().to_lowercase())
+            .filter(|w| !w.is_empty())
+            .collect()
+    })
+}
+
+/// The words of the technical lists, lower case.
+fn tech_words() -> &'static std::collections::HashSet<String> {
+    static SET: OnceLock<std::collections::HashSet<String>> = OnceLock::new();
+    SET.get_or_init(|| {
+        TECH_WORDS
+            .iter()
+            .flat_map(|t| t.lines())
+            .map(|l| l.split('#').next().unwrap_or("").trim().to_lowercase())
+            .filter(|w| !w.is_empty())
+            .collect()
+    })
+}
+
 /// Whether a word is correct though not in the main list (see
 /// [`accepted_words`]).
 pub fn accepted(word: &str) -> bool {
-    accepted_words().contains(&word.to_lowercase())
+    let w = word.to_lowercase();
+    if accepted_words().contains(&w) || rarest_words().contains(&w) {
+        return true;
+    }
+    // Only for the technical lists: the rare English words already list
+    // their forms, and inferring more lets typos through (|diabled| as
+    // |diable| plus |-d|).
+    let set = tech_words();
+    // A plural or verb form of an accepted word (|impls| from |impl|,
+    // |rebased| from |rebase|), or the singular of an accepted plural
+    // (|finalizer| from |finalizers|): the technical lists name one form.
+    let stem = |suffix: &str| w.strip_suffix(suffix).filter(|s| s.chars().count() >= 3);
+    stem("s").is_some_and(|s| set.contains(s))
+        || stem("es").is_some_and(|s| set.contains(s))
+        || stem("ed").is_some_and(|s| set.contains(s) || set.contains(&format!("{s}e")))
+        || stem("d").is_some_and(|s| s.ends_with('e') && set.contains(s))
+        || stem("ing").is_some_and(|s| set.contains(s) || set.contains(&format!("{s}e")))
+        || set.contains(&format!("{w}s"))
+        // A verb whose agent noun is accepted (|autoscaled|, |autoscale|
+        // from |autoscalers|).
+        || ["ed", "es", "ing", "e", "s"].iter().any(|x| {
+            stem(x).is_some_and(|s| {
+                set.contains(&format!("{s}er")) || set.contains(&format!("{s}ers"))
+            })
+        })
 }
 
 /// Commonness tier of a word form, if listed.

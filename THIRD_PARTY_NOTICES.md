@@ -36,9 +36,9 @@ full text is in the file named. Details, versions and changes are in
 - License: MIT License (`MIT`); full text in [`corpora/golden-rules/LICENSE`](corpora/golden-rules/LICENSE)
 - Used for: tests and evaluation only
 
-## English Speller Database (ESDB/SCOWL) word list, size 60 (and the size-70 additions), and US/GB variant pairs
+## English Speller Database (ESDB/SCOWL) word list, size 60 (and the size-70 and size-80 additions), and US/GB variant pairs
 
-- Location: `data/scowl/en-60.tsv`, `data/scowl/en-70-extra.txt`, `data/scowl/variants.tsv`, `data/scowl/Copyright`, `data/scowl/SOURCE.md`
+- Location: `data/scowl/en-60.tsv`, `data/scowl/en-70-extra.txt`, `data/scowl/en-80-extra.txt`, `data/scowl/variants.tsv`, `data/scowl/Copyright`, `data/scowl/SOURCE.md`
 - Copyright: Copyright 2000-2026 by Kevin Atkinson (ESDB); see data/scowl/Copyright for the sources ESDB is derived from
 - License: SCOWL/ESDB permissive notice (`LicenseRef-SCOWL`); full text in [`data/scowl/Copyright`](data/scowl/Copyright)
 - Used for: the tool (shipped)

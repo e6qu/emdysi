@@ -1207,6 +1207,16 @@ impl Rule {
                         *uses.entry(t.form.to_lowercase()).or_default() += 1;
                     }
                 }
+                // Words the document writes in lower case: a word it uses
+                // only capitalized is a name (|Aaron Turon|), not the word
+                // a typo was meant for.
+                let plain: std::collections::HashSet<&str> = a
+                    .sentences
+                    .iter()
+                    .flat_map(|s| s.tokens.iter())
+                    .map(|t| t.form.as_str())
+                    .filter(|f| f.chars().all(|c| !c.is_uppercase()))
+                    .collect();
                 // Words the document capitalizes after the start of a
                 // sentence are names.
                 let names: std::collections::HashSet<&str> = a
@@ -1364,7 +1374,7 @@ impl Rule {
                         let lower = w.to_lowercase();
                         let mut in_document: Vec<String> = emdysi_parse::edits(&lower)
                             .into_iter()
-                            .filter(|e| *e != lower && uses.contains_key(e) && known(e))
+                            .filter(|e| *e != lower && plain.contains(e.as_str()) && known(e))
                             .collect();
                         in_document.sort();
                         in_document.dedup();
@@ -1729,6 +1739,15 @@ impl Rule {
         // Words specific to one variety: (sentence, token, variety, other).
         let mut found: Vec<(usize, usize, Variety, &str)> = Vec::new();
         let table = variants();
+        // Words the document capitalizes after the start of a sentence are
+        // names at the start of one too (|Matt| is not a spelling of |mat|).
+        let names: std::collections::HashSet<&str> = a
+            .sentences
+            .iter()
+            .flat_map(|s| s.tokens.iter().skip(1))
+            .filter(|t| t.form.chars().next().is_some_and(char::is_uppercase))
+            .map(|t| t.form.as_str())
+            .collect();
         for (si, s) in a.sentences.iter().enumerate() {
             for (ti, t) in s.tokens.iter().enumerate() {
                 let w = &t.form;
@@ -1738,6 +1757,14 @@ impl Rule {
                 let upper = w.chars().filter(|c| c.is_uppercase()).count();
                 if upper > 1
                     || (ti > 0 && w.chars().next().is_some_and(char::is_uppercase))
+                    || names.contains(w.as_str())
+                    // ... or followed by another capitalized word, like a
+                    // name (|Matt Mauer had an idea|).
+                    || (ti == 0
+                        && w.chars().next().is_some_and(char::is_uppercase)
+                        && s.tokens
+                            .get(1)
+                            .is_some_and(|n| n.form.chars().next().is_some_and(char::is_uppercase)))
                     || s.text
                         .chars()
                         .skip(t.from)
@@ -2318,7 +2345,7 @@ fn candidate_fixes(
     // |researches| are count uses the grammar's lexicon lacks.
     if has(&["always singular"])
         && crate::dict::tier(&lower).is_none()
-        && !crate::dict::accepted(&lower)
+        && !crate::dict::accepted_common(&lower)
     {
         for base in erg
             .forms_by_rule(word, None)

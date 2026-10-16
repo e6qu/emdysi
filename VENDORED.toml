@@ -183,8 +183,8 @@ source_doc = "corpora/README.md"
 
 [[item]]
 id = "scowl"
-paths = ["data/scowl/en-60.tsv", "data/scowl/en-70-extra.txt", "data/scowl/variants.tsv", "data/scowl/Copyright", "data/scowl/SOURCE.md"]
-name = "English Speller Database (ESDB/SCOWL) word list, size 60 (and the size-70 additions), and US/GB variant pairs"
+paths = ["data/scowl/en-60.tsv", "data/scowl/en-70-extra.txt", "data/scowl/en-80-extra.txt", "data/scowl/variants.tsv", "data/scowl/Copyright", "data/scowl/SOURCE.md"]
+name = "English Speller Database (ESDB/SCOWL) word list, size 60 (and the size-70 and size-80 additions), and US/GB variant pairs"
 upstream = "https://github.com/en-wl/wordlist"
 version = "1e5b7d3a72f47a71da5d28686c1dd4b397178485"
 retrieved = "2026-10-01"
@@ -192,7 +192,7 @@ license = "LicenseRef-SCOWL"
 license_files = ["data/scowl/Copyright"]
 copyright = "Copyright 2000-2026 by Kevin Atkinson (ESDB); see data/scowl/Copyright for the sources ESDB is derived from"
 provenance = "Generated with the upstream tools (word-list 60 A,B,Z 1; no Australian spellings, which carry an additional notice). Per the Copyright file, for a generated list of size 80 or below that is not Australian English, no additional copyright applies beyond the notice before the ===."
-modifications = "Generated lists, not upstream files: en-60.tsv adds each word's smallest ESDB size; en-70-extra.txt lists the size-70 words not in en-60.tsv; variants.tsv is produced by data/scowl/gen-variants.py from the same database."
+modifications = "Generated lists, not upstream files: en-60.tsv adds each word's smallest ESDB size; en-70-extra.txt lists the size-70 words not in en-60.tsv; en-80-extra.txt the size-80 words in neither; variants.tsv is produced by data/scowl/gen-variants.py from the same database."
 use = "shipped"
 source_doc = "data/scowl/SOURCE.md"
 
