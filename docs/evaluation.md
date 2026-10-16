@@ -1722,6 +1722,18 @@ From the false flags of the second development set:
   options (*-funsigned-char*, *--dry-run*), which are now code-like
   tokens for the parser too.
 
+Measured: real errors without a model unchanged (167 of 377, the same
+pairs); false flags 4 → 4 on the first development set, 53 → 50 on the
+second, 31 → 29 on the held-out set, each removed flag one of those
+above and none added. With a perfect model, 333 of 377 (88%; spelling
+172 of 178, unchanged) against 337 before: the grammar fixes that
+differ (*the case*, *of futures*, *Label*, *change*, and three gained)
+are ones whose verification runs into the 30-second budget, and the
+binary from before these changes misses *Label* and *change* too when
+they are rerun alone. The perfect-model figures move by a few pairs
+between runs, and more on a cold parse cache (326 on the first run
+after a lexicon change), since the budget is wall-clock time.
+
 Measured and rejected: reporting, without a model, a sentence without a
 strict reading for which exactly one candidate correction parses
 (`single_fix`). Of the grammar errors' sentences without one, about a
