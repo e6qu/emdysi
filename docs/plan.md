@@ -60,7 +60,7 @@ Where the work stands, and how to resume it on another machine.
      `cargo run --release -p emdysi-check --example real_errors -- OUT.tsv`
      (167 of 377 without a model, 2026-10-15);
    - measure false flags with and without it: `THREADS=4 ... --example
-     false_flags -- OUT.tsv` and `SET=dev2` (6 and 79 flags without a
+     false_flags -- OUT.tsv` and `SET=dev2` (4 and 53 flags without a
      model); with an in-process GGUF model use `THREADS=1` (one model per
      thread);
    - compare with a much larger model served over the same API on the same

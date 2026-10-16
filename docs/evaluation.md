@@ -1638,3 +1638,55 @@ The new catches: *An*, *contribute*, *doesn't*, *hold*, *returns*,
 *then*, *Next*, *that*, *will*; none lost. No flag on the corrected
 text.
 
+### Fewer false flags: names, technical words, rarer English words
+
+The false flags without a model, looked at one by one (2026-10-16):
+many were technical words the bundled lists lack (*async*, *libc*,
+*rootfs*, *impls*), rare but correct English words (*corslet*, *gists*,
+*curtsey*), and one name (*Matt*, taken for a British spelling of *mat*).
+The changes:
+
+- the consistency rule skips a sentence-initial word the document
+  capitalizes elsewhere, or that another capitalized word follows (*Matt
+  Mauer had an idea*), as the spelling rule already does;
+- the plural and verb forms of the technical lists' words are accepted,
+  and the singular of a listed plural (*impls* from *impl*, *finalizer*
+  from *finalizers*, *autoscaled* from *autoscalers*); only for those
+  lists: inferring forms of the rare English words let *diabled* through
+  as *diable* plus *-d*;
+- `core.spelling` ignores a short list of common technical words the
+  lists lack (*async*, *libc*, *rootfs*, *nftables*, *subnet*,
+  *implementor*, *iirc*) and *alia*, *curtsey*;
+- the ESDB/SCOWL size-80 additions, generated from the same database and
+  commit as the size-60 and size-70 lists (`data/scowl/en-80-extra.txt`,
+  77,257 words; size 80 is the largest without additional copyright), are
+  accepted like the size-70 words (*corslet*, *studier*, *gists*). Of the
+  178 real spelling errors only *informations* is such a word, and the
+  check for a mass noun made plural ignores this list, so it is still
+  caught. A word the document uses only capitalized is no longer a word a
+  typo is taken to mean (*aturon*, a handle, is no typo of *Turon* in
+  *Aaron Turon*, a name that list made known).
+
+| Measure | Before | After |
+|---|---|---|
+| False flags, first development set (2,498 sentences) | 6 | 4 |
+| False flags, second development set (13,442 sentences) | 79 | 53 |
+| False flags, held-out set (8,371 sentences) | 35 | 31 |
+| Real errors caught without a model (377) | 167 | 167 (the same pairs) |
+| Real errors caught with a perfect model | 337 | ORACLE |
+
+No new flag on any set. The held-out set, not used while developing the
+checks, loses *gists*, *studier*, *corslet* and *autoscales*.
+
+Of the 53 flags left on the second development set, 15 are errors in the
+edited text after all (*is is*, *the the* four times, *and and*, *a
+overflow* twice, and the misspellings *anyeone*, *consided*, *durnig*,
+*reseearchers*, *righly*, *santisers*, *inspite*); 21 are a document
+mixing spellings (*behaviour* where the text mostly has *behavior*), which
+is what the consistency rule reports; 4 are period spellings in a
+nineteenth-century novel (*expence*, *expences*, *an union* twice); 13 are
+false: project jargon and handles in the Rust blog (*sret*, *tiif*,
+*mgca*, *ambig*, *compiletest*, *redzone*, *hackend*, *funsigned*,
+*epage*, *zulips*) and two readings of *has* (*The all-hands has
+happened!*).
+
