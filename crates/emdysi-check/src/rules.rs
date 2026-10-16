@@ -1322,7 +1322,10 @@ impl Rule {
                             .split(['-', '\'', '’'])
                             .filter(|p| !p.is_empty())
                             .collect();
-                        if known(w) || parts.iter().all(|p| known(p)) {
+                        if known(w)
+                            || parts.iter().all(|p| known(p))
+                            || crate::in_code_like(&s.text, t.from, t.to)
+                        {
                             continue;
                         }
                         // A known word plus an affix ("promptability") is a

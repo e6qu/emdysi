@@ -265,17 +265,18 @@ fn grammar_errors_precision() {
 }
 
 #[test]
-fn mentioned_people_and_plurals_of_ignored_words_are_not_typos() {
+fn mentioned_people_options_and_plurals_of_ignored_words_are_not_typos() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     let checker = Checker::new(packs());
     let opts = Options {
         threads: 2,
         ..Options::default()
     };
-    // Before: |epage| as a typo of |page|, |zulips| of |tulips| (Rust blog).
+    // Before: |epage| as a typo of |page|, |zulips| of |tulips| and
+    // |funsigned| of |unsigned| (Rust blog).
     let src = "Comment by @epage:\n\n\
                Thanks to epage for the idea. We talked it over on zulips \
-               durnig the week.\n";
+               durnig the week, and added an option like -funsigned-char.\n";
     let a = analyze(&erg, src, Format::Markdown, &opts);
     let d = checker.check(&erg, &a);
     let spelling: Vec<&str> = d

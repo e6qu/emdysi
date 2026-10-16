@@ -223,10 +223,11 @@ static CITATION: std::sync::LazyLock<fancy_regex::Regex> = std::sync::LazyLock::
 /// Code-like tokens in prose: template shortcodes (`{{< glossary_tooltip
 /// term_id="pod" >}}`, `{{% note %}}`, `{{ .Site.Title }}`), URLs, email
 /// addresses, paths (`src/main.rs`) and names with a file or domain
-/// extension (`cmd.exe`, `crates.io`).
+/// extension (`cmd.exe`, `crates.io`), and command-line options
+/// (`-funsigned-char`, `--dry-run`).
 static CODE_LIKE: std::sync::LazyLock<fancy_regex::Regex> = std::sync::LazyLock::new(|| {
     fancy_regex::Regex::new(
-        r"\{\{[<%]?[^{}]*?[>%]?\}\}|\bhttps?://[^\s<>()]+[^\s<>().,;:!?]|\b[\w.+-]+@[\w-]+(?:\.[\w-]+)+|(?<![\w/])(?:[\w.-]+/)+[\w-]*\.[A-Za-z0-9]+\b|(?<![\w/])/[\w.-]+(?:/[\w.-]+)+|\b[A-Za-z][\w-]*\.(?:io|com|org|net|dev|gov|edu|rs|exe|py|js|ts|md|toml|json|ya?ml|txt|html?|sh|go|c|h)\b",
+        r"\{\{[<%]?[^{}]*?[>%]?\}\}|\bhttps?://[^\s<>()]+[^\s<>().,;:!?]|\b[\w.+-]+@[\w-]+(?:\.[\w-]+)+|(?<![\w/])(?:[\w.-]+/)+[\w-]*\.[A-Za-z0-9]+\b|(?<![\w/])/[\w.-]+(?:/[\w.-]+)+|\b[A-Za-z][\w-]*\.(?:io|com|org|net|dev|gov|edu|rs|exe|py|js|ts|md|toml|json|ya?ml|txt|html?|sh|go|c|h)\b|(?<![\w-])--?[a-z][a-z0-9]*(?:-[a-z0-9]+)+\b|(?<![\w-])--[a-z][a-z0-9]+\b",
     )
     .expect("code-like pattern")
 });
@@ -287,6 +288,16 @@ fn lead_in(text: &str) -> bool {
             | "though"
             | "until"
     )
+}
+
+/// Whether characters `from..to` of a sentence lie inside a code-like token
+/// ([`CODE_LIKE`]).
+pub(crate) fn in_code_like(text: &str, from: usize, to: usize) -> bool {
+    CODE_LIKE.find_iter(text).flatten().any(|m| {
+        let start = text[..m.start()].chars().count();
+        let end = start + m.as_str().chars().count();
+        start <= from && to <= end
+    })
 }
 
 pub(crate) fn parser_text(text: &str, in_list: bool) -> Option<String> {
