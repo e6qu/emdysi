@@ -1773,6 +1773,14 @@ impl Rule {
                 {
                     continue;
                 }
+                // Other words, not other spellings: American English has
+                // |amongst| and |whilst| too, if less often.
+                if matches!(
+                    w.to_lowercase().as_str(),
+                    "amongst" | "whilst" | "amidst" | "among" | "while" | "amid"
+                ) {
+                    continue;
+                }
                 for (v, other) in table.get(&w.to_lowercase()).into_iter().flatten() {
                     found.push((si, ti, *v, other));
                 }
