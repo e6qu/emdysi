@@ -1690,3 +1690,31 @@ false: project jargon and handles in the Rust blog (*sret*, *tiif*,
 *epage*, *zulips*) and two readings of *has* (*The all-hands has
 happened!*).
 
+### Coverage: a conjunction with a comma, and a single verified correction
+
+`culprits` on the fresh 948-sentence sample (2026-10-16): 40 sentences
+without a strict reading, scattered, mostly archaic (*knew not how*,
+*beyond competition her favourite child*) or not prose. Two recurring
+gaps are fixed:
+
+- a sentence-initial coordinating conjunction followed by a comma (*And,
+  I have a deep passion for this problem.*, *Or, why did he thus come a
+  day before he was expected?*): the grammar reads a conjunction with a
+  comma as informal, so the parser is given the sentence without that
+  comma (a space keeps the offsets);
+- *mortifying*, an adjective the ERG lacks though it has *humiliating*
+  and *embarrassing*.
+
+And the consistency rule no longer counts *amongst*, *whilst* and
+*amidst* as British spellings: they are other words, used in American
+English too.
+
+Measured and rejected: reporting, without a model, a sentence without a
+strict reading for which exactly one candidate correction parses
+(`single_fix`). Of the grammar errors' sentences without one, about a
+fifth have a single verified correction, but apart from doubled words
+(*the the*, *and and*, *to to*, which the repeated-word rule already
+reports) it is seldom the right one: *afters the update*, *cluster
+administered to*, *The API server i willing*. A single correction the
+grammar accepts is no evidence of an error.
+
