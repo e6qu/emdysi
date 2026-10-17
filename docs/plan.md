@@ -23,7 +23,8 @@ unless stated:
 | ... with a perfect model choosing among verified corrections | 337 (89%): grammar 165 of 199 | the upper bound for any model; no real model measured yet |
 | False flags on edited text, per 1,000 sentences | 1.6 (first development set), 3.7 (second), 3.5 (held out, 8,371 sentences) | most of the second set's flags point at real errors or real spelling mixes in the source |
 | Gold analyses (ERG test suites) | MRS identical for all 2,966 reproduced; ranker 81.7% exact match held out | |
-| Speed | about 2.4 s of CPU per sentence of edited text (cold parse cache) | held-out set: 115 minutes on 3 threads |
+| Speed | about 1.7 s of CPU per sentence of edited text (cold parse cache, one thread) | 2.1 s before the grammar-error variant was gated (2026-10-17); parsing is 82% of the time |
+| Rule data | 1,645 LanguageTool rules, 98 slop rules, 26 GitLab rules (opt-in packs); codespell, CMUdict, UniMorph, Open English WordNet, UD English EWT vendored | emdysi is AGPL-3.0-or-later since 2026-10-17 (decision D15), so share-alike and GPL data can be used |
 
 ## Priorities
 
@@ -42,24 +43,33 @@ unless stated:
    reading or cut off by the search. What a model-free path could reach
    is bounded by `fix_bound` (142 of 199 corrections verifiable); the
    problem is choosing among the verified ones without a model.
-3. **Speed.** 2.4 s of CPU per sentence is minutes for a long document
-   and too slow for an editor. Where the time goes (parse, the
-   grammar-error variant, verification of corrections) needs profiling on
-   ordinary edited text before any optimization; a model adds candidate
-   verification on top (up to 120 parses for a doubted sentence).
+3. **Speed.** 1.7 s of CPU per sentence is still minutes for a long
+   document. Profiled (`timing`): the parser takes 82%, rules almost
+   nothing; the 4% of sentences that reach the time limit take 31% of
+   parse time and yield almost no strict readings. Next: make those
+   sentences cheaper (tag-based chart pruning, an earlier fragment
+   fallback). A model adds candidate verification on top (up to 120
+   parses for a doubted sentence).
 4. **Coverage of edited text (M19).** About 4% of edited sentences get no
    strict reading (40 of a 948-sentence sample, mostly archaic or not
    prose). Remaining recurring gaps: locative inversion, verbless *Many
    thanks to X*, extraposed *than* clauses, bare names before nouns
    (*Longbourn estate*).
-5. **Machine-written prose (M21).** The vendored samples are from 2023
-   models and lack newer tropes; the judgements no pattern can make
-   (explaining the obvious, fake specificity) wait on the model.
+5. **Machine-written prose (M21).** 24 samples of current-model prose
+   (`corpora/ai-current`) found the newer tropes (bold lead-ins, emoji
+   headings, reader hooks), and the `slop` pack adds bheijden/slop's
+   tested patterns. The judgements no pattern can make (explaining the
+   obvious, fake specificity) wait on the model.
+6. **Rule data with a tagger.** 2,508 more LanguageTool rules need parts
+   of speech of open classes; with the parser's own tags (or the tagger,
+   83% right among its guesses for unknown words on EWT) they could be
+   converted too.
 
 Decided against, with measurements in evaluation.md: work limits in
 place of the parser's time limits (no work measure tracks time well
 enough), reporting a single verified correction without a model, and
-typos-dict as a misspelling list (share-alike provenance).
+LanguageTool's wordiness and redundancy lists (wrong replacements, off by
+default in LanguageTool too).
 
 ## Milestones
 
