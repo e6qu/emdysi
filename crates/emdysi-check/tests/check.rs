@@ -288,6 +288,41 @@ fn mentioned_people_options_and_plurals_of_ignored_words_are_not_typos() {
 }
 
 #[test]
+fn misspellings_the_morphology_or_the_model_used_to_hide() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let checker = Checker::new(packs());
+    let opts = Options {
+        threads: 2,
+        ..Options::default()
+    };
+    // Before: read as derived forms (|file| + -ed + -s, -ing on the noun
+    // |specif|, |wit| + -in'), as |languages| + -s, or left to a model.
+    // Real words stay unflagged, and so does a word glued to inline code.
+    let src = "The fileds were witin reach, specifing the languagess. \
+               The admistrators found it neccesary. \
+               We built nightlies unfrequently, with two `let`s and grafana.\n";
+    let a = analyze(&erg, src, Format::Markdown, &opts);
+    let d = checker.check(&erg, &a);
+    let spelling: Vec<&str> = d
+        .iter()
+        .filter(|x| x.rule == "core.spelling")
+        .map(|x| &src[x.range.clone()])
+        .collect();
+    assert_eq!(
+        spelling,
+        vec![
+            "fileds",
+            "witin",
+            "specifing",
+            "languagess",
+            "admistrators",
+            "neccesary"
+        ],
+        "{d:?}"
+    );
+}
+
+#[test]
 fn a_lead_in_to_a_list_is_not_a_sentence() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     let checker = Checker::new(packs());
