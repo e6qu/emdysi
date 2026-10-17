@@ -218,3 +218,24 @@ full text is in the file named. Details, versions and changes are in
 - Copyright: Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline (Automattic), GNU GPL
 - License: GNU Lesser General Public License 2.1 or later (`LGPL-2.1-or-later`); full text in [`data/languagetool/COPYING.txt`](data/languagetool/COPYING.txt), [`data/languagetool/LICENSE-GPL-3.0`](data/languagetool/LICENSE-GPL-3.0)
 - Used for: the tool (shipped)
+
+## bheijden/slop rule sets for machine-written prose
+
+- Location: `data/slop/LICENSE`, `data/slop/NOTICE`, `data/slop/README-upstream.md`, `data/slop/SOURCE.md`, `data/slop/rules/ai-tells.json`, `data/slop/rules/load-bearing.json`, `data/slop/rules/pr-vocabulary.json`, `data/slop/rules/simonwillison.json`
+- Copyright: Copyright 2026 Bas van der Heijden; portions derived from Simon Willison's llm-cliche-highlighter (Apache-2.0)
+- License: Apache License 2.0 (`Apache-2.0`); full text in [`data/slop/LICENSE`](data/slop/LICENSE), [`data/slop/NOTICE`](data/slop/NOTICE)
+- Used for: the tool (shipped)
+
+## bheijden/slop's rule set from Wikipedia's Signs of AI writing, and the pack generated from all the slop rule sets
+
+- Location: `data/slop/rules/wikipedia-ai.json`, `data/slop/LICENSE-CC-BY-SA-4.0.txt`, `packs/slop.toml`
+- Copyright: Wikipedia contributors (Signs of AI writing); Copyright 2026 Bas van der Heijden; Simon Willison
+- License: Creative Commons Attribution-ShareAlike 4.0 (`CC-BY-SA-4.0`); full text in [`data/slop/LICENSE-CC-BY-SA-4.0.txt`](data/slop/LICENSE-CC-BY-SA-4.0.txt), [`data/slop/LICENSE`](data/slop/LICENSE), [`data/slop/NOTICE`](data/slop/NOTICE)
+- Used for: the tool (shipped)
+
+## GitLab documentation Vale rules, and the pack generated from them
+
+- Location: `data/vale/gitlab`, `packs/gitlab.toml`
+- Copyright: Copyright GitLab Inc.
+- License: Creative Commons Attribution-ShareAlike 4.0 (`CC-BY-SA-4.0`); full text in [`data/vale/gitlab/LICENSE`](data/vale/gitlab/LICENSE), [`data/vale/gitlab/LICENSE-CC-BY-SA-4.0.txt`](data/vale/gitlab/LICENSE-CC-BY-SA-4.0.txt)
+- Used for: the tool (shipped)

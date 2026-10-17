@@ -1867,3 +1867,82 @@ Spelling only (`en check --no-parse` on every document, against main):
 18 more real errors flagged in the real-error corpus; on the false-flag
 sets, three more flags, all real typos in the second development set
 (*borrowcking*, *implemenent*, *rationable*), and no false ones.
+
+## Where checking time goes
+
+`timing` (`crates/emdysi-check/examples`) checks documents on one thread
+with no parse cache and reports the time of each stage, the slowest
+rules, and how parse time spreads over sentences. On 24 documents of the
+first development set (1,388 sentences, 21,867 words):
+
+| Stage | Before: ms a sentence | After the gate below |
+|---|---|---|
+| parse | 1,416 | 1,402 |
+| re-parse (quoting, unpruned) | 24 | 24 |
+| grammar-error variant | 610 | 248 |
+| rules | 2 | 1 |
+| rules' correction parses | 0 | 0 |
+| all | 2,085 | 1,706 |
+
+Rules cost nothing next to the parser; the spelling and grammar-error
+rules are the slowest at about 1 s for all 1,388 sentences. The
+grammar-error variant (the mal-rule grammar, run on sentences without a
+strict reading, or with one built on a generic entry for an unknown word)
+was the second cost. The gate: a sentence with a strict reading runs the
+variant only if one of its generic words has a known stem (a misspelled
+or wrongly inflected known word, which a mal-rule can name). Grammar
+errors found without a model stay at 24 of 199, and all real errors at
+183: the 362 seconds saved found nothing.
+
+Parse time is concentrated in a few sentences:
+
+| Parse time | Sentences | Share of parse time | With a strict reading | Search complete |
+|---|---|---|---|---|
+| 0–0.5 s | 744 | 7% | 542 | 670 |
+| 0.5–1 s | 219 | 8% | 208 | 126 |
+| 1–2 s | 162 | 12% | 156 | 67 |
+| 2–5 s | 151 | 24% | 141 | 38 |
+| 5–9.5 s | 51 | 18% | 35 | 9 |
+| 9.5 s and over | 60 | 31% | 1 | 2 |
+
+The 60 sentences that reach the time limit take 31% of parse time and
+yield one strict reading between them. A lower limit would save most of
+that, but the 5–9.5 s band still finds 35 strict readings in 51
+sentences, and limits on work instead of time were measured and rejected
+(above). The next step is to make those sentences cheaper (chart pruning
+by the tagger's hypotheses, earlier fragment fallback), not to give up
+on them sooner.
+
+## The tagger on UD English EWT
+
+`tagger_eval` (`crates/emdysi-parse/examples`) compares the rule-based
+tagger's hypotheses with the gold Penn Treebank tags of the UD English
+EWT development set (corpora/ud-ewt), counting words only (punctuation
+has rules of its own in the grammar). The ERG uses the tags only for
+words its lexicon lacks, to build generic entries, so the row that
+matters is the second:
+
+| Words | Count | First guess | Among guesses (before) | Among guesses | Guesses a word |
+|---|---|---|---|---|---|
+| all | 21,972 | 68.8% | 84.4% | 85.0% | 1.99 |
+| unknown to the ERG | 1,440 | 66.7% | 76.2% | 83.4% | 2.25 |
+
+Two fixes from the misses: *n't*, a token of its own in EWT, is an
+adverb (89 misses), and a capitalized word ending in *-ian*, *-ese* or
+*-ish* may be an adjective (*Palestinian*, *Japanese*; the tagger gave
+only NNP and NN). The remaining misses among unknown words are mostly
+e-mail addresses and URLs (gold ADD), informal spellings (*sooooo*,
+*goin*) and lower-case place names.
+
+## WordNet-confirmed lexical gaps
+
+`culprits` finds, for a sentence without a strict reading, the words
+whose replacement by a stand-in of some class gives one; `gaps.py`
+writes entries for those words that Open English WordNet has in that
+class and the ERG lacks. On 40 sentences of the pool of unparsed edited
+sentences, before the stand-in run reached its time limit, it proposed
+15 entries, most of them wrong: culprits often blames a function word,
+and WordNet lists *in* (indium), *so* and *have* as nouns. With short
+and function words left out, 8 remain, of which four are sound (*the
+fidgets*, *megrim*, *plaice*, *retro* as a noun). Too few to justify a
+generated lexicon file yet; the filter is in `gaps.py` for a larger run.

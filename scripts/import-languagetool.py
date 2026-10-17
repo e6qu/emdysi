@@ -13,8 +13,7 @@ Every converted rule keeps LanguageTool's examples (incorrect ones as
 `examples`, correct ones as `acceptable`), and a rule is kept only if the
 converted pattern finds the marked span of every incorrect example and
 nothing in the correct ones (checked here with the `regex` module, and
-again by the test suite with emdysi's own engine). The word lists
-`wordiness.txt` and `redundancies.txt` become two more rules.
+again by the test suite with emdysi's own engine).
 
     python3 scripts/import-languagetool.py           # write the pack
     python3 scripts/import-languagetool.py --check   # fail if out of date
@@ -556,33 +555,6 @@ def slug(s):
     return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")
 
 
-def word_list(file, rid, message, severity, min_words):
-    """`wordiness.txt` or `redundancies.txt` (`phrase=replacement|...`)
-    as one rule, keeping phrases of at least `min_words` words."""
-    swap = {}
-    for line in (SRC / file).read_text().splitlines():
-        line = line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        k, v = line.split("=", 1)
-        k = k.strip()
-        if k and k not in swap and len(k.split()) >= min_words:
-            swap[k] = v.split("|")[0].strip()
-    lines = [
-        "[[rule]]",
-        f'id = "languagetool.{rid}"',
-        'kind = "substitution"',
-        f'severity = "{severity}"',
-        f"message = {toml_str(message)}",
-        f"source = {toml_str(UPSTREAM + file)}",
-        f"license = {toml_str(LICENSE)}",
-        "ignorecase = true",
-        "[rule.swap]",
-    ]
-    lines += [f"{toml_str(k)} = {toml_str(v)}" for k, v in sorted(swap.items())]
-    return "\n".join(lines) + "\n", len(swap)
-
-
 def build():
     kept, skipped = [], {}
     ids = {}
@@ -633,27 +605,22 @@ def build():
         if r["acceptable"]:
             out.append("acceptable = [" + ", ".join(toml_str(t + "\n") for t in r["acceptable"]) + "]")
         out.append("")
-    wl = []
-    # Two-word "wordy" phrases (|there is|, |as to|, |which is|) are most
-    # of the list's findings on edited text, and seldom worth changing.
-    for file, rid, msg, sev, min_words in (
-        ("wordiness.txt", "wordiness", "Wordy: '{match}' can be '{replacement}'.", "suggestion", 3),
-        ("redundancies.txt", "redundancy", "Redundant: '{match}' can be '{replacement}'.", "suggestion", 1),
-    ):
-        text, n = word_list(file, rid, msg, sev, min_words)
-        out.append(text)
-        wl.append(n)
-    return "\n".join(out), kept, skipped, wl
+    # LanguageTool's wordiness and redundancy lists (wordiness.txt,
+    # redundancies.txt) are left out, as LanguageTool turns them off by
+    # default: on edited text they flagged 642 and 95 phrases, many with
+    # wrong or placeholder replacements (|as shown in| -> |shows that|,
+    # [OMIT]) or standard phrasal verbs (|shut down|, |open up|).
+    return "\n".join(out), kept, skipped
 
 
 def main():
-    text, kept, skipped, wl = build()
+    text, kept, skipped = build()
     if "--check" in sys.argv:
         if OUT.read_text() != text:
             sys.exit(f"{OUT.relative_to(ROOT)} is out of date: run scripts/import-languagetool.py")
         return
     OUT.write_text(text)
-    print(f"{len(kept)} rules kept; word lists {wl}", file=sys.stderr)
+    print(f"{len(kept)} rules kept", file=sys.stderr)
     for k, v in sorted(skipped.items(), key=lambda kv: -kv[1])[:25]:
         print(f"  skipped {v:5}  {k}", file=sys.stderr)
 

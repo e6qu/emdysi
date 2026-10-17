@@ -264,8 +264,9 @@ plain-style: Plain-language conventions: active voice, short sentences, concrete
 The default packs are `core`, `ai-tells`, `plain-style`, `substance`,
 `structure` and `terms`. Opt-in packs bring other style guides' word
 choices, converted from their Vale packages: `microsoft`, `google` and
-`elastic`, as well as `wordlists` (hedges, weasel words, fillers) and
-`equality` (insensitive wording). Naming a pack with `--pack` replaces
+`elastic`, as well as `wordlists` (hedges, weasel words, fillers),
+`equality` (insensitive wording) and `languagetool` (LanguageTool's
+English rules that need no tagger). Naming a pack with `--pack` replaces
 the defaults:
 
 ```sh

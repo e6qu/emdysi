@@ -303,3 +303,60 @@ pub fn inflection_of_known(word: &str) -> bool {
     map.get(&word.to_lowercase())
         .is_some_and(|lemmas| lemmas.iter().any(|l| tier(l).is_some()))
 }
+
+const COHERENCY: &str = include_str!("../../../data/languagetool/en/coherency.txt");
+
+/// The spelling one term is grouped under when a document writes it in two
+/// ways both valid in one variety (|acknowledgement| and |acknowledgment|,
+/// |randomiser| and |randomizer|): LanguageTool's coherency list
+/// (`data/languagetool/en/coherency.txt`), with the inflected forms of
+/// each pair from UniMorph matched by their features. `word` is lowercase
+/// without hyphens. Pairs the variety tables already relate are left to
+/// the spelling-consistency rule.
+pub fn coherent_key(word: &str) -> Option<&'static str> {
+    static MAP: OnceLock<HashMap<String, String>> = OnceLock::new();
+    let map = MAP.get_or_init(|| {
+        let plain = |w: &str| w.trim().to_lowercase().replace('-', "");
+        let pairs: Vec<Vec<String>> = COHERENCY
+            .lines()
+            .filter(|l| !l.starts_with('#') && l.contains(';'))
+            .map(|l| l.split(';').map(plain).collect())
+            .filter(|p: &Vec<String>| {
+                !p.iter().any(|a| {
+                    variants()
+                        .get(a)
+                        .is_some_and(|vs| vs.iter().any(|(_, o)| p.contains(&o.to_lowercase())))
+                })
+            })
+            .collect();
+        let wanted: std::collections::HashSet<&str> =
+            pairs.iter().flatten().map(String::as_str).collect();
+        // Lemma -> (features, form), for the lemmas of the pairs.
+        let mut forms: HashMap<&str, Vec<(&str, String)>> = HashMap::new();
+        for line in UNIMORPH.lines() {
+            let mut it = line.split('\t');
+            if let (Some(lemma), Some(form), Some(feats)) = (it.next(), it.next(), it.next()) {
+                if let Some(&l) = wanted.get(lemma.to_lowercase().as_str()) {
+                    forms.entry(l).or_default().push((feats, plain(form)));
+                }
+            }
+        }
+        let mut m = HashMap::new();
+        for p in &pairs {
+            let first = &p[0];
+            for other in p {
+                m.insert(other.clone(), first.clone());
+                for (feats, form) in forms.get(other.as_str()).into_iter().flatten() {
+                    if let Some((_, f)) = forms
+                        .get(first.as_str())
+                        .and_then(|fs| fs.iter().find(|(g, _)| g == feats))
+                    {
+                        m.insert(form.clone(), f.clone());
+                    }
+                }
+            }
+        }
+        m
+    });
+    map.get(word).map(String::as_str)
+}

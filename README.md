@@ -110,7 +110,9 @@ The default rule packs are:
 Opt-in packs (`--pack NAME`): `microsoft`, `google` and `elastic` (word
 choice from those style guides, via their Vale packages), `wordlists`
 (hedges, weasel words, fillers), `equality` (insensitive wording, from the
-data behind alex), `coverage` (sentences the grammar could not analyse
+data behind alex), `languagetool` (LanguageTool's English rules that need
+no tagger, 1,645 of them), `gitlab` (GitLab's documentation style rules),
+`slop` (bheijden/slop's patterns of machine-written prose), `coverage` (sentences the grammar could not analyse
 fully, and ambiguous ones) and `decisions` (checks that ask a local model).
 Write your own packs in TOML: see [rules.md](docs/rules.md).
 

@@ -24,8 +24,10 @@ const BUILTIN_PACKS: &[(&str, &str)] = &[
     ("microsoft", include_str!("../../../packs/microsoft.toml")),
     ("google", include_str!("../../../packs/google.toml")),
     ("elastic", include_str!("../../../packs/elastic.toml")),
+    ("gitlab", include_str!("../../../packs/gitlab.toml")),
     ("wordlists", include_str!("../../../packs/wordlists.toml")),
     ("equality", include_str!("../../../packs/equality.toml")),
+    ("slop", include_str!("../../../packs/slop.toml")),
     // LanguageTool's rules that need only words
     // (scripts/import-languagetool.py).
     (

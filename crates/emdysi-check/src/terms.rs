@@ -673,8 +673,9 @@ pub fn run_acronyms(
 // One spelling per term
 
 /// Spellings of one term that differ only in hyphens, spaces or case
-/// (e-mail / email, data set / dataset, front-end / frontend) used in one
-/// document: the less used spellings are fixed to the most used one. When
+/// (e-mail / email, data set / dataset, front-end / frontend), or that
+/// LanguageTool lists as two valid spellings of one word
+/// (acknowledgement / acknowledgment), used in one document: the less used spellings are fixed to the most used one. When
 /// the grammar gives the spellings different parts of speech ("set up" the
 /// verb, "setup" the noun), they are different words and left alone.
 const FUNCTION_WORDS: &[&str] = &[
@@ -710,6 +711,9 @@ pub fn run_variants(a: &Analysis, min_length: usize, g: &Glossary) -> Vec<Hit> {
                 continue;
             }
             let key: String = w.to_lowercase().replace('-', "");
+            // Two valid spellings of one word (|acknowledgement|,
+            // |acknowledgment|) share a key.
+            let key = crate::dict::coherent_key(&key).map_or(key, str::to_string);
             if key.chars().count() >= min_length {
                 found.entry(key).or_default().push((
                     si,

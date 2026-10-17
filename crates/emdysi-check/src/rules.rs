@@ -176,7 +176,8 @@ pub enum Kind {
     /// for groups); with `expand` the message is expanded too. With
     /// `needs`, a sentence is tried only if it contains one of those words
     /// (lowercase; see [`crate::Sentence::mentions`]), matches inside a
-    /// URL or file path are skipped (they are about words), and the
+    /// URL, file path or inline code are skipped (they are about words),
+    /// and the
     /// patterns compile when one first does: a pack
     /// of a thousand rules then costs little to load or run.
     Regex {
@@ -1117,11 +1118,21 @@ impl Rule {
                     }
                     for m in re.captures_iter(s.original.as_str()).flatten() {
                         let m0 = m.name("m").or_else(|| m.get(0)).unwrap();
-                        if !needs.is_empty() && in_url_or_path(&s.original, m0.start(), m0.end()) {
-                            continue;
-                        }
                         let from = s.original[..m0.start()].chars().count();
                         let to = from + m0.as_str().chars().count();
+                        // Word rules skip URLs, paths and inline code
+                        // (masked in `s.text`): |the `Some` variant|.
+                        if !needs.is_empty()
+                            && (in_url_or_path(&s.original, m0.start(), m0.end())
+                                || s.text
+                                    .chars()
+                                    .zip(s.original.chars())
+                                    .skip(from)
+                                    .take(to - from)
+                                    .any(|(t, o)| t != o))
+                        {
+                            continue;
+                        }
                         let mut d = self.diag(a, si, from, to, m0.as_str());
                         let expanded = |template: &str| {
                             let mut e = String::new();
