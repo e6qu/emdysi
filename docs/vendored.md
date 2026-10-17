@@ -66,8 +66,13 @@ dependencies are covered separately, by `cargo deny` and
 | [Hedge, weasel and filler word lists (words/hedges, words/weasels, words/fillers), and the pack generated from them](#words-lists) | MIT | shipped | [`data/words`](../data/words), [`packs/wordlists.toml`](../packs/wordlists.toml) |
 | [retext-equality English word lists (alex), and the pack generated from them](#retext-equality) | MIT | shipped | [`data/equality`](../data/equality), [`packs/equality.toml`](../packs/equality.toml) |
 | [Open English WordNet: single words with parts of speech, verb frames and irregular forms](#oewn-words) | CC-BY-4.0 | shipped | [`data/oewn`](../data/oewn) |
+| [CMU Pronouncing Dictionary](#cmudict) | BSD-2-Clause | shipped | [`data/cmudict`](../data/cmudict) |
+| [codespell dictionaries of common misspellings and their corrections](#codespell-dictionaries) | CC-BY-SA-3.0 | shipped | [`data/codespell`](../data/codespell) |
+| [UniMorph English inflection tables](#unimorph-eng) | CC-BY-SA-3.0 | shipped | [`data/unimorph`](../data/unimorph) |
+| [Universal Dependencies English Web Treebank (all of train, dev and test)](#ud-ewt) | CC-BY-SA-4.0 | test | [`corpora/ud-ewt`](../corpora/ud-ewt) |
+| [LanguageTool English rules and word lists](#languagetool-en) | LGPL-2.1-or-later | shipped | [`data/languagetool`](../data/languagetool) |
 
-Licenses: MIT License (16), GNU Affero General Public License 3.0 or later (11), Creative Commons Attribution 4.0 (4), SCOWL/ESDB permissive notice (1), Public domain (1), CC0 1.0 (public domain dedication) (1), Creative Commons Attribution-ShareAlike 3.0 (1), Apache License 2.0 (1).
+Licenses: MIT License (16), GNU Affero General Public License 3.0 or later (11), Creative Commons Attribution 4.0 (4), Creative Commons Attribution-ShareAlike 3.0 (3), SCOWL/ESDB permissive notice (1), Public domain (1), CC0 1.0 (public domain dedication) (1), Apache License 2.0 (1), BSD 2-Clause License (1), Creative Commons Attribution-ShareAlike 4.0 (1), GNU Lesser General Public License 2.1 or later (1).
 
 ## Details
 
@@ -652,3 +657,83 @@ Licenses: MIT License (16), GNU Affero General Public License 3.0 or later (11),
 - **Modifications:** Extracted by scripts/oewn/extract.py: single-word lower-case lemmas only, with parts of speech, verb frames and irregular forms; senses, definitions, examples and relations dropped.
 - **Use:** shipped
 - **Details:** [`data/oewn/SOURCE.md`](../data/oewn/SOURCE.md)
+
+<a id="cmudict"></a>
+
+### CMU Pronouncing Dictionary
+
+- **Paths:** [`data/cmudict`](../data/cmudict)
+- **Upstream:** <https://github.com/cmusphinx/cmudict> (cmudict.dict, LICENSE, README)
+- **Version:** 74790861f652b15e4ac49015a90074ad62a27690
+- **Retrieved:** 2026-10-17
+- **License:** BSD-2-Clause (BSD 2-Clause License)
+- **License text:** [`data/cmudict/LICENSE`](../data/cmudict/LICENSE)
+- **Copyright:** Copyright (C) 1993-2015 Carnegie Mellon University
+- **Provenance:** Pronunciations compiled at Carnegie Mellon University for the Sphinx speech recognizer and maintained by volunteers; LICENSE copied from the repository at that commit.
+- **Modifications:** None; README kept as README-upstream.
+- **Use:** shipped
+- **Details:** [`data/cmudict/SOURCE.md`](../data/cmudict/SOURCE.md)
+
+<a id="codespell-dictionaries"></a>
+
+### codespell dictionaries of common misspellings and their corrections
+
+- **Paths:** [`data/codespell`](../data/codespell)
+- **Upstream:** <https://github.com/codespell-project/codespell> (codespell_lib/data/dictionary*.txt)
+- **Version:** 6e8b7f250621279fa3e33272f4df712580ceeb84
+- **Retrieved:** 2026-10-17
+- **License:** CC-BY-SA-3.0 (Creative Commons Attribution-ShareAlike 3.0)
+- **License text:** [`data/codespell/LICENSE`](../data/codespell/LICENSE)
+- **Copyright:** The codespell contributors; derived from English Wikipedia's lists of common misspellings (Wikipedia contributors)
+- **Provenance:** Upstream README: the dictionary files are derivative works of English Wikipedia released under CC BY-SA 3.0 (the program itself is GPL-2.0-only and not used). LICENSE is the CC BY-SA 3.0 text from the SPDX License List (31ba1a50e5397e00a304dbadc76531740e89ee48). Used under CC BY-SA 4.0, as 3.0 allows for adaptations (decision D15).
+- **Modifications:** None.
+- **Use:** shipped
+- **Details:** [`data/codespell/SOURCE.md`](../data/codespell/SOURCE.md)
+
+<a id="unimorph-eng"></a>
+
+### UniMorph English inflection tables
+
+- **Paths:** [`data/unimorph`](../data/unimorph)
+- **Upstream:** <https://github.com/unimorph/eng> (eng, README.md)
+- **Version:** 66e0e9e8e2dcd196da081a25a48e5c1fe3d8b49b
+- **Retrieved:** 2026-10-17
+- **License:** CC-BY-SA-3.0 (Creative Commons Attribution-ShareAlike 3.0)
+- **License text:** [`data/unimorph/LICENSE`](../data/unimorph/LICENSE)
+- **Copyright:** The UniMorph project (Kirov et al. 2018; McCarthy et al. 2020); English Wiktionary editors
+- **Provenance:** Inflected forms extracted by UniMorph from English Wiktionary; upstream README states the CC BY-SA 3.0 license. LICENSE is the CC BY-SA 3.0 text from the SPDX License List (31ba1a50e5397e00a304dbadc76531740e89ee48). Used under CC BY-SA 4.0 (decision D15).
+- **Modifications:** None; README kept as README-upstream.md.
+- **Use:** shipped
+- **Details:** [`data/unimorph/SOURCE.md`](../data/unimorph/SOURCE.md)
+
+<a id="ud-ewt"></a>
+
+### Universal Dependencies English Web Treebank (all of train, dev and test)
+
+- **Paths:** [`corpora/ud-ewt`](../corpora/ud-ewt)
+- **Upstream:** <https://github.com/UniversalDependencies/UD_English-EWT>
+- **Version:** 4a4d77f599ea53cc405f85d0cec4b2f14f81d42b
+- **Retrieved:** 2026-10-17
+- **License:** CC-BY-SA-4.0 (Creative Commons Attribution-ShareAlike 4.0)
+- **License text:** [`corpora/ud-ewt/LICENSE.txt`](../corpora/ud-ewt/LICENSE.txt)
+- **Copyright:** English Web Treebank (Google, LDC2012T13) and the UD English EWT contributors (see README-upstream.md)
+- **Provenance:** English web text annotated for the English Web Treebank and converted and corrected by Universal Dependencies, released under CC BY-SA 4.0 (LICENSE.txt in the repository at that commit).
+- **Modifications:** None; README kept as README-upstream.md.
+- **Use:** test
+- **Details:** [`corpora/ud-ewt/SOURCE.md`](../corpora/ud-ewt/SOURCE.md)
+
+<a id="languagetool-en"></a>
+
+### LanguageTool English rules and word lists
+
+- **Paths:** [`data/languagetool`](../data/languagetool)
+- **Upstream:** <https://github.com/languagetool-org/languagetool> (languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/, COPYING.txt)
+- **Version:** 5b59afaf3a12489eb34f09b555cb31f1174926c7
+- **Retrieved:** 2026-10-17
+- **License:** LGPL-2.1-or-later (GNU Lesser General Public License 2.1 or later)
+- **License text:** [`data/languagetool/COPYING.txt`](../data/languagetool/COPYING.txt), [`data/languagetool/LICENSE-GPL-3.0`](../data/languagetool/LICENSE-GPL-3.0)
+- **Copyright:** Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline (Automattic), GNU GPL
+- **Provenance:** Rule files' headers: LGPL version 2.1 or (at your option) any later version; COPYING.txt from the repository root. Portions converted from After the Deadline, under the GNU GPL with no version stated (any version may be chosen; used under GPL-3.0-or-later, whose text is from the SPDX License List). Both combine with emdysi's AGPL-3.0-or-later (decision D15).
+- **Modifications:** None; the shell script indent.sh left out.
+- **Use:** shipped
+- **Details:** [`data/languagetool/SOURCE.md`](../data/languagetool/SOURCE.md)

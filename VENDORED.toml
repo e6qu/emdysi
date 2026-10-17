@@ -579,3 +579,78 @@ modifications = "Extracted by scripts/oewn/extract.py: single-word lower-case le
 use = "shipped"
 source_doc = "data/oewn/SOURCE.md"
 
+
+[[item]]
+id = "cmudict"
+paths = ["data/cmudict"]
+name = "CMU Pronouncing Dictionary"
+upstream = "https://github.com/cmusphinx/cmudict (cmudict.dict, LICENSE, README)"
+version = "74790861f652b15e4ac49015a90074ad62a27690"
+retrieved = "2026-10-17"
+license = "BSD-2-Clause"
+license_files = ["data/cmudict/LICENSE"]
+copyright = "Copyright (C) 1993-2015 Carnegie Mellon University"
+provenance = "Pronunciations compiled at Carnegie Mellon University for the Sphinx speech recognizer and maintained by volunteers; LICENSE copied from the repository at that commit."
+modifications = "None; README kept as README-upstream."
+use = "shipped"
+source_doc = "data/cmudict/SOURCE.md"
+
+[[item]]
+id = "codespell-dictionaries"
+paths = ["data/codespell"]
+name = "codespell dictionaries of common misspellings and their corrections"
+upstream = "https://github.com/codespell-project/codespell (codespell_lib/data/dictionary*.txt)"
+version = "6e8b7f250621279fa3e33272f4df712580ceeb84"
+retrieved = "2026-10-17"
+license = "CC-BY-SA-3.0"
+license_files = ["data/codespell/LICENSE"]
+copyright = "The codespell contributors; derived from English Wikipedia's lists of common misspellings (Wikipedia contributors)"
+provenance = "Upstream README: the dictionary files are derivative works of English Wikipedia released under CC BY-SA 3.0 (the program itself is GPL-2.0-only and not used). LICENSE is the CC BY-SA 3.0 text from the SPDX License List (31ba1a50e5397e00a304dbadc76531740e89ee48). Used under CC BY-SA 4.0, as 3.0 allows for adaptations (decision D15)."
+modifications = "None."
+use = "shipped"
+source_doc = "data/codespell/SOURCE.md"
+
+[[item]]
+id = "unimorph-eng"
+paths = ["data/unimorph"]
+name = "UniMorph English inflection tables"
+upstream = "https://github.com/unimorph/eng (eng, README.md)"
+version = "66e0e9e8e2dcd196da081a25a48e5c1fe3d8b49b"
+retrieved = "2026-10-17"
+license = "CC-BY-SA-3.0"
+license_files = ["data/unimorph/LICENSE"]
+copyright = "The UniMorph project (Kirov et al. 2018; McCarthy et al. 2020); English Wiktionary editors"
+provenance = "Inflected forms extracted by UniMorph from English Wiktionary; upstream README states the CC BY-SA 3.0 license. LICENSE is the CC BY-SA 3.0 text from the SPDX License List (31ba1a50e5397e00a304dbadc76531740e89ee48). Used under CC BY-SA 4.0 (decision D15)."
+modifications = "None; README kept as README-upstream.md."
+use = "shipped"
+source_doc = "data/unimorph/SOURCE.md"
+
+[[item]]
+id = "ud-ewt"
+paths = ["corpora/ud-ewt"]
+name = "Universal Dependencies English Web Treebank (all of train, dev and test)"
+upstream = "https://github.com/UniversalDependencies/UD_English-EWT"
+version = "4a4d77f599ea53cc405f85d0cec4b2f14f81d42b"
+retrieved = "2026-10-17"
+license = "CC-BY-SA-4.0"
+license_files = ["corpora/ud-ewt/LICENSE.txt"]
+copyright = "English Web Treebank (Google, LDC2012T13) and the UD English EWT contributors (see README-upstream.md)"
+provenance = "English web text annotated for the English Web Treebank and converted and corrected by Universal Dependencies, released under CC BY-SA 4.0 (LICENSE.txt in the repository at that commit)."
+modifications = "None; README kept as README-upstream.md."
+use = "test"
+source_doc = "corpora/ud-ewt/SOURCE.md"
+
+[[item]]
+id = "languagetool-en"
+paths = ["data/languagetool"]
+name = "LanguageTool English rules and word lists"
+upstream = "https://github.com/languagetool-org/languagetool (languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/, COPYING.txt)"
+version = "5b59afaf3a12489eb34f09b555cb31f1174926c7"
+retrieved = "2026-10-17"
+license = "LGPL-2.1-or-later"
+license_files = ["data/languagetool/COPYING.txt", "data/languagetool/LICENSE-GPL-3.0"]
+copyright = "Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline (Automattic), GNU GPL"
+provenance = "Rule files' headers: LGPL version 2.1 or (at your option) any later version; COPYING.txt from the repository root. Portions converted from After the Deadline, under the GNU GPL with no version stated (any version may be chosen; used under GPL-3.0-or-later, whose text is from the SPDX License List). Both combine with emdysi's AGPL-3.0-or-later (decision D15)."
+modifications = "None; the shell script indent.sh left out."
+use = "shipped"
+source_doc = "data/languagetool/SOURCE.md"

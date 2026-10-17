@@ -183,3 +183,38 @@ full text is in the file named. Details, versions and changes are in
 - Copyright: Open English WordNet, Copyright (c) 2019-present, The Open English Wordnet Team; WordNet 3.1, Copyright 2011 by Princeton University
 - License: Creative Commons Attribution 4.0 (`CC-BY-4.0`); full text in [`data/oewn/LICENSE`](data/oewn/LICENSE), [`data/oewn/LICENSE-WordNet`](data/oewn/LICENSE-WordNet)
 - Used for: the tool (shipped)
+
+## CMU Pronouncing Dictionary
+
+- Location: `data/cmudict`
+- Copyright: Copyright (C) 1993-2015 Carnegie Mellon University
+- License: BSD 2-Clause License (`BSD-2-Clause`); full text in [`data/cmudict/LICENSE`](data/cmudict/LICENSE)
+- Used for: the tool (shipped)
+
+## codespell dictionaries of common misspellings and their corrections
+
+- Location: `data/codespell`
+- Copyright: The codespell contributors; derived from English Wikipedia's lists of common misspellings (Wikipedia contributors)
+- License: Creative Commons Attribution-ShareAlike 3.0 (`CC-BY-SA-3.0`); full text in [`data/codespell/LICENSE`](data/codespell/LICENSE)
+- Used for: the tool (shipped)
+
+## UniMorph English inflection tables
+
+- Location: `data/unimorph`
+- Copyright: The UniMorph project (Kirov et al. 2018; McCarthy et al. 2020); English Wiktionary editors
+- License: Creative Commons Attribution-ShareAlike 3.0 (`CC-BY-SA-3.0`); full text in [`data/unimorph/LICENSE`](data/unimorph/LICENSE)
+- Used for: the tool (shipped)
+
+## Universal Dependencies English Web Treebank (all of train, dev and test)
+
+- Location: `corpora/ud-ewt`
+- Copyright: English Web Treebank (Google, LDC2012T13) and the UD English EWT contributors (see README-upstream.md)
+- License: Creative Commons Attribution-ShareAlike 4.0 (`CC-BY-SA-4.0`); full text in [`corpora/ud-ewt/LICENSE.txt`](corpora/ud-ewt/LICENSE.txt)
+- Used for: tests and evaluation only
+
+## LanguageTool English rules and word lists
+
+- Location: `data/languagetool`
+- Copyright: Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline (Automattic), GNU GPL
+- License: GNU Lesser General Public License 2.1 or later (`LGPL-2.1-or-later`); full text in [`data/languagetool/COPYING.txt`](data/languagetool/COPYING.txt), [`data/languagetool/LICENSE-GPL-3.0`](data/languagetool/LICENSE-GPL-3.0)
+- Used for: the tool (shipped)
