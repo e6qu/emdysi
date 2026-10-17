@@ -1993,3 +1993,10 @@ guide, not a general check.
 `terms.variant-spelling` change nothing on the edited sets: no document
 uses both spellings of a pair that differs in more than hyphens (those
 were grouped already).
+
+### Recall after the dictionaries
+
+`real_errors` without a model, after codespell's misspelling list, the
+UniMorph inflections and the CMUdict articles: 192 of 377 (51%), up from
+183. Spelling 168 of 178 (from 159), grammar unchanged at 24 of 199, and
+no corrected sentence flagged.

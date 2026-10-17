@@ -19,7 +19,7 @@ unless stated:
 
 | Measure | Now | Notes |
 |---|---|---|
-| Real errors caught (377, from documentation histories) | 183 (49%): spelling 159 of 178, grammar 24 of 199 | 167 before the spelling work of 2026-10-17 (this branch) |
+| Real errors caught (377, from documentation histories) | 192 (51%): spelling 168 of 178, grammar 24 of 199 | 167 before the spelling work of 2026-10-17, 183 before codespell's list |
 | ... with a perfect model choosing among verified corrections | 337 (89%): grammar 165 of 199 | the upper bound for any model; no real model measured yet |
 | False flags on edited text, per 1,000 sentences | 1.6 (first development set), 3.7 (second), 3.5 (held out, 8,371 sentences) | most of the second set's flags point at real errors or real spelling mixes in the source |
 | Gold analyses (ERG test suites) | MRS identical for all 2,966 reproduced; ranker 81.7% exact match held out | |
