@@ -212,9 +212,9 @@ full text is in the file named. Details, versions and changes are in
 - License: Creative Commons Attribution-ShareAlike 4.0 (`CC-BY-SA-4.0`); full text in [`corpora/ud-ewt/LICENSE.txt`](corpora/ud-ewt/LICENSE.txt)
 - Used for: tests and evaluation only
 
-## LanguageTool English rules and word lists
+## LanguageTool English rules and word lists, and the pack generated from them
 
-- Location: `data/languagetool`
+- Location: `data/languagetool`, `packs/languagetool.toml`
 - Copyright: Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline (Automattic), GNU GPL
 - License: GNU Lesser General Public License 2.1 or later (`LGPL-2.1-or-later`); full text in [`data/languagetool/COPYING.txt`](data/languagetool/COPYING.txt), [`data/languagetool/LICENSE-GPL-3.0`](data/languagetool/LICENSE-GPL-3.0)
 - Used for: the tool (shipped)

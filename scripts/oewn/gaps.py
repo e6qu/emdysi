@@ -58,6 +58,8 @@ def erg_lexicon():
                     classes[orth].add("adjective")
                 if t.startswith("av_"):
                     classes[orth].add("adverb")
+                if not t.startswith(("n_", "v_", "aj_", "av_")):
+                    classes[orth].add("function")
     return classes
 
 
@@ -135,6 +137,13 @@ def main(paths):
                         needed[(word, cls)].append(sentence)
     entries = {}
     for (word, cls), sentences in sorted(needed.items()):
+        # Culprits often blames a function word, and WordNet has |in|
+        # (indium), |so| and |have| as nouns: leave out short words and
+        # words the ERG has as function words.
+        lw = word.lower()
+        if len(lw) <= 3 or "function" in erg.get(lw, set()):
+            print(f"skip {word}:{cls}: a short or function word", file=sys.stderr)
+            continue
         cands = lemmas(word, words, forms)
         lemma = next((l for l in cands if confirmed(cls, *words[l])), None)
         if lemma is None:

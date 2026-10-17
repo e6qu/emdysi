@@ -103,9 +103,34 @@ pub struct Sentence {
     /// Analysis by the grammar-error variant of the grammar, for sentences
     /// without a strict analysis (see [`Options::diagnose`]).
     pub mal_parse: Option<Parse>,
+    /// The sentence's words, lowercase (see [`Sentence::words`]).
+    pub word_set: std::sync::OnceLock<std::collections::HashSet<String>>,
 }
 
 impl Sentence {
+    /// The words of the sentence as written, lowercase, split at every
+    /// character that is not a letter or digit (|it's| gives |it| and
+    /// |s|). Computed once; rules use it to skip sentences cheaply.
+    pub fn words(&self) -> &std::collections::HashSet<String> {
+        self.word_set.get_or_init(|| {
+            self.original
+                .split(|c: char| !c.is_alphanumeric())
+                .filter(|w| !w.is_empty())
+                .map(str::to_lowercase)
+                .collect()
+        })
+    }
+
+    /// Whether the sentence contains `w` (lowercase): as a word if `w` is
+    /// all letters and digits, otherwise anywhere.
+    pub fn mentions(&self, w: &str) -> bool {
+        if w.chars().all(char::is_alphanumeric) {
+            self.words().contains(w)
+        } else {
+            self.original.to_lowercase().contains(w)
+        }
+    }
+
     /// The best-ranked reading, if any.
     pub fn best(&self) -> Option<&Reading> {
         self.parse.as_ref().and_then(|p| p.readings.first())
@@ -429,6 +454,7 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                 tokens: Vec::new(),
                 skipped: None,
                 mal_parse: None,
+                word_set: std::sync::OnceLock::new(),
             });
         }
     }

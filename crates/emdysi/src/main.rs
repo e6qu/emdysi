@@ -26,6 +26,12 @@ const BUILTIN_PACKS: &[(&str, &str)] = &[
     ("elastic", include_str!("../../../packs/elastic.toml")),
     ("wordlists", include_str!("../../../packs/wordlists.toml")),
     ("equality", include_str!("../../../packs/equality.toml")),
+    // LanguageTool's rules that need only words
+    // (scripts/import-languagetool.py).
+    (
+        "languagetool",
+        include_str!("../../../packs/languagetool.toml"),
+    ),
     // Sentences the grammar could not analyse fully (not errors).
     ("coverage", include_str!("../../../packs/coverage.toml")),
     // Questions for a local decision model; nothing without one.

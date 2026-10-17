@@ -247,3 +247,59 @@ pub fn erg_errors() -> &'static HashMap<String, ErgError> {
             .collect()
     })
 }
+
+const CODESPELL: &str = include_str!("../../../data/codespell/dictionary.txt");
+
+/// A misspelling from codespell's dictionary of common misspellings
+/// (`data/codespell`, from English Wikipedia's lists): its corrections, and
+/// whether the first may be applied without asking (a single correction,
+/// not marked with a trailing comma).
+pub fn codespell(word: &str) -> Option<(&'static [String], bool)> {
+    static MAP: OnceLock<HashMap<String, (Vec<String>, bool)>> = OnceLock::new();
+    MAP.get_or_init(|| {
+        CODESPELL
+            .lines()
+            .filter_map(|l| {
+                let (wrong, right) = l.split_once("->")?;
+                let fixes: Vec<String> = right
+                    .split(',')
+                    .map(str::trim)
+                    .filter(|x| !x.is_empty())
+                    .map(str::to_string)
+                    .collect();
+                let sure = fixes.len() == 1 && !right.trim_end().ends_with(',');
+                Some((wrong.trim().to_string(), (fixes, sure)))
+            })
+            .collect()
+    })
+    .get(&word.to_lowercase())
+    .map(|(f, sure)| (f.as_slice(), *sure))
+}
+
+const UNIMORPH: &str = include_str!("../../../data/unimorph/eng");
+
+/// Whether `word` is an inflected form, in UniMorph's English tables
+/// (`data/unimorph`, from Wiktionary), of a lemma the word lists know
+/// (|nightlies| of |nightly|). Only forms of known lemmas count: the
+/// tables also list rare and obsolete words, which would hide typos.
+pub fn inflection_of_known(word: &str) -> bool {
+    static MAP: OnceLock<HashMap<String, Vec<String>>> = OnceLock::new();
+    let map = MAP.get_or_init(|| {
+        let mut m: HashMap<String, Vec<String>> = HashMap::new();
+        for line in UNIMORPH.lines() {
+            let mut it = line.split('\t');
+            let (Some(lemma), Some(form)) = (it.next(), it.next()) else {
+                continue;
+            };
+            if lemma.contains(' ') || form.contains(' ') || form == lemma {
+                continue;
+            }
+            m.entry(form.to_lowercase())
+                .or_default()
+                .push(lemma.to_lowercase());
+        }
+        m
+    });
+    map.get(&word.to_lowercase())
+        .is_some_and(|lemmas| lemmas.iter().any(|l| tier(l).is_some()))
+}

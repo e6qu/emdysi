@@ -126,6 +126,37 @@ pub enum MatchOn {
     Surface,
 }
 
+/// A pattern compiled when first used.
+#[derive(Debug, Clone)]
+pub struct LazyRegex {
+    src: String,
+    re: std::sync::OnceLock<Option<Regex>>,
+}
+
+impl LazyRegex {
+    fn new(src: String) -> Self {
+        LazyRegex {
+            src,
+            re: std::sync::OnceLock::new(),
+        }
+    }
+
+    /// Compile now (once), with the error if the pattern is bad.
+    fn compile(&self) -> Result<&Regex, String> {
+        if let Some(r) = self.re.get() {
+            return r.as_ref().ok_or_else(|| "bad pattern".to_string());
+        }
+        let r = Regex::new(&self.src).map_err(|e| e.to_string());
+        let _ = self.re.set(r.as_ref().ok().cloned());
+        r.map(|_| self.re.get().unwrap().as_ref().unwrap())
+    }
+
+    /// The compiled pattern; `None` if it does not compile.
+    pub fn get(&self) -> Option<&Regex> {
+        self.compile().ok()
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum Kind {
     /// A question for a decision model about each sentence or block
@@ -139,11 +170,22 @@ pub enum Kind {
         replace: HashMap<String, String>,
     },
     /// A regular expression over the sentence text. Sentences that match
-    /// `unless` (e.g. a citation) are skipped.
+    /// `unless` (e.g. a citation) are skipped. A group named `m` narrows
+    /// the finding to its span (the rest of the match is context).
+    /// `suggest` lists alternatives (expanded like `replace`, `${name}`
+    /// for groups); with `expand` the message is expanded too. With
+    /// `needs`, a sentence is tried only if it contains one of those words
+    /// (lowercase; see [`crate::Sentence::mentions`]), matches inside a
+    /// URL or file path are skipped (they are about words), and the
+    /// patterns compile when one first does: a pack
+    /// of a thousand rules then costs little to load or run.
     Regex {
-        re: Regex,
+        re: LazyRegex,
+        needs: Vec<String>,
         replace: Option<String>,
-        unless: Option<Regex>,
+        unless: Option<LazyRegex>,
+        suggest: Vec<String>,
+        expand: bool,
     },
     /// The findings of other rules (ids starting with one of `of`), when a
     /// document has at least `min` of them and more than `max` per `per`
@@ -264,7 +306,9 @@ pub enum Kind {
     /// `|`. Replacements are suggestions, automatic fixes only with
     /// `fix = true` and a single alternative.
     Substitution {
-        swaps: Vec<(Regex, Vec<String>)>,
+        /// Pattern, replacements, and the pattern's text when it is a
+        /// plain phrase (lowercase): sentences without it are skipped.
+        swaps: Vec<(Regex, Vec<String>, Option<String>)>,
         fix: bool,
     },
 }
@@ -388,14 +432,29 @@ impl Rule {
             }
             "regex" => {
                 let pat = get_str(t, "pattern").ok_or_else(|| err("regex rule needs `pattern`"))?;
-                let re = Regex::new(&pat).map_err(|e| err(&format!("bad pattern: {e}")))?;
+                let needs: Vec<String> = get_list(t, "needs")
+                    .iter()
+                    .map(|w| w.to_lowercase())
+                    .collect();
+                let lazy = |src: String, what: &str| {
+                    let r = LazyRegex::new(src);
+                    // Without `needs`, a bad pattern is an error now.
+                    if needs.is_empty() {
+                        r.compile().map_err(|e| err(&format!("bad {what}: {e}")))?;
+                    }
+                    Ok::<_, PackError>(r)
+                };
+                let re = lazy(pat, "pattern")?;
                 let unless = get_str(t, "unless")
-                    .map(|u| Regex::new(&u).map_err(|e| err(&format!("bad `unless` pattern: {e}"))))
+                    .map(|u| lazy(u, "`unless` pattern"))
                     .transpose()?;
                 Kind::Regex {
                     re,
+                    needs,
                     replace: get_str(t, "replace"),
                     unless,
+                    suggest: get_list(t, "suggest"),
+                    expand: t.get("expand").and_then(Value::as_bool).unwrap_or(false),
                 }
             }
             "tell-density" => Kind::TellDensity {
@@ -680,7 +739,15 @@ impl Rule {
                             .ok_or_else(|| err("`swap` values must be strings"))?;
                         let re = Regex::new(&wrap(k))
                             .map_err(|e| err(&format!("bad swap pattern {k:?}: {e}")))?;
-                        swaps.push((re, rep.split('|').map(|r| r.trim().to_string()).collect()));
+                        let plain = k
+                            .chars()
+                            .all(|c| c.is_alphanumeric() || matches!(c, ' ' | '\'' | '-'))
+                            .then(|| k.to_lowercase());
+                        swaps.push((
+                            re,
+                            rep.split('|').map(|r| r.trim().to_string()).collect(),
+                            plain,
+                        ));
                     }
                     Kind::Substitution {
                         swaps,
@@ -997,7 +1064,11 @@ impl Rule {
             Kind::Substitution { swaps, fix } => {
                 for (si, s) in a.sentences.iter().enumerate() {
                     let mut taken: Vec<(usize, usize)> = Vec::new();
-                    for (re, reps) in swaps {
+                    let lower = s.text.to_lowercase();
+                    for (re, reps, plain) in swaps {
+                        if plain.as_ref().is_some_and(|p| !lower.contains(p.as_str())) {
+                            continue;
+                        }
                         for m in re.find_iter(&s.text).flatten() {
                             if taken.iter().any(|&(f, t)| m.start() < t && f < m.end()) {
                                 continue;
@@ -1028,23 +1099,41 @@ impl Rule {
                 re,
                 replace,
                 unless,
+                suggest,
+                expand,
+                needs,
             } => {
                 for (si, s) in a.sentences.iter().enumerate() {
+                    if !needs.is_empty() && !needs.iter().any(|w| s.mentions(w)) {
+                        continue;
+                    }
+                    let Some(re) = re.get() else { continue };
                     if unless
                         .as_ref()
+                        .and_then(LazyRegex::get)
                         .is_some_and(|u| u.is_match(&s.original).unwrap_or(false))
                     {
                         continue;
                     }
                     for m in re.captures_iter(s.original.as_str()).flatten() {
-                        let m0 = m.get(0).unwrap();
+                        let m0 = m.name("m").or_else(|| m.get(0)).unwrap();
+                        if !needs.is_empty() && in_url_or_path(&s.original, m0.start(), m0.end()) {
+                            continue;
+                        }
                         let from = s.original[..m0.start()].chars().count();
                         let to = from + m0.as_str().chars().count();
                         let mut d = self.diag(a, si, from, to, m0.as_str());
+                        let expanded = |template: &str| {
+                            let mut e = String::new();
+                            m.expand(template, &mut e);
+                            e
+                        };
                         if let Some(rep) = replace {
-                            let mut expanded = String::new();
-                            m.expand(rep, &mut expanded);
-                            d.replacement = Some(expanded);
+                            d.replacement = Some(expanded(rep));
+                        }
+                        d.suggestions = suggest.iter().map(|t| expanded(t)).collect();
+                        if *expand {
+                            d.message = expanded(&self.message).replace("{match}", m0.as_str());
                         }
                         out.push(d);
                     }
@@ -1246,6 +1335,9 @@ impl Rule {
                     .filter_map(|w| w.strip_prefix('@'))
                     .map(str::to_lowercase)
                     .collect();
+                // Words the document writes as code (|`notin`|, a fenced
+                // block) are its identifiers, wherever else they appear.
+                let in_code = code_words(&a.source);
                 // Words the document capitalizes after the start of a
                 // sentence are names.
                 let names: std::collections::HashSet<&str> = a
@@ -1332,6 +1424,7 @@ impl Rule {
                             // ... and the plural of an ignored word (|zulips|).
                             || w.strip_suffix('s').is_some_and(|b| ignore.iter().any(|i| i == b))
                             || mentioned.contains(w.as_str())
+                            || in_code.contains(w.to_lowercase().as_str())
                             || g.knows_word(w)
                         {
                             continue;
@@ -1340,6 +1433,7 @@ impl Rule {
                             crate::dict::tier(p).is_some()
                                 || crate::dict::accepted(p)
                                 || erg.known_word(p)
+                                || crate::dict::inflection_of_known(p)
                         };
                         let parts: Vec<&str> = w
                             .split(['-', '\'', '’'])
@@ -1349,6 +1443,23 @@ impl Rule {
                             || parts.iter().all(|p| known(p))
                             || crate::in_code_like(&s.text, t.from, t.to)
                         {
+                            continue;
+                        }
+                        // A misspelling codespell lists (from English
+                        // Wikipedia's lists of common misspellings) is one,
+                        // however far from its correction and however often
+                        // the document repeats it; its fix is applied when
+                        // codespell gives only one.
+                        if let Some((fixes, sure)) = crate::dict::codespell(w) {
+                            let mut d = self.diag(a, si, t.from, t.to, w);
+                            d.message = d
+                                .message
+                                .replace("{suggestion}", &format!(" Did you mean '{}'?", fixes[0]));
+                            d.suggestions = fixes.to_vec();
+                            if sure {
+                                d.replacement = Some(fixes[0].clone());
+                            }
+                            out.push(d);
                             continue;
                         }
                         // A known word plus an affix ("promptability") is a
@@ -2905,6 +3016,51 @@ fn split_contraction(w: &str) -> Vec<String> {
         }
     }
     vec![w]
+}
+
+/// Whether bytes `[from, to)` of `text` touch a URL or a file path: a
+/// run of non-space characters with |://|, a slash between letters
+/// (|src/main|, not |2/29|), or a dot between a letter or digit and two
+/// or more letters (|github.io|, |main.rs|, not |a.m.| or |e.g.|).
+fn in_url_or_path(text: &str, from: usize, to: usize) -> bool {
+    let start = text[..from].rfind(char::is_whitespace).map_or(0, |i| i + 1);
+    let end = text[to..]
+        .find(char::is_whitespace)
+        .map_or(text.len(), |i| to + i);
+    let c: Vec<char> = text[start..end].chars().collect();
+    let letter = |i: usize| c.get(i).is_some_and(|c| c.is_alphabetic());
+    text[start..end].contains("://")
+        || (1..c.len()).any(|i| {
+            (c[i] == '/' && letter(i - 1) && letter(i + 1))
+                || (c[i] == '.' && c[i - 1].is_alphanumeric() && letter(i + 1) && letter(i + 2))
+        })
+}
+
+/// The words inside a Markdown document's code: inline code spans and
+/// fenced blocks, lowercased.
+fn code_words(source: &str) -> std::collections::HashSet<String> {
+    let mut out = std::collections::HashSet::new();
+    let mut fenced = false;
+    let mut add = |code: &str| {
+        out.extend(
+            code.split(|c: char| !c.is_alphanumeric())
+                .filter(|w| !w.is_empty())
+                .map(str::to_lowercase),
+        )
+    };
+    for line in source.lines() {
+        let t = line.trim_start();
+        if t.starts_with("```") || t.starts_with("~~~") {
+            fenced = !fenced;
+        } else if fenced {
+            add(line);
+        } else {
+            for code in line.split('`').skip(1).step_by(2) {
+                add(code);
+            }
+        }
+    }
+    out
 }
 
 #[cfg(test)]

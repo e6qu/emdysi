@@ -68,6 +68,11 @@ pub fn tag(form: &str, initial: bool) -> Vec<Tag> {
         if plural {
             return tags(&[("NNP", 0.6), ("NNPS", 0.25), ("NN", 0.15)]);
         }
+        // Adjectives of nations, peoples and faiths are capitalized:
+        // |Palestinian|, |Japanese|, |Kurdish| (UD English EWT).
+        if ["ian", "ese", "ish"].iter().any(|e| lower.ends_with(e)) {
+            return tags(&[("NNP", 0.6), ("JJ", 0.25), ("NN", 0.15)]);
+        }
         return tags(&[("NNP", 0.8), ("NN", 0.2)]);
     }
     let mut out = if lower.ends_with("ly") {
@@ -129,6 +134,7 @@ fn closed_class(w: &str) -> Option<&'static [(&'static str, f64)]> {
         "this" | "some" | "any" | "all" | "both" | "either" | "neither" => &[("DT", 1.0)],
         "that" => &[("DT", 0.4), ("IN", 0.4), ("WDT", 0.2)],
         "to" => &[("TO", 1.0)],
+        "n't" | "n’t" => &[("RB", 1.0)],
         "in" | "on" | "at" | "of" | "for" | "with" | "from" | "by" | "about" | "into" | "onto"
         | "over" | "under" | "after" | "before" | "during" | "through" | "between" | "among"
         | "against" | "without" | "within" | "since" | "until" | "because" | "although"
@@ -173,6 +179,13 @@ mod tests {
         assert_eq!(best("multifaceted"), "JJ");
         assert_eq!(best("well-designed"), "JJ");
         assert!(matches!(best("refactored").as_str(), "VBD" | "VBN"));
+    }
+
+    #[test]
+    fn capitalized_adjectives_of_peoples() {
+        let t = tag("Palestinian", false);
+        assert!(t.iter().any(|t| t.tag == "JJ"), "{t:?}");
+        assert_eq!(t[0].tag, "NNP");
     }
 
     #[test]

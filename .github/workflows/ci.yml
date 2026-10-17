@@ -45,7 +45,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: python -m pip install --quiet pyyaml && python scripts/import-rules.py --check
+      - run: python -m pip install --quiet pyyaml regex && python scripts/import-rules.py --check && python scripts/import-languagetool.py --check
       - uses: EmbarkStudios/cargo-deny-action@v2
         with:
           command: check licenses bans sources

@@ -41,6 +41,11 @@ fn rule_examples() {
                     concepts: pack.concepts.clone(),
                 }])
             };
+            // A pattern over the text needs no parse.
+            let opts = Options {
+                parse: !matches!(rule.kind, emdysi_check::rules::Kind::Regex { .. }),
+                ..opts.clone()
+            };
             for (doc, want) in rule
                 .examples
                 .iter()

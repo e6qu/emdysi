@@ -288,6 +288,28 @@ fn mentioned_people_options_and_plurals_of_ignored_words_are_not_typos() {
 }
 
 #[test]
+fn a_word_the_document_writes_as_code_is_not_a_typo() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let checker = Checker::new(packs());
+    let opts = Options {
+        parse: false,
+        ..Options::default()
+    };
+    // Before: |notin| as a typo of |noting| (Kubernetes docs), where the
+    // document's examples write the operator as code.
+    let src = "Restrict negative matching with the _notin_ operator, \
+               as in `tier notin (frontend)`. Teh rest is simple.\n";
+    let a = analyze(&erg, src, Format::Markdown, &opts);
+    let d = checker.check(&erg, &a);
+    let spelling: Vec<&str> = d
+        .iter()
+        .filter(|x| x.rule == "core.spelling")
+        .map(|x| &src[x.range.clone()])
+        .collect();
+    assert_eq!(spelling, vec!["Teh"], "{d:?}");
+}
+
+#[test]
 fn misspellings_the_morphology_or_the_model_used_to_hide() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     let checker = Checker::new(packs());
