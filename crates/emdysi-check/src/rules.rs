@@ -1850,7 +1850,9 @@ impl Rule {
                     // still blocks (|How he lived I know not|).
                     let untried = alts.iter().any(|e| {
                         !verified.iter().any(|(v, _)| std::ptr::eq(*v, e))
-                            && !verified.iter().any(|(v, _)| v.from == e.from && v.to == e.to)
+                            && !verified
+                                .iter()
+                                .any(|(v, _)| v.from == e.from && v.to == e.to)
                             && candidate_fixes(erg, s, e, &names).is_empty()
                     });
                     if fixes.is_empty() || untried {
