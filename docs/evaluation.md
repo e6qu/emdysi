@@ -2050,4 +2050,7 @@ the same limit, the 116 sentences that took 5 seconds or more took at
 most 5.4 seconds (the row's range is coarse). A parse's several searches
 (narrow, wide and wider beams, then without pruning) and their grace
 periods for unpacking now share one hard deadline, the limit plus a
-fifth of it (at most two seconds), which makes that bound explicit.
+fifth of it (at most two seconds), which makes that bound explicit: on
+the same 116 sentences it changes nothing (the slowest 5.5 seconds, 15
+strict readings against 14). `timing`'s rows are now finer around the
+usual limits (5 to 6, 6 to 9.5, 9.5 to 10.5 seconds).

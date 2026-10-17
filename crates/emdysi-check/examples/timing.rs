@@ -116,8 +116,12 @@ fn main() {
         (0.5, 1.0),
         (1.0, 2.0),
         (2.0, 5.0),
-        (5.0, 9.5),
-        (9.5, f64::MAX),
+        // Fine near the time limits (5 and 10 seconds are the usual ones),
+        // to tell parses that end at a limit from ones that overrun it.
+        (5.0, 6.0),
+        (6.0, 9.5),
+        (9.5, 10.5),
+        (10.5, f64::MAX),
     ] {
         let b: Vec<&(f64, bool, bool)> = parses.iter().filter(|p| p.0 >= lo && p.0 < hi).collect();
         let t: f64 = b.iter().map(|p| p.0).sum();
