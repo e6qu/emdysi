@@ -99,3 +99,6 @@ other	The news was mortifying.	A participle adjective the ERG lacks (grammar/emd
 other	The all-hands has happened!	A hyphenated noun the ERG lacks (grammar/emdysi/lexicon.tdl).
 other	Many thanks to the reviewers.	A salutation the ERG lacks, in the form of its thanks (grammar/emdysi/lexicon.tdl).
 other	Many thanks for your help.	The same, with for.
+other	On the table lay a book.	Locative inversion with a verb the ERG lists for it (v_np_locinv-mv_le).
+other	Into the room walked a stranger.	Locative inversion with a verb of motion the ERG lacks for it (grammar/emdysi/lexicon.tdl).
+other	Behind the house lurked a shadow.	The same, a verb of position.

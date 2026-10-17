@@ -239,7 +239,21 @@ pub fn run_articles(a: &Analysis) -> Vec<Hit> {
                 };
                 let mut h = Hit::at(a, si, art.from, art.to);
                 h = h.var("fix", fixed).var("word", &next.form);
-                h.replacement = Some(fixed.to_string());
+                // Before a verb form (|Instead of an creating a block|)
+                // the article itself may be the error: a suggestion, not
+                // an automatic fix.
+                let verb_next = s.best().is_some_and(|r| {
+                    r.words
+                        .iter()
+                        .filter(|w| w.from < next.to && next.from < w.to)
+                        .filter_map(crate::tags::penn)
+                        .any(|t| t.starts_with("VB"))
+                });
+                if verb_next {
+                    h.suggestions = vec![fixed.to_string()];
+                } else {
+                    h.replacement = Some(fixed.to_string());
+                }
                 out.push(h);
             }
         }

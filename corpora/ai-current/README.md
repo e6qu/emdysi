@@ -14,3 +14,9 @@ patterns appear at the density they do in real output.
   `to_tsv.py`) against the edited documents of `corpora/edited`, to find
   patterns the rule packs miss and to calibrate the ones they have
   (see docs/evaluation.md, "Machine-written prose from current models").
+  The first 24 documents (2026-10-17) were used to write the rules; the 12
+  added later the same day (release notes, a billing FAQ, a git tutorial,
+  a personal statement, a talk proposal, a product comparison, a grant
+  summary, a postmortem, a book review, a social thread, a wedding toast,
+  a course description) were first measured as unseen text, then used
+  for more rules.

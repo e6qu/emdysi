@@ -404,7 +404,7 @@ license = "MIT"
 license_files = ["corpora/real-errors/LICENSE-rust-book-MIT"]
 copyright = "The Rust Project Developers and the book's contributors"
 provenance = "Paragraphs of the book before and after commits that fix typos, spelling or grammar; both versions are part of the MIT OR Apache-2.0 repository's history (used under MIT)."
-modifications = "Selected and aligned by corpora/real-errors/mine.py (122 paragraph pairs); no text changed."
+modifications = "Selected and aligned by corpora/real-errors/mine.py (122 paragraph pairs); four rows repaired by mine.py --repair (block quotes); no text changed."
 use = "test"
 source_doc = "corpora/real-errors/SOURCE.md"
 
@@ -419,7 +419,7 @@ license = "CC-BY-4.0"
 license_files = ["corpora/real-errors/LICENSE-kubernetes-website"]
 copyright = "The Kubernetes Authors"
 provenance = "Paragraphs of the documentation before and after the 400 most recent commits that fix typos, spelling or grammar; both versions are part of the CC BY 4.0 repository's history."
-modifications = "Selected and aligned by corpora/real-errors/mine.py (255 paragraph pairs); no text changed."
+modifications = "Selected and aligned by corpora/real-errors/mine.py (255 paragraph pairs); mine.py --repair dropped three rows whose change was in YAML front matter and repaired two (252 pairs); no text changed."
 use = "test"
 source_doc = "corpora/real-errors/SOURCE.md"
 

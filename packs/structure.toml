@@ -130,10 +130,10 @@ kind = "regex"
 scope = "lead"
 severity = "warning"
 message = "The opening ('{match}') delays the point; start with the conclusion or the key fact."
-description = "Openings of a document or top-level section that say nothing yet: scene-setting, announcements of what the text will do, rhetorical questions. Only the first paragraph of the document and of each H1 or H2 section is checked."
+description = "Openings of a document or top-level section that say nothing yet: scene-setting, announcements of what the text will do, rhetorical questions. Only the first paragraph of the document and of each H1 or H2 section is checked. 'In today's ... world' is ai-tells.in-todays, anywhere in the text."
 source = "plainlanguage.gov, Organize; Microsoft Writing Style Guide, Top 10 tips"
-pattern = "(?i)^(?:in today's (?:\\w+[- ])*(?:world|landscape|age|era|environment)|in an? (?:\\w+[- ]){0,3}(?:world|landscape|era) (?:where|of)|in this day and age|in recent years|have you ever (?:wondered|asked yourself)|let's (?:dive|delve|take a (?:closer |deep )?look)|without further ado|as we all know|it is no secret that|it's no secret that|imagine (?:a world|for a moment)|(?:this|the following|in this) (?:article|post|guide|document|blog post|section|report)(?:,)? (?:will|we will|we'll|aims to|is going to) |in this (?:article|post|guide|document|section|report), (?:we|I) (?:will|'ll|are going to))"
-examples = ["# Tools\n\nIn today's fast-paced digital world, teams need better tools.\n", "# Tools\n\nIn this article, we will explore three tools.\n"]
+pattern = "(?i)^(?:in an? (?:\\w+[- ]){0,3}(?:world|landscape|era) (?:where|of)|in this day and age|in recent years|have you ever (?:wondered|asked yourself)|let's (?:dive|delve|take a (?:closer |deep )?look)|without further ado|as we all know|it is no secret that|it's no secret that|imagine (?:a world|for a moment)|(?:this|the following|in this) (?:article|post|guide|document|blog post|section|report)(?:,)? (?:will|we will|we'll|aims to|is going to) |in this (?:article|post|guide|document|section|report), (?:we|I) (?:will|'ll|are going to))"
+examples = ["# Tools\n\nIn a world where teams ship daily, review matters.\n", "# Tools\n\nIn this article, we will explore three tools.\n"]
 acceptable = ["# Tools\n\nTeams that adopted the new linter cut review time by a third.\n"]
 
 # Headings.

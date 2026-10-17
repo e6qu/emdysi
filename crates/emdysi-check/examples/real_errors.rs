@@ -19,7 +19,9 @@
 //! sentence the writer's correction has (an upper bound for any model).
 //! Either way the number of questions asked is reported. `SHARD=i/n`
 //! checks only every n-th pair, starting with the i-th.
-//! `PACKS=packs/a.toml,...` adds packs to `core`.
+//! `PACKS=packs/a.toml,...` adds packs to `core`. `EXPLAIN=FILE` writes
+//! the grammar's account of each missed grammar error (see the `why`
+//! example).
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -149,6 +151,9 @@ fn main() {
     };
     let tallies: Mutex<BTreeMap<String, Tally>> = Mutex::default();
     let lines: Mutex<Vec<String>> = Mutex::default();
+    // `EXPLAIN=FILE`: the grammar's account of each missed grammar error.
+    let explain_path = std::env::var("EXPLAIN").ok();
+    let explain: Option<Mutex<Vec<String>>> = explain_path.as_ref().map(|_| Mutex::default());
     let next = Mutex::new(0usize);
     std::thread::scope(|s| {
         let threads = std::env::var("THREADS")
@@ -199,6 +204,25 @@ fn main() {
                     };
                     let hits = check(before, from, to);
                     let false_hits = check(after, afrom, ato);
+                    // Why a grammar error was missed: the grammar's account
+                    // of each sentence the change touches.
+                    if hits.is_empty() && kind.starts_with("grammar") {
+                        if let Some(out) = &explain {
+                            let a = analyze(&erg, before, Format::Markdown, &opts);
+                            for si in 0..a.sentences.len() {
+                                let r = a.sentence_source(si);
+                                if r.start < to && from < r.end {
+                                    out.lock().unwrap().push(format!(
+                                        "## {kind}: {:?} -> {:?}\n{}\n{}\n",
+                                        &before[from..to],
+                                        &after[afrom..ato],
+                                        a.sentences[si].original,
+                                        emdysi_check::rules::explain_grammar(&erg, &a, si)
+                                    ));
+                                }
+                            }
+                        }
+                    }
                     let describe = |ds: &[Diagnostic]| {
                         ds.iter()
                             .map(|d| format!("{}: {}", d.rule, d.message))
@@ -223,6 +247,11 @@ fn main() {
             });
         }
     });
+    if let (Some(path), Some(out)) = (&explain_path, explain) {
+        let mut out = out.into_inner().unwrap();
+        out.sort();
+        std::fs::write(path, out.join("\n")).unwrap();
+    }
     let mut lines = lines.into_inner().unwrap();
     lines.sort();
     std::fs::write(

@@ -665,6 +665,7 @@ impl Erg {
             // gigabytes.
             max_nodes: 25_000_000,
             timeout: Duration::from_secs(60),
+            hard_deadline: None,
             packing_restrictor,
             max_readings: 1000,
             packing_top_type: ace_setting(&config_src, "generalize-edge-top-types")
@@ -840,6 +841,18 @@ impl Erg {
 
     fn parse_uncached(&self, text: &str, config: &ParserConfig) -> Result<Parse, Error> {
         let t0 = std::time::Instant::now();
+        // One limit for all the searches below (narrow, wide, wider and
+        // unpruned beams), each with its grace periods: the time limit and
+        // one grace period of a fifth of it, at most two seconds. (Each
+        // search starts only with a second left and its grace periods are
+        // short, so in practice a parse already ended within half a second
+        // of the limit; this makes the bound explicit.)
+        let config = &ParserConfig {
+            hard_deadline: Some(
+                t0 + config.timeout + (config.timeout / 5).min(Duration::from_secs(2)),
+            ),
+            ..config.clone()
+        };
         let tokens = self.tokens(text);
         let (lat, _) = self.map_tokens(&tokens, false)?;
         if std::env::var_os("EMDYSI_CHART").is_some() {

@@ -49,7 +49,9 @@ def files_under(rel):
     if os.path.isfile(full):
         return [rel]
     out = []
-    for d, _, fs in os.walk(full):
+    for d, dirs, fs in os.walk(full):
+        # Python's bytecode caches (ignored by git) are not content.
+        dirs[:] = [x for x in dirs if x != "__pycache__"]
         for f in fs:
             out.append(os.path.relpath(os.path.join(d, f), ROOT))
     return out

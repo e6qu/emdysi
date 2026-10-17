@@ -2027,3 +2027,53 @@ On the real-error corpus (`real_errors` with
 caught stay at 24 of 199, and one corrected sentence is flagged. The
 converted rules target other errors than the ones in this corpus
 (missing function words, wrong forms), which need the grammar.
+
+### A lower time limit: 5 seconds instead of 10
+
+`timing` with `TIMEOUT=5` against the default 10 seconds, on the same
+24 documents of the first development set (1,388 sentences, one thread,
+no parse cache):
+
+| Limit | ms a sentence | Sentences with a strict reading | Findings that changed |
+|---|---|---|---|
+| 10 s | 1,703 | 1,083 | |
+| 5 s | 1,381 (−19%) | 1,056 (−27) | passive 208 → 201, agentless passive 127 → 120, rule of three 43 → 40, stacked negation 18 → 15, tense shift 14 → 12, noun stacks 34 → 32 |
+
+Spelling and grammar-error findings do not change, but 27 sentences (2%)
+lose their strict reading, and with it the findings of the rules that
+read the parse. The default stays at 10 seconds; `--timeout` remains for
+those who prefer speed.
+
+The 81 sentences the 5-second run put in the "5 to 9.5 s" row are not
+parses that overran the limit by seconds: parsed again on their own with
+the same limit, the 116 sentences that took 5 seconds or more took at
+most 5.4 seconds (the row's range is coarse). A parse's several searches
+(narrow, wide and wider beams, then without pruning) and their grace
+periods for unpacking now share one hard deadline, the limit plus a
+fifth of it (at most two seconds), which makes that bound explicit: on
+the same 116 sentences it changes nothing (the slowest 5.5 seconds, 15
+strict readings against 14). `timing`'s rows are now finer around the
+usual limits (5 to 6, 6 to 9.5, 9.5 to 10.5 seconds).
+
+### Twelve more machine-written samples, measured unseen
+
+`corpora/ai-current` gained 12 documents in genres the first 24 lack
+(release notes, a billing FAQ, a git tutorial, a personal statement, a
+talk proposal, a product comparison, a grant summary, a postmortem, a
+book review, a social thread, a wedding toast, a course description).
+Measured before any rule changed, as text the rules had not been written
+from: `ai-tells.dense` fired on 6 of the 12 (against 14 of the 24 the
+rules were written on), so the rules carry over, a little weaker.
+
+From the six it missed came more stock phrases (*every step of the
+way*, *can't wait to see what you*, *it's that easy*, *and just like
+that*, *your unique needs*, *happy coding*), the reply opener
+*Absolutely!*, and a rule for *In today's ... world / landscape*
+(`ai-tells.in-todays`). With them, `dense` fires on 9 of the 12 (no
+longer unseen text). On the 654 edited documents the new phrases made
+one finding, *you can rest assured that it will happily...* (the Rust
+book), and *rest assured* was taken out again.
+
+Found on the way: a word-list item ending in punctuation never matched,
+as the tokenizer makes the punctuation a token of its own; the chatbot
+rule's *certainly!* had never fired. Items are now split the same way.

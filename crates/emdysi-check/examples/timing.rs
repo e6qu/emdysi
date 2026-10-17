@@ -9,6 +9,7 @@
 //! Set `EMDYSI_NO_CACHE=1` to time parsing rather than the parse cache.
 //! `TIMEOUT=SECONDS` sets the parser's time limit; the findings of
 //! each rule are listed too, to compare runs with different limits.
+//! `SLOW=SECONDS` prints the sentences parsed that slowly, with their time.
 
 use emdysi_check::{Checker, Format, Options, Pack, analyze, timing};
 use emdysi_parse::{Erg, default_grammar_dir};
@@ -48,6 +49,9 @@ fn main() {
         ..Options::default()
     };
     let mut findings: std::collections::BTreeMap<String, usize> = Default::default();
+    // `SLOW=SECONDS` prints each sentence whose parse took that long or
+    // longer, with its time, on standard error.
+    let slow: Option<f64> = std::env::var("SLOW").ok().and_then(|t| t.parse().ok());
     let (mut sentences, mut words) = (0, 0);
     // Each parsed sentence's parse time, and whether it got a strict
     // reading and whether its search was complete.
@@ -68,9 +72,17 @@ fn main() {
             *findings.entry(d.rule).or_default() += 1;
         }
         check_time += t.elapsed();
-        for p in a.sentences.iter().filter_map(|s| s.parse.as_ref()) {
+        for s in &a.sentences {
+            let Some(p) = &s.parse else { continue };
             let strict = p.readings.iter().any(|r| emdysi_parse::is_strict(&r.root));
             parses.push((p.elapsed.as_secs_f64(), strict, p.complete));
+            if slow.is_some_and(|t| p.elapsed.as_secs_f64() >= t) {
+                eprintln!(
+                    "{:.1}\t{}",
+                    p.elapsed.as_secs_f64(),
+                    s.text.replace('\n', " ")
+                );
+            }
         }
         sentences += a.sentences.len();
         words += a
@@ -104,8 +116,12 @@ fn main() {
         (0.5, 1.0),
         (1.0, 2.0),
         (2.0, 5.0),
-        (5.0, 9.5),
-        (9.5, f64::MAX),
+        // Fine near the time limits (5 and 10 seconds are the usual ones),
+        // to tell parses that end at a limit from ones that overrun it.
+        (5.0, 6.0),
+        (6.0, 9.5),
+        (9.5, 10.5),
+        (10.5, f64::MAX),
     ] {
         let b: Vec<&(f64, bool, bool)> = parses.iter().filter(|p| p.0 >= lo && p.0 < hi).collect();
         let t: f64 = b.iter().map(|p| p.0).sum();

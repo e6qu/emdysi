@@ -24,7 +24,7 @@ unless stated:
 | False flags on edited text, per 1,000 sentences | 1.6 (first development set), 3.7 (second), 3.5 (held out, 8,371 sentences) | most of the second set's flags point at real errors or real spelling mixes in the source |
 | Gold analyses (ERG test suites) | MRS identical for all 2,966 reproduced; ranker 81.7% exact match held out | |
 | Speed | about 1.7 s of CPU per sentence of edited text (cold parse cache, one thread) | 2.1 s before the grammar-error variant was gated (2026-10-17); parsing is 82% of the time |
-| Rule data | 2,579 LanguageTool rules (579 of them checked against the parse's parts of speech), 98 slop rules, 26 GitLab rules (opt-in packs); codespell, CMUdict, UniMorph, Open English WordNet, UD English EWT vendored | emdysi is AGPL-3.0-or-later since 2026-10-17 (decision D15), so share-alike and GPL data can be used |
+| Rule data | 2,580 LanguageTool rules (579 of them checked against the parse's parts of speech), 98 slop rules, 26 GitLab rules (opt-in packs); codespell, CMUdict, UniMorph, Open English WordNet, UD English EWT vendored | emdysi is AGPL-3.0-or-later since 2026-10-17 (decision D15), so share-alike and GPL data can be used |
 
 ## Priorities
 

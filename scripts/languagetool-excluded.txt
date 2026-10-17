@@ -2,5 +2,5 @@
 # their own examples in emdysi although the converter's check passes, with
 # the reason. Read by scripts/import-languagetool.py.
 
-# emdysi's sentence segmentation ends a sentence at "Ph." in "Ph. D.".
-languagetool.ph-d
+# (None at present. languagetool.ph-d was here until emdysi's segmentation
+# stopped ending a sentence at "Ph." in "Ph. D.".)

@@ -3155,6 +3155,16 @@ pub fn explain_grammar(erg: &Erg, a: &crate::Analysis, si: usize) -> String {
 /// |’s|, |isn’t| is |is| |n’t|) and a hyphen as its own token, so that
 /// |here's the thing| and |fast-paced| match.
 fn split_contraction(w: &str) -> Vec<String> {
+    // Trailing punctuation is a token of its own, as the tokenizer makes
+    // it (|certainly!| is |certainly| |!|).
+    if let Some(stem) = w
+        .strip_suffix(['!', '?', '.', ',', ';', ':'])
+        .filter(|s| !s.is_empty())
+    {
+        let mut parts = split_contraction(stem);
+        parts.push(w[stem.len()..].to_string());
+        return parts;
+    }
     // |fast-paced| is |fast| |-| |paced|.
     if w.len() > 1 && w.contains('-') && !w.starts_with('-') && !w.ends_with('-') {
         let mut parts = Vec::new();

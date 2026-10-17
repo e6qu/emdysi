@@ -479,7 +479,7 @@ Licenses: MIT License (16), GNU Affero General Public License 3.0 or later (11),
 - **License text:** [`corpora/real-errors/LICENSE-rust-book-MIT`](../corpora/real-errors/LICENSE-rust-book-MIT)
 - **Copyright:** The Rust Project Developers and the book's contributors
 - **Provenance:** Paragraphs of the book before and after commits that fix typos, spelling or grammar; both versions are part of the MIT OR Apache-2.0 repository's history (used under MIT).
-- **Modifications:** Selected and aligned by corpora/real-errors/mine.py (122 paragraph pairs); no text changed.
+- **Modifications:** Selected and aligned by corpora/real-errors/mine.py (122 paragraph pairs); four rows repaired by mine.py --repair (block quotes); no text changed.
 - **Use:** test
 - **Details:** [`corpora/real-errors/SOURCE.md`](../corpora/real-errors/SOURCE.md)
 
@@ -495,7 +495,7 @@ Licenses: MIT License (16), GNU Affero General Public License 3.0 or later (11),
 - **License text:** [`corpora/real-errors/LICENSE-kubernetes-website`](../corpora/real-errors/LICENSE-kubernetes-website)
 - **Copyright:** The Kubernetes Authors
 - **Provenance:** Paragraphs of the documentation before and after the 400 most recent commits that fix typos, spelling or grammar; both versions are part of the CC BY 4.0 repository's history.
-- **Modifications:** Selected and aligned by corpora/real-errors/mine.py (255 paragraph pairs); no text changed.
+- **Modifications:** Selected and aligned by corpora/real-errors/mine.py (255 paragraph pairs); mine.py --repair dropped three rows whose change was in YAML front matter and repaired two (252 pairs); no text changed.
 - **Use:** test
 - **Details:** [`corpora/real-errors/SOURCE.md`](../corpora/real-errors/SOURCE.md)
 
