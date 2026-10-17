@@ -34,6 +34,10 @@ words = [
   "unlock the full potential", "unlock new possibilities",
   "limitless possibilities", "endless possibilities", "lasting impact",
   "navigate the complexities of",
+  "the real magic happens", "make or break", "hiding in plain sight",
+  "has you covered", "will thank you", "this is just the beginning",
+  "we can't wait to", "we can’t wait to", "every single time",
+  "game-changer", "game changer", "supercharge", "the gift of focus",
 ]
 
 [[rule]]
@@ -59,6 +63,7 @@ words = [
   "i hope this helps", "as an ai", "as a language model", "great question",
   "certainly!", "i'd be happy to help", "i’d be happy to help",
   "feel free to ask", "let me know if you have any other questions",
+  "let me break it down", "let me break this down", "i hope that helps",
 ]
 
 [[rule]]
@@ -127,6 +132,88 @@ examples = [
 ]
 acceptable = [
   "“What do you think? It is excellent news,” said Lydia.\n",
+]
+
+[[rule]]
+id = "ai-tells.reader-hooks"
+kind = "words"
+match = "surface"
+severity = "warning"
+message = "Hook aimed at the reader ('{match}'); get to the point."
+description = "Phrases current chat models use to court the reader: a show of candour, an invitation to dive in, a guess at the reader's experience, a call to action. Each occurs at most once in the 410,000 words of the edited corpora (corpora/edited, corpora/edited-by-sa), and in most of the documents of corpora/ai-current."
+words = [
+  "let's be honest", "let’s be honest", "let's face it", "let’s face it",
+  "let's dive in", "let’s dive in", "let's dive into", "let’s dive into",
+  "sound familiar?", "you're not alone", "you’re not alone",
+  "ready to get started?", "ready to see it in action?", "spoiler:",
+  "what most guides won't tell you", "what most guides won’t tell you",
+  "i see you.",
+]
+examples = [
+  "Let's be honest: most teams don't have this problem.\n",
+  "It's 2 a.m. and the alert fires. Sound familiar? You're not alone.\n",
+]
+acceptable = [
+  "To be honest, the old release was faster.\n",
+]
+
+[[rule]]
+id = "ai-tells.just-fragment"
+kind = "sentence-pair"
+severity = "suggestion"
+message = "Reveal after a run of fragments ('{match}' then 'Just ...'); say what it does instead."
+description = "A list of things gone, in fragments, then the payoff in two words: 'No more spreadsheets. No more manual matching. Just results.' Not once in the edited corpora."
+pattern = "^\\W*No\\b[^.!?]{1,60}[.!?]\\W*$"
+next = "^\\W*Just\\s+\\w+(?:\\s+\\w+)?[.!]\\W*$"
+examples = [
+  "No more spreadsheets. No more manual matching. Just results.\n",
+]
+acceptable = [
+  "No changes are needed. Just run the installer again.\n",
+]
+
+[[rule]]
+id = "ai-tells.emoji-heading"
+kind = "regex"
+scope = "heading"
+severity = "suggestion"
+message = "Emoji in a heading; let the words carry it."
+description = "An emoji at the start of a heading or list item, a habit of model-written READMEs and newsletters: never at the start of a line in the edited corpora, though their blog posts use emoji in running text."
+pattern = "^\\W*?[\\x{1F300}-\\x{1FAFF}\\x{2600}-\\x{27BF}\\x{2B50}\\x{2705}]"
+examples = [
+  "# Tidepool\n\n## ✨ Features\n\nIt is fast.\n",
+]
+acceptable = [
+  "# Release notes\n\nThe survey was positive. 🎉 Most people want more.\n",
+]
+
+[[rule]]
+id = "ai-tells.emoji-list"
+kind = "regex"
+scope = "list-item"
+severity = "suggestion"
+message = "Emoji at the start of a list item; let the words carry it."
+description = "As `ai-tells.emoji-heading`, for list items ('🚀 **Blazing fast:** ...')."
+pattern = "^\\W*?[\\x{1F300}-\\x{1FAFF}\\x{2600}-\\x{27BF}\\x{2B50}\\x{2705}]"
+examples = [
+  "Features:\n\n- 🚀 Blazing fast startup.\n- 🔒 Secure by default.\n",
+]
+acceptable = [
+  "Features:\n\n- Fast startup.\n- Secure defaults.\n",
+]
+
+[[rule]]
+id = "ai-tells.hashtags"
+kind = "regex"
+severity = "suggestion"
+message = "A line of hashtags; they belong to a social-media post, not to prose."
+description = "Two or more hashtags making up a whole line, as model-written social-media posts end. Not in the edited corpora."
+pattern = "^\\s*(?:#[A-Za-z]\\w*\\s*){2,}$"
+examples = [
+  "Keep going.\n\n#Leadership #Growth #Resilience\n",
+]
+acceptable = [
+  "Use the `#[derive(Debug)]` attribute.\n",
 ]
 
 [[rule]]
