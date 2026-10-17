@@ -109,9 +109,9 @@ kind = "variants"
 min_length = 5
 severity = "warning"
 message = "'{match}' is also written '{preferred}' in this document; use one spelling."
-description = "One term written in several ways in one document (e-mail and email, data set and dataset, front-end and frontend). The spelling the glossary prefers, or else the one used most, wins. Spellings the grammar analyses as different parts of speech (the verb 'set up', the noun 'setup') are different words and are left alone."
+description = "One term written in several ways in one document (e-mail and email, data set and dataset, front-end and frontend, and LanguageTool's pairs of valid spellings such as comingle and commingle). The spelling the glossary prefers, or else the one used most, wins. Spellings the grammar analyses as different parts of speech (the verb 'set up', the noun 'setup') are different words and are left alone."
 source = "plainlanguage.gov, Use the same terms consistently; Microsoft Writing Style Guide (one term, one concept)"
-examples = ["Send an email to the team. The e-mail should list the dates.\n"]
+examples = ["Send an email to the team. The e-mail should list the dates.\n", "The funds commingle with others. Never comingle accounts.\n"]
 acceptable = ["Set up the server. The setup takes an hour.\n", "Send an email to the team. The email should list the dates.\n"]
 
 # Invented jargon.

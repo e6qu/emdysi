@@ -14,6 +14,45 @@ use emdysi_parse::{Erg, InputToken, Parse, Reading};
 use emdysi_text::blocks::{Block, BlockKind, markdown_blocks, plain_blocks};
 use emdysi_text::segment::sentences;
 
+/// Time spent in each stage of checking, summed over all threads since the
+/// process started (for profiling: see `examples/timing.rs`).
+pub mod timing {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    use std::time::{Duration, Instant};
+
+    pub static PARSE: AtomicU64 = AtomicU64::new(0);
+    pub static REPARSE: AtomicU64 = AtomicU64::new(0);
+    pub static MAL: AtomicU64 = AtomicU64::new(0);
+    pub static RULES: AtomicU64 = AtomicU64::new(0);
+    pub static VERIFY: AtomicU64 = AtomicU64::new(0);
+
+    /// Runs `f`, adding its time to `counter`.
+    pub fn timed<T>(counter: &AtomicU64, f: impl FnOnce() -> T) -> T {
+        let t = Instant::now();
+        let out = f();
+        counter.fetch_add(t.elapsed().as_nanos() as u64, Ordering::Relaxed);
+        out
+    }
+
+    /// Time per rule id, summed like the stages.
+    pub static RULE_TIMES: std::sync::Mutex<std::collections::BTreeMap<String, Duration>> =
+        std::sync::Mutex::new(std::collections::BTreeMap::new());
+
+    /// The stages and their times so far.
+    pub fn report() -> Vec<(&'static str, Duration)> {
+        [
+            ("parse", &PARSE),
+            ("re-parse (quoting, unpruned)", &REPARSE),
+            ("grammar-error variant", &MAL),
+            ("rules", &RULES),
+            ("rules' correction parses", &VERIFY),
+        ]
+        .into_iter()
+        .map(|(n, c)| (n, Duration::from_nanos(c.load(Ordering::Relaxed))))
+        .collect()
+    }
+}
+
 pub mod articles;
 pub mod assist;
 pub mod compounds;
@@ -26,6 +65,7 @@ pub mod report;
 pub mod rules;
 pub mod semantics;
 pub mod structure;
+pub mod tags;
 pub mod terms;
 pub mod toml;
 
@@ -64,9 +104,34 @@ pub struct Sentence {
     /// Analysis by the grammar-error variant of the grammar, for sentences
     /// without a strict analysis (see [`Options::diagnose`]).
     pub mal_parse: Option<Parse>,
+    /// The sentence's words, lowercase (see [`Sentence::words`]).
+    pub word_set: std::sync::OnceLock<std::collections::HashSet<String>>,
 }
 
 impl Sentence {
+    /// The words of the sentence as written, lowercase, split at every
+    /// character that is not a letter or digit (|it's| gives |it| and
+    /// |s|). Computed once; rules use it to skip sentences cheaply.
+    pub fn words(&self) -> &std::collections::HashSet<String> {
+        self.word_set.get_or_init(|| {
+            self.original
+                .split(|c: char| !c.is_alphanumeric())
+                .filter(|w| !w.is_empty())
+                .map(str::to_lowercase)
+                .collect()
+        })
+    }
+
+    /// Whether the sentence contains `w` (lowercase): as a word if `w` is
+    /// all letters and digits, otherwise anywhere.
+    pub fn mentions(&self, w: &str) -> bool {
+        if w.chars().all(char::is_alphanumeric) {
+            self.words().contains(w)
+        } else {
+            self.original.to_lowercase().contains(w)
+        }
+    }
+
     /// The best-ranked reading, if any.
     pub fn best(&self) -> Option<&Reading> {
         self.parse.as_ref().and_then(|p| p.readings.first())
@@ -390,6 +455,7 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                 tokens: Vec::new(),
                 skipped: None,
                 mal_parse: None,
+                word_set: std::sync::OnceLock::new(),
             });
         }
     }
@@ -431,7 +497,9 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                     } else {
                         let masked = parser_text(text, in_list);
                         let text = masked.as_deref().unwrap_or(text);
-                        match erg.parse_limited(text, opts.timeout, opts.max_readings) {
+                        match timing::timed(&timing::PARSE, || {
+                            erg.parse_limited(text, opts.timeout, opts.max_readings)
+                        }) {
                             Ok(p) => (Some(p), None),
                             Err(e) => (None, Some(e.to_string())),
                         }
@@ -457,7 +525,9 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                             return p;
                         }
                         let p = if p.readings.len() >= opts.max_readings {
-                            match erg.parse_limited(text, opts.timeout, ALL_READINGS) {
+                            match timing::timed(&timing::REPARSE, || {
+                                erg.parse_limited(text, opts.timeout, ALL_READINGS)
+                            }) {
                                 Ok(q) if q.readings.len() < ALL_READINGS && quoting_only(&q) => q,
                                 _ => return p,
                             }
@@ -471,7 +541,9 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                         let p = if p.complete {
                             p
                         } else {
-                            match erg.parse_unpruned(text, opts.timeout, ALL_READINGS) {
+                            match timing::timed(&timing::REPARSE, || {
+                                erg.parse_unpruned(text, opts.timeout, ALL_READINGS)
+                            }) {
                                 Ok(q)
                                     if q.complete
                                         && q.readings.len() < ALL_READINGS
@@ -511,11 +583,26 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                                     .unwrap_or_default()
                                     .chars()
                                     .collect();
+                                // ... and only a wrong form of a word the
+                                // grammar knows ("buyed", "childs") can be
+                                // named within it: the variant has nothing to
+                                // say inside a name or a term ("kubelet"),
+                                // which most unknown words in edited text
+                                // are, and parsing it took a third of the
+                                // checking time.
                                 p.readings.first().is_some_and(|r| {
                                     r.words.iter().any(|w| {
                                         w.generic
                                             && !acronym(&original, w.from, w.to)
                                             && !masked_code(&masked, w.from, w.to)
+                                            && !erg
+                                                .inflections(
+                                                    &original[w.from.min(original.len())
+                                                        ..w.to.min(original.len())]
+                                                        .iter()
+                                                        .collect::<String>(),
+                                                )
+                                                .is_empty()
                                     })
                                 })
                             }));
@@ -534,11 +621,13 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                         let masked = parser_text(text, in_list);
                         let text = masked.as_deref().unwrap_or(text);
                         erg.mal().and_then(|m| {
-                            m.parse_limited(
-                                text,
-                                opts.timeout.min(MAL_TIMEOUT),
-                                opts.max_readings.min(MAL_READINGS),
-                            )
+                            timing::timed(&timing::MAL, || {
+                                m.parse_limited(
+                                    text,
+                                    opts.timeout.min(MAL_TIMEOUT),
+                                    opts.max_readings.min(MAL_READINGS),
+                                )
+                            })
                             .ok()
                             .map(|mut p| {
                                 p.readings.retain(|r| !unlicensed_quoting(r, text));
@@ -667,7 +756,16 @@ impl Checker {
             for rule in &pack.rules {
                 if self.enabled(&rule.id) {
                     let ask = ask.as_mut().map(|x| &mut **x as &mut dyn decisions::Ask);
+                    let t = std::time::Instant::now();
                     rule.run_with(erg, a, &glossary, ask, &mut out);
+                    let d = t.elapsed();
+                    timing::RULES
+                        .fetch_add(d.as_nanos() as u64, std::sync::atomic::Ordering::Relaxed);
+                    *timing::RULE_TIMES
+                        .lock()
+                        .unwrap()
+                        .entry(rule.id.clone())
+                        .or_default() += d;
                 }
             }
         }

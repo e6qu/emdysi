@@ -126,6 +126,131 @@ pub enum MatchOn {
     Surface,
 }
 
+/// A matched group changed for a suggestion: a regex replacement on its
+/// text, then the form for a Penn Treebank tag (from UniMorph, see
+/// [`crate::dict::inflect`]), then a change of case (`startupper`,
+/// `startlower`, `allupper`, `alllower`). In a pack, a string of five
+/// tab-separated fields: group, case, pattern, replacement, tag (empty
+/// for none).
+#[derive(Debug, Clone)]
+pub struct Transform {
+    group: String,
+    case: String,
+    pattern: Option<Regex>,
+    replacement: String,
+    tag: String,
+}
+
+impl Transform {
+    fn parse(spec: &str) -> Result<Transform, String> {
+        let f: Vec<&str> = spec.split('\t').collect();
+        let [group, case, pattern, replacement, tag] = f[..] else {
+            return Err(format!("a transform has five fields: {spec:?}"));
+        };
+        Ok(Transform {
+            group: group.to_string(),
+            case: case.to_string(),
+            pattern: if pattern.is_empty() {
+                None
+            } else {
+                Some(Regex::new(pattern).map_err(|e| format!("bad transform pattern: {e}"))?)
+            },
+            replacement: replacement.to_string(),
+            tag: tag.to_string(),
+        })
+    }
+
+    /// The changed text of the group in `m`; `None` if the group did not
+    /// match or has no form for the tag.
+    fn apply(&self, m: &fancy_regex::Captures<'_, str>) -> Option<String> {
+        let mut text = m.name(&self.group)?.as_str().to_string();
+        if let Some(p) = &self.pattern {
+            text = p.replace_all(&text, self.replacement.as_str()).into_owned();
+        }
+        if !self.tag.is_empty() {
+            let inflected = crate::dict::inflect(&text, &self.tag)?;
+            text = if text.chars().next().is_some_and(char::is_uppercase) {
+                upper_first(&inflected)
+            } else {
+                inflected
+            };
+        }
+        Some(match self.case.as_str() {
+            "startupper" => upper_first(&text),
+            "startlower" => {
+                let mut c = text.chars();
+                c.next()
+                    .map(|f| f.to_lowercase().chain(c).collect())
+                    .unwrap_or_default()
+            }
+            "allupper" => text.to_uppercase(),
+            "alllower" => text.to_lowercase(),
+            _ => text,
+        })
+    }
+}
+
+fn upper_first(s: &str) -> String {
+    let mut c = s.chars();
+    c.next()
+        .map(|f| f.to_uppercase().chain(c).collect())
+        .unwrap_or_default()
+}
+
+/// A template with `{{i}}` (transform `i` of `ts`) and `${name}` (a
+/// group) filled from `m`; `None` if a transform it uses has no result.
+fn fill(template: &str, m: &fancy_regex::Captures<'_, str>, ts: &[Transform]) -> Option<String> {
+    let mut t = template.to_string();
+    for (i, x) in ts.iter().enumerate() {
+        let key = format!("{{{{{i}}}}}");
+        if t.contains(&key) {
+            t = t.replace(&key, &x.apply(m)?.replace('$', "$$"));
+        }
+    }
+    let mut e = String::new();
+    m.expand(&t, &mut e);
+    Some(e)
+}
+
+/// A part-of-speech condition on a named group of a `regex` rule.
+#[derive(Debug, Clone)]
+pub struct TagCheck {
+    group: String,
+    tag: Regex,
+    negate: bool,
+}
+
+/// A pattern compiled when first used.
+#[derive(Debug, Clone)]
+pub struct LazyRegex {
+    src: String,
+    re: std::sync::OnceLock<Option<Regex>>,
+}
+
+impl LazyRegex {
+    fn new(src: String) -> Self {
+        LazyRegex {
+            src,
+            re: std::sync::OnceLock::new(),
+        }
+    }
+
+    /// Compile now (once), with the error if the pattern is bad.
+    fn compile(&self) -> Result<&Regex, String> {
+        if let Some(r) = self.re.get() {
+            return r.as_ref().ok_or_else(|| "bad pattern".to_string());
+        }
+        let r = Regex::new(&self.src).map_err(|e| e.to_string());
+        let _ = self.re.set(r.as_ref().ok().cloned());
+        r.map(|_| self.re.get().unwrap().as_ref().unwrap())
+    }
+
+    /// The compiled pattern; `None` if it does not compile.
+    pub fn get(&self) -> Option<&Regex> {
+        self.compile().ok()
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum Kind {
     /// A question for a decision model about each sentence or block
@@ -139,11 +264,31 @@ pub enum Kind {
         replace: HashMap<String, String>,
     },
     /// A regular expression over the sentence text. Sentences that match
-    /// `unless` (e.g. a citation) are skipped.
+    /// `unless` (e.g. a citation) are skipped. A group named `m` narrows
+    /// the finding to its span (the rest of the match is context).
+    /// `suggest` lists alternatives (expanded like `replace`, `${name}`
+    /// for groups); with `expand` the message is expanded too. With
+    /// `needs`, a sentence is tried only if it contains one of those words
+    /// (lowercase; see [`crate::Sentence::mentions`]), matches inside a
+    /// URL, file path or inline code are skipped (they are about words),
+    /// and the
+    /// patterns compile when one first does: a pack
+    /// of a thousand rules then costs little to load or run.
     Regex {
-        re: Regex,
+        re: LazyRegex,
+        needs: Vec<String>,
         replace: Option<String>,
-        unless: Option<Regex>,
+        unless: Option<LazyRegex>,
+        suggest: Vec<String>,
+        expand: bool,
+        /// Part-of-speech conditions on named groups (`tags`, `not_tags`:
+        /// `"t2=NN.*"`): the group must cover a word of the best reading
+        /// whose Penn Treebank tag (see [`crate::tags`]) matches, or (with
+        /// `negate`) none that does. A rule with conditions needs a parse.
+        tags: Vec<TagCheck>,
+        /// Changes to a matched group for suggestions and messages,
+        /// written `{{0}}`, `{{1}}`... in templates (see [`Transform`]).
+        transforms: Vec<Transform>,
     },
     /// The findings of other rules (ids starting with one of `of`), when a
     /// document has at least `min` of them and more than `max` per `per`
@@ -264,7 +409,9 @@ pub enum Kind {
     /// `|`. Replacements are suggestions, automatic fixes only with
     /// `fix = true` and a single alternative.
     Substitution {
-        swaps: Vec<(Regex, Vec<String>)>,
+        /// Pattern, replacements, and the pattern's text when it is a
+        /// plain phrase (lowercase): sentences without it are skipped.
+        swaps: Vec<(Regex, Vec<String>, Option<String>)>,
         fix: bool,
     },
 }
@@ -388,14 +535,50 @@ impl Rule {
             }
             "regex" => {
                 let pat = get_str(t, "pattern").ok_or_else(|| err("regex rule needs `pattern`"))?;
-                let re = Regex::new(&pat).map_err(|e| err(&format!("bad pattern: {e}")))?;
+                let needs: Vec<String> = get_list(t, "needs")
+                    .iter()
+                    .map(|w| w.to_lowercase())
+                    .collect();
+                let lazy = |src: String, what: &str| {
+                    let r = LazyRegex::new(src);
+                    // Without `needs`, a bad pattern is an error now.
+                    if needs.is_empty() {
+                        r.compile().map_err(|e| err(&format!("bad {what}: {e}")))?;
+                    }
+                    Ok::<_, PackError>(r)
+                };
+                let re = lazy(pat, "pattern")?;
                 let unless = get_str(t, "unless")
-                    .map(|u| Regex::new(&u).map_err(|e| err(&format!("bad `unless` pattern: {e}"))))
+                    .map(|u| lazy(u, "`unless` pattern"))
                     .transpose()?;
                 Kind::Regex {
                     re,
+                    needs,
                     replace: get_str(t, "replace"),
                     unless,
+                    suggest: get_list(t, "suggest"),
+                    expand: t.get("expand").and_then(Value::as_bool).unwrap_or(false),
+                    tags: [("tags", false), ("not_tags", true)]
+                        .iter()
+                        .flat_map(|&(key, negate)| {
+                            get_list(t, key).into_iter().map(move |c| (c, negate))
+                        })
+                        .map(|(c, negate)| {
+                            let (group, tag) = c
+                                .split_once('=')
+                                .ok_or_else(|| err(&format!("bad tag condition {c:?}")))?;
+                            Ok(TagCheck {
+                                group: group.to_string(),
+                                tag: Regex::new(&format!("^(?:{tag})$"))
+                                    .map_err(|e| err(&format!("bad tag pattern: {e}")))?,
+                                negate,
+                            })
+                        })
+                        .collect::<Result<_, PackError>>()?,
+                    transforms: get_list(t, "transforms")
+                        .iter()
+                        .map(|x| Transform::parse(x).map_err(|e| err(&e)))
+                        .collect::<Result<_, PackError>>()?,
                 }
             }
             "tell-density" => Kind::TellDensity {
@@ -527,6 +710,10 @@ impl Rule {
                         max_words: n("max_words", 8.0),
                         min: n("min", 3.0),
                         share: num("share").unwrap_or(0.4),
+                    },
+                    "bold-lead-ins" => StructureCheck::BoldLeadIns {
+                        min: n("min", 3.0),
+                        share: num("share").unwrap_or(0.5),
                     },
                     "paragraph-length" => StructureCheck::ParagraphLength {
                         max_words: n("max_words", 150.0),
@@ -676,7 +863,15 @@ impl Rule {
                             .ok_or_else(|| err("`swap` values must be strings"))?;
                         let re = Regex::new(&wrap(k))
                             .map_err(|e| err(&format!("bad swap pattern {k:?}: {e}")))?;
-                        swaps.push((re, rep.split('|').map(|r| r.trim().to_string()).collect()));
+                        let plain = k
+                            .chars()
+                            .all(|c| c.is_alphanumeric() || matches!(c, ' ' | '\'' | '-'))
+                            .then(|| k.to_lowercase());
+                        swaps.push((
+                            re,
+                            rep.split('|').map(|r| r.trim().to_string()).collect(),
+                            plain,
+                        ));
                     }
                     Kind::Substitution {
                         swaps,
@@ -905,6 +1100,7 @@ impl Rule {
             }
         } else {
             self.run_all(erg, a, g, &mut found);
+            let with_model = ask.is_some();
             if let (
                 Kind::Spelling {
                     model_threshold, ..
@@ -916,6 +1112,22 @@ impl Rule {
             }
             // What only a model could confirm is not reported without one
             // (`choose_spellings` clears the mark of what it confirms).
+            // ... except, without a model, a misspelling with a single
+            // candidate that it only drops or adds letters to
+            // (|admistrators|, |neccesary|, |securly|): a word only
+            // substitutions make a known word of is more often a name or
+            // term (|grafana|, |mebibytes|).
+            for d in found.iter_mut().filter(|_| !with_model) {
+                let w = &a.source[d.range.clone()];
+                if d.needs_model
+                    && d.suggestions.len() == 1
+                    && w.chars().count() >= 6
+                    && w.chars().all(|c| !c.is_uppercase())
+                    && indels_only(w, &d.suggestions[0])
+                {
+                    d.needs_model = false;
+                }
+            }
             found.retain(|d| !d.needs_model);
         }
         if self.scope != Scope::All {
@@ -976,7 +1188,11 @@ impl Rule {
             Kind::Substitution { swaps, fix } => {
                 for (si, s) in a.sentences.iter().enumerate() {
                     let mut taken: Vec<(usize, usize)> = Vec::new();
-                    for (re, reps) in swaps {
+                    let lower = s.text.to_lowercase();
+                    for (re, reps, plain) in swaps {
+                        if plain.as_ref().is_some_and(|p| !lower.contains(p.as_str())) {
+                            continue;
+                        }
                         for m in re.find_iter(&s.text).flatten() {
                             if taken.iter().any(|&(f, t)| m.start() < t && f < m.end()) {
                                 continue;
@@ -1007,23 +1223,69 @@ impl Rule {
                 re,
                 replace,
                 unless,
+                suggest,
+                expand,
+                needs,
+                tags,
+                transforms,
             } => {
                 for (si, s) in a.sentences.iter().enumerate() {
+                    if !tags.is_empty() && s.best().is_none() {
+                        continue;
+                    }
+                    if !needs.is_empty() && !needs.iter().any(|w| s.mentions(w)) {
+                        continue;
+                    }
+                    let Some(re) = re.get() else { continue };
                     if unless
                         .as_ref()
+                        .and_then(LazyRegex::get)
                         .is_some_and(|u| u.is_match(&s.original).unwrap_or(false))
                     {
                         continue;
                     }
                     for m in re.captures_iter(s.original.as_str()).flatten() {
-                        let m0 = m.get(0).unwrap();
+                        let m0 = m.name("m").or_else(|| m.get(0)).unwrap();
                         let from = s.original[..m0.start()].chars().count();
                         let to = from + m0.as_str().chars().count();
+                        // Word rules skip URLs, paths and inline code
+                        // (masked in `s.text`): |the `Some` variant|.
+                        if !needs.is_empty()
+                            && (in_url_or_path(&s.original, m0.start(), m0.end())
+                                || s.text
+                                    .chars()
+                                    .zip(s.original.chars())
+                                    .skip(from)
+                                    .take(to - from)
+                                    .any(|(t, o)| t != o))
+                        {
+                            continue;
+                        }
+                        if !tags.iter().all(|c| tag_holds(s, &m, c)) {
+                            continue;
+                        }
                         let mut d = self.diag(a, si, from, to, m0.as_str());
                         if let Some(rep) = replace {
-                            let mut expanded = String::new();
-                            m.expand(rep, &mut expanded);
-                            d.replacement = Some(expanded);
+                            d.replacement = fill(rep, &m, transforms);
+                        }
+                        d.suggestions = suggest
+                            .iter()
+                            .filter_map(|t| fill(t, &m, transforms))
+                            .collect();
+                        if *expand {
+                            // Without a transform's result, the group as
+                            // written.
+                            let msg = fill(&self.message, &m, transforms).unwrap_or_else(|| {
+                                let mut t = self.message.clone();
+                                for (i, x) in transforms.iter().enumerate() {
+                                    t = t.replace(
+                                        &format!("{{{{{i}}}}}"),
+                                        &format!("${{{}}}", x.group),
+                                    );
+                                }
+                                fill(&t, &m, &[]).unwrap_or_default()
+                            });
+                            d.message = msg.replace("{match}", m0.as_str());
                         }
                         out.push(d);
                     }
@@ -1225,6 +1487,9 @@ impl Rule {
                     .filter_map(|w| w.strip_prefix('@'))
                     .map(str::to_lowercase)
                     .collect();
+                // Words the document writes as code (|`notin`|, a fenced
+                // block) are its identifiers, wherever else they appear.
+                let in_code = code_words(&a.source);
                 // Words the document capitalizes after the start of a
                 // sentence are names.
                 let names: std::collections::HashSet<&str> = a
@@ -1300,15 +1565,18 @@ impl Rule {
                         if w.chars().count() < *min_length && !short_typo
                             || !w.chars().all(|c| c.is_lowercase() || c == '\'' || c == '-')
                             || w.contains("--")
+                            // Inline code, or a word around it (|`let`s|).
                             || s.text
                                 .chars()
+                                .zip(s.original.chars())
                                 .skip(t.from)
                                 .take(t.to - t.from)
-                                .all(|c| c == 'x')
+                                .any(|(m, o)| m != o)
                             || ignore.contains(w)
                             // ... and the plural of an ignored word (|zulips|).
                             || w.strip_suffix('s').is_some_and(|b| ignore.iter().any(|i| i == b))
                             || mentioned.contains(w.as_str())
+                            || in_code.contains(w.to_lowercase().as_str())
                             || g.knows_word(w)
                         {
                             continue;
@@ -1317,6 +1585,7 @@ impl Rule {
                             crate::dict::tier(p).is_some()
                                 || crate::dict::accepted(p)
                                 || erg.known_word(p)
+                                || crate::dict::inflection_of_known(p)
                         };
                         let parts: Vec<&str> = w
                             .split(['-', '\'', '’'])
@@ -1326,6 +1595,23 @@ impl Rule {
                             || parts.iter().all(|p| known(p))
                             || crate::in_code_like(&s.text, t.from, t.to)
                         {
+                            continue;
+                        }
+                        // A misspelling codespell lists (from English
+                        // Wikipedia's lists of common misspellings) is one,
+                        // however far from its correction and however often
+                        // the document repeats it; its fix is applied when
+                        // codespell gives only one.
+                        if let Some((fixes, sure)) = crate::dict::codespell(w) {
+                            let mut d = self.diag(a, si, t.from, t.to, w);
+                            d.message = d
+                                .message
+                                .replace("{suggestion}", &format!(" Did you mean '{}'?", fixes[0]));
+                            d.suggestions = fixes.to_vec();
+                            if sure {
+                                d.replacement = Some(fixes[0].clone());
+                            }
+                            out.push(d);
                             continue;
                         }
                         // A known word plus an affix ("promptability") is a
@@ -1369,13 +1655,25 @@ impl Rule {
                                     && crate::dict::tier(&x).is_some()
                                     && x.starts_with(&stem)
                             });
-                            if !by_inflection && !by_derivation {
+                            // ... or a listed word with one letter typed
+                            // twice (|languagess|, |valuess|).
+                            let doubled = suggestions(erg, w, 5).0.iter().any(|x| {
+                                let x = x.to_lowercase();
+                                let c: Vec<char> = w.chars().collect();
+                                crate::dict::tier(&x).is_some()
+                                    && (1..c.len()).any(|i| {
+                                        c[i] == c[i - 1]
+                                            && c[..i].iter().chain(&c[i + 1..]).collect::<String>()
+                                                == x
+                                    })
+                            });
+                            if !by_inflection && !by_derivation && !doubled {
                                 continue;
                             }
                             // A rare correct plural can also be one edit from
                             // a listed word (|nestings|, |nestlings|): only
                             // the model can tell.
-                            derived_typo = !by_inflection;
+                            derived_typo = !by_inflection && !doubled;
                         }
                         if uses.get(&w.to_lowercase()).copied().unwrap_or(0) > 1 {
                             continue;
@@ -2523,11 +2821,13 @@ fn verified_fix(
             .chain(rep.chars().collect::<Vec<_>>().iter())
             .chain(masked[to..].iter())
             .collect();
-        let Ok(p) = erg.parse_limited(
-            fixed.trim(),
-            std::time::Duration::from_secs(5),
-            VERIFY_READINGS,
-        ) else {
+        let Ok(p) = crate::timing::timed(&crate::timing::VERIFY, || {
+            erg.parse_limited(
+                fixed.trim(),
+                std::time::Duration::from_secs(5),
+                VERIFY_READINGS,
+            )
+        }) else {
             continue;
         };
         // The correction must repair the analysis that names the error, not
@@ -2605,6 +2905,27 @@ fn match_case(like: &str, rep: &str) -> String {
 }
 
 /// Damerau-Levenshtein distance (optimal string alignment).
+/// Whether `b` is as few edits from `a` with insertions and deletions
+/// only as with substitutions too.
+fn indels_only(a: &str, b: &str) -> bool {
+    let (x, y): (Vec<char>, Vec<char>) = (a.chars().collect(), b.chars().collect());
+    // Longest common subsequence.
+    let mut row = vec![0usize; y.len() + 1];
+    for &cx in &x {
+        let mut prev = 0;
+        for (j, &cy) in y.iter().enumerate() {
+            let here = row[j + 1];
+            row[j + 1] = if cx == cy {
+                prev + 1
+            } else {
+                row[j + 1].max(row[j])
+            };
+            prev = here;
+        }
+    }
+    x.len() + y.len() - 2 * row[y.len()] == edit_distance(a, b)
+}
+
 pub fn edit_distance(a: &str, b: &str) -> usize {
     let a: Vec<char> = a.to_lowercase().chars().collect();
     let b: Vec<char> = b.to_lowercase().chars().collect();
@@ -2847,6 +3168,75 @@ fn split_contraction(w: &str) -> Vec<String> {
         }
     }
     vec![w]
+}
+
+/// Whether a match meets a part-of-speech condition: the words of the
+/// sentence's best reading that the group covers.
+fn tag_holds(s: &crate::Sentence, m: &fancy_regex::Captures<'_, str>, c: &TagCheck) -> bool {
+    let Some(g) = m.name(&c.group) else {
+        // An optional group that did not take part.
+        return true;
+    };
+    let from = s.original[..g.start()].chars().count();
+    let to = from + g.as_str().chars().count();
+    let found = s.best().is_some_and(|r| {
+        r.words
+            .iter()
+            .filter(|w| w.from < to && from < w.to)
+            .flat_map(crate::tags::penn_all)
+            .any(|t| c.tag.is_match(t).unwrap_or(false))
+    });
+    found != c.negate
+}
+
+/// Whether bytes `[from, to)` of `text` touch a URL or a file path: a
+/// run of non-space characters with |://|, a slash between letters
+/// (|src/main|, not |2/29|), or a dot between a letter or digit and two
+/// or more letters, the first lower case (|github.io|, |main.rs|, not
+/// |a.m.|, |e.g.| or |B.Sc|).
+fn in_url_or_path(text: &str, from: usize, to: usize) -> bool {
+    let start = text[..from].rfind(char::is_whitespace).map_or(0, |i| i + 1);
+    let end = text[to..]
+        .find(char::is_whitespace)
+        .map_or(text.len(), |i| to + i);
+    let c: Vec<char> = text[start..end].chars().collect();
+    let letter = |i: usize| c.get(i).is_some_and(|c| c.is_alphabetic());
+    text[start..end].contains("://")
+        || (1..c.len()).any(|i| {
+            (c[i] == '/' && letter(i - 1) && letter(i + 1))
+                || (c[i] == '.'
+                    && c[i - 1].is_alphanumeric()
+                    && letter(i + 1)
+                    && letter(i + 2)
+                    && c[i + 1].is_lowercase())
+        })
+}
+
+/// The words inside a Markdown document's code: inline code spans and
+/// fenced blocks, lowercased.
+fn code_words(source: &str) -> std::collections::HashSet<String> {
+    let mut out = std::collections::HashSet::new();
+    let mut fenced = false;
+    let mut add = |code: &str| {
+        out.extend(
+            code.split(|c: char| !c.is_alphanumeric())
+                .filter(|w| !w.is_empty())
+                .map(str::to_lowercase),
+        )
+    };
+    for line in source.lines() {
+        let t = line.trim_start();
+        if t.starts_with("```") || t.starts_with("~~~") {
+            fenced = !fenced;
+        } else if fenced {
+            add(line);
+        } else {
+            for code in line.split('`').skip(1).step_by(2) {
+                add(code);
+            }
+        }
+    }
+    out
 }
 
 #[cfg(test)]

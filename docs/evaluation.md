@@ -1187,6 +1187,73 @@ plain-language guides show a passage before and after its rewrite, and
 reference pages repeat a sentence in each tab. The check remains available
 as `check = "restatement"` of the `semantics` kind.
 
+### Machine-written prose from current models
+
+The vendored machine-written samples come from 2023 models, so the rules
+for newer tropes had nothing to measure against. `corpora/ai-current`
+(2026-10-17) holds 24 documents written for this project in the voice of
+current chat-model output: a blog post, a README, a launch announcement,
+a social post, a support reply, an explainer, a newsletter, a listicle,
+an onboarding guide, a talk summary, an answer, an essay, a cover letter,
+a product page, a meeting summary, a press release, a travel guide, a job
+posting, a sales email, a self-review, an abstract, a code review, an
+outage apology and a recipe introduction (5,675 words). They were written
+to be typical of their genre, not as parodies; but they were written,
+not sampled, so they cannot by themselves show that a pattern is typical.
+The evidence for each new rule is the other side: the edited corpora
+(654 documents, 410,000 words), where each new phrase or pattern occurs
+at most once.
+
+Patterns the packs missed in these documents, and the new rules:
+
+- hooks aimed at the reader (*Let's be honest*, *Sound familiar? You're
+  not alone*, *Ready to get started?*, *Spoiler:*): `reader-hooks`; *Let's
+  dive in* was left out, as the Rust book uses it;
+- a run of fragments and a two-word payoff (*No more spreadsheets. No
+  more manual matching. Just results.*): `just-fragment`;
+- the contrast frame across two sentences without *about*: with *just*
+  or *only* (*Rate limiting isn't just a nice-to-have. It's essential.*,
+  `not-just-then-is`) or ending in a short punchline (*Setbacks aren't the
+  end of your story. They're the plot twist.*, `not-then-punchline`); the
+  edited corpora have two such pairs, both without either feature (*It
+  isn't something to submit. It's a separate part of the instructions.*);
+- list items that open with a bold label (*\*\*Logs:\*\* What
+  happened.*): `bold-lead-ins`, a new structure check, once a document
+  when at least three fifths of its list items do (in the edited corpora,
+  36 of 2,348 list items open so; one document passes the threshold);
+- an emoji at the start of a heading or list item (edited blog posts use
+  emoji in running text, never at the start of a line), a line of
+  hashtags, letter and email formulas (*I hope this email finds you
+  well*; suggestions only, as the edited corpora have no letters), and
+  about 40 more stock phrases (*the real magic happens*, *has you
+  covered*, *will thank you*, *a must-visit*, *paves the way for*);
+- a sentence opening with *Whether you're* (7 in the 5,675 words of the
+  samples, once in the edited corpora: `whether-you`) and a listicle title
+  (*7 Proven Strategies to ...*, `listicle-title`, headings only).
+
+Documents each rule fires on (`en check --no-parse`, so without the rules
+that need a parse: the rule of three, participial tails):
+
+| Rule | Machine-written (24) | Edited (654) |
+|---|---|---|
+| `ai-tells.dense` | 14 | 0 |
+| `ai-tells.stock-phrases` | 16 | 3 |
+| `ai-tells.inflated` | 11 | 41 |
+| `ai-tells.bold-lead-ins` | 10 | 1 |
+| `ai-tells.vocabulary` | 9 | 27 |
+| `ai-tells.em-dash` | 8 | 7 |
+| `ai-tells.formulas` | 5 | 0 |
+| `ai-tells.openers` | 4 | 34 |
+| `ai-tells.not-x-but-y` | 3 | 92 |
+| `ai-tells.reader-hooks`, `just-fragment`, `its-about`, `emoji-heading`, `chatbot`, `rhetorical-question` | 2 each | 1, 0, 0, 0, 0, 6 |
+| `ai-tells.not-then-punchline`, `not-just-then-is`, `hashtags`, `emoji-list`, `setup` | 1 each | 0 |
+
+`ai-tells.dense`, the verdict that a text reads as generated, fires on 14
+of the 24 machine-written documents and none of the edited ones. The
+documents it misses carry their tropes in the shape of the whole (a
+social post of one-line paragraphs, an essay of aphorisms, an apology of
+stock contrition) at densities below its threshold.
+
 ## Grammar and spelling fixes with a decision model: the upper bound
 
 `core.grammar-fix` and the model's choice among spelling suggestions
@@ -1743,3 +1810,220 @@ reports) it is seldom the right one: *afters the update*, *cluster
 administered to*, *The API server i willing*. A single correction the
 grammar accepts is no evidence of an error.
 
+
+### Measured and rejected: work limits instead of time limits
+
+The parser's limits are wall-clock time, so whether a candidate
+correction verifies depends on the machine and its load: the
+perfect-model figure moves by a few pairs between runs of one binary,
+and by eleven on a cold parse cache. A limit on work instead (unifications
+tried, in the chart and when unpacking, shared by the searches of one
+parse) would make results the same everywhere, and was tried. It does
+not keep the time limits' behaviour: the rate varies too much by
+sentence (11 to 134 unifications a millisecond; 42 the median, 18 to 40
+on sentences over 30 words), and neither unifications, chart nodes nor a
+mix of the two predicts a search's time within 25% for half of them or a
+factor of 2.7 for nine in ten. Calibrated at the median rate, short
+sentences ran out of work before their former time and the perfect-model
+run lost eight corrections; calibrated at the 75th percentile, long
+sentences parsed for nearly twice their former time, and a single parse
+reached 2.4 GB, so four measurement processes ran out of memory. Time
+limits stay; measurements compare runs on a warm parse cache.
+
+### Spelling without a model: misspellings the morphology or the model hid
+
+Without a model, 35 of the 178 misspellings went unreported. Three causes,
+found by tracing each:
+
+- The grammar's morphology read them as word forms: *fileds* as *file*
+  + passive + plural (a passive, `_odlr`, was not counted as an
+  inflection), *specifing* as *-ing* on the noun *specif*, *refacting* as
+  *re-* on the noun *fact*, *returing* as *re-* on the name *turing*,
+  *witin* as the informal *wit* + *-in'*. A derived form now counts as a
+  known word only when each rule fits its stem's word class (*un-* also
+  takes adverbs: *unfrequently*), with one inflection at most, and not in
+  an informal form. Two real words the overgeneration used to let
+  through are now listed: *nightlies*, and *writeable*.
+- The technical lists' inferred plurals took *valuess* for a plural of
+  *values*: no plural of a plural now. And a word with one letter typed
+  twice (*languagess*) is a typo, not a derivation; main reported
+  *languagess* only by accident, through the junk form *languagesd*.
+- Findings with a single candidate two edits away, or a misspelled
+  derivation, waited for a model. Reported without one when the word is
+  lower case, at least six letters, and the candidate is reached by
+  dropping or adding letters only (*admistrators*, *neccesary*,
+  *securly*, *assignement*). Reporting every single candidate also
+  flagged *grafana* (*granada*), *mebibytes*, *syscalls*, *retpoline*,
+  *conversible* and *massebot*: words only substitutions make a known
+  word of are mostly names and terms. (That criterion was chosen after
+  seeing the held-out set's flags.) *distroless* is listed.
+
+A word glued to inline code (two `` `let`s ``) is no longer spell-checked:
+the code's masking made it *xxxs*, which only the old overgeneration let
+through. typos-dict, a curated misspelling table, cannot be used: it took
+in codespell's and Wikipedia's share-alike lists (see `docs/prior-art.md`).
+
+Spelling only (`en check --no-parse` on every document, against main):
+18 more real errors flagged in the real-error corpus; on the false-flag
+sets, three more flags, all real typos in the second development set
+(*borrowcking*, *implemenent*, *rationable*), and no false ones.
+
+## Where checking time goes
+
+`timing` (`crates/emdysi-check/examples`) checks documents on one thread
+with no parse cache and reports the time of each stage, the slowest
+rules, and how parse time spreads over sentences. On 24 documents of the
+first development set (1,388 sentences, 21,867 words):
+
+| Stage | Before: ms a sentence | After the gate below |
+|---|---|---|
+| parse | 1,416 | 1,402 |
+| re-parse (quoting, unpruned) | 24 | 24 |
+| grammar-error variant | 610 | 248 |
+| rules | 2 | 1 |
+| rules' correction parses | 0 | 0 |
+| all | 2,085 | 1,706 |
+
+Rules cost nothing next to the parser; the spelling and grammar-error
+rules are the slowest at about 1 s for all 1,388 sentences. The
+grammar-error variant (the mal-rule grammar, run on sentences without a
+strict reading, or with one built on a generic entry for an unknown word)
+was the second cost. The gate: a sentence with a strict reading runs the
+variant only if one of its generic words has a known stem (a misspelled
+or wrongly inflected known word, which a mal-rule can name). Grammar
+errors found without a model stay at 24 of 199, and all real errors at
+183: the 362 seconds saved found nothing.
+
+Parse time is concentrated in a few sentences:
+
+| Parse time | Sentences | Share of parse time | With a strict reading | Search complete |
+|---|---|---|---|---|
+| 0–0.5 s | 744 | 7% | 542 | 670 |
+| 0.5–1 s | 219 | 8% | 208 | 126 |
+| 1–2 s | 162 | 12% | 156 | 67 |
+| 2–5 s | 151 | 24% | 141 | 38 |
+| 5–9.5 s | 51 | 18% | 35 | 9 |
+| 9.5 s and over | 60 | 31% | 1 | 2 |
+
+The 60 sentences that reach the time limit take 31% of parse time and
+yield one strict reading between them. A lower limit would save most of
+that, but the 5–9.5 s band still finds 35 strict readings in 51
+sentences, and limits on work instead of time were measured and rejected
+(above). The next step is to make those sentences cheaper (chart pruning
+by the tagger's hypotheses, earlier fragment fallback), not to give up
+on them sooner.
+
+## The tagger on UD English EWT
+
+`tagger_eval` (`crates/emdysi-parse/examples`) compares the rule-based
+tagger's hypotheses with the gold Penn Treebank tags of the UD English
+EWT development set (corpora/ud-ewt), counting words only (punctuation
+has rules of its own in the grammar). The ERG uses the tags only for
+words its lexicon lacks, to build generic entries, so the row that
+matters is the second:
+
+| Words | Count | First guess | Among guesses (before) | Among guesses | Guesses a word |
+|---|---|---|---|---|---|
+| all | 21,972 | 68.8% | 84.4% | 85.0% | 1.99 |
+| unknown to the ERG | 1,440 | 66.7% | 76.2% | 83.4% | 2.25 |
+
+Two fixes from the misses: *n't*, a token of its own in EWT, is an
+adverb (89 misses), and a capitalized word ending in *-ian*, *-ese* or
+*-ish* may be an adjective (*Palestinian*, *Japanese*; the tagger gave
+only NNP and NN). The remaining misses among unknown words are mostly
+e-mail addresses and URLs (gold ADD), informal spellings (*sooooo*,
+*goin*) and lower-case place names.
+
+## WordNet-confirmed lexical gaps
+
+`culprits` finds, for a sentence without a strict reading, the words
+whose replacement by a stand-in of some class gives one; `gaps.py`
+writes entries for those words that Open English WordNet has in that
+class and the ERG lacks. On 40 sentences of the pool of unparsed edited
+sentences, before the stand-in run reached its time limit, it proposed
+15 entries, most of them wrong: culprits often blames a function word,
+and WordNet lists *in* (indium), *so* and *have* as nouns. With short
+and function words left out, 8 remain, of which four are sound (*the
+fidgets*, *megrim*, *plaice*, *retro* as a noun). Too few to justify a
+generated lexicon file yet; the filter is in `gaps.py` for a larger run.
+
+## Imported rule data: LanguageTool, slop and GitLab
+
+The three new opt-in packs, checked without parsing on every document of
+the three edited sets (654 documents: 221, 126 and 307) and on the 24
+samples of current-model prose (`corpora/ai-current`):
+
+| Pack | Rules | Machine-written: documents with findings | Findings | Edited: documents with findings | Findings |
+|---|---|---|---|---|---|
+| `languagetool` | 1,645 | 0 of 24 | 0 | 79 of 654 | 141 |
+| `slop` | 98 | 23 of 24 | 94 | 171 of 654 | 512 |
+| `gitlab` | 26 | 20 of 24 | 57 | 452 of 654 | 9,021 |
+
+**languagetool.** Its findings on edited text are mostly style
+suggestions (*all of the* for *all the*, *might perhaps*), and among them
+real errors in the sources: *setup* used as a verb (*they've setup a
+cloud instance*), *github* in prose, *up stairs*. On the real-error
+corpus it finds none of the 199 grammar errors (missing function words
+and wrong forms, which LanguageTool catches with its tagger, not with the
+word-only rules converted here); its findings there are style
+suggestions. An earlier run, before inline code was skipped, flagged *the
+`Some` variant* (a Rust type, not an article error). LanguageTool's
+wordiness and redundancy lists, measured in the same run, flagged 642 and
+95 phrases on edited text, many with wrong replacements (*as shown in* →
+*shows that*, *On the other hand* → *Although*) or flagging standard
+phrasal verbs (*shut down*, *open up*); they are left out, as
+LanguageTool itself ships them turned off.
+
+**slop.** Fires on 96% of the machine-written samples and 26% of edited
+documents. Most findings on both sides are its em-dash rule (41 of 94 on
+machine-written text, 184 of 512 on edited text), which its own
+description calls a house style; without it the pack still separates
+the two (*ai-vocab*, *promo*, *genuinely*, *performative-honesty* on the
+machine-written side; *stranded-auxiliary* and *load-bearing-adverbs* on
+edited prose, where they are mostly ordinary English). Opt-in, for a
+reader who wants the slop author's judgement on top of `ai-tells`.
+
+**gitlab.** GitLab's own documentation rules, converted faithfully:
+*inclusive-language* flags every *he*, *she* and *his* (4,574 findings,
+nearly all in the fiction and blog documents), *future-tense* every
+*will* (1,691). A house style for documentation written to GitLab's
+guide, not a general check.
+
+**Variant spellings.** The coherency pairs added to
+`terms.variant-spelling` change nothing on the edited sets: no document
+uses both spellings of a pair that differs in more than hyphens (those
+were grouped already).
+
+### Recall after the dictionaries
+
+`real_errors` without a model, after codespell's misspelling list, the
+UniMorph inflections and the CMUdict articles: 192 of 377 (51%), up from
+183. Spelling 168 of 178 (from 159), grammar unchanged at 24 of 199, and
+no corrected sentence flagged.
+
+False flags with parsing on the first development set (`false_flags`,
+the whole `core` pack, including the articles rule with its new lists and
+CMUdict): 4 flags in 2,498 sentences, 1.6 per 1,000, the same as before
+the dictionaries; none from `core.articles`.
+
+### LanguageTool rules with parts of speech
+
+The regex kind's tag conditions let LanguageTool rules that need
+open-class parts of speech convert, with the tags taken from the parse
+(`emdysi_check::tags`), and its transforms let suggestions change case,
+rewrite a matched word or inflect it for a tag (UniMorph). 755 rules with
+tag conditions convert; `lt_validate` parses each one's examples, and the
+579 that pass are kept. The pack has 2,579 rules.
+
+With parsing, on the first development set (`false_flags` with
+`PACK=packs/languagetool.toml`, before the transforms): 17 findings in
+2,498 sentences, 6.8 per 1,000, mostly style suggestions (*all of the*,
+*cross reference*, *a small number of*) and some real errors in the
+sources (*between 6 to 9*, *economical development*, *up to date* before
+a noun); two came from rules with tag conditions.
+
+On the real-error corpus (`real_errors` with
+`PACKS=packs/languagetool.toml`, the 2,162-rule pack): grammar errors
+caught stay at 24 of 199, and one corrected sentence is flagged. The
+converted rules target other errors than the ones in this corpus
+(missing function words, wrong forms), which need the grammar.

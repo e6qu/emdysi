@@ -393,33 +393,37 @@ fn grammatical_sentences_are_only_screened() {
 fn spelling_fix_chosen_in_context() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     let checker = core();
-    let text = "We need to chck the logs.\n";
+    let text = "The scheduler wll start the pods.\n";
     let a = analyze(&erg, text, Format::Markdown, &opts());
     let spelling = |d: &[Diagnostic]| d.iter().find(|d| d.rule == "core.spelling").cloned();
-    // Without a model: several words are one edit away, so no fix.
+    // Without a model: codespell's list knows the typo but offers two
+    // words, |will| and |well|, so no fix.
     let plain = spelling(&checker.check(&erg, &a)).unwrap();
     assert_eq!(plain.replacement, None);
-    assert!(plain.suggestions.len() >= 2);
+    assert!(plain.suggestions.len() >= 2, "{plain:?}");
     let mut model = Prefers {
-        want: "to check the",
+        want: "scheduler will start",
         asked: Vec::new(),
     };
     let d = spelling(&checker.check_with(&erg, &a, Some(&mut model))).unwrap();
-    assert_eq!(d.replacement.as_deref(), Some("check"));
-    assert_eq!(d.suggestions[0], "check");
+    assert_eq!(d.replacement.as_deref(), Some("will"));
+    assert_eq!(d.suggestions[0], "will");
     assert!(d.message.contains("by the model"), "{}", d.message);
 }
 
 #[test]
-fn a_word_two_edits_away_needs_the_model() {
+fn a_word_two_edits_away_is_fixed_with_the_model() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     let checker = core();
-    let text = "It is neccesary to read the docs.\n";
+    let text = "It is neccessry to read the docs.\n";
     let a = analyze(&erg, text, Format::Markdown, &opts());
     let spelling = |d: &[Diagnostic]| d.iter().find(|d| d.rule == "core.spelling").cloned();
-    // |neccesary| is two edits from |necessary|: no finding without a
-    // model, since a rare correct word can be as far from a common one.
-    assert_eq!(spelling(&checker.check(&erg, &a)), None);
+    // |neccessry| is two edits from |necessary|, its only candidate, which
+    // it only drops and adds letters to: a finding without a model, but no
+    // fix, since a rare correct word can be as far from a common one.
+    let plain = spelling(&checker.check(&erg, &a)).unwrap();
+    assert_eq!(plain.replacement, None);
+    assert_eq!(plain.suggestions, vec!["necessary".to_string()]);
     // A model that prefers the common word confirms it, with the fix.
     let mut model = Prefers {
         want: "is necessary to",
@@ -430,7 +434,7 @@ fn a_word_two_edits_away_needs_the_model() {
     // The word as written is one of the options; a model that prefers it
     // drops the finding.
     let mut model = Prefers {
-        want: "is neccesary to",
+        want: "is neccessry to",
         asked: Vec::new(),
     };
     assert_eq!(
@@ -443,10 +447,10 @@ fn a_word_two_edits_away_needs_the_model() {
 fn a_word_two_edits_from_several_words_needs_the_model() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     let checker = core();
-    let text = "With the priotized list feature, a second alternative can be specified.\n";
+    let text = "With the priaitized list feature, a second alternative can be specified.\n";
     let a = analyze(&erg, text, Format::Markdown, &opts());
     let spelling = |d: &[Diagnostic]| d.iter().find(|d| d.rule == "core.spelling").cloned();
-    // |priotized| is two edits from |prioritized| and from |privatized|:
+    // |priaitized| is two edits from |prioritized| and from |privatized|:
     // no finding without a model ...
     assert_eq!(spelling(&checker.check(&erg, &a)), None);
     // ... and the model chooses among them.
@@ -462,7 +466,7 @@ fn a_word_two_edits_from_several_words_needs_the_model() {
 fn a_typo_in_a_title_cased_name_needs_the_model() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     let checker = core();
-    let text = "It may not be detected by the Node Shutdown Mananger in time.\n";
+    let text = "It may not be detected by the Node Shutdown Mannager in time.\n";
     let a = analyze(&erg, text, Format::Markdown, &opts());
     let spelling = |d: &[Diagnostic]| d.iter().find(|d| d.rule == "core.spelling").cloned();
     // A capitalized word is taken for a name, but among title-cased
@@ -481,30 +485,32 @@ fn a_typo_in_a_title_cased_name_needs_the_model() {
 fn a_three_letter_typo_needs_the_model() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     let checker = core();
-    let text = "The scheduler wil start the pods.\n";
+    let text = "We wnt to read the logs.\n";
     let a = analyze(&erg, text, Format::Markdown, &opts());
     let spelling = |d: &[Diagnostic]| d.iter().find(|d| d.rule == "core.spelling").cloned();
-    // Too short for a finding of its own, but one edit from |will|.
+    // Too short for a finding of its own, but one edit from |want|.
     assert_eq!(spelling(&checker.check(&erg, &a)), None);
     let mut model = Prefers {
-        want: "scheduler will start",
+        want: "We want to",
         asked: Vec::new(),
     };
     let d = spelling(&checker.check_with(&erg, &a, Some(&mut model))).unwrap();
-    assert_eq!(d.replacement.as_deref(), Some("will"));
+    assert_eq!(d.replacement.as_deref(), Some("want"));
 }
 
 #[test]
-fn a_misspelled_derivation_needs_the_model() {
+fn a_listed_misspelling_is_fixed_without_the_model() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     let checker = core();
     let text = "It works like an assignement here.\n";
     let a = analyze(&erg, text, Format::Markdown, &opts());
     let spelling = |d: &[Diagnostic]| d.iter().find(|d| d.rule == "core.spelling").cloned();
-    // |assignement| reads as |assignee| plus |-ment|, a coinage, but
-    // |assignment| is one edit away inside the word: a typo only the model
-    // can confirm (|nestings| is as close to |nestlings|).
-    assert_eq!(spelling(&checker.check(&erg, &a)), None);
+    // |assignement| reads as |assignee| plus |-ment|, a coinage, and once
+    // needed the model; codespell's list of known misspellings has it,
+    // with a single correction: a fix without a model.
+    let plain = spelling(&checker.check(&erg, &a)).unwrap();
+    assert_eq!(plain.replacement.as_deref(), Some("assignment"));
+    // A model has nothing to add.
     let mut model = Prefers {
         want: "an assignment here",
         asked: Vec::new(),

@@ -130,7 +130,8 @@ pub fn accepted(word: &str) -> bool {
     // |rebased| from |rebase|), or the singular of an accepted plural
     // (|finalizer| from |finalizers|): the technical lists name one form.
     let stem = |suffix: &str| w.strip_suffix(suffix).filter(|s| s.chars().count() >= 3);
-    stem("s").is_some_and(|s| set.contains(s))
+    // (Not a plural of a plural: |valuess| is no form of |values|.)
+    stem("s").is_some_and(|s| !s.ends_with('s') && set.contains(s))
         || stem("es").is_some_and(|s| set.contains(s))
         || stem("ed").is_some_and(|s| set.contains(s) || set.contains(&format!("{s}e")))
         || stem("d").is_some_and(|s| s.ends_with('e') && set.contains(s))
@@ -245,4 +246,195 @@ pub fn erg_errors() -> &'static HashMap<String, ErgError> {
             })
             .collect()
     })
+}
+
+const CODESPELL: &str = include_str!("../../../data/codespell/dictionary.txt");
+
+/// A misspelling from codespell's dictionary of common misspellings
+/// (`data/codespell`, from English Wikipedia's lists): its corrections, and
+/// whether the first may be applied without asking (a single correction,
+/// not marked with a trailing comma).
+pub fn codespell(word: &str) -> Option<(&'static [String], bool)> {
+    static MAP: OnceLock<HashMap<String, (Vec<String>, bool)>> = OnceLock::new();
+    MAP.get_or_init(|| {
+        CODESPELL
+            .lines()
+            .filter_map(|l| {
+                let (wrong, right) = l.split_once("->")?;
+                let fixes: Vec<String> = right
+                    .split(',')
+                    .map(str::trim)
+                    .filter(|x| !x.is_empty())
+                    .map(str::to_string)
+                    .collect();
+                let sure = fixes.len() == 1 && !right.trim_end().ends_with(',');
+                Some((wrong.trim().to_string(), (fixes, sure)))
+            })
+            .collect()
+    })
+    .get(&word.to_lowercase())
+    .map(|(f, sure)| (f.as_slice(), *sure))
+}
+
+const UNIMORPH: &str = include_str!("../../../data/unimorph/eng");
+
+/// Whether `word` is an inflected form, in UniMorph's English tables
+/// (`data/unimorph`, from Wiktionary), of a lemma the word lists know
+/// (|nightlies| of |nightly|). Only forms of known lemmas count: the
+/// tables also list rare and obsolete words, which would hide typos.
+pub fn inflection_of_known(word: &str) -> bool {
+    static MAP: OnceLock<HashMap<String, Vec<String>>> = OnceLock::new();
+    let map = MAP.get_or_init(|| {
+        let mut m: HashMap<String, Vec<String>> = HashMap::new();
+        for line in UNIMORPH.lines() {
+            let mut it = line.split('\t');
+            let (Some(lemma), Some(form)) = (it.next(), it.next()) else {
+                continue;
+            };
+            if lemma.contains(' ') || form.contains(' ') || form == lemma {
+                continue;
+            }
+            m.entry(form.to_lowercase())
+                .or_default()
+                .push(lemma.to_lowercase());
+        }
+        m
+    });
+    map.get(&word.to_lowercase())
+        .is_some_and(|lemmas| lemmas.iter().any(|l| tier(l).is_some()))
+}
+
+const COHERENCY: &str = include_str!("../../../data/languagetool/en/coherency.txt");
+
+/// The spelling one term is grouped under when a document writes it in two
+/// ways both valid in one variety (|acknowledgement| and |acknowledgment|,
+/// |randomiser| and |randomizer|): LanguageTool's coherency list
+/// (`data/languagetool/en/coherency.txt`), with the inflected forms of
+/// each pair from UniMorph matched by their features. `word` is lowercase
+/// without hyphens. Pairs the variety tables already relate are left to
+/// the spelling-consistency rule.
+pub fn coherent_key(word: &str) -> Option<&'static str> {
+    static MAP: OnceLock<HashMap<String, String>> = OnceLock::new();
+    let map = MAP.get_or_init(|| {
+        let plain = |w: &str| w.trim().to_lowercase().replace('-', "");
+        let pairs: Vec<Vec<String>> = COHERENCY
+            .lines()
+            .filter(|l| !l.starts_with('#') && l.contains(';'))
+            .map(|l| l.split(';').map(plain).collect())
+            .filter(|p: &Vec<String>| {
+                !p.iter().any(|a| {
+                    variants()
+                        .get(a)
+                        .is_some_and(|vs| vs.iter().any(|(_, o)| p.contains(&o.to_lowercase())))
+                })
+            })
+            .collect();
+        let wanted: std::collections::HashSet<&str> =
+            pairs.iter().flatten().map(String::as_str).collect();
+        // Lemma -> (features, form), for the lemmas of the pairs.
+        let mut forms: HashMap<&str, Vec<(&str, String)>> = HashMap::new();
+        for line in UNIMORPH.lines() {
+            let mut it = line.split('\t');
+            if let (Some(lemma), Some(form), Some(feats)) = (it.next(), it.next(), it.next()) {
+                if let Some(&l) = wanted.get(lemma.to_lowercase().as_str()) {
+                    forms.entry(l).or_default().push((feats, plain(form)));
+                }
+            }
+        }
+        let mut m = HashMap::new();
+        for p in &pairs {
+            let first = &p[0];
+            for other in p {
+                m.insert(other.clone(), first.clone());
+                for (feats, form) in forms.get(other.as_str()).into_iter().flatten() {
+                    if let Some((_, f)) = forms
+                        .get(first.as_str())
+                        .and_then(|fs| fs.iter().find(|(g, _)| g == feats))
+                    {
+                        m.insert(form.clone(), f.clone());
+                    }
+                }
+            }
+        }
+        m
+    });
+    map.get(word).map(String::as_str)
+}
+
+/// `word` inflected for a Penn Treebank tag (VBD, VBN, VBG, VBZ, VB, VBP,
+/// NNS, NN), from UniMorph's English tables: the form with that tag of a
+/// lemma `word` is a form of (|go| or |went| with VBN gives |gone|). `None`
+/// when the tables do not have it. The case of the result is lower.
+pub fn inflect(word: &str, tag: &str) -> Option<String> {
+    type Forms = HashMap<String, Vec<(String, String)>>;
+    static MAP: OnceLock<(Forms, HashMap<String, Vec<String>>)> = OnceLock::new();
+    let (forms, lemmas) = MAP.get_or_init(|| {
+        let mut forms: Forms = HashMap::new();
+        let mut lemmas: HashMap<String, Vec<String>> = HashMap::new();
+        for line in UNIMORPH.lines() {
+            let mut it = line.split('\t');
+            let (Some(l), Some(f), Some(feats)) = (it.next(), it.next(), it.next()) else {
+                continue;
+            };
+            if l.contains(' ') || f.contains(' ') {
+                continue;
+            }
+            let (l, f) = (l.to_lowercase(), f.to_lowercase());
+            forms
+                .entry(l.clone())
+                .or_default()
+                .push((feats.to_string(), f.clone()));
+            let ls = lemmas.entry(f).or_default();
+            if !ls.contains(&l) {
+                ls.push(l);
+            }
+        }
+        (forms, lemmas)
+    });
+    let w = word.to_lowercase();
+    let want = match tag {
+        "VBD" => "V;PST",
+        "VBN" => "V;V.PTCP;PST",
+        "VBG" => "V;V.PTCP;PRS",
+        "VBZ" => "V;PRS;3;SG",
+        "NNS" => "N;PL",
+        "VB" | "VBP" | "NN" => "",
+        _ => return None,
+    };
+    let noun = tag.starts_with('N');
+    let candidates: Vec<&String> = std::iter::once(&w)
+        .filter(|l| forms.contains_key(*l))
+        .chain(lemmas.get(&w).into_iter().flatten())
+        .collect();
+    for l in candidates {
+        let fs = &forms[l];
+        // The lemma must have forms of the right word class.
+        if !fs
+            .iter()
+            .any(|(f, _)| f.starts_with(if noun { "N" } else { "V" }))
+        {
+            continue;
+        }
+        if want.is_empty() {
+            return Some(l.clone());
+        }
+        if let Some((_, f)) = fs.iter().find(|(f, _)| f == want) {
+            return Some(f.clone());
+        }
+    }
+    None
+}
+
+#[cfg(test)]
+mod inflect_tests {
+    use super::inflect;
+
+    #[test]
+    fn forms_for_tags() {
+        assert_eq!(inflect("went", "VBN").as_deref(), Some("gone"));
+        assert_eq!(inflect("go", "VBZ").as_deref(), Some("goes"));
+        assert_eq!(inflect("mice", "NN").as_deref(), Some("mouse"));
+        assert_eq!(inflect("mouse", "NNS").as_deref(), Some("mice"));
+        assert_eq!(inflect("writes", "VB").as_deref(), Some("write"));
+    }
 }

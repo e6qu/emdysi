@@ -1,10 +1,105 @@
 //! The indefinite article: *a* before a consonant sound, *an* before a
-//! vowel sound. The sound is read from the spelling only where the spelling
-//! settles it; words whose first sound the spelling leaves open (*uni-*,
-//! *h-*, *x-*, acronyms, single letters, numbers) are skipped.
+//! vowel sound. The sound comes from LanguageTool's lists of words that
+//! take *a* or *an* against their spelling (`data/languagetool/en/det_a.txt`,
+//! `det_an.txt`), then from the CMU Pronouncing Dictionary
+//! (`data/cmudict`), then from the spelling where the spelling settles it.
+//! Words whose first sound is open (*an historic* and *a historic*, a word
+//! with two pronunciations that differ) are skipped.
+
+use std::collections::{HashMap, HashSet};
+use std::sync::OnceLock;
 
 use crate::structure::Hit;
 use crate::{Analysis, Sentence};
+
+const CMUDICT: &str = include_str!("../../../data/cmudict/cmudict.dict");
+const DET_A: &str = include_str!("../../../data/languagetool/en/det_a.txt");
+const DET_AN: &str = include_str!("../../../data/languagetool/en/det_an.txt");
+
+/// ARPAbet vowels (without the stress digit).
+const VOWELS: &[&str] = &[
+    "AA", "AE", "AH", "AO", "AW", "AY", "EH", "ER", "EY", "IH", "IY", "OW", "OY", "UH", "UW",
+];
+
+/// The first sound of each word of the CMU Pronouncing Dictionary: a vowel
+/// (`Some(true)`), a consonant (`Some(false)`), or open (`None`): its
+/// pronunciations differ, or it starts with an *h* before an unstressed
+/// vowel, where both articles are written (*an historic*, *a hotel*).
+fn pronounced() -> &'static HashMap<String, Option<bool>> {
+    static MAP: OnceLock<HashMap<String, Option<bool>>> = OnceLock::new();
+    MAP.get_or_init(|| {
+        let mut out: HashMap<String, Option<bool>> = HashMap::new();
+        for line in CMUDICT.lines() {
+            let mut it = line.split_whitespace();
+            let (Some(word), Some(first)) = (it.next(), it.next()) else {
+                continue;
+            };
+            let word = word.split('(').next().unwrap_or(word).to_string();
+            let phone = first.trim_end_matches(|c: char| c.is_ascii_digit());
+            let sound = if VOWELS.contains(&phone) {
+                Some(true)
+            } else if phone == "HH" {
+                // The vowel after the h: stressed (|a house|), or not, where
+                // usage is divided (|an historic|).
+                it.next().filter(|v| v.ends_with('1')).map(|_| false)
+            } else {
+                Some(false)
+            };
+            out.entry(word)
+                .and_modify(|s| {
+                    if *s != sound {
+                        *s = None;
+                    }
+                })
+                .or_insert(sound);
+        }
+        out
+    })
+}
+
+/// LanguageTool's words that take *a* (`false`) or *an* (`true`) against
+/// their spelling, lower case unless marked case-sensitive with `*`;
+/// words in both lists take either and are left out.
+fn listed() -> &'static HashMap<String, bool> {
+    static MAP: OnceLock<HashMap<String, bool>> = OnceLock::new();
+    MAP.get_or_init(|| {
+        let read = |src: &str| -> HashSet<String> {
+            src.lines()
+                .map(str::trim)
+                .filter(|l| !l.is_empty() && !l.starts_with('#'))
+                .map(|l| match l.strip_prefix('*') {
+                    Some(exact) => exact.to_string(),
+                    None => l.to_lowercase(),
+                })
+                .collect()
+        };
+        let (a, an) = (read(DET_A), read(DET_AN));
+        let mut out = HashMap::new();
+        for w in a.difference(&an) {
+            out.insert(w.clone(), false);
+        }
+        for w in an.difference(&a) {
+            out.insert(w.clone(), true);
+        }
+        out
+    })
+}
+
+/// Whether `form` (as written) starts with a vowel sound, from the lists,
+/// the dictionary or the spelling, if one of them settles it.
+fn sound(form: &str) -> Option<bool> {
+    let lower = form.to_lowercase();
+    if let Some(&an) = listed().get(form).or_else(|| listed().get(&lower)) {
+        return Some(an);
+    }
+    if lower == "one" || lower == "once" || lower.starts_with("one-") {
+        return Some(false);
+    }
+    if let Some(&s) = pronounced().get(&lower) {
+        return s;
+    }
+    vowel_sound(&lower)
+}
 
 /// Words spelled with a vowel letter that start with a consonant sound
 /// (prefixes).
@@ -106,18 +201,33 @@ pub fn run_articles(a: &Analysis) -> Vec<Hit> {
             if !gap_is_space(s, art.to, next.from) {
                 continue;
             }
-            let word = next.form.split('-').next().unwrap_or("");
-            if word.chars().count() < 2
-                || !word.chars().all(|c| c.is_ascii_lowercase() || c == '\'')
-                || !word.chars().any(|c| "aeiouy".contains(c))
-                || FUNCTION_WORDS.contains(&word)
-                || crate::dict::tier(word).is_none()
-                // A lower-case acronym ("an mri").
-                || crate::dict::words().contains_key(&word.to_uppercase())
+            // A hyphenated word the dictionary lists whole (|x-ray|), else
+            // its first part.
+            let whole = next.form.to_lowercase();
+            let word = if next.form.contains('-') && pronounced().contains_key(&whole) {
+                next.form.as_str()
+            } else {
+                next.form.split('-').next().unwrap_or("")
+            };
+            // An acronym in capitals counts where the lists or the
+            // dictionary know how it is said (|an MBA|, |a NASA|).
+            let acronym = (2..=6).contains(&word.chars().count())
+                && word.chars().all(|c| c.is_ascii_uppercase())
+                && (listed().contains_key(word)
+                    || listed().contains_key(&word.to_lowercase())
+                    || pronounced().contains_key(&word.to_lowercase()));
+            if !acronym
+                && (word.chars().count() < 2
+                    || !word.chars().all(|c| c.is_ascii_lowercase() || c == '\'' || c == '-')
+                    || !word.chars().any(|c| "aeiouy".contains(c))
+                    || FUNCTION_WORDS.contains(&word)
+                    || crate::dict::tier(word).is_none()
+                    // A lower-case acronym ("an mri").
+                    || crate::dict::words().contains_key(&word.to_uppercase()))
             {
                 continue;
             }
-            let Some(vowel) = vowel_sound(word) else {
+            let Some(vowel) = sound(word) else {
                 continue;
             };
             if vowel != an && is_determiner(s, art.from, art.to) {
@@ -156,7 +266,37 @@ fn is_determiner(s: &Sentence, from: usize, to: usize) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::vowel_sound;
+    use super::{sound, vowel_sound};
+
+    #[test]
+    fn sounds_from_the_lists_and_the_dictionary() {
+        for w in [
+            "hour",
+            "honest",
+            "unidentified",
+            "x-ray",
+            "MBA",
+            "eight",
+            "heir",
+        ] {
+            assert_eq!(sound(w), Some(true), "{w}");
+        }
+        for w in [
+            "house",
+            "unicorn",
+            "euro",
+            "one-time",
+            "xenon",
+            "university",
+            "NASA",
+        ] {
+            assert_eq!(sound(w), Some(false), "{w}");
+        }
+        // Usage is divided before an unstressed h.
+        for w in ["historic", "hotel"] {
+            assert_eq!(sound(w), None, "{w}");
+        }
+    }
 
     #[test]
     fn sounds() {

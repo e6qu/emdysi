@@ -288,6 +288,63 @@ fn mentioned_people_options_and_plurals_of_ignored_words_are_not_typos() {
 }
 
 #[test]
+fn a_word_the_document_writes_as_code_is_not_a_typo() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let checker = Checker::new(packs());
+    let opts = Options {
+        parse: false,
+        ..Options::default()
+    };
+    // Before: |notin| as a typo of |noting| (Kubernetes docs), where the
+    // document's examples write the operator as code.
+    let src = "Restrict negative matching with the _notin_ operator, \
+               as in `tier notin (frontend)`. Teh rest is simple.\n";
+    let a = analyze(&erg, src, Format::Markdown, &opts);
+    let d = checker.check(&erg, &a);
+    let spelling: Vec<&str> = d
+        .iter()
+        .filter(|x| x.rule == "core.spelling")
+        .map(|x| &src[x.range.clone()])
+        .collect();
+    assert_eq!(spelling, vec!["Teh"], "{d:?}");
+}
+
+#[test]
+fn misspellings_the_morphology_or_the_model_used_to_hide() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let checker = Checker::new(packs());
+    let opts = Options {
+        threads: 2,
+        ..Options::default()
+    };
+    // Before: read as derived forms (|file| + -ed + -s, -ing on the noun
+    // |specif|, |wit| + -in'), as |languages| + -s, or left to a model.
+    // Real words stay unflagged, and so does a word glued to inline code.
+    let src = "The fileds were witin reach, specifing the languagess. \
+               The admistrators found it neccesary. \
+               We built nightlies unfrequently, with two `let`s and grafana.\n";
+    let a = analyze(&erg, src, Format::Markdown, &opts);
+    let d = checker.check(&erg, &a);
+    let spelling: Vec<&str> = d
+        .iter()
+        .filter(|x| x.rule == "core.spelling")
+        .map(|x| &src[x.range.clone()])
+        .collect();
+    assert_eq!(
+        spelling,
+        vec![
+            "fileds",
+            "witin",
+            "specifing",
+            "languagess",
+            "admistrators",
+            "neccesary"
+        ],
+        "{d:?}"
+    );
+}
+
+#[test]
 fn a_lead_in_to_a_list_is_not_a_sentence() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     let checker = Checker::new(packs());
@@ -460,4 +517,51 @@ fn a_typo_of_a_word_the_document_uses() {
         .unwrap_or_else(|| panic!("{d:?}"));
     assert_eq!(&src[sp.range.clone()], "crytographic");
     assert_eq!(sp.replacement.as_deref(), Some("cryptographic"));
+}
+
+#[test]
+fn penn_tags_from_the_parse() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let opts = Options {
+        threads: 1,
+        ..Options::default()
+    };
+    let src = "The dogs quickly chased him to a bigger house, and Kim will stay.\n";
+    let a = analyze(&erg, src, Format::Markdown, &opts);
+    let r = a.sentences[0].best().expect("a reading");
+    let tags: Vec<(String, &str)> = r
+        .words
+        .iter()
+        .flat_map(|w| {
+            emdysi_check::tags::penn_all(w)
+                .into_iter()
+                .map(|t| (w.surface.to_lowercase(), t))
+        })
+        .collect();
+    let want = [
+        ("the", "DT"),
+        ("dogs", "NNS"),
+        ("quickly", "RB"),
+        ("chased", "VBD"),
+        ("him", "PRP"),
+        ("to", "TO"),
+        ("a", "DT"),
+        ("bigger", "JJR"),
+        ("house", "NN"),
+        ("and", "CC"),
+        ("kim", "NNP"),
+        ("will", "MD"),
+        ("stay", "VB"),
+    ];
+    assert!(
+        !tags.iter().any(|(s, t)| s == "," && *t == "CD"),
+        "{tags:?}"
+    );
+    for (w, t) in want {
+        assert!(
+            tags.iter()
+                .any(|(s, g)| s.trim_end_matches([',', '.']) == w && *g == t),
+            "{w}/{t} not in {tags:?}"
+        );
+    }
 }

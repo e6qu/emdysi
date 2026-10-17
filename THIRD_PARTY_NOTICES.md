@@ -3,7 +3,8 @@
 <!-- Generated from VENDORED.toml by scripts/check-vendored.py
      --update; do not edit by hand. -->
 
-emdysi is MIT-licensed ([`LICENSE`](LICENSE)). It includes the
+emdysi is licensed under the GNU Affero General Public License 3.0 or
+later ([`LICENSE`](LICENSE)). It includes the
 following third-party material, each under its own license, whose
 full text is in the file named. Details, versions and changes are in
 [`docs/vendored.md`](docs/vendored.md).
@@ -174,4 +175,74 @@ full text is in the file named. Details, versions and changes are in
 - Location: `data/equality`, `packs/equality.toml`
 - Copyright: Copyright (c) 2015 Titus Wormer
 - License: MIT License (`MIT`); full text in [`data/equality/license`](data/equality/license)
+- Used for: the tool (shipped)
+
+## Open English WordNet: single words with parts of speech, verb frames and irregular forms
+
+- Location: `data/oewn`
+- Copyright: Open English WordNet, Copyright (c) 2019-present, The Open English Wordnet Team; WordNet 3.1, Copyright 2011 by Princeton University
+- License: Creative Commons Attribution 4.0 (`CC-BY-4.0`); full text in [`data/oewn/LICENSE`](data/oewn/LICENSE), [`data/oewn/LICENSE-WordNet`](data/oewn/LICENSE-WordNet)
+- Used for: the tool (shipped)
+
+## CMU Pronouncing Dictionary
+
+- Location: `data/cmudict`
+- Copyright: Copyright (C) 1993-2015 Carnegie Mellon University
+- License: BSD 2-Clause License (`BSD-2-Clause`); full text in [`data/cmudict/LICENSE`](data/cmudict/LICENSE)
+- Used for: the tool (shipped)
+
+## codespell dictionaries of common misspellings and their corrections
+
+- Location: `data/codespell`
+- Copyright: The codespell contributors; derived from English Wikipedia's lists of common misspellings (Wikipedia contributors)
+- License: Creative Commons Attribution-ShareAlike 3.0 (`CC-BY-SA-3.0`); full text in [`data/codespell/LICENSE`](data/codespell/LICENSE)
+- Used for: the tool (shipped)
+
+## UniMorph English inflection tables
+
+- Location: `data/unimorph`
+- Copyright: The UniMorph project (Kirov et al. 2018; McCarthy et al. 2020); English Wiktionary editors
+- License: Creative Commons Attribution-ShareAlike 3.0 (`CC-BY-SA-3.0`); full text in [`data/unimorph/LICENSE`](data/unimorph/LICENSE)
+- Used for: the tool (shipped)
+
+## Universal Dependencies English Web Treebank (all of train, dev and test)
+
+- Location: `corpora/ud-ewt`
+- Copyright: English Web Treebank (Google, LDC2012T13) and the UD English EWT contributors (see README-upstream.md)
+- License: Creative Commons Attribution-ShareAlike 4.0 (`CC-BY-SA-4.0`); full text in [`corpora/ud-ewt/LICENSE.txt`](corpora/ud-ewt/LICENSE.txt)
+- Used for: tests and evaluation only
+
+## LanguageTool English rules and word lists, and the pack generated from them
+
+- Location: `data/languagetool`, `packs/languagetool.toml`
+- Copyright: Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline (Automattic), GNU GPL
+- License: GNU Lesser General Public License 2.1 or later (`LGPL-2.1-or-later`); full text in [`data/languagetool/COPYING.txt`](data/languagetool/COPYING.txt), [`data/languagetool/LICENSE-GPL-3.0`](data/languagetool/LICENSE-GPL-3.0)
+- Used for: the tool (shipped)
+
+## bheijden/slop rule sets for machine-written prose
+
+- Location: `data/slop/LICENSE`, `data/slop/NOTICE`, `data/slop/README-upstream.md`, `data/slop/SOURCE.md`, `data/slop/rules/ai-tells.json`, `data/slop/rules/load-bearing.json`, `data/slop/rules/pr-vocabulary.json`, `data/slop/rules/simonwillison.json`
+- Copyright: Copyright 2026 Bas van der Heijden; portions derived from Simon Willison's llm-cliche-highlighter (Apache-2.0)
+- License: Apache License 2.0 (`Apache-2.0`); full text in [`data/slop/LICENSE`](data/slop/LICENSE), [`data/slop/NOTICE`](data/slop/NOTICE)
+- Used for: the tool (shipped)
+
+## bheijden/slop's rule set from Wikipedia's Signs of AI writing, and the pack generated from all the slop rule sets
+
+- Location: `data/slop/rules/wikipedia-ai.json`, `data/slop/LICENSE-CC-BY-SA-4.0.txt`, `packs/slop.toml`
+- Copyright: Wikipedia contributors (Signs of AI writing); Copyright 2026 Bas van der Heijden; Simon Willison
+- License: Creative Commons Attribution-ShareAlike 4.0 (`CC-BY-SA-4.0`); full text in [`data/slop/LICENSE-CC-BY-SA-4.0.txt`](data/slop/LICENSE-CC-BY-SA-4.0.txt), [`data/slop/LICENSE`](data/slop/LICENSE), [`data/slop/NOTICE`](data/slop/NOTICE)
+- Used for: the tool (shipped)
+
+## GitLab documentation Vale rules, and the pack generated from them
+
+- Location: `data/vale/gitlab`, `packs/gitlab.toml`
+- Copyright: Copyright GitLab Inc.
+- License: Creative Commons Attribution-ShareAlike 4.0 (`CC-BY-SA-4.0`); full text in [`data/vale/gitlab/LICENSE`](data/vale/gitlab/LICENSE), [`data/vale/gitlab/LICENSE-CC-BY-SA-4.0.txt`](data/vale/gitlab/LICENSE-CC-BY-SA-4.0.txt)
+- Used for: the tool (shipped)
+
+## proselint's checks, their word lists and test sentences, and the pack generated from them
+
+- Location: `data/proselint`, `packs/proselint.toml`
+- Copyright: Copyright (c) 2014-2015 Jordan Suchow, Michael Pacer and Lara A. Ross; lists from After the Deadline (GPL), GNU diction (GPL) and write-good (MIT)
+- License: BSD 3-Clause License (`BSD-3-Clause`); full text in [`data/proselint/LICENSE.md`](data/proselint/LICENSE.md)
 - Used for: the tool (shipped)

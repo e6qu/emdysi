@@ -12,12 +12,15 @@ file, and `python3 scripts/check-vendored.py` (run in CI) verifies
 both, that every file under `grammar/`, `corpora/` and `data/` belongs
 to exactly one entry, and that this page is current.
 
-Policy ([`docs/dependencies.md`](dependencies.md)): only licenses
-compatible with emdysi's MIT license are allowed (MIT, Apache-2.0,
-BSD, ISC, CC0, CC BY, public domain, the SCOWL notice). Share-alike
-material (CC BY-SA) is allowed only as test data in its own
-directory and never shapes what the tool ships. Non-commercial,
-no-derivatives, LDC and unclear licenses are not allowed. Material
+Policy ([`docs/dependencies.md`](dependencies.md)): emdysi is
+licensed under the GNU Affero General Public License 3.0 or later
+(decision D15), and only licenses compatible with it are allowed:
+permissive ones (MIT, Apache-2.0, BSD, ISC, CC0, CC BY, public
+domain, the SCOWL notice), share-alike ones (CC BY-SA 4.0, and 3.0
+used under 4.0) and the GNU licenses that combine with the AGPL
+(GPL-3.0-or-later, LGPL, GPL-2.0-or-later). GPL-2.0-only,
+non-commercial, no-derivatives, LDC and unclear licenses are not
+allowed. Material
 marked *shipped* is compiled into or loaded by `en`; material
 marked *test* is used only by tests and evaluations. Rust crate
 dependencies are covered separately, by `cargo deny` and
@@ -28,20 +31,21 @@ dependencies are covered separately, by `cargo deny` and
 | Resource | License | Use | Paths |
 |---|---|---|---|
 | [English Resource Grammar (ERG), 2025 release line](#erg) | MIT | shipped | [`grammar/erg`](../grammar/erg) |
-| [emdysi's extensions of the ERG (constructions, lexical entries and formal counterparts of informal rules)](#erg-extensions) | MIT | shipped | [`grammar/emdysi`](../grammar/emdysi) |
+| [emdysi's extensions of the ERG (constructions, lexical entries and formal counterparts of informal rules)](#erg-extensions) | AGPL-3.0-or-later | shipped | [`grammar/emdysi`](../grammar/emdysi) |
 | [ERG gold treebank profiles built from constructed test suites](#erg-gold-constructed) | MIT | test | [`corpora/erg-gold/mrs`](../corpora/erg-gold/mrs), [`corpora/erg-gold/csli`](../corpora/erg-gold/csli), [`corpora/erg-gold/esd`](../corpora/erg-gold/esd), [`corpora/erg-gold/control`](../corpora/erg-gold/control), [`corpora/erg-gold/ccs`](../corpora/erg-gold/ccs) |
 | [ERG gold treebank profile of 'The Adventure of the Speckled Band'](#erg-gold-sh-spec) | MIT | test | [`corpora/erg-gold/sh-spec`](../corpora/erg-gold/sh-spec) |
-| [Provenance note and license text for the ERG gold profiles](#erg-gold-docs) | MIT | test | [`corpora/erg-gold/SOURCE.md`](../corpora/erg-gold/SOURCE.md), [`corpora/erg-gold/LICENSE`](../corpora/erg-gold/LICENSE) |
+| [Provenance note and license text for the ERG gold profiles](#erg-gold-docs) | AGPL-3.0-or-later | test | [`corpora/erg-gold/SOURCE.md`](../corpora/erg-gold/SOURCE.md), [`corpora/erg-gold/LICENSE`](../corpora/erg-gold/LICENSE) |
 | [English 'Golden Rules' sentence-segmentation test cases](#golden-rules) | MIT | test | [`corpora/golden-rules`](../corpora/golden-rules) |
-| [AI-style prose samples with expected diagnostics](#ai-prose) | MIT | test | [`corpora/ai-prose`](../corpora/ai-prose) |
-| [Grammatical stress sentences (buffalo, garden paths, ambiguity)](#stress) | MIT | test | [`corpora/stress`](../corpora/stress) |
-| [AI-prose treebank: sentences with the right ERG reading chosen by hand](#ai-treebank) (machine-generated text) | MIT | test | [`corpora/ai-treebank`](../corpora/ai-treebank) |
-| [Corpus policy](#corpora-readme) | MIT | test | [`corpora/README.md`](../corpora/README.md) |
+| [AI-style prose samples with expected diagnostics](#ai-prose) | AGPL-3.0-or-later | test | [`corpora/ai-prose`](../corpora/ai-prose) |
+| [Machine-written prose in the style of current chat models](#ai-current) (machine-generated text) | AGPL-3.0-or-later | test | [`corpora/ai-current`](../corpora/ai-current) |
+| [Grammatical stress sentences (buffalo, garden paths, ambiguity)](#stress) | AGPL-3.0-or-later | test | [`corpora/stress`](../corpora/stress) |
+| [AI-prose treebank: sentences with the right ERG reading chosen by hand](#ai-treebank) (machine-generated text) | AGPL-3.0-or-later | test | [`corpora/ai-treebank`](../corpora/ai-treebank) |
+| [Corpus policy](#corpora-readme) | AGPL-3.0-or-later | test | [`corpora/README.md`](../corpora/README.md) |
 | [English Speller Database (ESDB/SCOWL) word list, size 60 (and the size-70 and size-80 additions), and US/GB variant pairs](#scowl) | LicenseRef-SCOWL | shipped | [`data/scowl/en-60.tsv`](../data/scowl/en-60.tsv), [`data/scowl/en-70-extra.txt`](../data/scowl/en-70-extra.txt), [`data/scowl/en-80-extra.txt`](../data/scowl/en-80-extra.txt), [`data/scowl/variants.tsv`](../data/scowl/variants.tsv), [`data/scowl/Copyright`](../data/scowl/Copyright), [`data/scowl/SOURCE.md`](../data/scowl/SOURCE.md) |
-| [Generator for the US/GB variant table](#scowl-tools) | MIT | test | [`data/scowl/gen-variants.py`](../data/scowl/gen-variants.py) |
-| [Parse-ranking model weights](#rank-model) | MIT | shipped | [`crates/emdysi-parse/data/rank.tsv`](../crates/emdysi-parse/data/rank.tsv) |
+| [Generator for the US/GB variant table](#scowl-tools) | AGPL-3.0-or-later | test | [`data/scowl/gen-variants.py`](../data/scowl/gen-variants.py) |
+| [Parse-ranking model weights](#rank-model) | AGPL-3.0-or-later | shipped | [`crates/emdysi-parse/data/rank.tsv`](../crates/emdysi-parse/data/rank.tsv) |
 | [ERG grammar-error codes and feedback texts](#erg-errors) | MIT | shipped | [`data/erg-errors/errors.tsv`](../data/erg-errors/errors.tsv), [`data/erg-errors/SOURCE.md`](../data/erg-errors/SOURCE.md) |
-| [Converter for the ERG error table](#erg-errors-tools) | MIT | test | [`data/erg-errors/gen-errors.py`](../data/erg-errors/gen-errors.py) |
+| [Converter for the ERG error table](#erg-errors-tools) | AGPL-3.0-or-later | test | [`data/erg-errors/gen-errors.py`](../data/erg-errors/gen-errors.py) |
 | [BLiMP minimal pairs (first 30 pairs of each of the 67 paradigms)](#blimp-sample) | CC-BY-4.0 | test | [`corpora/blimp/sample.tsv`](../corpora/blimp/sample.tsv), [`corpora/blimp/LICENSE`](../corpora/blimp/LICENSE), [`corpora/blimp/SOURCE.md`](../corpora/blimp/SOURCE.md) |
 | [Zorro acceptability minimal pairs (first 30 pairs of each of the 23 paradigms)](#zorro-sample) | MIT | test | [`corpora/zorro/sample.tsv`](../corpora/zorro/sample.tsv), [`corpora/zorro/LICENSE`](../corpora/zorro/LICENSE), [`corpora/zorro/SOURCE.md`](../corpora/zorro/SOURCE.md) |
 | [Pride and Prejudice, chapters 1 to 6 (development) and 7 to 30 (held out) (edited fiction sample)](#edited-fiction) | LicenseRef-PublicDomain | test | [`corpora/edited/fiction.tsv`](../corpora/edited/fiction.tsv), [`corpora/edited/heldout-fiction.tsv`](../corpora/edited/heldout-fiction.tsv), [`corpora/edited/dev2-fiction.tsv`](../corpora/edited/dev2-fiction.tsv), [`corpora/edited/SOURCE.md`](../corpora/edited/SOURCE.md) |
@@ -52,7 +56,7 @@ dependencies are covered separately, by `cargo deny` and
 | [Software-term word lists from the cspell dictionaries (software-terms, rust, k8s, fullstack)](#cspell-software-terms) | MIT | shipped | [`data/cspell`](../data/cspell) |
 | [Typo, spelling and grammar fixes from the commit history of The Rust Programming Language](#real-errors-rust-book) | MIT | test | [`corpora/real-errors/rust-book.tsv`](../corpora/real-errors/rust-book.tsv), [`corpora/real-errors/LICENSE-rust-book-MIT`](../corpora/real-errors/LICENSE-rust-book-MIT), [`corpora/real-errors/LICENSE-rust-book-APACHE`](../corpora/real-errors/LICENSE-rust-book-APACHE), [`corpora/real-errors/SOURCE.md`](../corpora/real-errors/SOURCE.md) |
 | [Typo, spelling and grammar fixes from the commit history of the Kubernetes documentation](#real-errors-kubernetes) | CC-BY-4.0 | test | [`corpora/real-errors/kubernetes.tsv`](../corpora/real-errors/kubernetes.tsv), [`corpora/real-errors/LICENSE-kubernetes-website`](../corpora/real-errors/LICENSE-kubernetes-website) |
-| [Converters for the corpus samples (minimal pairs and machine-generated text)](#pair-sample-tools) | MIT | test | [`corpora/blimp/sample.py`](../corpora/blimp/sample.py), [`corpora/zorro/sample.py`](../corpora/zorro/sample.py), [`corpora/beemo/sample.py`](../corpora/beemo/sample.py), [`corpora/cheat/sample.py`](../corpora/cheat/sample.py), [`corpora/hh-rlhf/sample.py`](../corpora/hh-rlhf/sample.py), [`corpora/edited/sample.py`](../corpora/edited/sample.py), [`corpora/real-errors/mine.py`](../corpora/real-errors/mine.py) |
+| [Converters for the corpus samples (minimal pairs and machine-generated text)](#pair-sample-tools) | AGPL-3.0-or-later | test | [`corpora/blimp/sample.py`](../corpora/blimp/sample.py), [`corpora/zorro/sample.py`](../corpora/zorro/sample.py), [`corpora/beemo/sample.py`](../corpora/beemo/sample.py), [`corpora/cheat/sample.py`](../corpora/cheat/sample.py), [`corpora/hh-rlhf/sample.py`](../corpora/hh-rlhf/sample.py), [`corpora/edited/sample.py`](../corpora/edited/sample.py), [`corpora/real-errors/mine.py`](../corpora/real-errors/mine.py) |
 | [Beemo machine-generated texts with expert edits (first 200 Generation/Open QA rows from Apache-2.0/MIT models)](#beemo-sample) (machine-generated text) | MIT | test | [`corpora/beemo/sample.tsv`](../corpora/beemo/sample.tsv), [`corpora/beemo/LICENSE`](../corpora/beemo/LICENSE), [`corpora/beemo/SOURCE.md`](../corpora/beemo/SOURCE.md) |
 | [CHEAT ChatGPT-generated abstracts (first 200 records of the generation file)](#cheat-sample) (machine-generated text) | MIT | test | [`corpora/cheat/sample.tsv`](../corpora/cheat/sample.tsv), [`corpora/cheat/LICENSE`](../corpora/cheat/LICENSE), [`corpora/cheat/SOURCE.md`](../corpora/cheat/SOURCE.md) |
 | [Anthropic HH-RLHF helpful-base: final assistant turn of the chosen dialogue (first 200 test records)](#hh-rlhf-sample) (machine-generated text) | MIT | test | [`corpora/hh-rlhf/sample.tsv`](../corpora/hh-rlhf/sample.tsv), [`corpora/hh-rlhf/LICENSE`](../corpora/hh-rlhf/LICENSE), [`corpora/hh-rlhf/SOURCE.md`](../corpora/hh-rlhf/SOURCE.md) |
@@ -61,8 +65,18 @@ dependencies are covered separately, by `cargo deny` and
 | [Vale package for the Elastic style guide, and the pack generated from it](#vale-elastic) | Apache-2.0 | shipped | [`data/vale/elastic`](../data/vale/elastic), [`packs/elastic.toml`](../packs/elastic.toml) |
 | [Hedge, weasel and filler word lists (words/hedges, words/weasels, words/fillers), and the pack generated from them](#words-lists) | MIT | shipped | [`data/words`](../data/words), [`packs/wordlists.toml`](../packs/wordlists.toml) |
 | [retext-equality English word lists (alex), and the pack generated from them](#retext-equality) | MIT | shipped | [`data/equality`](../data/equality), [`packs/equality.toml`](../packs/equality.toml) |
+| [Open English WordNet: single words with parts of speech, verb frames and irregular forms](#oewn-words) | CC-BY-4.0 | shipped | [`data/oewn`](../data/oewn) |
+| [CMU Pronouncing Dictionary](#cmudict) | BSD-2-Clause | shipped | [`data/cmudict`](../data/cmudict) |
+| [codespell dictionaries of common misspellings and their corrections](#codespell-dictionaries) | CC-BY-SA-3.0 | shipped | [`data/codespell`](../data/codespell) |
+| [UniMorph English inflection tables](#unimorph-eng) | CC-BY-SA-3.0 | shipped | [`data/unimorph`](../data/unimorph) |
+| [Universal Dependencies English Web Treebank (all of train, dev and test)](#ud-ewt) | CC-BY-SA-4.0 | test | [`corpora/ud-ewt`](../corpora/ud-ewt) |
+| [LanguageTool English rules and word lists, and the pack generated from them](#languagetool-en) | LGPL-2.1-or-later | shipped | [`data/languagetool`](../data/languagetool), [`packs/languagetool.toml`](../packs/languagetool.toml) |
+| [bheijden/slop rule sets for machine-written prose](#slop-rules) | Apache-2.0 | shipped | [`data/slop/LICENSE`](../data/slop/LICENSE), [`data/slop/NOTICE`](../data/slop/NOTICE), [`data/slop/README-upstream.md`](../data/slop/README-upstream.md), [`data/slop/SOURCE.md`](../data/slop/SOURCE.md), [`data/slop/rules/ai-tells.json`](../data/slop/rules/ai-tells.json), [`data/slop/rules/load-bearing.json`](../data/slop/rules/load-bearing.json), [`data/slop/rules/pr-vocabulary.json`](../data/slop/rules/pr-vocabulary.json), [`data/slop/rules/simonwillison.json`](../data/slop/rules/simonwillison.json) |
+| [bheijden/slop's rule set from Wikipedia's Signs of AI writing, and the pack generated from all the slop rule sets](#slop-wikipedia) | CC-BY-SA-4.0 | shipped | [`data/slop/rules/wikipedia-ai.json`](../data/slop/rules/wikipedia-ai.json), [`data/slop/LICENSE-CC-BY-SA-4.0.txt`](../data/slop/LICENSE-CC-BY-SA-4.0.txt), [`packs/slop.toml`](../packs/slop.toml) |
+| [GitLab documentation Vale rules, and the pack generated from them](#vale-gitlab) | CC-BY-SA-4.0 | shipped | [`data/vale/gitlab`](../data/vale/gitlab), [`packs/gitlab.toml`](../packs/gitlab.toml) |
+| [proselint's checks, their word lists and test sentences, and the pack generated from them](#proselint) | BSD-3-Clause | shipped | [`data/proselint`](../data/proselint), [`packs/proselint.toml`](../packs/proselint.toml) |
 
-Licenses: MIT License (26), Creative Commons Attribution 4.0 (3), SCOWL/ESDB permissive notice (1), Public domain (1), CC0 1.0 (public domain dedication) (1), Creative Commons Attribution-ShareAlike 3.0 (1), Apache License 2.0 (1).
+Licenses: MIT License (16), GNU Affero General Public License 3.0 or later (11), Creative Commons Attribution 4.0 (4), Creative Commons Attribution-ShareAlike 3.0 (3), Creative Commons Attribution-ShareAlike 4.0 (3), Apache License 2.0 (2), SCOWL/ESDB permissive notice (1), Public domain (1), CC0 1.0 (public domain dedication) (1), BSD 2-Clause License (1), GNU Lesser General Public License 2.1 or later (1), BSD 3-Clause License (1).
 
 ## Details
 
@@ -90,7 +104,7 @@ Licenses: MIT License (26), Creative Commons Attribution 4.0 (3), SCOWL/ESDB per
 - **Upstream:** this repository
 - **Version:** written 2026-10-05 to 2026-10-06
 - **Retrieved:** 2026-10-06
-- **License:** MIT (MIT License)
+- **License:** AGPL-3.0-or-later (GNU Affero General Public License 3.0 or later)
 - **License text:** [`LICENSE`](../LICENSE)
 - **Copyright:** Copyright (c) 2026 emdysi contributors
 - **Provenance:** Written for this project in TDL on the ERG's types; no ERG file is changed.
@@ -138,7 +152,7 @@ Licenses: MIT License (26), Creative Commons Attribution 4.0 (3), SCOWL/ESDB per
 - **Upstream:** this repository (LICENSE copied from https://github.com/delph-in/erg)
 - **Version:** 13b615ab607374ed7cafe753830e23043a22b71d
 - **Retrieved:** 2026-10-01
-- **License:** MIT (MIT License)
+- **License:** AGPL-3.0-or-later (GNU Affero General Public License 3.0 or later)
 - **License text:** [`corpora/erg-gold/LICENSE`](../corpora/erg-gold/LICENSE)
 - **Copyright:** emdysi contributors (SOURCE.md); ERG developers (LICENSE)
 - **Provenance:** Documentation.
@@ -170,14 +184,31 @@ Licenses: MIT License (26), Creative Commons Attribution 4.0 (3), SCOWL/ESDB per
 - **Upstream:** this repository
 - **Version:** written 2026-10-01
 - **Retrieved:** 2026-10-01
-- **License:** MIT (MIT License)
+- **License:** AGPL-3.0-or-later (GNU Affero General Public License 3.0 or later)
 - **License text:** [`LICENSE`](../LICENSE)
 - **Copyright:** Copyright (c) 2026 emdysi contributors
 - **Provenance:** Written for this project; no text copied from other sources; names and figures invented. expected/ is generated by crates/emdysi-check/tests/corpus.rs.
-- **Generated by:** written for this project in the style of machine-written prose (not sampled from a model's output corpus); covered by the repository's MIT license
+- **Generated by:** written for this project in the style of machine-written prose (not sampled from a model's output corpus); covered by the repository's license (AGPL-3.0-or-later)
 - **Modifications:** n/a
 - **Use:** test
 - **Details:** [`corpora/ai-prose/README.md`](../corpora/ai-prose/README.md)
+
+<a id="ai-current"></a>
+
+### Machine-written prose in the style of current chat models
+
+- **Paths:** [`corpora/ai-current`](../corpora/ai-current)
+- **Upstream:** this repository
+- **Version:** written 2026-10-17
+- **Retrieved:** 2026-10-17
+- **License:** AGPL-3.0-or-later (GNU Affero General Public License 3.0 or later)
+- **License text:** [`LICENSE`](../LICENSE)
+- **Copyright:** Copyright (c) 2026 emdysi contributors
+- **Provenance:** Written for this project in the voice of chat-model output as of 2026; no text copied from other sources; names, products and figures invented. samples.tsv is generated by to_tsv.py from the .md files.
+- **Generated by:** written by Claude (Anthropic) for this project, as typical current model output for ordinary requests; covered by the repository's license (AGPL-3.0-or-later)
+- **Modifications:** n/a
+- **Use:** test
+- **Details:** [`corpora/ai-current/README.md`](../corpora/ai-current/README.md)
 
 <a id="stress"></a>
 
@@ -187,7 +218,7 @@ Licenses: MIT License (26), Creative Commons Attribution 4.0 (3), SCOWL/ESDB per
 - **Upstream:** this repository (well-known example sentences from the linguistics literature and folklore)
 - **Version:** written 2026-10-05 to 2026-10-06
 - **Retrieved:** 2026-10-06
-- **License:** MIT (MIT License)
+- **License:** AGPL-3.0-or-later (GNU Affero General Public License 3.0 or later)
 - **License text:** [`LICENSE`](../LICENSE)
 - **Copyright:** Copyright (c) 2026 emdysi contributors (list and notes); the example sentences are short, widely quoted linguistic examples, attributed in README.md where the author is known
 - **Provenance:** Compiled for this project from well-known examples; one sentence of Pride and Prejudice (public domain).
@@ -203,7 +234,7 @@ Licenses: MIT License (26), Creative Commons Attribution 4.0 (3), SCOWL/ESDB per
 - **Upstream:** this repository (sentences from corpora/ai-prose and corpora/beemo)
 - **Version:** judged 2026-10-03
 - **Retrieved:** 2026-10-03
-- **License:** MIT (MIT License)
+- **License:** AGPL-3.0-or-later (GNU Affero General Public License 3.0 or later)
 - **License text:** [`LICENSE`](../LICENSE), [`corpora/beemo/LICENSE`](../corpora/beemo/LICENSE)
 - **Copyright:** Annotations and ai-prose sentences: Copyright (c) 2026 emdysi contributors; Beemo sentences: Copyright (c) 2024 Toloka
 - **Provenance:** 160 sentences (36 from corpora/ai-prose, 124 from the model outputs in corpora/beemo); for each, the derivation skeleton of the reading judged right among the six best, by crates/emdysi-parse/examples/judge.rs and hand judgement.
@@ -220,7 +251,7 @@ Licenses: MIT License (26), Creative Commons Attribution 4.0 (3), SCOWL/ESDB per
 - **Upstream:** this repository
 - **Version:** n/a
 - **Retrieved:** 2026-10-01
-- **License:** MIT (MIT License)
+- **License:** AGPL-3.0-or-later (GNU Affero General Public License 3.0 or later)
 - **License text:** [`LICENSE`](../LICENSE)
 - **Copyright:** Copyright (c) 2026 emdysi contributors
 - **Provenance:** Documentation.
@@ -252,7 +283,7 @@ Licenses: MIT License (26), Creative Commons Attribution 4.0 (3), SCOWL/ESDB per
 - **Upstream:** this repository
 - **Version:** n/a
 - **Retrieved:** 2026-10-01
-- **License:** MIT (MIT License)
+- **License:** AGPL-3.0-or-later (GNU Affero General Public License 3.0 or later)
 - **License text:** [`LICENSE`](../LICENSE)
 - **Copyright:** Copyright (c) 2026 emdysi contributors
 - **Provenance:** Own code.
@@ -268,7 +299,7 @@ Licenses: MIT License (26), Creative Commons Attribution 4.0 (3), SCOWL/ESDB per
 - **Upstream:** this repository (trained by crates/emdysi-parse/examples/train.rs)
 - **Version:** trained 2026-10-01 on corpora/erg-gold
 - **Retrieved:** 2026-10-01
-- **License:** MIT (MIT License)
+- **License:** AGPL-3.0-or-later (GNU Affero General Public License 3.0 or later)
 - **License text:** [`LICENSE`](../LICENSE), [`corpora/erg-gold/LICENSE`](../corpora/erg-gold/LICENSE)
 - **Copyright:** Copyright (c) 2026 emdysi contributors; derived only from the MIT-licensed ERG gold profiles listed above
 - **Provenance:** Averaged-perceptron weights over derivation features, and a temperature that calibrates their scores, fitted on a held-out 10% of the same items (2026-10-05); training data is only corpora/erg-gold (no LDC or NC data).
@@ -300,7 +331,7 @@ Licenses: MIT License (26), Creative Commons Attribution 4.0 (3), SCOWL/ESDB per
 - **Upstream:** this repository
 - **Version:** n/a
 - **Retrieved:** 2026-10-01
-- **License:** MIT (MIT License)
+- **License:** AGPL-3.0-or-later (GNU Affero General Public License 3.0 or later)
 - **License text:** [`LICENSE`](../LICENSE)
 - **Copyright:** Copyright (c) 2026 emdysi contributors
 - **Provenance:** Own code.
@@ -476,7 +507,7 @@ Licenses: MIT License (26), Creative Commons Attribution 4.0 (3), SCOWL/ESDB per
 - **Upstream:** this repository
 - **Version:** n/a
 - **Retrieved:** 2026-10-01
-- **License:** MIT (MIT License)
+- **License:** AGPL-3.0-or-later (GNU Affero General Public License 3.0 or later)
 - **License text:** [`LICENSE`](../LICENSE)
 - **Copyright:** Copyright (c) 2026 emdysi contributors
 - **Provenance:** Own code.
@@ -614,3 +645,163 @@ Licenses: MIT License (26), Creative Commons Attribution 4.0 (3), SCOWL/ESDB per
 - **Modifications:** data/equality: en/*.yml and license verbatim, plus SOURCE.md. packs/equality.toml: generated by scripts/import-rules.py from the `type: basic` entries only (one substitution or existence rule per category file).
 - **Use:** shipped
 - **Details:** [`data/equality/SOURCE.md`](../data/equality/SOURCE.md)
+
+<a id="oewn-words"></a>
+
+### Open English WordNet: single words with parts of speech, verb frames and irregular forms
+
+- **Paths:** [`data/oewn`](../data/oewn)
+- **Upstream:** <https://github.com/globalwordnet/english-wordnet> (src/yaml/entries-*.yaml)
+- **Version:** bff3181fe5c810dcd157cba0eed60322a6e0aaed
+- **Retrieved:** 2026-10-17
+- **License:** CC-BY-4.0 (Creative Commons Attribution 4.0)
+- **License text:** [`data/oewn/LICENSE`](../data/oewn/LICENSE), [`data/oewn/LICENSE-WordNet`](../data/oewn/LICENSE-WordNet)
+- **Copyright:** Open English WordNet, Copyright (c) 2019-present, The Open English Wordnet Team; WordNet 3.1, Copyright 2011 by Princeton University
+- **Provenance:** Lexical database maintained by the Open English Wordnet team under CC BY 4.0 (upstream LICENSE.md), derived from Princeton WordNet 3.1 under the WordNet license (upstream WNDB_License.txt, permissive with attribution). Both license files copied from the upstream repository.
+- **Modifications:** Extracted by scripts/oewn/extract.py: single-word lower-case lemmas only, with parts of speech, verb frames and irregular forms; senses, definitions, examples and relations dropped.
+- **Use:** shipped
+- **Details:** [`data/oewn/SOURCE.md`](../data/oewn/SOURCE.md)
+
+<a id="cmudict"></a>
+
+### CMU Pronouncing Dictionary
+
+- **Paths:** [`data/cmudict`](../data/cmudict)
+- **Upstream:** <https://github.com/cmusphinx/cmudict> (cmudict.dict, LICENSE, README)
+- **Version:** 74790861f652b15e4ac49015a90074ad62a27690
+- **Retrieved:** 2026-10-17
+- **License:** BSD-2-Clause (BSD 2-Clause License)
+- **License text:** [`data/cmudict/LICENSE`](../data/cmudict/LICENSE)
+- **Copyright:** Copyright (C) 1993-2015 Carnegie Mellon University
+- **Provenance:** Pronunciations compiled at Carnegie Mellon University for the Sphinx speech recognizer and maintained by volunteers; LICENSE copied from the repository at that commit.
+- **Modifications:** None; README kept as README-upstream.
+- **Use:** shipped
+- **Details:** [`data/cmudict/SOURCE.md`](../data/cmudict/SOURCE.md)
+
+<a id="codespell-dictionaries"></a>
+
+### codespell dictionaries of common misspellings and their corrections
+
+- **Paths:** [`data/codespell`](../data/codespell)
+- **Upstream:** <https://github.com/codespell-project/codespell> (codespell_lib/data/dictionary*.txt)
+- **Version:** 6e8b7f250621279fa3e33272f4df712580ceeb84
+- **Retrieved:** 2026-10-17
+- **License:** CC-BY-SA-3.0 (Creative Commons Attribution-ShareAlike 3.0)
+- **License text:** [`data/codespell/LICENSE`](../data/codespell/LICENSE)
+- **Copyright:** The codespell contributors; derived from English Wikipedia's lists of common misspellings (Wikipedia contributors)
+- **Provenance:** Upstream README: the dictionary files are derivative works of English Wikipedia released under CC BY-SA 3.0 (the program itself is GPL-2.0-only and not used). LICENSE is the CC BY-SA 3.0 text from the SPDX License List (31ba1a50e5397e00a304dbadc76531740e89ee48). Used under CC BY-SA 4.0, as 3.0 allows for adaptations (decision D15).
+- **Modifications:** None.
+- **Use:** shipped
+- **Details:** [`data/codespell/SOURCE.md`](../data/codespell/SOURCE.md)
+
+<a id="unimorph-eng"></a>
+
+### UniMorph English inflection tables
+
+- **Paths:** [`data/unimorph`](../data/unimorph)
+- **Upstream:** <https://github.com/unimorph/eng> (eng, README.md)
+- **Version:** 66e0e9e8e2dcd196da081a25a48e5c1fe3d8b49b
+- **Retrieved:** 2026-10-17
+- **License:** CC-BY-SA-3.0 (Creative Commons Attribution-ShareAlike 3.0)
+- **License text:** [`data/unimorph/LICENSE`](../data/unimorph/LICENSE)
+- **Copyright:** The UniMorph project (Kirov et al. 2018; McCarthy et al. 2020); English Wiktionary editors
+- **Provenance:** Inflected forms extracted by UniMorph from English Wiktionary; upstream README states the CC BY-SA 3.0 license. LICENSE is the CC BY-SA 3.0 text from the SPDX License List (31ba1a50e5397e00a304dbadc76531740e89ee48). Used under CC BY-SA 4.0 (decision D15).
+- **Modifications:** None; README kept as README-upstream.md.
+- **Use:** shipped
+- **Details:** [`data/unimorph/SOURCE.md`](../data/unimorph/SOURCE.md)
+
+<a id="ud-ewt"></a>
+
+### Universal Dependencies English Web Treebank (all of train, dev and test)
+
+- **Paths:** [`corpora/ud-ewt`](../corpora/ud-ewt)
+- **Upstream:** <https://github.com/UniversalDependencies/UD_English-EWT>
+- **Version:** 4a4d77f599ea53cc405f85d0cec4b2f14f81d42b
+- **Retrieved:** 2026-10-17
+- **License:** CC-BY-SA-4.0 (Creative Commons Attribution-ShareAlike 4.0)
+- **License text:** [`corpora/ud-ewt/LICENSE.txt`](../corpora/ud-ewt/LICENSE.txt)
+- **Copyright:** English Web Treebank (Google, LDC2012T13) and the UD English EWT contributors (see README-upstream.md)
+- **Provenance:** English web text annotated for the English Web Treebank and converted and corrected by Universal Dependencies, released under CC BY-SA 4.0 (LICENSE.txt in the repository at that commit).
+- **Modifications:** None; README kept as README-upstream.md.
+- **Use:** test
+- **Details:** [`corpora/ud-ewt/SOURCE.md`](../corpora/ud-ewt/SOURCE.md)
+
+<a id="languagetool-en"></a>
+
+### LanguageTool English rules and word lists, and the pack generated from them
+
+- **Paths:** [`data/languagetool`](../data/languagetool), [`packs/languagetool.toml`](../packs/languagetool.toml)
+- **Upstream:** <https://github.com/languagetool-org/languagetool> (languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/, COPYING.txt)
+- **Version:** 5b59afaf3a12489eb34f09b555cb31f1174926c7
+- **Retrieved:** 2026-10-17
+- **License:** LGPL-2.1-or-later (GNU Lesser General Public License 2.1 or later)
+- **License text:** [`data/languagetool/COPYING.txt`](../data/languagetool/COPYING.txt), [`data/languagetool/LICENSE-GPL-3.0`](../data/languagetool/LICENSE-GPL-3.0)
+- **Copyright:** Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline (Automattic), GNU GPL
+- **Provenance:** Rule files' headers: LGPL version 2.1 or (at your option) any later version; COPYING.txt from the repository root. Portions converted from After the Deadline, under the GNU GPL with no version stated (any version may be chosen; used under GPL-3.0-or-later, whose text is from the SPDX License List). Both combine with emdysi's AGPL-3.0-or-later (decision D15).
+- **Modifications:** data/languagetool: unchanged; the shell script indent.sh left out. packs/languagetool.toml: generated by scripts/import-languagetool.py (the pattern rules that need only words, closed-class tags or inflections from UniMorph, each kept only if it passes its own examples; wordiness.txt and redundancies.txt as substitutions).
+- **Use:** shipped
+- **Details:** [`data/languagetool/SOURCE.md`](../data/languagetool/SOURCE.md)
+
+<a id="slop-rules"></a>
+
+### bheijden/slop rule sets for machine-written prose
+
+- **Paths:** [`data/slop/LICENSE`](../data/slop/LICENSE), [`data/slop/NOTICE`](../data/slop/NOTICE), [`data/slop/README-upstream.md`](../data/slop/README-upstream.md), [`data/slop/SOURCE.md`](../data/slop/SOURCE.md), [`data/slop/rules/ai-tells.json`](../data/slop/rules/ai-tells.json), [`data/slop/rules/load-bearing.json`](../data/slop/rules/load-bearing.json), [`data/slop/rules/pr-vocabulary.json`](../data/slop/rules/pr-vocabulary.json), [`data/slop/rules/simonwillison.json`](../data/slop/rules/simonwillison.json)
+- **Upstream:** <https://github.com/bheijden/slop>
+- **Version:** 6af32460028c96e5144c08fff2e2d44a2bbed9be
+- **Retrieved:** 2026-10-17
+- **License:** Apache-2.0 (Apache License 2.0)
+- **License text:** [`data/slop/LICENSE`](../data/slop/LICENSE), [`data/slop/NOTICE`](../data/slop/NOTICE)
+- **Copyright:** Copyright 2026 Bas van der Heijden; portions derived from Simon Willison's llm-cliche-highlighter (Apache-2.0)
+- **Provenance:** Rule sets written by the author; simonwillison.json derived from Simon Willison's tools (NOTICE).
+- **Modifications:** None.
+- **Use:** shipped
+- **Details:** [`data/slop/SOURCE.md`](../data/slop/SOURCE.md)
+
+<a id="slop-wikipedia"></a>
+
+### bheijden/slop's rule set from Wikipedia's Signs of AI writing, and the pack generated from all the slop rule sets
+
+- **Paths:** [`data/slop/rules/wikipedia-ai.json`](../data/slop/rules/wikipedia-ai.json), [`data/slop/LICENSE-CC-BY-SA-4.0.txt`](../data/slop/LICENSE-CC-BY-SA-4.0.txt), [`packs/slop.toml`](../packs/slop.toml)
+- **Upstream:** <https://github.com/bheijden/slop> (rules/wikipedia-ai.json); https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing
+- **Version:** 6af32460028c96e5144c08fff2e2d44a2bbed9be
+- **Retrieved:** 2026-10-17
+- **License:** CC-BY-SA-4.0 (Creative Commons Attribution-ShareAlike 4.0)
+- **License text:** [`data/slop/LICENSE-CC-BY-SA-4.0.txt`](../data/slop/LICENSE-CC-BY-SA-4.0.txt), [`data/slop/LICENSE`](../data/slop/LICENSE), [`data/slop/NOTICE`](../data/slop/NOTICE)
+- **Copyright:** Wikipedia contributors (Signs of AI writing); Copyright 2026 Bas van der Heijden; Simon Willison
+- **Provenance:** NOTICE: adapted from Wikipedia's Signs of AI writing (CC BY-SA 4.0) via Simon Willison's llm-cliche-highlighter (Apache-2.0). The generated pack combines it with the Apache-2.0 sets, so the pack as a whole is share-alike; each rule's license field names its own source.
+- **Modifications:** data/slop/rules/wikipedia-ai.json unchanged. packs/slop.toml: generated by scripts/import-rules.py (regex rules that fire on any match and pass their own tests).
+- **Use:** shipped
+- **Details:** [`data/slop/SOURCE.md`](../data/slop/SOURCE.md)
+
+<a id="vale-gitlab"></a>
+
+### GitLab documentation Vale rules, and the pack generated from them
+
+- **Paths:** [`data/vale/gitlab`](../data/vale/gitlab), [`packs/gitlab.toml`](../packs/gitlab.toml)
+- **Upstream:** <https://gitlab.com/gitlab-org/gitlab> (doc/.vale/gitlab_base, LICENSE)
+- **Version:** 1d58eb23e25fffbf37bacc83ca32aa9f99a4c793
+- **Retrieved:** 2026-10-17
+- **License:** CC-BY-SA-4.0 (Creative Commons Attribution-ShareAlike 4.0)
+- **License text:** [`data/vale/gitlab/LICENSE`](../data/vale/gitlab/LICENSE), [`data/vale/gitlab/LICENSE-CC-BY-SA-4.0.txt`](../data/vale/gitlab/LICENSE-CC-BY-SA-4.0.txt)
+- **Copyright:** Copyright GitLab Inc.
+- **Provenance:** GitLab's own rules for its documentation; the repository LICENSE puts everything under doc/ under CC BY-SA 4.0.
+- **Modifications:** data/vale/gitlab: gitlab_base/*.yml and LICENSE verbatim, the CC BY-SA 4.0 text, SOURCE.md. packs/gitlab.toml: generated by scripts/import-rules.py (existence and substitution rules only).
+- **Use:** shipped
+- **Details:** [`data/vale/gitlab/SOURCE.md`](../data/vale/gitlab/SOURCE.md)
+
+<a id="proselint"></a>
+
+### proselint's checks, their word lists and test sentences, and the pack generated from them
+
+- **Paths:** [`data/proselint`](../data/proselint), [`packs/proselint.toml`](../packs/proselint.toml)
+- **Upstream:** <https://github.com/amperser/proselint>
+- **Version:** dbed789caae662d06c7c8a5a13dd31f1acd36f5c
+- **Retrieved:** 2026-10-17
+- **License:** BSD-3-Clause (BSD 3-Clause License)
+- **License text:** [`data/proselint/LICENSE.md`](../data/proselint/LICENSE.md)
+- **Copyright:** Copyright (c) 2014-2015 Jordan Suchow, Michael Pacer and Lara A. Ross; lists from After the Deadline (GPL), GNU diction (GPL) and write-good (MIT)
+- **Provenance:** Checks written by the proselint authors from usage guides cited in each module's header (Garner's Modern American Usage, and others); some lists taken from After the Deadline and GNU diction (GPL), which combine with emdysi's AGPL-3.0-or-later (D15), and write-good (MIT).
+- **Modifications:** data/proselint: checks/, tests/examples.py, registry/checks/engine.py (as engine.py) and LICENSE.md verbatim, plus SOURCE.md. packs/proselint.toml: generated by scripts/import-rules.py, reading the check modules with Python's ast module.
+- **Use:** shipped
+- **Details:** [`data/proselint/SOURCE.md`](../data/proselint/SOURCE.md)

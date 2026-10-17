@@ -1,7 +1,8 @@
 # emdysi
 
 emdysi is an English parser and prose checker, written in Rust and
-MIT-licensed. Its command-line tool, `en`:
+licensed under the GNU Affero General Public License 3.0 or later. Its
+command-line tool, `en`:
 
 - parses English into phrase structure and meaning, and says when a
   sentence is ambiguous;
@@ -109,7 +110,10 @@ The default rule packs are:
 Opt-in packs (`--pack NAME`): `microsoft`, `google` and `elastic` (word
 choice from those style guides, via their Vale packages), `wordlists`
 (hedges, weasel words, fillers), `equality` (insensitive wording, from the
-data behind alex), `coverage` (sentences the grammar could not analyse
+data behind alex), `languagetool` (LanguageTool's English rules that need
+no tagger or whose parts of speech the parse gives, 2,579 of them), `gitlab` (GitLab's documentation style rules),
+`slop` (bheijden/slop's patterns of machine-written prose), `proselint`
+(proselint's usage advice), `coverage` (sentences the grammar could not analyse
 fully, and ambiguous ones) and `decisions` (checks that ask a local model).
 Write your own packs in TOML: see [rules.md](docs/rules.md).
 
@@ -127,27 +131,22 @@ from tens of milliseconds to a few seconds per sentence.
 
 ## Roadmap
 
-The milestones and their status are in [docs/plan.md](docs/plan.md), which
-ends with how to pick the work up. Next, in order:
+The plan, with where the work stands, its priorities and how to pick it
+up, is in [docs/plan.md](docs/plan.md). In order:
 
-1. **A small local classifier with the grammar (must have, M20).** A model
-   of about 2 GB (Gemma 4 E2B, 4-bit GGUF, or similar) chooses in context
-   among the spelling and grammar corrections the grammar has verified, so
-   that the two together are more accurate than a much larger model alone.
-   The machinery is done and tested with a stand-in model. With a perfect
-   model in place of the real one, the share of real errors caught rises
-   from 44% to 89% (337 of 377); that assumes the model names the wrong word
-   in a sentence it doubts, which only the model's measurement can tell.
-   Most of what remains out of reach needs wider grammar coverage, which
-   can be done without the model. Then: download the model, calibrate it and
-   measure it with `scripts/model-eval/run.sh` (recall on real errors,
-   false flags on edited text, against the grammar alone, a perfect model
-   and a larger model).
-2. **Coverage of edited text (M19):** the recurring gaps left in the
-   samples.
-3. **AI tropes on current models' prose (M21):** more machine-written text
-   from current models to calibrate against.
-4. **Speed** on the slowest ordinary sentences.
+1. **A real model with the grammar (must have, M20).** A model of about
+   2 GB (Gemma 4 E2B, 4-bit GGUF, or similar) chooses in context among the
+   corrections the grammar has verified. The machinery is done and tested
+   with stand-ins; with a perfect model the share of real errors caught
+   rises from 49% to 89% (337 of 377). What a real model gets, and whether
+   it beats a much larger model alone, is the open question:
+   `scripts/model-eval/run.sh` measures it once the model can be
+   downloaded.
+2. **Grammar errors without a model:** 24 of 199 real grammar errors are
+   caught today.
+3. **Speed:** about 2.4 s of CPU per sentence of edited text.
+4. **Coverage of edited text (M19)** and **machine-written prose from
+   current models (M21).**
 
 ## Documentation
 
@@ -186,7 +185,14 @@ ends with how to pick the work up. Next, in order:
 
 ## License
 
-emdysi is MIT-licensed ([`LICENSE`](LICENSE)). It includes third-party
-material under its own licenses, all compatible with MIT: see
+emdysi is free software: you can redistribute it and modify it under the
+terms of the GNU Affero General Public License as published by the Free
+Software Foundation, version 3 of the License or (at your option) any later
+version ([`LICENSE`](LICENSE)). It is distributed in the hope that it will
+be useful, but without any warranty. If you run a modified version as a
+network service, the AGPL obliges you to offer its source to the service's
+users. emdysi was MIT-licensed until 2026-10-17 (decision D15 in
+[docs/decisions.md](docs/decisions.md)). It includes third-party material
+under its own licenses, all compatible with the AGPL: see
 [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) and
 [docs/vendored.md](docs/vendored.md).

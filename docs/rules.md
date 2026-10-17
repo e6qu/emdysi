@@ -65,6 +65,25 @@ back-references) matched against each sentence. With `replace`, matches are
 fixed automatically; `$1` and similar refer to capture groups. Sentences that
 match `unless` are skipped, e.g. claims that come with a citation.
 
+A group named `m` narrows the finding to its span (the rest of the match is
+context). `suggest` is a list of alternatives, expanded like `replace`
+(`${name}` for a named group); with `expand = true` the message is
+expanded the same way. `needs` lists words (lowercase) one of which a
+sentence must contain for the pattern to be tried (as a whole word if it
+is all letters and digits, else anywhere); the pattern is then compiled
+when a sentence first contains one, and matches inside a URL or file path
+are skipped. The `languagetool` pack, two and a half thousand such rules, loads in a
+fraction of a second this way.
+
+`tags` and `not_tags` put part-of-speech conditions on named groups, as
+`"group=pattern"` strings (`"t2=NNS?"`): the group must cover a word of the
+sentence's best reading whose Penn Treebank tag matches the pattern, or,
+for `not_tags`, none whose tag does. The tags come from the parse: the
+lexical type and inflectional rules of each word (`n_pl_olr` makes NNS,
+`aj_*-cmp_le` JJR; *stay* in *will stay* is both VB and VBP, since the
+grammar gives both one rule). A rule with conditions needs a parse, and
+does nothing on a sentence without one.
+
 ### `construction`
 
 Nodes of the grammar's derivation tree. The English Resource Grammar names
@@ -106,16 +125,33 @@ reported. `{count}`, `{per}` and `{max}` are available in messages.
 
 Lower-case words that neither the bundled word list (ESDB/SCOWL, size 60,
 American and British spellings, both *-ise* and *-ize*), nor the rarer
-words of size 70 and the software terms of the cspell dictionaries
+words of sizes 70 and 80 and the software terms of the cspell dictionaries
 (accepted, never suggested), nor the grammar's lexicon and inflection rules
-know. Names, acronyms, numbers and inline code are skipped. A word is
-reported only when it looks like a typo: a known word is one edit away,
-and the word occurs once in the document (a word used twice or more is one
-of the document's terms, such as *kubelet*). Options are `min_length` (default 3) and
-`ignore` (a list of words). `{suggestion}` is available in messages. A
-suggestion is applied automatically only when it is clearly the most likely
-correction: a transposed or doubled letter, or the only known word one edit
-away.
+know. A form the grammar derives counts only when each of its rules fits
+its stem's word class, with one inflection at most and no informal form
+(*specifing* is not *-ing* on the noun *specif*). Names, acronyms,
+numbers, mentions (*@name*, and the same word elsewhere in the document),
+command-line options, inline code (and words glued to it) and words the
+document writes as code elsewhere (`` `notin` ``) are skipped, as are
+inflected forms of known words in UniMorph's tables (*nightlies*). A word
+on codespell's list of common misspellings is reported with the list's
+corrections, and fixed automatically when the list gives one (*recieve*,
+*accessable*).
+A word is reported only when it looks like a typo: a known word is one
+edit away, or two for a long word with few common candidates, and the
+word occurs once in the document (a word used twice or more is one of
+the document's terms, such as *kubelet*). A known word with one letter
+typed twice (*languagess*) is a typo, a known word plus an affix is a
+coinage unless a word on the same stem is one edit away (*assignement*).
+Findings only a model can confirm (two edits away, misspelled
+derivations, typos in title-cased runs, three-letter words) are reported
+without a model only when there is a single candidate the word only drops
+or adds letters to (*neccesary*), and never fixed automatically. Options
+are `min_length` (default 3), `ignore` (a list of words; their plurals
+too) and `model_threshold`. `{suggestion}` is available in messages. A
+suggestion is applied automatically only when it is clearly the most
+likely correction: a transposed or doubled letter, or the only known word
+one edit away.
 
 ### `semantics`
 
@@ -188,7 +224,11 @@ check.
 ### `articles`
 
 *a* before a vowel sound or *an* before a consonant sound (*a alpha-level
-field*, *an cluster*). The sound is read from the spelling only where the
+field*, *an cluster*). The sound of the next word comes from
+LanguageTool's lists of words that take *a* or *an* against their
+spelling, then from the CMU Pronouncing Dictionary (*an hour*, *a
+historic*, *an MBA*, *a euro*; left alone when the dictionary's
+pronunciations disagree), and otherwise from the spelling where the
 spelling settles it: *a* and *e*, *i*, *o* words take *an*, except *one*,
 *once*, *eu-* and *ewe*; *u* words take *a* when they start with a
 *you* sound (*unique*, *unit*, *use*, *usual*, *utility*) and *an* when they
@@ -268,6 +308,14 @@ one of:
 - `unnumbered-steps`: a bulleted list of three or more instructions with
   words of sequence (`pattern`: *then*, *next*, *finally*, *steps*, ...) in
   its items or the paragraph before it; `{count}`.
+- `one-line-paragraphs`: paragraphs of one sentence of at most
+  `max_words` words (default 8), when there are at least `min` (default 3)
+  and they are at least `share` (default 0.4) of the paragraphs; `{count}`;
+- `bold-lead-ins`: list items that open with a bold label ending in a
+  colon or full stop (*\*\*Logs:\*\* What happened.*), when there are at
+  least `min` (default 3) and they are at least `share` (default 0.5) of
+  the document's list items, reported once on the first; `{count}` (the
+  labelled items), `{items}` (all list items).
 
 ### `parallel`
 
@@ -321,7 +369,10 @@ are found through the grammar's lemmas and get a suggestion instead);
 
 One term written in several ways in one document: spellings that differ only
 in hyphens, spaces or case (*e-mail* / *email*, *data set* / *dataset*,
-*front-end* / *frontend*), for words of at least `min_length` letters
+*front-end* / *frontend*), or that LanguageTool lists as two valid
+spellings of one word (*comingle* / *commingle*, with their inflections
+from UniMorph; pairs the variety tables relate, such as *-ise* and *-ize*,
+are left to the spelling-consistency rule), for words of at least `min_length` letters
 (default 5). The spelling the glossary prefers wins, else the one used most,
 else the first. Spellings to which the grammar gives different parts of
 speech (the verb *set up*, the noun *setup*) are different words and are left
@@ -401,17 +452,52 @@ modifiers.
 
 ## Imported packs
 
-Five opt-in packs are generated by `scripts/import-rules.py` from rule data
-vendored under `data/` (see [`VENDORED.toml`](../VENDORED.toml)); load them
-with `--pack NAME`:
+Nine opt-in packs are generated from rule data vendored under `data/`
+(see [`VENDORED.toml`](../VENDORED.toml)), eight by
+`scripts/import-rules.py` and `languagetool` by
+`scripts/import-languagetool.py`; load them with `--pack NAME`:
 
 | Pack | Source | License |
 |---|---|---|
 | `microsoft` | Vale package errata-ai/Microsoft (Microsoft Writing Style Guide) | MIT; style guide CC BY 4.0 |
 | `google` | Vale package errata-ai/Google (Google developer documentation style guide) | MIT; style guide CC BY 4.0 |
 | `elastic` | Vale package elastic/vale-rules (Elastic style guide) | Apache-2.0, with NOTICE |
+| `gitlab` | GitLab's own Vale rules for its documentation (`doc/.vale/gitlab_base`) | CC BY-SA 4.0 |
 | `wordlists` | words/hedges, words/weasels, words/fillers | MIT |
 | `equality` | retext-equality (the data behind alex): insensitive wording, `type: basic` entries only | MIT |
+| `languagetool` | LanguageTool's English pattern rules that need only words (grammar, confused words, collocations, style) | LGPL-2.1-or-later; portions from After the Deadline, GPL-3.0-or-later |
+| `proselint` | proselint's checks: clichés, redundancy, jargon, malapropisms, skunked terms and more | BSD-3-Clause; lists from After the Deadline and GNU diction (GPL) |
+| `slop` | bheijden/slop's rule sets for machine-written prose (its own, Simon Willison's, and one adapted from Wikipedia's "Signs of AI writing") | Apache-2.0; the Wikipedia-derived set CC BY-SA 4.0 |
+
+LanguageTool's rules are matched against tokens its own tagger has tagged;
+emdysi has no such tagger, so only the rules whose tokens are words, word
+patterns, inflections of a word (expanded from UniMorph) or closed-class
+tags (determiners, pronouns, modals, prepositions: word lists) are
+converted, 1,645 of them, each to a `regex` rule whose tokens are named
+groups. Rules that also need open-class parts of speech (nouns, verbs,
+adjectives, adverbs) become rules with tag conditions, checked against
+the parse: 755 such rules convert, and the 579 whose examples hold with
+emdysi's parse are kept (`scripts/languagetool-tagged.txt`, written by
+`crates/emdysi-check/examples/lt_validate.rs`; the test suite cannot
+parse every example of every rule, so this check runs when the pack is
+generated), 2,579 rules in all. Suggestions may change a matched word's
+case, apply a regex replacement to it, or inflect it for a tag (from
+UniMorph): the regex kind's `transforms`. A rule is kept only if it finds the marked span of each of its
+incorrect examples and nothing in its correct ones; the examples come along
+as the rule's `examples` and `acceptable`, so the test suite checks them
+again. Rules that need parts of speech of open classes, chunks or filters,
+rules off by default or marked picky, typography rules and the ellipsis
+rule are left out, and so are LanguageTool's wordiness and redundancy
+lists, which LanguageTool also turns off by default (on edited text they
+flagged hundreds of phrases, many with wrong replacements). Rules that
+need only words skip URLs, file paths and inline code.
+
+`slop` keeps the bheijden/slop rules that fire on any match of a pattern,
+and only those whose pattern finds each of its `hit` tests within one
+sentence and none of its `miss` tests; the tests become the rule's
+examples. Rules on counts per unit of text, and its other match kinds
+(chains, echoes, anaphora), are left out: the `ai-tells` pack covers
+those.
 
 Only Vale's `existence` and `substitution` rules are converted, with each
 rule's link kept as its `source`; capitalization, sequence, readability and
@@ -419,15 +505,15 @@ similar rules are left out, since emdysi has its own grammar-based rules for
 those concerns. Do not edit the generated packs: change the converter and
 run `python3 scripts/import-rules.py` (CI runs it with `--check`).
 
-Some rule data is deliberately not imported:
+The Red Hat Vale package (MIT) is deliberately not imported: it includes
+rules adapted from the IBM Style Guide, all rights to which "belong to
+IBM".
 
-- proselint (BSD-3-Clause) reads a list derived from After the Deadline,
-  which is GPL-licensed;
-- the Red Hat Vale package (MIT) includes rules adapted from the IBM Style
-  Guide, all rights to which "belong to IBM";
-- GitLab's Vale rules are CC BY-SA 4.0, as are lists derived from
-  Wikipedia's "Signs of AI writing";
-- LanguageTool's rules are LGPL, with GPL portions from After the Deadline.
+`proselint` is read from proselint's Python check modules with Python's
+`ast` module, without running them: checks of four kinds (existence of
+patterns or of one pattern, preferred forms of words or of patterns)
+convert, with each rule's examples drawn from its own phrases and each
+module's passing test sentences as its `acceptable` documents.
 
 ## Glossaries
 

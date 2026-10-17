@@ -58,7 +58,7 @@ license or provenance incompatible with an MIT deliverable.
 | nlprule | MIT/Apache code; **`.bin` data LGPL-2.1** (derived from LanguageTool) | Unmaintained since 2021 | IDEA | A LanguageTool rule engine in Rust. |
 | fst + levenshtein_automata | Unlicense/MIT; MIT | Stable | **REUSE** | Core of a fast dictionary and suggestion engine. |
 | symspell | MIT | 2026-03 | **REUSE** (algorithm) | Symmetric-delete suggestions and word segmentation. Its frequency dictionaries' provenance is unverified, so build our own. |
-| typos / typos-dict | MIT OR Apache-2.0 | Very active | **REUSE** (verify) | A curated misspelling-to-fix table, ideal for confident auto-fix. Check the provenance of words.csv against codespell, which is GPL-2.0 (unverified). |
+| typos / typos-dict | MIT OR Apache-2.0 | Very active | **AVOID** (verified 2026-10-17) | A curated misspelling-to-fix table, ideal for confident auto-fix, but `words.csv` took in codespell's dictionary (commit 7523a86, 2023: about 10,000 entries; codespell is GPL-2.0, its dictionary CC BY-SA 3.0) and Wikipedia's list of common misspellings (74e0660, 2026; CC BY-SA), so its MIT/Apache label does not cover its data. |
 | spellbook | MPL-2.0 | Active | REUSE possible | Pure-Rust Hunspell. File-level copyleft is fine as an unmodified dependency, but we likely don't need it. |
 | zspell | Apache-2.0 | Slow | IDEA | Hunspell-compatible. |
 | hunspell-rs / -sys | FFI to C++ Hunspell (MPL/LGPL/GPL tri-license) | Stale | AVOID | |
