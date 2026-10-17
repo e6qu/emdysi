@@ -1843,13 +1843,14 @@ impl Rule {
                     // (|How he lived I know not| as a run-on that wants a
                     // comma) may be what the writer meant, and blocks the
                     // claim.
-                    // An untried analysis of the same words a verified
+                    // An untried analysis of exactly the words a verified
                     // correction mends (|The cluster info are known|: |are|
                     // as the wrong form of *be*, or as a robust *is* with
-                    // nothing to try) is the same error.
+                    // nothing to try) is the same error; one of other words
+                    // still blocks (|How he lived I know not|).
                     let untried = alts.iter().any(|e| {
                         !verified.iter().any(|(v, _)| std::ptr::eq(*v, e))
-                            && !verified.iter().any(|(v, _)| v.from < e.to && e.from < v.to)
+                            && !verified.iter().any(|(v, _)| v.from == e.from && v.to == e.to)
                             && candidate_fixes(erg, s, e, &names).is_empty()
                     });
                     if fixes.is_empty() || untried {
