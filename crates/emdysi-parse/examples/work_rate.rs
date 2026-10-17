@@ -1,6 +1,6 @@
 //! Work (unifications tried) and time per parse, one line per sentence on
 //! stdin: words, work, milliseconds, whether a strict reading was found,
-//! whether the search was cut short.
+//! whether the search was cut short. TIMEOUT_MS and WORK set the limits.
 use std::io::BufRead;
 use std::time::Duration;
 
