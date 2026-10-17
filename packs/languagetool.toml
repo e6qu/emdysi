@@ -1288,6 +1288,39 @@ suggest = ['World ${t2}']
 examples = ["He was a member of the anti-aircraft artillery during Word War II\n"]
 
 [[rule]]
+id = "languagetool.word-world-2"
+kind = "regex"
+severity = "warning"
+message = "Did you mean '{{0}}'?"
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (WORD_WORLD)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:the)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<m>(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?-i:word))(?!(?!n['’]t)\\w|-\\w)))\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?-i:['’]s))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?!(?:truest)(?!(?!n['’]t)\\w|-\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t5>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))"
+needs = ['word']
+tags = ['t4=JJS', 't5=NN.*']
+expand = true
+transforms = ["t2\u0009\u0009r\u0009rl\u0009"]
+replace = '{{0}}'
+suggest = ['{{0}}']
+examples = ["This is the word's largest cat.\n"]
+acceptable = ["That's stupid in the word's truest sense.\n"]
+
+[[rule]]
+id = "languagetool.word-world-3"
+kind = "regex"
+severity = "warning"
+message = "Did you mean '{{0}}'?"
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (WORD_WORLD)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:in)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:the)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t5>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:entire|whole)(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t6>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:word)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['word']
+tags = ['t1=JJS', 't2=NN.*']
+expand = true
+transforms = ["t6\u0009\u0009r\u0009rl\u0009"]
+replace = '{{0}}'
+suggest = ['{{0}}']
+examples = ["This is the best cake in the word.\n", "This is the best game in the entire word.\n"]
+
+[[rule]]
 id = "languagetool.want-be"
 kind = "regex"
 severity = "warning"
@@ -4312,6 +4345,21 @@ replace = '${t1}s'
 suggest = ['${t1}s']
 examples = ["He doe's not know what he is talking about.\n"]
 acceptable = ["The Commission's concurrence on DOE's general repository siting rule is separate and distinct from any comments.\n", "John Doe's and Jane Doe's fake personality.\n"]
+
+[[rule]]
+id = "languagetool.verb-apostrophe-s-2"
+kind = "regex"
+severity = "warning"
+message = "Do not use 's with a verb."
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (VERB_APOSTROPHE_S)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:that|who|which)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?!(?:throughout|underneath|against|because|beneath|besides|between|despite|outside|through|towards|whereas|whether|without|across|around|before|behind|beside|beyond|during|except|inside|though|toward|unless|unlike|within|about|above|after|along|among|below|since|there|under|until|while|amid|down|from|into|like|near|onto|over|than|that|till|upon|with|for|off|out|per|via|as|at|by|if|in|of|on|up)(?!(?!n['’]t)\\w|-\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?-i:go|want))(?!(?!n['’]t)\\w|-\\w))(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:['’]s)(?!(?!n['’]t)\\w|-\\w)))\\s*(?P<t5>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:throughout|underneath|against|because|beneath|besides|between|despite|outside|through|towards|whereas|whether|without|across|around|before|behind|beside|beyond|during|except|inside|though|toward|unless|unlike|within|about|above|after|along|among|below|since|under|until|while|amid|down|from|into|like|near|onto|over|than|that|till|upon|with|for|off|out|per|via|as|at|by|if|in|of|on|to|up))(?!(?!n['’]t)\\w|-\\w))"
+needs = ['that', 'which', 'who']
+tags = ['t2=RB']
+transforms = ["t3\u0009\u0009\u0009\u0009VBZ"]
+replace = '{{0}}'
+suggest = ['{{0}}']
+examples = ["I miss the button on the bottom right that just go's over all the errors.\n"]
 
 [[rule]]
 id = "languagetool.may-be"
@@ -8280,6 +8328,22 @@ examples = ["Russia is aways described as becoming more assertive on the interna
 acceptable = ["It certainly will prove a stark contrast to recent league aways the Hatters have enjoyed at the likes of Molineux, Maine Road and Hillsborough.\n", "This year there's three big aways - Rome, Dublin, and Cardiff.\n"]
 
 [[rule]]
+id = "languagetool.tel-tell"
+kind = "regex"
+severity = "warning"
+message = "The word \"tel\" is an abbreviation for \"telephone\". Did you maybe mean the verb '{{0}}'?"
+source = 'https://www.merriam-webster.com/dictionary/tell; https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (TEL_TELL)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:should|could|might|ought|shall|would|must|will|['’]ll|can|may|['’]d))(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:tels?)(?!(?!n['’]t)\\w|-\\w)))"
+tags = ['t1=PRP|NN.*', 't3=RB.*']
+unless = "(?i)(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:tel)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s])){0,1}?\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:avivs?)(?!(?!n['’]t)\\w|-\\w))))"
+expand = true
+transforms = ["t4\u0009\u0009(?i)el\u0009ell\u0009"]
+replace = '{{0}}'
+suggest = ['{{0}}']
+examples = ["He will tel the truth.\n", "As far as I can tel, the files where just opened an they would revert to 0 bytes.\n"]
+
+[[rule]]
 id = "languagetool.tel-tell-2"
 kind = "regex"
 severity = "warning"
@@ -8963,6 +9027,22 @@ expand = true
 replace = '${t1}-${t2}'
 suggest = ['${t1}-${t2}']
 examples = ["We will do it on a one off basis.\n"]
+
+[[rule]]
+id = "languagetool.sleep-walk-compound"
+kind = "regex"
+severity = "warning"
+message = "The verb 'sleep{{0}}' is spelled as one word."
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (SLEEP_WALK_COMPOUND)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:being|been|were|['’]re|are|was|['’]m|['’]s|am|be|is)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?!(?:throughout|underneath|against|because|beneath|besides|between|despite|outside|through|towards|whereas|whether|without|across|around|before|behind|beside|beyond|during|except|inside|though|toward|unless|unlike|within|about|above|after|along|among|below|since|there|under|until|while|amid|down|from|into|like|near|onto|over|than|that|till|upon|with|for|off|out|per|via|as|at|by|if|in|of|on|up)(?!(?!n['’]t)\\w|-\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:sleep)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:walking)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['walking']
+tags = ['t2=RB']
+expand = true
+transforms = ["t4\u0009alllower\u0009\u0009\u0009"]
+replace = 'sleep{{0}}'
+suggest = ['sleep{{0}}']
+examples = ["He is sleep walking.\n"]
 
 [[rule]]
 id = "languagetool.passer-by-compound"
@@ -9750,6 +9830,39 @@ suggest = ['${t1}-${t2}']
 examples = ["I discovered a nice note taking app.\n"]
 
 [[rule]]
+id = "languagetool.heart-broken-compound"
+kind = "regex"
+severity = "warning"
+message = "The adjective 'heart{{0}}' is spelled as one word."
+source = 'https://languagetool.org/insights/post/compound-words/#compound-nouns; https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (HEART_BROKEN_COMPOUND)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<m>(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:heart)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:broken|felt)(?!(?!n['’]t)\\w|-\\w)))\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))"
+needs = ['heart']
+tags = ['t3=NN.*']
+not_tags = ['t3=MD|IN|W.*|PRP.*|RB']
+expand = true
+transforms = ["t2\u0009alllower\u0009\u0009\u0009"]
+replace = 'heart{{0}}'
+suggest = ['heart{{0}}']
+examples = ["He's a heart broken man.\n"]
+
+[[rule]]
+id = "languagetool.heart-broken-compound-2"
+kind = "regex"
+severity = "warning"
+message = "The adjective 'heart{{0}}' is spelled as one word."
+source = 'https://languagetool.org/insights/post/compound-words/#compound-nouns; https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (HEART_BROKEN_COMPOUND)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:feeling|being|feels|been|feel|felt|were|['’]re|are|was|['’]m|['’]s|am|be|is)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:heart)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:broken|felt)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['heart']
+tags = ['t2=RB']
+expand = true
+transforms = ["t4\u0009alllower\u0009\u0009\u0009"]
+replace = 'heart{{0}}'
+suggest = ['heart{{0}}']
+examples = ["I was really heart broken when you left.\n"]
+
+[[rule]]
 id = "languagetool.dog-eat-dog-hyphen"
 kind = "regex"
 severity = "warning"
@@ -9795,6 +9908,23 @@ expand = true
 replace = '${t1}-${t2}'
 suggest = ['${t1}-${t2}']
 examples = ["He did some on page optimizations to boost his website in Google.\n"]
+
+[[rule]]
+id = "languagetool.check-box-compound"
+kind = "regex"
+severity = "warning"
+message = "The noun 'check{{0}}' is spelled as one word."
+source = 'https://languagetool.org/insights/post/compound-words/#compound-nouns; https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (CHECK_BOX_COMPOUND)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:an?|the|my|y?our|their|its|his)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:check)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:box(es)?|lists?|mates?)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['check']
+tags = ['t2=JJ.*']
+not_tags = ['t2=NN.*']
+expand = true
+transforms = ["t4\u0009alllower\u0009\u0009\u0009"]
+replace = 'check{{0}}'
+suggest = ['check{{0}}']
+examples = ["Please click on the check box to confirm it.\n"]
 
 [[rule]]
 id = "languagetool.doctors-appointment"
@@ -11085,6 +11215,38 @@ suggest = ['${t1} pick{{0}}']
 examples = ["She drives a Ford pick up.\n"]
 
 [[rule]]
+id = "languagetool.show-compounds"
+kind = "regex"
+severity = "warning"
+message = "The noun 'show{{0}}' is spelled as one word."
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (SHOW_COMPOUNDS)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:the|an?|my|of|for|with(in|out)|at|in|y?our|their|his|her)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:show)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:cases?|downs?|time)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['show']
+tags = ['t2=JJ.*']
+expand = true
+transforms = ["t4\u0009alllower\u0009\u0009\u0009"]
+replace = 'show{{0}}'
+suggest = ['show{{0}}']
+examples = ["He prepared a show case for the presentation.\n"]
+
+[[rule]]
+id = "languagetool.show-compounds-2"
+kind = "regex"
+severity = "warning"
+message = "The noun 'show{{0}}' is spelled as one word."
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (SHOW_COMPOUNDS)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:being|been|were|['’]re|are|was|['’]m|['’]s|am|be|is)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:show)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:cases?|downs?|time)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['show']
+tags = ['t2=JJ.*']
+expand = true
+transforms = ["t4\u0009alllower\u0009\u0009\u0009"]
+replace = 'show{{0}}'
+suggest = ['show{{0}}']
+examples = ["It is show time!\n"]
+
+[[rule]]
 id = "languagetool.show-compounds-3"
 kind = "regex"
 severity = "warning"
@@ -11812,6 +11974,38 @@ suggest = ['${t3}-${t4}']
 examples = ["I want to strong arm myself.\n"]
 
 [[rule]]
+id = "languagetool.dead-lift-compound"
+kind = "regex"
+severity = "warning"
+message = "The verb 'dead{{0}}' is spelled as one word."
+source = 'https://languagetool.org/insights/post/compound-words/#compound-verbs; https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (DEAD_LIFT_COMPOUND)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:should|could|might|ought|shall|would|must|will|['’]ll|can|may|['’]d))(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:dead)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:lift)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['dead']
+tags = ['t2=RB']
+expand = true
+transforms = ["t4\u0009alllower\u0009\u0009\u0009"]
+replace = 'dead{{0}}'
+suggest = ['dead{{0}}']
+examples = ["I can dead lift 200 KG.\n"]
+
+[[rule]]
+id = "languagetool.dead-lift-compound-2"
+kind = "regex"
+severity = "warning"
+message = "The verb 'dead{{0}}' is spelled as one word."
+source = 'https://languagetool.org/insights/post/compound-words/#compound-verbs; https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (DEAD_LIFT_COMPOUND)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:let)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:['’]s|us|me|him|her|them|it)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:dead)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t5>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:lift)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['dead']
+tags = ['t3=RB']
+expand = true
+transforms = ["t5\u0009alllower\u0009\u0009\u0009"]
+replace = 'dead{{0}}'
+suggest = ['dead{{0}}']
+examples = ["Let's dead lift 200 KG.\n"]
+
+[[rule]]
 id = "languagetool.dead-lift-compound-3"
 kind = "regex"
 severity = "warning"
@@ -11825,6 +12019,22 @@ transforms = ["t4\u0009alllower\u0009\u0009\u0009"]
 replace = 'dead{{0}}'
 suggest = ['dead{{0}}']
 examples = ["I did not dead lift anything today.\n"]
+
+[[rule]]
+id = "languagetool.dead-lift-compound-4"
+kind = "regex"
+severity = "warning"
+message = "The verb 'dead{{0}}' is spelled as one word."
+source = 'https://languagetool.org/insights/post/compound-words/#compound-verbs; https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (DEAD_LIFT_COMPOUND)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:being|been|were|['’]re|are|was|['’]m|['’]s|am|be|is)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:dead)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:lifting)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['lifting']
+tags = ['t2=RB']
+expand = true
+transforms = ["t4\u0009alllower\u0009\u0009\u0009"]
+replace = 'dead{{0}}'
+suggest = ['dead{{0}}']
+examples = ["I'm dead lifting 200 KG.\n"]
 
 [[rule]]
 id = "languagetool.dead-lift-compound-5"
@@ -11841,6 +12051,22 @@ replace = 'dead{{0}}'
 suggest = ['dead{{0}}']
 examples = ["He dead lifted 200 KG.\n"]
 acceptable = ["Haslam compared the LME's trading turnover averaging $8 billion a day with the around $1.5 billion a day traded online by U.S. energy giant Enron Corp.\n"]
+
+[[rule]]
+id = "languagetool.dead-lift-compound-6"
+kind = "regex"
+severity = "warning"
+message = "The verb 'dead{{0}}' is spelled as one word."
+source = 'https://languagetool.org/insights/post/compound-words/#compound-verbs; https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (DEAD_LIFT_COMPOUND)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:to|please)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:dead)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:lift)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['dead']
+tags = ['t2=RB']
+expand = true
+transforms = ["t4\u0009alllower\u0009\u0009\u0009"]
+replace = 'dead{{0}}'
+suggest = ['dead{{0}}']
+examples = ["I want to dead lift 200 KG.\n"]
 
 [[rule]]
 id = "languagetool.guilt-trip-hyphen-2"
@@ -12711,6 +12937,125 @@ examples = ["On the kitchen table she left a hand written notice.\n"]
 acceptable = ["I never witnesses my hand writing a letter.\n"]
 
 [[rule]]
+id = "languagetool.hand-compounds-7"
+kind = "regex"
+severity = "warning"
+message = "The verb 'hand{{0}}' is spelled as one word."
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (HAND_COMPOUNDS)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:should|could|might|ought|shall|would|must|will|['’]ll|can|may|['’]d))(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:hand)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:write|craft|bag|wash|pick)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['hand']
+tags = ['t2=RB']
+unless = "(?i)(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:hand)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:in|to)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:hand|glove)(?!(?!n['’]t)\\w|-\\w))))|(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:hand)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:sanitizers?)(?!(?!n['’]t)\\w|-\\w))))"
+expand = true
+transforms = ["t4\u0009alllower\u0009\u0009\u0009"]
+replace = 'hand{{0}}'
+suggest = ['hand{{0}}']
+examples = ["I would always hand write my letters.\n"]
+
+[[rule]]
+id = "languagetool.hand-compounds-8"
+kind = "regex"
+severity = "warning"
+message = "The verb 'hand-{{0}}' is spelled as one word."
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (HAND_COMPOUNDS)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:should|could|might|ought|shall|would|must|will|['’]ll|can|may|['’]d))(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:hand)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:stitch)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['stitch']
+tags = ['t2=RB']
+unless = "(?i)(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:hand)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:in|to)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:hand|glove)(?!(?!n['’]t)\\w|-\\w))))|(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:hand)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:sanitizers?)(?!(?!n['’]t)\\w|-\\w))))"
+expand = true
+transforms = ["t4\u0009alllower\u0009\u0009\u0009"]
+replace = 'hand-{{0}}'
+suggest = ['hand-{{0}}']
+examples = ["I could hand stitch a sweater.\n"]
+
+[[rule]]
+id = "languagetool.hand-compounds-9"
+kind = "regex"
+severity = "warning"
+message = "The verb 'hand{{0}}' is spelled as one word."
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (HAND_COMPOUNDS)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:s?he|it|we|they|you|I)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:hand)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:writes?|wrote|crafts?|crafted|bags?|wash(e[ds])?|pick(s|ed)?)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['hand']
+tags = ['t2=RB']
+unless = "(?i)(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:hand)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:in|to)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:hand|glove)(?!(?!n['’]t)\\w|-\\w))))|(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:hand)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:sanitizers?)(?!(?!n['’]t)\\w|-\\w))))"
+expand = true
+transforms = ["t4\u0009alllower\u0009\u0009\u0009"]
+replace = 'hand{{0}}'
+suggest = ['hand{{0}}']
+examples = ["I always hand write my mails.\n"]
+
+[[rule]]
+id = "languagetool.hand-compounds-10"
+kind = "regex"
+severity = "warning"
+message = "The verb 'hand-{{0}}' is spelled as one word."
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (HAND_COMPOUNDS)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:s?he|it|we|they|you|I)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:hand)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:stitch(es|ed)?)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['hand']
+tags = ['t2=RB']
+unless = "(?i)(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:hand)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:in|to)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:hand|glove)(?!(?!n['’]t)\\w|-\\w))))|(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:hand)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:sanitizers?)(?!(?!n['’]t)\\w|-\\w))))"
+expand = true
+transforms = ["t4\u0009alllower\u0009\u0009\u0009"]
+replace = 'hand-{{0}}'
+suggest = ['hand-{{0}}']
+examples = ["She hand stitched a sweater.\n"]
+
+[[rule]]
+id = "languagetool.hand-compounds-11"
+kind = "regex"
+severity = "warning"
+message = "The verb 'hand{{0}}' is spelled as one word."
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (HAND_COMPOUNDS)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:let)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:['’]s|us|me|him|her|them|it)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:hand)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t5>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:write|craft|bag|wash|pick)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['hand']
+tags = ['t3=RB']
+unless = "(?i)(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:hand)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:in|to)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:hand|glove)(?!(?!n['’]t)\\w|-\\w))))|(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:hand)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:sanitizers?)(?!(?!n['’]t)\\w|-\\w))))"
+expand = true
+transforms = ["t5\u0009alllower\u0009\u0009\u0009"]
+replace = 'hand{{0}}'
+suggest = ['hand{{0}}']
+examples = ["Let's hand write this letter.\n"]
+
+[[rule]]
+id = "languagetool.hand-compounds-12"
+kind = "regex"
+severity = "warning"
+message = "The verb 'hand{{0}}' is spelled as one word."
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (HAND_COMPOUNDS)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:doing|does|done|did|dos|do)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:hand)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:write|craft|bag|wash|pick)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['hand']
+tags = ['t2=RB']
+unless = "(?i)(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:hand)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:in|to)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:hand|glove)(?!(?!n['’]t)\\w|-\\w))))|(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:hand)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:sanitizers?)(?!(?!n['’]t)\\w|-\\w))))"
+expand = true
+transforms = ["t4\u0009alllower\u0009\u0009\u0009"]
+replace = 'hand{{0}}'
+suggest = ['hand{{0}}']
+examples = ["I did not hand write this letter.\n"]
+
+[[rule]]
+id = "languagetool.hand-compounds-13"
+kind = "regex"
+severity = "warning"
+message = "The verb 'hand{{0}}' is spelled as one word."
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (HAND_COMPOUNDS)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:to|please)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:hand)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:write|craft|bag|wash|pick)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['hand']
+tags = ['t2=RB']
+unless = "(?i)(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:hand)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:in|to)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:hand|glove)(?!(?!n['’]t)\\w|-\\w))))|(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:hand)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:sanitizers?)(?!(?!n['’]t)\\w|-\\w))))"
+expand = true
+transforms = ["t4\u0009alllower\u0009\u0009\u0009"]
+replace = 'hand{{0}}'
+suggest = ['hand{{0}}']
+examples = ["I forgot to hand write a letter.\n"]
+
+[[rule]]
 id = "languagetool.hand-compounds-14"
 kind = "regex"
 severity = "warning"
@@ -12811,6 +13156,22 @@ replace = '{{0}}{{1}}'
 suggest = ['{{0}}{{1}}']
 examples = ["They are selling their fruits at a market place.\n"]
 acceptable = ["He lives at 130 Market Place.\n"]
+
+[[rule]]
+id = "languagetool.door-compounds"
+kind = "regex"
+severity = "warning"
+message = "Did you mean the adjective '{{0}}{{1}}'?"
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (DOOR_COMPOUNDS)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:themselves|throughout|underneath|yourselves|ourselves|yourself|against|another|because|beneath|besides|between|despite|herself|himself|neither|outside|through|towards|whereas|whether|without|across|around|before|behind|beside|beyond|during|either|except|inside|itself|myself|though|toward|unless|unlike|within|about|above|after|along|among|below|every|since|their|these|those|under|until|while|amid|both|down|each|from|into|like|near|onto|over|some|than|that|them|they|this|till|upon|with|your|all|any|for|her|him|his|its|off|our|out|per|she|the|via|you|an|as|at|by|he|if|in|it|me|my|no|of|on|up|us|we|a|i))(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:in|out)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:door)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['door']
+tags = ['t2=JJ.*']
+expand = true
+transforms = ["t3\u0009alllower\u0009\u0009\u0009", "t4\u0009alllower\u0009\u0009\u0009"]
+replace = '{{0}}{{1}}'
+suggest = ['{{0}}{{1}}']
+examples = ["He is a fan of out door sports.\n"]
 
 [[rule]]
 id = "languagetool.door-compounds-2"
@@ -13399,6 +13760,21 @@ suggest = ['buenos {{0}}']
 examples = ["Buenos dias, my friend!\n"]
 
 [[rule]]
+id = "languagetool.aftermarket"
+kind = "regex"
+severity = "warning"
+message = 'This is normally spelled as one word.'
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (AFTERMARKET)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:the|an?|no|my|y?our|his|her|their|its|s)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:after)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:markets?|life|math|parts?|pieces?|shaves?|shocks?|taste|thoughts?|shows?|glows?)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['after']
+tags = ['t2=JJ.*']
+transforms = ["t4\u0009alllower\u0009\u0009\u0009"]
+replace = '${t3}{{0}}'
+suggest = ['${t3}{{0}}']
+examples = ["The after life is something that many religions believe in.\n"]
+
+[[rule]]
 id = "languagetool.happy-easter"
 kind = "regex"
 severity = "warning"
@@ -13468,6 +13844,22 @@ suggest = ['${t1}-${t2}', '${t1}{{0}}']
 examples = ["She went hitch hiking with her brother to explore the nature.\n"]
 
 [[rule]]
+id = "languagetool.feed-back"
+kind = "regex"
+severity = "warning"
+message = 'This is spelled as one word.'
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (FEED_BACK)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:the|an?|my|y?our|his|her|their|its|no)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?!(?:few)(?!(?!n['’]t)\\w|-\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:feed)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:back)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['feed']
+tags = ['t2=JJ.*']
+unless = "(?i)(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:no)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:longer)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:feed)(?!(?!n['’]t)\\w|-\\w))))"
+transforms = ["t4\u0009alllower\u0009\u0009\u0009"]
+replace = '${t3}{{0}}'
+suggest = ['${t3}{{0}}']
+examples = ["He told me his feed back and it helped me to improve.\n"]
+
+[[rule]]
 id = "languagetool.frequent-asked-questions"
 kind = "regex"
 severity = "warning"
@@ -13524,6 +13916,54 @@ tags = ['t2=JJ']
 replace = 'well-known'
 suggest = ['well-known']
 examples = ["The young women of this district are well know for their beauty.\n"]
+
+[[rule]]
+id = "languagetool.be-come"
+kind = "regex"
+severity = "warning"
+message = "Did you mean 'be{{0}}'?"
+source = 'https://www.merriam-webster.com/dictionary/become; https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (BE_COME)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:themselves|yourselves|ourselves|yourself|herself|himself|itself|myself|should|could|might|ought|shall|would|must|them|they|will|['’]ll|can|her|him|may|she|you|['’]d|he|it|me|to|us|we|i))(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:be)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:comes?|came)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['be']
+tags = ['t2=RB']
+expand = true
+transforms = ["t4\u0009alllower\u0009\u0009\u0009"]
+replace = 'be{{0}}'
+suggest = ['be{{0}}']
+examples = ["They be came very interested in that topic.\n"]
+
+[[rule]]
+id = "languagetool.be-come-2"
+kind = "regex"
+severity = "warning"
+message = "Did you mean 'be{{0}}'?"
+source = 'https://www.merriam-webster.com/dictionary/become; https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (BE_COME)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:being|been|were|['’]re|are|was|['’]m|['’]s|am|be|is)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:be)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:coming)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['coming']
+tags = ['t2=RB']
+expand = true
+transforms = ["t4\u0009alllower\u0009\u0009\u0009"]
+replace = 'be{{0}}'
+suggest = ['be{{0}}']
+examples = ["They are be coming very interested in that topic.\n"]
+
+[[rule]]
+id = "languagetool.be-come-3"
+kind = "regex"
+severity = "warning"
+message = "Did you mean 'be{{0}}'?"
+source = 'https://www.merriam-webster.com/dictionary/become; https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (BE_COME)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:having|haves|have|had|has)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:be)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:come)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['come']
+tags = ['t2=RB']
+expand = true
+transforms = ["t4\u0009alllower\u0009\u0009\u0009"]
+replace = 'be{{0}}'
+suggest = ['be{{0}}']
+examples = ["He has be come a millionaire.\n"]
 
 [[rule]]
 id = "languagetool.pedal-to-the-metal"
@@ -14339,6 +14779,22 @@ suggest = ['either']
 examples = ["I have no problems too.\n"]
 
 [[rule]]
+id = "languagetool.prefer-to-vbg"
+kind = "regex"
+severity = "warning"
+message = "Did you mean '{{0}}'?"
+source = 'https://languagetool.org/insights/post/present-participle-example/; https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (PREFER_TO_VBG)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:prefer)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:to)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['prefer']
+tags = ['t3=VBG']
+expand = true
+transforms = ["t3\u0009\u0009\u0009\u0009VB"]
+replace = '{{0}}'
+suggest = ['{{0}}']
+examples = ["Some other people prefer to changing job.\n"]
+
+[[rule]]
 id = "languagetool.ve-having"
 kind = "regex"
 severity = "warning"
@@ -14493,6 +14949,53 @@ suggest = ['${t2} {{0}}']
 examples = ["He is having a stoke.\n"]
 
 [[rule]]
+id = "languagetool.a-stoke-2"
+kind = "regex"
+severity = "warning"
+message = "Did you mean '{{0}}'?"
+source = 'https://www.merriam-webster.com/dictionary/a%20stroke; https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (A_STOKE)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:an?|the)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:stoke)(?!(?!n['’]t)\\w|-\\w)))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:of)(?!(?!n['’]t)\\w|-\\w))"
+needs = ['stoke']
+tags = ['t2=JJ']
+expand = true
+transforms = ["t3\u0009\u0009(?i)toke\u0009troke\u0009"]
+replace = '{{0}}'
+suggest = ['{{0}}']
+examples = ["That was a stoke of genius.\n"]
+
+[[rule]]
+id = "languagetool.a-stoke-3"
+kind = "regex"
+severity = "warning"
+message = "Did you mean '{{0}}' (= brain attack)?"
+source = 'https://www.merriam-webster.com/dictionary/a%20stroke; https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (A_STOKE)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:disability|recovering|countable|recovered|damaging|recovers|damaged|damages|recover|damage|suffer|dying|died|dies|die)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:from)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:a)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t5>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:stoke)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['stoke']
+tags = ['t4=JJ']
+expand = true
+transforms = ["t5\u0009\u0009(?i)toke\u0009troke\u0009"]
+replace = '{{0}}'
+suggest = ['{{0}}']
+examples = ["He needs to recover from a stoke.\n"]
+
+[[rule]]
+id = "languagetool.the-hot-dog"
+kind = "regex"
+severity = "warning"
+message = "The word \"${t2}\" spelled with a hyphen is a verb. Did you mean the noun '{{0}}'?"
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (THE_HOT_DOG)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:the|an?|my|y?our|his|their)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:lip-syncs?|hot-dogs?)(?!(?!n['’]t)\\w|-\\w)))"
+tags = ['t2=JJ.*']
+expand = true
+transforms = ["t3\u0009\u0009-\u0009 \u0009"]
+replace = '{{0}}'
+suggest = ['{{0}}']
+examples = ["He was eating a delicious hot-dog.\n"]
+
+[[rule]]
 id = "languagetool.the-welsh"
 kind = "regex"
 severity = "warning"
@@ -14607,6 +15110,23 @@ replace = '${t2}-${t3}'
 suggest = ['${t2}-${t3}']
 examples = ["Must haves for anyone who loves nature.\n", "Must reads from your favorite author.\n"]
 acceptable = ["Must-visit places in Amsterdam.\n"]
+
+[[rule]]
+id = "languagetool.wold-would"
+kind = "regex"
+severity = "warning"
+message = "Did you mean '{{0}}'?"
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (WOLD_WOULD)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<m>(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:[cw]old)(?!(?!n['’]t)\\w|-\\w)))\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:have)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))"
+needs = ['have']
+tags = ['t3=VBN']
+unless = "(?i)(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:the|an?|my|your|s)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:[cw]old)(?!(?!n['’]t)\\w|-\\w))))|(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:cold)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:shouldering|shouldered|countable|shoulders|pressing|shoulder|calling|pressed|presses|called|turkey|calls|press|call)(?!(?!n['’]t)\\w|-\\w))))"
+expand = true
+transforms = ["t1\u0009\u0009(?i)old\u0009ould\u0009"]
+replace = '{{0}}'
+suggest = ['{{0}}']
+examples = ["Tom wold have done it differently.\n"]
 
 [[rule]]
 id = "languagetool.wold-would-2"
@@ -14741,6 +15261,24 @@ suggest = ['speech ${t2}']
 examples = ["The speak recognition can even understand Chinese.\n", "I drew many speak bubbles that need to be filled with words.\n"]
 
 [[rule]]
+id = "languagetool.beg-bag"
+kind = "regex"
+severity = "warning"
+message = "The word '${t4}' is a verb. Did you mean the noun '{{0}}'?"
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (BEG_BAG)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:an?|the|my|his|her|their|our|your|s)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?(?:\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:paper|plastic|tea|laptop|messenger|duffel|clutch|cotton|beach|grocery|shopping|i?phone|shoulder|lunch|tote|hobo|hand|bucket|baguette|basket|school)(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:begs?)(?!(?!n['’]t)\\w|-\\w)))"
+tags = ['t2=JJS?']
+not_tags = ['t2=NN.*']
+unless = "(?i)(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:let)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s])){0,2}?\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:beg)(?!(?!n['’]t)\\w|-\\w))))"
+expand = true
+transforms = ["t4\u0009\u0009e\u0009a\u0009"]
+replace = '{{0}}'
+suggest = ['{{0}}']
+examples = ["Santa has some presents in his big begs.\n", "I was carrying the stuff in a green grocery beg.\n"]
+acceptable = ["The cat is in the bag.\n", "Many people in the world beg to fit in.\n", "Let her beg.\n"]
+
+[[rule]]
 id = "languagetool.beg-bag-3"
 kind = "regex"
 severity = "warning"
@@ -14783,6 +15321,23 @@ needs = ['heave']
 replace = 'heavy'
 suggest = ['heavy']
 examples = ["There's fairly heave use of java.\n", "You can witness a heave use of social media in the last decade.\n", "Java is in heave use at LanguageTool.\n"]
+
+[[rule]]
+id = "languagetool.complaint-complained"
+kind = "regex"
+severity = "warning"
+message = "The word '${t3}' is a noun. Did you mean the verb '{{0}}'?"
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (COMPLAINT_COMPLAINED)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?!(?:one|her)(?!(?!n['’]t)\\w|-\\w))(?:(?:themselves|yourselves|ourselves|yourself|herself|himself|itself|myself|them|they|her|him|she|you|he|it|me|us|we|i))(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(complain|restrain|constrain)t)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['he', 'her', 'herself', 'him', 'himself', 'i', 'it', 'itself', 'me', 'myself', 'ourselves', 'she', 'them', 'themselves', 'they', 'us', 'we', 'you', 'yourself', 'yourselves']
+tags = ['t2=RB']
+expand = true
+transforms = ["t3\u0009\u0009aint\u0009ained\u0009"]
+replace = '{{0}}'
+suggest = ['{{0}}']
+examples = ["I complaint about the poor quality.\n", "He formally complaint about the train not arriving in time.\n", "I restraint the dog.\n"]
+acceptable = ["One complaint that I didn't understand.\n", "That was her only complaint.\n"]
 
 [[rule]]
 id = "languagetool.an-vb-prp"
@@ -14853,6 +15408,42 @@ transforms = ["t2\u0009\u0009(?i)install\u0009installation\u0009"]
 replace = '{{0}}'
 suggest = ['{{0}}']
 examples = ["He also did an install of the alarm system.\n"]
+
+[[rule]]
+id = "languagetool.a-install-3"
+kind = "regex"
+severity = "warning"
+message = "The word '${t3}' is not a noun."
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (A_INSTALL)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:that|this)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:((un|auto|re|pre)\\-?)?install)(?!(?!n['’]t)\\w|-\\w)))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))"
+needs = ['that', 'this']
+tags = ['t2=JJS?|VBD', 't4=VB.*|JJ|RB']
+not_tags = ['t4=NN.*|IN']
+unless = "(?i)(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:apt)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:install)(?!(?!n['’]t)\\w|-\\w))))"
+expand = true
+transforms = ["t3\u0009\u0009(?i)install\u0009installation\u0009"]
+replace = '{{0}}'
+suggest = ['{{0}}']
+examples = ["He performed that install recently.\n", "That uninstall has worked.\n"]
+acceptable = ["A package manager that installs and runs Swift command line tool packages.\n", "Business heats up for small Virginia Beach company that installs Ikea kitchens.\n", "Creating an installer that installs the JRE.\n", "A software that often installs in just 3 minutes.\n"]
+
+[[rule]]
+id = "languagetool.a-install-4"
+kind = "regex"
+severity = "warning"
+message = "The word '${t3}' is not a noun."
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (A_INSTALL)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:those|these|whose)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:((un|auto|re|pre)\\-?)?installs)(?!(?!n['’]t)\\w|-\\w)))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))"
+needs = ['these', 'those', 'whose']
+tags = ['t2=JJS?|VBD', 't4=VB.*|JJ|RB']
+unless = "(?i)(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:apt)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:install)(?!(?!n['’]t)\\w|-\\w))))"
+expand = true
+transforms = ["t3\u0009\u0009(?i)install\u0009installation\u0009"]
+replace = '{{0}}'
+suggest = ['{{0}}']
+examples = ["He performed those installs recently.\n", "These uninstalls have worked.\n"]
 
 [[rule]]
 id = "languagetool.a-attach"
@@ -16306,6 +16897,23 @@ examples = ["Do you found the pen?\n"]
 acceptable = ["Do you find the pen?\n"]
 
 [[rule]]
+id = "languagetool.going-to-vbd"
+kind = "regex"
+severity = "warning"
+message = "The verb after 'going to' requires the base form."
+source = 'https://languagetool.org/insights/post/will-vs-going-to/#simple-future-tense-with-%E2%80%9Cgoing-to%E2%80%9D; https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (GOING_TO_VBD)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:going)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:to)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['going']
+tags = ['t3=VBD']
+not_tags = ['t3=VB']
+transforms = ["t3\u0009\u0009\u0009\u0009VB"]
+replace = '{{0}}'
+suggest = ['{{0}}']
+examples = ["I'm going to wrote him.\n"]
+acceptable = ["We are not going to let them get away with this.\n"]
+
+[[rule]]
 id = "languagetool.non-action-continuous"
 kind = "regex"
 severity = "warning"
@@ -16394,6 +17002,23 @@ suggest = ['on']
 examples = ["Congratulations for your new job!\n"]
 
 [[rule]]
+id = "languagetool.dont-needs"
+kind = "regex"
+severity = "warning"
+message = "Did you mean '{{0}}'?"
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (DONT_NEEDS)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:do|will)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:not)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?!(?:is)(?!(?!n['’]t)\\w|-\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['not']
+tags = ['t3=VBZ']
+expand = true
+transforms = ["t3\u0009\u0009\u0009\u0009VB"]
+replace = '{{0}}'
+suggest = ['{{0}}']
+examples = ["I do not needs help with that.\n", "You do not has a bicycle?\n"]
+acceptable = ["I do not need help with that.\n", "You do not have a bicycle?\n", "... and that they do not is because nobody cares.\n"]
+
+[[rule]]
 id = "languagetool.a-quite-while"
 kind = "regex"
 severity = "warning"
@@ -16478,6 +17103,23 @@ suggest = ['{{0}} ${t2} was', '{{0}} ${t2} is']
 examples = ["No news are good news.\n", "These information were very helpful.\n"]
 
 [[rule]]
+id = "languagetool.a-information-2"
+kind = "regex"
+severity = "warning"
+message = "'${t3}' is a mass noun (i.e., uncountable). Therefore, the preceding '${t1}' is probably wrong."
+source = 'https://www.englishclub.com/grammar/nouns-countable-un.htm; https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (A_INFORMATION)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<m>(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:an?)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:information)(?!(?!n['’]t)\\w|-\\w)))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))"
+needs = ['information']
+tags = ['t2=JJ']
+not_tags = ['t2=NN.*', 't4=NN.*|UNKNOWN']
+expand = true
+replace = '${t2} ${t3}'
+suggest = ['${t2} ${t3}']
+examples = ["This is a valuable information.\n"]
+acceptable = ["This is valuable information.\n", "Is there an information desk?\n"]
+
+[[rule]]
 id = "languagetool.agreement-sent-start"
 kind = "regex"
 severity = "warning"
@@ -16508,23 +17150,6 @@ replace = 'are'
 suggest = ['are']
 examples = ["The dogs of war is released.\n"]
 acceptable = ["The dog of war is released.\n", "That species of bird is said to be in danger of dying out.\n"]
-
-[[rule]]
-id = "languagetool.agreement-sent-start-3"
-kind = "regex"
-severity = "warning"
-message = "You should probably use '{{0}}'."
-source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (AGREEMENT_SENT_START)'
-license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
-pattern = "(?i)(?P<t1>^)\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:another|neither|either|every|their|these|those|both|each|some|that|this|your|all|any|her|his|its|our|the|an|my|no|a))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:of)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t5>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?!(?:hedge)(?!(?!n['’]t)\\w|-\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t6>(?:,))(?:\\s*(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))*?\\s*(?P<t7>(?:,))\\s*(?P<m>(?P<t8>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?!(?:is|soldiers|guys|companies)(?!(?!n['’]t)\\w|-\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))"
-needs = ['of']
-tags = ['t3=NNS', 't5=NN(:.+)?', 't8=VBZ']
-expand = true
-transforms = ["t8\u0009\u0009\u0009\u0009VBP"]
-replace = '{{0}}'
-suggest = ['{{0}}']
-examples = ["The dogs of war, mostly dachshunds and terrier mixes, barks loudly.\n"]
-acceptable = ["The dogs of war are released.\n", "The dog of war is released.\n"]
 
 [[rule]]
 id = "languagetool.agreement-sent-start-4"
@@ -16572,41 +17197,6 @@ replace = 'were'
 suggest = ['were']
 examples = ["The dogs of war, however, was released.\n"]
 acceptable = ["The dogs of war, however, are released.\n", "The dog of war, however, was released.\n"]
-
-[[rule]]
-id = "languagetool.agreement-sent-start-7"
-kind = "regex"
-severity = "warning"
-message = "You should probably use '{{0}}'."
-source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (AGREEMENT_SENT_START)'
-license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
-pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:wh(at|ich|o|ose|ere|en|ether))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:another|neither|either|every|these|those|both|each|some|that|this|all|any|the|an|no|a))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:throughout|underneath|against|because|beneath|besides|between|despite|outside|through|towards|whereas|whether|without|across|around|before|behind|beside|beyond|during|except|inside|though|toward|unless|unlike|within|about|above|after|along|among|below|since|under|until|while|amid|down|from|into|like|near|onto|over|than|that|till|upon|with|for|off|out|per|via|as|at|by|if|in|of|on|up))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t5>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<m>(?P<t6>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?!(?:is|soldiers|guys|companies)(?!(?!n['’]t)\\w|-\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))"
-needs = ['a', 'all', 'an', 'another', 'any', 'both', 'each', 'either', 'every', 'neither', 'no', 'some', 'that', 'the', 'these', 'this', 'those']
-tags = ['t3=NNS', 't5=NN.*', 't6=VBZ']
-not_tags = ['t3=NN(:.+)?']
-expand = true
-transforms = ["t6\u0009\u0009\u0009\u0009VBP"]
-replace = '{{0}}'
-suggest = ['{{0}}']
-examples = ["She asked whether the users from Asia wants to learn English.\n"]
-
-[[rule]]
-id = "languagetool.agreement-sent-start-8"
-kind = "regex"
-severity = "warning"
-message = "You should probably use '{{0}}'."
-source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (AGREEMENT_SENT_START)'
-license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
-pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:wh(at|ich|o|ose|ere|en|ether))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:another|neither|either|every|these|those|both|each|some|that|this|all|any|the|an|no|a))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<m>(?P<t5>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?!(?:is|soldiers|guys|companies)(?!(?!n['’]t)\\w|-\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))"
-needs = ['a', 'all', 'an', 'another', 'any', 'both', 'each', 'either', 'every', 'neither', 'no', 'some', 'that', 'the', 'these', 'this', 'those']
-tags = ['t3=JJ', 't4=NNS', 't5=VBZ']
-not_tags = ['t4=NNP?|NN:.*']
-expand = true
-transforms = ["t5\u0009\u0009\u0009\u0009VBP"]
-replace = '{{0}}'
-suggest = ['{{0}}']
-examples = ["How can we know whether the black dogs barks loudly?\n"]
-acceptable = ["The dogs are released.\n", "The dog is released.\n", "The Canadian Badlands has much to offer.\n"]
 
 [[rule]]
 id = "languagetool.agreement-sent-start-9"
@@ -16672,56 +17262,148 @@ examples = ["What happened when the dogs of war was released.\n"]
 acceptable = ["The dogs of war are released.\n", "The dog of war was released.\n"]
 
 [[rule]]
-id = "languagetool.agreement-sent-start-13"
+id = "languagetool.agreement-sent-start-17"
+kind = "regex"
+severity = "warning"
+message = "You should probably use: 'are'."
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (AGREEMENT_SENT_START)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:wh(at|ich|o|ose|ere|en|ether))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:another|neither|either|every|these|those|both|each|some|that|this|all|any|the|an|no|a))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:,))(?:\\s*(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))*?\\s*(?P<t5>(?:,))\\s*(?P<m>(?P<t6>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:is)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['is']
+tags = ['t3=NNS']
+not_tags = ['t3=NN(:.+)?']
+replace = 'are'
+suggest = ['are']
+examples = ["What happens when the dogs, Bob and Ben, is released?\n"]
+acceptable = ["The dog is released.\n"]
+
+[[rule]]
+id = "languagetool.agreement-sent-start-18"
+kind = "regex"
+severity = "warning"
+message = "You should probably use: 'were'."
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (AGREEMENT_SENT_START)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:wh(at|ich|o|ose|ere|en|ether))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:another|neither|either|every|these|those|both|each|some|that|this|all|any|the|an|no|a))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?!(?:media)(?!(?!n['’]t)\\w|-\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:,))(?:\\s*(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))*?\\s*(?P<t5>(?:,))\\s*(?P<m>(?P<t6>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:was)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['was']
+tags = ['t3=NNS']
+not_tags = ['t3=NN(:.+)?']
+replace = 'were'
+suggest = ['were']
+examples = ["What happened when the dogs, Bob and Ben, was released.\n"]
+acceptable = ["The dog was released.\n"]
+
+[[rule]]
+id = "languagetool.agreement-sent-start-19"
+kind = "regex"
+severity = "warning"
+message = "Possible agreement error. You should probably use: 'are'."
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (AGREEMENT_SENT_START)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:wh(at|ich|o|ose|ere|en|ether))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:another|neither|either|every|these|those|both|each|some|that|this|all|any|the|an|no|a))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:of)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t5>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t6>(?:,))(?:\\s*(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))*?\\s*(?P<t7>(?:,))\\s*(?P<m>(?P<t8>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:is)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['of']
+tags = ['t3=NNS', 't5=NN(:.+)?']
+replace = 'are'
+suggest = ['are']
+examples = ["What happens when the dogs of war, finally, is released.\n"]
+acceptable = ["The dog of war is released.\n"]
+
+[[rule]]
+id = "languagetool.agreement-sent-start-20"
+kind = "regex"
+severity = "warning"
+message = "Possible agreement error. You should probably use: 'were'."
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (AGREEMENT_SENT_START)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:wh(at|ich|o|ose|ere|en|ether))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:another|neither|either|every|these|those|both|each|some|that|this|all|any|the|an|no|a))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:of)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t5>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t6>(?:,))(?:\\s*(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))*?\\s*(?P<t7>(?:,))\\s*(?P<m>(?P<t8>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:was)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['was']
+tags = ['t3=NNS', 't5=NN(:.+)?']
+replace = 'were'
+suggest = ['were']
+examples = ["What happened when the dogs of war, two dachshunds, was released.\n"]
+acceptable = ["The dogs of war, however, are released.\n", "The dog of war, however, was released.\n"]
+
+[[rule]]
+id = "languagetool.agreement-sent-start-21"
 kind = "regex"
 severity = "warning"
 message = "You should probably use '{{0}}'."
 source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (AGREEMENT_SENT_START)'
 license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
-pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:wh(at|ich|o|ose|ere|en|ether))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:another|neither|either|every|these|those|both|each|some|that|this|all|any|the|an|no|a))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:,))(?:\\s*(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))*?\\s*(?P<t5>(?:,))\\s*(?P<m>(?P<t6>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?!(?:is|soldiers|guys|companies)(?!(?!n['’]t)\\w|-\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))"
-needs = [',']
-tags = ['t3=NNS', 't6=VBZ']
-not_tags = ['t3=NN(:.+)?']
+pattern = "(?i)(?P<t1>^)\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:and)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:another|neither|either|every|their|these|those|both|each|some|that|this|your|all|any|her|his|its|our|the|an|my|no|a))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t5>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<m>(?P<t6>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['and']
+tags = ['t2=NNP', 't6=VBZ']
+not_tags = ['t6=NN.*']
+unless = "(?i)(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:and)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:my)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:name)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:is)(?!(?!n['’]t)\\w|-\\w))))"
 expand = true
 transforms = ["t6\u0009\u0009\u0009\u0009VBP"]
 replace = '{{0}}'
 suggest = ['{{0}}']
-examples = ["Do you know what the dogs, which are specially trained to detect organic matter, eats?\n"]
-acceptable = ["The dogs, sacrificed by the Ichma, are often found with ropes still tied around their necks.\n"]
+examples = ["Tina and her father sings a song.\n"]
+acceptable = ["Tom and my name is Rishi.\n"]
 
 [[rule]]
-id = "languagetool.agreement-sent-start-14"
+id = "languagetool.agreement-sent-start-22"
 kind = "regex"
 severity = "warning"
 message = "You should probably use '{{0}}'."
 source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (AGREEMENT_SENT_START)'
 license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
-pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:wh(at|ich|o|ose|ere|en|ether))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:another|neither|either|every|these|those|both|each|some|that|this|all|any|the|an|no|a))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:throughout|underneath|against|because|beneath|besides|between|despite|outside|through|towards|whereas|whether|without|across|around|before|behind|beside|beyond|during|except|inside|though|toward|unless|unlike|within|about|above|after|along|among|below|since|under|until|while|amid|down|from|into|like|near|onto|over|than|that|till|upon|with|for|off|out|per|via|as|at|by|if|in|of|on|up))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t5>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t6>(?:,))(?:\\s*(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))*?\\s*(?P<t7>(?:,))\\s*(?P<m>(?P<t8>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?!(?:is|soldiers|guys|companies)(?!(?!n['’]t)\\w|-\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))"
-needs = [',']
-tags = ['t3=NNS', 't5=NN.*', 't8=VBZ']
-not_tags = ['t3=NN(:.+)?']
+pattern = "(?i)(?P<t1>^)\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:Each)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:of)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:the)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t5>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<m>(?P<t6>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['each']
+tags = ['t5=NNS', 't6=VBP']
+not_tags = ['t6=NN.*|VB[DGZ]|JJ']
 expand = true
-transforms = ["t8\u0009\u0009\u0009\u0009VBP"]
+transforms = ["t6\u0009\u0009\u0009\u0009VBZ"]
 replace = '{{0}}'
 suggest = ['{{0}}']
-examples = ["Do you know whether the users from Asia, for example, wants to learn English?\n"]
+examples = ["Each of the children are happy.\n"]
 
 [[rule]]
-id = "languagetool.agreement-question-3"
+id = "languagetool.agreement-sent-start-23"
 kind = "regex"
 severity = "warning"
-message = "You should probably use '{{0}}'."
+message = "You should probably use: 'are'."
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (AGREEMENT_SENT_START)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>^)\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:another|neither|either|every|their|these|those|both|each|some|that|this|your|all|any|her|his|its|our|the|an|my|no|a))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:in|of)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t5>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<m>(?P<t6>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:is)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['is']
+tags = ['t3=NNS', 't5=NNP|UNKNOWN']
+not_tags = ['t3=NN(:.+)?']
+replace = 'are'
+suggest = ['are']
+examples = ["The dogs of Peter is released.\n", "The chemicals in Botox is released.\n"]
+acceptable = ["The dog is released.\n"]
+
+[[rule]]
+id = "languagetool.agreement-sent-start-24"
+kind = "regex"
+severity = "warning"
+message = "You should probably use: 'were'."
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (AGREEMENT_SENT_START)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>^)\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:another|neither|either|every|their|these|those|both|each|some|that|this|your|all|any|her|his|its|our|the|an|my|no|a))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:in|of)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t5>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<m>(?P<t6>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:was)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['was']
+tags = ['t3=NNS', 't5=NNP|UNKNOWN']
+not_tags = ['t3=NN(:.+)?']
+replace = 'were'
+suggest = ['were']
+examples = ["The dogs of Peter was released.\n", "The chemicals in Botox was released.\n"]
+acceptable = ["The dog is released.\n"]
+
+[[rule]]
+id = "languagetool.agreement-question-4"
+kind = "regex"
+severity = "warning"
+message = "You should probably use 'are' or 'were'."
 source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (AGREEMENT_QUESTION)'
 license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
-pattern = "(?i)(?P<t1>^)(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:wh(at|ere|en))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:Does)(?!(?!n['’]t)\\w|-\\w)))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:another|neither|either|every|their|these|those|both|each|some|that|this|your|all|any|her|his|its|our|the|an|my|no|a))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t5>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t6>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))*?\\s*(?P<t7>(?:\\?))"
-needs = ['does']
-tags = ['t5=NNS', 't6=VBP?']
-not_tags = ['t5=NN(:UN)?']
-expand = true
-transforms = ["t3\u0009\u0009(?i)es\u0009\u0009"]
-replace = '{{0}}'
-suggest = ['{{0}}']
-examples = ["Does your parents live in England?\n", "What does your parents know?\n"]
+pattern = "(?i)(?P<t1>^)\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:whatever|whenever|wherever|whomever|however|whoever|where|what|when|whom|how|who|why))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:is|was)(?!(?!n['’]t)\\w|-\\w)))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:another|neither|either|every|their|these|those|both|each|some|that|this|your|all|any|her|his|its|our|the|an|my|no|a))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t5>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?!(?:media)(?!(?!n['’]t)\\w|-\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t6>(?:\\?))"
+needs = ['is', 'was']
+tags = ['t5=NNS']
+not_tags = ['t5=NN(:.+)?']
+suggest = ['are', 'were']
+examples = ["Where is your dogs?\n", "Where was the cars?\n"]
 
 [[rule]]
 id = "languagetool.a-hundreds"
@@ -16778,6 +17460,22 @@ replace = 'foot'
 suggest = ['foot']
 examples = ["I had a shoe on one feet.\n"]
 acceptable = ["I had a show on one foot.\n"]
+
+[[rule]]
+id = "languagetool.have-twitter"
+kind = "regex"
+severity = "warning"
+message = 'Did you mean the proper noun or did you want to use it as a verb?'
+source = 'https://languagetool.org/insights/post/to-have-grammar/; https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (HAVE_TWITTER)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<m>(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:ha[ds]|(?:ha)?ve|used?)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?-i:twitter|skype|excel|google|zoom|slack|photoshop|sketch|visa|react))(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['excel', 'google', 'photoshop', 'react', 'sketch', 'skype', 'slack', 'twitter', 'visa', 'zoom']
+tags = ['t1=VB.?']
+unless = "(?i)(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:visa)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s])){0,6}?\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:requirements|restrictions|approvals|processes|rejections)(?!(?!n['’]t)\\w|-\\w))))"
+transforms = ["t2\u0009startupper\u0009\u0009\u0009", "t2\u0009\u0009\u0009\u0009VBN"]
+suggest = ['${t1} {{0}}', '${t1} {{1}}']
+examples = ["I have twitter.\n"]
+acceptable = ["Some countries also have visa and/or health requirements.\n"]
 
 [[rule]]
 id = "languagetool.confusion-ride-right"
@@ -17023,6 +17721,21 @@ suggest = ['${t1} the ${t2}']
 examples = ["Something happened in past.\n"]
 
 [[rule]]
+id = "languagetool.incorrect-possessive-apostrophe"
+kind = "regex"
+severity = "warning"
+message = 'The possessive apostrophe may be misplaced.'
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (INCORRECT_POSSESSIVE_APOSTROPHE)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<m>(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:this)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:weeks|week-?ends|months|years)(?!(?!n['’]t)\\w|-\\w))(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:['’`´‘ʻ])(?!(?!n['’]t)\\w|-\\w)))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))"
+needs = ['this']
+tags = ['t4=JJ|NN.*|UNKNOWN']
+transforms = ["t2\u0009\u0009(?i)s$\u0009\u0009"]
+replace = '${t1} {{0}}${t3}s'
+suggest = ['${t1} {{0}}${t3}s']
+examples = ["This weeks' meeting was rescheduled.\n"]
+
+[[rule]]
 id = "languagetool.this-nns"
 kind = "regex"
 severity = "warning"
@@ -17036,6 +17749,21 @@ transforms = ["t2\u0009\u0009(?i)s\u0009's\u0009"]
 suggest = ['${t1} {{0}}', 'these ${t2}']
 examples = ["This years election will change everything.\n", "And this weeks platform update is a relatively small.\n"]
 acceptable = ["I suggested this years ago.\n", "Been working on this months now and am exasperated.\n"]
+
+[[rule]]
+id = "languagetool.this-nns-2"
+kind = "regex"
+severity = "warning"
+message = "Did you mean 'this information'? 'Information' is uncountable (except in certain legal meanings)."
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (THIS_NNS)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<m>(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:th[eo]se)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:informations?)(?!(?!n['’]t)\\w|-\\w)))\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))"
+tags = ['t3=VB.*']
+not_tags = ['t3=NNS']
+replace = 'this information'
+suggest = ['this information']
+examples = ["I am not sure how much of these information is provided by the company.\n"]
+acceptable = ["The CAISO's Contracts group uses these information sheets to complete three original agreements for your signature.\n"]
 
 [[rule]]
 id = "languagetool.this-nns-3"
@@ -17097,20 +17825,6 @@ suggest = ['${t2}']
 examples = ["Kyoto is the most oldest city.\n"]
 
 [[rule]]
-id = "languagetool.worlds-best"
-kind = "regex"
-severity = "warning"
-message = 'The possessive apostrophe may be missing.'
-source = 'https://languagetool.org/insights/post/possessive-apostrophe/; https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (WORLDS_BEST)'
-license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
-pattern = "(?i)(?P<m>(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?-i:[Ww]orlds|Americas|Europes))(?!(?!n['’]t)\\w|-\\w)))\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))"
-tags = ['t2=JJS']
-transforms = ["t1\u0009\u0009(?i)s$\u0009\u0009"]
-replace = "{{0}}'s"
-suggest = ["{{0}}'s"]
-examples = ["He is the worlds best footballer.\n"]
-
-[[rule]]
 id = "languagetool.worlds-best-2"
 kind = "regex"
 severity = "warning"
@@ -17123,6 +17837,20 @@ tags = ['t3=JJS']
 replace = "world's"
 suggest = ["world's"]
 examples = ["It is known as the world best car.\n"]
+
+[[rule]]
+id = "languagetool.worlds-best-3"
+kind = "regex"
+severity = "warning"
+message = 'It seems that a possessive apostrophe is missing.'
+source = 'https://languagetool.org/insights/post/possessive-apostrophe/; https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (WORLDS_BEST)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:the)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<m>(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:United)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:States)(?!(?!n['’]t)\\w|-\\w)))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))"
+needs = ['united']
+tags = ['t4=JJS']
+replace = "United States'"
+suggest = ["United States'"]
+examples = ["It is known as the United States best swimmer.\n"]
 
 [[rule]]
 id = "languagetool.will-becoming"
@@ -17166,6 +17894,23 @@ needs = ['same']
 replace = 'as'
 suggest = ['as']
 examples = ["This is not the same thing than his.\n", "Your idea is the same like his.\n"]
+
+[[rule]]
+id = "languagetool.eager-to"
+kind = "regex"
+severity = "warning"
+message = "With 'eager to', use the base form of the verb."
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (EAGER_TO)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:eager)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:to)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['eager']
+tags = ['t3=VB[GZND]']
+not_tags = ['t3=VB']
+transforms = ["t3\u0009\u0009\u0009\u0009VB"]
+replace = '{{0}}'
+suggest = ['{{0}}']
+examples = ["Bangladesh is eager to buying cars from Iran.\n", "I'd be eager to trying out your patch.\n", "Bangladesh is eager to bought cars from Iran.\n"]
+acceptable = ["Bangladesh is eager to buy cars from Iran.\n", "His compatriots were eager to cast off Ottoman rule.\n"]
 
 [[rule]]
 id = "languagetool.non3prs-verb"
@@ -17466,6 +18211,21 @@ suggest = ['must']
 examples = ["I mus admit that you are right.\n"]
 
 [[rule]]
+id = "languagetool.prp-neds"
+kind = "regex"
+severity = "warning"
+message = "Did you mean '{{0}}' (= verb)?"
+source = 'https://www.merriam-webster.com/dictionary/need; https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (PRP_NEDS)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:I|you|s?he|we|they|it)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:neds?)(?!(?!n['’]t)\\w|-\\w)))"
+tags = ['t2=RB']
+expand = true
+transforms = ["t3\u0009\u0009(?i)ed\u0009eed\u0009"]
+replace = '{{0}}'
+suggest = ['{{0}}']
+examples = ["He neds to know about it.\n"]
+
+[[rule]]
 id = "languagetool.prp-delt"
 kind = "regex"
 severity = "warning"
@@ -17613,6 +18373,21 @@ suggest = ['bought']
 examples = ["He bough a new car.\n"]
 
 [[rule]]
+id = "languagetool.prp-sooths"
+kind = "regex"
+severity = "warning"
+message = "Did you mean '{{0}}' (= verb)?"
+source = 'https://www.merriam-webster.com/dictionary/soothe; https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (PRP_SOOTHS)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:s?he|it|we|they|I)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:sooths?)(?!(?!n['’]t)\\w|-\\w)))"
+tags = ['t2=RB']
+expand = true
+transforms = ["t3\u0009\u0009(?i)th\u0009the\u0009"]
+replace = '{{0}}'
+suggest = ['{{0}}']
+examples = ["It sooths my skin.\n"]
+
+[[rule]]
 id = "languagetool.prp-sais"
 kind = "regex"
 severity = "warning"
@@ -17735,6 +18510,35 @@ suggest = ['need ${t2}', '{{0}} ${t2}']
 examples = ["Our ned to feel special is making us lonely.\n", "Please also invite ned to our party.\n"]
 
 [[rule]]
+id = "languagetool.ned-need-2"
+kind = "regex"
+severity = "warning"
+message = "Did you mean 'need' (verb) or '{{0}}' (a person's name)?"
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (NED_NEED)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:I|you|s?he|it|we|they|should|[cw]ould|did|do|might|may|to)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:['’`´‘ʻ])(?!(?!n['’]t)\\w|-\\w)))?(?:\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?-i:ned))(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['ned']
+tags = ['t3=RB']
+expand = true
+transforms = ["t4\u0009startupper\u0009\u0009\u0009"]
+suggest = ['need', '{{0}}']
+examples = ["I really ned a new car.\n", "I ned a new car.\n", "Could ned be there?\n"]
+
+[[rule]]
+id = "languagetool.ies-ize"
+kind = "regex"
+severity = "warning"
+message = "Did you mean '{{0}}' (American English) or '{{1}}' (British English)?"
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (IES_IZE)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:should|could|might|ought|shall|would|must|will|['’]ll|can|may|['’]d))(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:['’`´‘ʻ])(?!(?!n['’]t)\\w|-\\w)))?(?:\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t5>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:priorit(ies|y)|priories|apolog(ies|y)|categor(ies|y))(?!(?!n['’]t)\\w|-\\w)))"
+tags = ['t1=PRP|NNP', 't4=RB']
+expand = true
+transforms = ["t5\u0009\u0009(?i)(ies|y)$\u0009ize\u0009", "t5\u0009\u0009(?i)(ies|y)$\u0009ise\u0009"]
+suggest = ['{{0}}', '{{1}}']
+examples = ["They would probably priorities single parent families.\n", "I would priorities this task.\n"]
+
+[[rule]]
 id = "languagetool.ies-ize-2"
 kind = "regex"
 severity = "warning"
@@ -17747,6 +18551,22 @@ transforms = ["t2\u0009\u0009(?i)i[sz]e$\u0009y\u0009"]
 replace = '{{0}}'
 suggest = ['{{0}}']
 examples = ["I owe you an apologize.\n"]
+
+[[rule]]
+id = "languagetool.bents-bends"
+kind = "regex"
+severity = "warning"
+message = "The word \"${t2}\" is a noun and adjective. Did you mean the verb '{{0}}'?"
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (BENTS_BENDS)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:themselves|yourselves|ourselves|yourself|herself|himself|itself|myself|them|they|her|him|she|you|he|it|me|us|we|i))(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:bents)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['bents']
+tags = ['t2=RB.*']
+expand = true
+transforms = ["t3\u0009\u0009(?i)t\u0009d\u0009"]
+replace = '{{0}}'
+suggest = ['{{0}}']
+examples = ["She bents down.\n"]
 
 [[rule]]
 id = "languagetool.emphasis-emphasize"
@@ -21553,6 +22373,20 @@ examples = ["Oh horrid examples...\n", "ahh finally they got told off.\n"]
 acceptable = ["Oh, horrid examples...\n", "Oh my God, I can’t believe this.\n", "Oh my, that's horrible!\n", "Yahoo Mail.\n", "Oh yeah, that's great!\n", "When he goes to the pub, it's for company, and when he makes his rounds at night, the wee folk give him sport.\n", "The term Wee Free was an epithet commonly used to distinguish two Scottish Presbyterian Churches after the union of 1900.\n", "Deirdre is suddenly canny, funny and a wee bit naughty.\n"]
 
 [[rule]]
+id = "languagetool.interjections-punctuation-2"
+kind = "regex"
+severity = "suggestion"
+message = 'Interjections are usually punctuated.'
+source = 'http://www.chompchomp.com/terms/interjection.htm; https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (INTERJECTIONS_PUNCTUATION)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>^)\\s*(?P<m>(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:aa?h|aha|ahem|ahh|argh|aww|aw|bah|boo|boo-hoo|brr|d['’]oh|duh|eek|eep|eh|eww|fuff|gah|gee|grr|hmm?|humph|ha|haha?|huh|hurrah|ick|meh|mhm|mm|muahaha|mwah|nah|nuh-uh|oh|ooh-la-la|ooh|oomph|oops|ouch|oww|oy|pfft?|phew|psst|sheesh|shh|shoo|tsk-tsk|uh-huh|uh-oh|uh-uh|uhh|umm|waah|wee|whoa|wow|yay|yeah|yee-haw|yikes|yoo-hoo|yuh-uh|yuck|zing)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))"
+tags = ['t3=NNP']
+unless = "(?i)(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:aa?h|aha|ahem|ahh|argh|aww|aw|bah|boo|boo-hoo|brr|d['’]oh|duh|eek|eep|eh|eww|fuff|gah|gee|grr|hmm?|humph|ha|haha?|huh|hurrah|ick|meh|mhm|mm|muahaha|mwah|nah|nuh-uh|oh|ooh-la-la|ooh|oomph|oops|ouch|oww|oy|pfft?|phew|psst|sheesh|shh|shoo|tsk-tsk|uh-huh|uh-oh|uh-uh|uhh|umm|waah|wee|whoa|wow|yay|yeah|yee-haw|yikes|yoo-hoo|yuh-uh|yuck|zing)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s])){0,2}?\\s*(?:(?:,))))|(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?-i:HM|MM|MEH|HA|AH))(?!(?!n['’]t)\\w|-\\w))))|(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:yay)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:to|for)(?!(?!n['’]t)\\w|-\\w))))|(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:ha)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:ha)(?!(?!n['’]t)\\w|-\\w))))|(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:wee)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:folk)(?!(?!n['’]t)\\w|-\\w))))|(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:another|neither|either|every|these|those|both|each|some|that|this|all|any|the|an|no|a))(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:wee)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:bit)(?!(?!n['’]t)\\w|-\\w))))|(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?-i:Wee))(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?-i:Free))(?!(?!n['’]t)\\w|-\\w))))"
+suggest = ['${t2}, ${t3}!', '${t2}, ${t3}?', '${t2}, ${t3},', '${t2}, ${t3}.']
+examples = ["Oh John what a horrid example...\n"]
+acceptable = ["Oh Peter, I just heard the news.\n", "Oh! Horrid examples...\n"]
+
+[[rule]]
 id = "languagetool.interjections-punctuation-3"
 kind = "regex"
 severity = "suggestion"
@@ -21603,6 +22437,21 @@ replace = '${t1},'
 suggest = ['${t1},']
 examples = ["We will meet Friday July 15.\n", "I will be back by Monday April 1st.\n"]
 acceptable = ["He was born on Friday, August 12, 2016.\n"]
+
+[[rule]]
+id = "languagetool.for-noun-sake"
+kind = "regex"
+severity = "suggestion"
+message = 'It appears that in this idiom a possessive apostrophe is missing.'
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (FOR_NOUN_SAKE)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<m>(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:for)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:[a-zA-Z]+)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:sake)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['sake']
+tags = ['t2=NN.*']
+transforms = ["t2\u0009\u0009(?<!s)s\\b\u0009\u0009"]
+suggest = ['${t1} {{0}}’s sake', '${t1} ${t2}’ sake']
+examples = ["For heavens sake!\n", "For goodness sake!\n"]
+acceptable = ["For Christ’s sake!\n", "For pity’s sake!\n"]
 
 [[rule]]
 id = "languagetool.state-of-the-art"
@@ -22411,6 +23260,21 @@ transforms = ["t3\u0009alllower\u0009(?i)scree\u0009\u0009"]
 replace = 'screen{{0}}'
 suggest = ['screen{{0}}']
 examples = ["An exclusive look behind the screes.\n"]
+
+[[rule]]
+id = "languagetool.scree-screen-4"
+kind = "regex"
+severity = "warning"
+message = "Did you mean 'screen'?"
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (SCREE_SCREEN)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:checking|watching|checked|looking|watched|watches|checks|looked|seeing|check|looks|watch|look|seen|sees|saw|see)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s])){0,4}?\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:on|at)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:my|the|y?our|her|his|their|this|that)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t5>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:scree)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['scree']
+tags = ['t4=JJ.*']
+unless = "(?i)(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:rocky|loose)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:screes?)(?!(?!n['’]t)\\w|-\\w))))"
+replace = 'screen'
+suggest = ['screen']
+examples = ["Please have a look at my scree.\n"]
 
 [[rule]]
 id = "languagetool.westing-wasting"
@@ -23359,6 +24223,21 @@ examples = ["Please have a look at our cooperate website.\n"]
 acceptable = ["The CEO's unwillingness to cooperate put us in a difficult position.\n"]
 
 [[rule]]
+id = "languagetool.ware-wear"
+kind = "regex"
+severity = "warning"
+message = "Did you mean the verb '{{0}}'?"
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (WARE_WEAR)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<m>(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:wares?)(?!(?!n['’]t)\\w|-\\w)))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?(?:\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:masks?|(sweat|t-?)?shirts?|trousers?|hats?|(hot)?pants|jens|shoes?|heels?|hoodies?|jackets?|socks?|shorts?|pullovers?|(sun)?glasses?|dress(es)?|uniforms?|caps?|suits?)(?!(?!n['’]t)\\w|-\\w))"
+tags = ['t2=DT|PRP\$|NN.*|JJ.*', 't3=NN.*|JJ.*']
+expand = true
+transforms = ["t1\u0009\u0009(?i)are\u0009ear\u0009"]
+replace = '{{0}}'
+suggest = ['{{0}}']
+examples = ["I will ware a black dress.\n"]
+
+[[rule]]
 id = "languagetool.tread-treat"
 kind = "regex"
 severity = "warning"
@@ -24188,6 +25067,22 @@ suggest = ['should']
 examples = ["It shout be fixed now.\n"]
 
 [[rule]]
+id = "languagetool.active-activate"
+kind = "regex"
+severity = "warning"
+message = "Did you mean the verb '{{0}}'?"
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (ACTIVE_ACTIVATE)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:to|please)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(de-?|re-?|in)?active[ds]?)(?!(?!n['’]t)\\w|-\\w)))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:another|neither|either|every|their|these|those|both|each|some|that|this|your|all|any|her|his|its|our|the|an|my|no|a))(?!(?!n['’]t)\\w|-\\w))"
+needs = ['please', 'to']
+tags = ['t2=RB']
+expand = true
+transforms = ["t3\u0009\u0009(?i)ive\u0009ivate\u0009"]
+replace = '{{0}}'
+suggest = ['{{0}}']
+examples = ["In order to deactive your account, you need to log in first.\n"]
+
+[[rule]]
 id = "languagetool.tab-tap"
 kind = "regex"
 severity = "warning"
@@ -24873,6 +25768,23 @@ not_tags = ['t3=VB[DNG]']
 replace = 'is'
 suggest = ['is']
 examples = ["What it wrong with you?\n"]
+
+[[rule]]
+id = "languagetool.off-of"
+kind = "regex"
+severity = "warning"
+message = "Did you mean the phrase '${t3} {{0}}' (= in a more advantageous position)?"
+source = 'https://www.lexico.com/definition/better_off; https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (OFF_OF)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:being|been|were|['’]re|are|was|['’]m|['’]s|am|be|is)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:better)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:of)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['better']
+tags = ['t2=RB']
+unless = "(?i)(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:better)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:of)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:course)(?!(?!n['’]t)\\w|-\\w))))|(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:better)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:of)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:the|an?)(?!(?!n['’]t)\\w|-\\w))))|(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:off)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:the)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:top)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:of)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s])){0,3}?\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:head)(?!(?!n['’]t)\\w|-\\w))))"
+expand = true
+transforms = ["t4\u0009\u0009(?i)f\u0009ff\u0009"]
+replace = '${t3} {{0}}'
+suggest = ['${t3} {{0}}']
+examples = ["I am quite content and just wish that people who are better of than me would realise how lucky they are.\n"]
 
 [[rule]]
 id = "languagetool.off-of-2"
@@ -25790,6 +26702,22 @@ suggest = ['coma']
 examples = ["He has been in a comma for nearly two weeks.\n"]
 
 [[rule]]
+id = "languagetool.log-in"
+kind = "regex"
+severity = "warning"
+message = "Did you mean the verb 'log {{0}}' instead of the noun '${t3}'?"
+source = 'https://grammarist.com/spelling/log-in-login/; https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (LOG_IN)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:I|you|we|they|s?he|it|please|can(not)?|[cw]ould|did|will|ll|should|who|must|might|may|do|wanna|gonna)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:log(in|out|off|on))(?!(?!n['’]t)\\w|-\\w)))"
+tags = ['t2=RB']
+expand = true
+transforms = ["t3\u0009\u0009(?i)log\u0009\u0009"]
+replace = 'log {{0}}'
+suggest = ['log {{0}}']
+examples = ["Please login before commenting.\n", "People who login get a discount.\n", "Why doesn’t it login?\n"]
+acceptable = ["Your login attempt was not successful.\n"]
+
+[[rule]]
 id = "languagetool.log-in-2"
 kind = "regex"
 severity = "warning"
@@ -25805,6 +26733,24 @@ suggest = ['log {{0}}']
 examples = ["Please let us login before commenting.\n"]
 
 [[rule]]
+id = "languagetool.log-in-3"
+kind = "regex"
+severity = "warning"
+message = "Did you mean the verb 'log {{0}}' instead of the noun '${t3}'?"
+source = 'https://grammarist.com/spelling/log-in-login/; https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (LOG_IN)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:to)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:log(in|out|off|on))(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['to']
+tags = ['t1=VB.*|MD']
+unless = "(?i)(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:login)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:page)(?!(?!n['’]t)\\w|-\\w))))"
+expand = true
+transforms = ["t3\u0009\u0009(?i)log\u0009\u0009"]
+replace = 'log {{0}}'
+suggest = ['log {{0}}']
+examples = ["Have you tried to logout?\n"]
+acceptable = ["He tried everything from login to logout.\n"]
+
+[[rule]]
 id = "languagetool.log-in-4"
 kind = "regex"
 severity = "warning"
@@ -25818,6 +26764,22 @@ replace = 'logs {{0}}'
 suggest = ['logs {{0}}']
 examples = ["He logins every day.\n"]
 acceptable = ["Why doesn’t it login?\n", "Is it login?\n"]
+
+[[rule]]
+id = "languagetool.log-in-5"
+kind = "regex"
+severity = "warning"
+message = "Did you mean the verb '{{0}} {{1}}'?"
+source = 'https://grammarist.com/spelling/log-in-login/; https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (LOG_IN)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:to)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:log-?in|log-?out|sign-?in)(?!(?!n['’]t)\\w|-\\w)))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:with)(?!(?!n['’]t)\\w|-\\w))"
+needs = ['with']
+tags = ['t2=RB']
+expand = true
+transforms = ["t3\u0009\u0009(?i)^(log|sign).+$\u0009${1}\u0009", "t3\u0009\u0009(?i)^(log|sign)-?\u0009\u0009"]
+replace = '{{0}} {{1}}'
+suggest = ['{{0}} {{1}}']
+examples = ["Could you ask the user to login with his account?\n", "Could you ask the user to sign-in with his account?\n"]
 
 [[rule]]
 id = "languagetool.there-their-3"
@@ -26432,6 +27394,22 @@ suggest = ['already']
 examples = ["I have all ready bought it.\n"]
 
 [[rule]]
+id = "languagetool.already-all-ready-3"
+kind = "regex"
+severity = "warning"
+message = "Did you mean 'al{{0}}'?"
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (ALREADY_ALL_READY)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:ha(?:ve|s|d))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<m>(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:all)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:ready|so)(?!(?!n['’]t)\\w|-\\w)))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))"
+needs = ['all']
+tags = ['t4=VBN']
+expand = true
+transforms = ["t3\u0009alllower\u0009\u0009\u0009"]
+replace = 'al{{0}}'
+suggest = ['al{{0}}']
+examples = ["I have all ready bought it.\n"]
+
+[[rule]]
 id = "languagetool.already-all-ready-4"
 kind = "regex"
 severity = "warning"
@@ -26461,6 +27439,35 @@ replace = 'already'
 suggest = ['already']
 examples = ["I've all ready bought it.\n"]
 acceptable = ["It's all ready to go.\n"]
+
+[[rule]]
+id = "languagetool.already-all-ready-6"
+kind = "regex"
+severity = "warning"
+message = "Did you mean 'already'?"
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (ALREADY_ALL_READY)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?!(?:bein[g'])(?!(?!n['’]t)\\w|-\\w))(?:being|been|were|['’]re|are|was|['’]m|['’]s|am|be|is)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<m>(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:all)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:ready)(?!(?!n['’]t)\\w|-\\w)))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?!(?:to|for)(?!(?!n['’]t)\\w|-\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))"
+needs = ['ready']
+tags = ['t4=VBG|IN']
+replace = 'already'
+suggest = ['already']
+examples = ["We are all ready on our way.\n"]
+acceptable = ["We were all ready to go.\n"]
+
+[[rule]]
+id = "languagetool.already-all-ready-7"
+kind = "regex"
+severity = "warning"
+message = "Did you mean 'already'?"
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (ALREADY_ALL_READY)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:to)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:all)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:ready)(?!(?!n['’]t)\\w|-\\w)))\\s*(?P<t5>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))"
+needs = ['ready']
+tags = ['t1=VB.*', 't5=VB']
+replace = 'already'
+suggest = ['already']
+examples = ["We would like to all ready go there.\n"]
 
 [[rule]]
 id = "languagetool.quiet-quite"
@@ -26612,6 +27619,39 @@ replace = 'in the past'
 suggest = ['in the past']
 examples = ["We succeeded in the passed.\n"]
 acceptable = ["In the past, we had a number of successes.\n"]
+
+[[rule]]
+id = "languagetool.about-to-vbd"
+kind = "regex"
+severity = "warning"
+message = "Did you mean '${t3} be {{0}}' or '${t3} {{1}}'?"
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (ABOUT_TO_VBD)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:being|been|were|['’]re|are|was|['’]m|['’]s|am|be|is)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s])){0,2}?\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:about)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:to)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['about']
+tags = ['t4=VB[DN]']
+not_tags = ['t4=VBP?']
+expand = true
+transforms = ["t4\u0009\u0009\u0009\u0009VBN", "t4\u0009\u0009\u0009\u0009VBP"]
+suggest = ['${t3} be {{0}}', '${t3} {{1}}']
+examples = ["The feature is about to implemented.\n", "I am looking to see if TWPL is close to the two wells that are about to drilled.\n", "Orlando and Sergio Assad are about to gave me their clearance to start a legal suit against ANEEL having in view its refusal to grant to Elektro such passthrough.\n"]
+acceptable = ["Tom was about to burst into tears.\n"]
+
+[[rule]]
+id = "languagetool.by-pass"
+kind = "regex"
+severity = "warning"
+message = "The verb or noun 'bypass' is spelled as one word."
+source = 'https://www.merriam-webster.com/dictionary/bypass; https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (BY_PASS)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:can(not)?|will|[wc]ould|must|should|did|do|does|might|may|to|please|was|were|has|(ha)?ve|had|been|are|['’]re|am|['’]m|is|['’]s)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?!(?:so)(?!(?!n['’]t)\\w|-\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:by)(?!(?!n['’]t)\\w|-\\w))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:passing|passed|passes|pass)(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['pass', 'passed', 'passes', 'passing']
+tags = ['t2=RB']
+not_tags = ['t2=VBP?']
+transforms = ["t4\u0009alllower\u0009\u0009\u0009"]
+replace = '${t3}{{0}}'
+suggest = ['${t3}{{0}}']
+examples = ["The thrust of the Lamfulussy process is a plan that would by pass the normal EU legislative process that includes passage of legislation through the Council of Ministers and the European Parliament, which usually takes at least two years.\n", "He is always by passing the meeting by coming late to work.\n", "I am not by passing life.\n"]
 
 [[rule]]
 id = "languagetool.by-pass-2"
@@ -30041,6 +31081,36 @@ suggest = ['Mac']
 examples = ["I'm working on a mac app.\n"]
 
 [[rule]]
+id = "languagetool.apple-products-9"
+kind = "regex"
+severity = "warning"
+message = "Did you mean Apple's computer 'Mac' (= trademark, capitalized)?"
+source = 'https://en.wikipedia.org/wiki/Timeline_of_Apple_Inc._products; https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (APPLE_PRODUCTS)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:my|your)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?-i:mac))(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['mac']
+tags = ['t2=JJ.*']
+unless = "(?i)(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:mac)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s])){0,3}?\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:cheese|address(es)?|spoof[\\w-]*)(?!(?!n['’]t)\\w|-\\w))))"
+replace = 'Mac'
+suggest = ['Mac']
+examples = ["My mac doesn't boot anymore.\n"]
+
+[[rule]]
+id = "languagetool.apple-products-10"
+kind = "regex"
+severity = "warning"
+message = "Did you mean Apple's computer 'Mac' (= trademark, capitalized)?"
+source = 'https://en.wikipedia.org/wiki/Timeline_of_Apple_Inc._products; https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (APPLE_PRODUCTS)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:on)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:an?)(?!(?!n['’]t)\\w|-\\w)))?(?:\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?-i:mac))(?!(?!n['’]t)\\w|-\\w)))"
+needs = ['mac']
+tags = ['t3=JJ.*']
+unless = "(?i)(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:mac)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s])){0,3}?\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:cheese)(?!(?!n['’]t)\\w|-\\w))))"
+replace = 'Mac'
+suggest = ['Mac']
+examples = ["I'm working on a mac app.\n"]
+
+[[rule]]
 id = "languagetool.apple-products-11"
 kind = "regex"
 severity = "warning"
@@ -30247,6 +31317,21 @@ transforms = ["t3\u0009startupper\u0009\u0009\u0009"]
 replace = 'Windows ${t2} {{0}}'
 suggest = ['Windows ${t2} {{0}}']
 examples = ["I was using windows 8 home edition.\n"]
+
+[[rule]]
+id = "languagetool.microsoft-products-10"
+kind = "regex"
+severity = "warning"
+message = "Did you mean 'Word' (= computer program, capitalized)?"
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (MICROSOFT_PRODUCTS)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:an?|the|one|my|y?our|his|her)(?!(?!n['’]t)\\w|-\\w))(?:\\s*(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?!(?:\\d[\\d,.]*|zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|million|billion|trillion)(?!(?!n['’]t)\\w|-\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<m>(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?-i:word))(?!(?!n['’]t)\\w|-\\w)))\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:charts?|documents?|docx?|files?|macros?|add-[io]ns?|pages?)(?!(?!n['’]t)\\w|-\\w))"
+needs = ['word']
+tags = ['t2=JJ.*']
+unless = "(?i)(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:the|an?|my|his|her|y?our)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:one)(?!(?!n['’]t)\\w|-\\w))))"
+replace = 'Word'
+suggest = ['Word']
+examples = ["Have you seen my word document?\n"]
 
 [[rule]]
 id = "languagetool.microsoft-products-11"
@@ -31900,6 +32985,23 @@ pattern = "(?i)(?P<m>(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?-i:[Ff]acet
 replace = 'FaceTime'
 suggest = ['FaceTime']
 examples = ["Let's have a quick facetime call.\n"]
+
+[[rule]]
+id = "languagetool.on-skype-6"
+kind = "regex"
+severity = "warning"
+message = 'The name of this brand needs to be capitalized.'
+source = 'https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (ON_SKYPE)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w))\\s*(?P<m>(?P<t2>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?-i:yahoo|zoom|skype|hangouts|slack|twitter|excel|google|chevy|react|photoshop|kindle|discover))(?!(?!n['’]t)\\w|-\\w)))(?:\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:(?:(?<!\\w)\\w[\\w-]*(?!\\w)|[^\\w\\s]))(?!(?!n['’]t)\\w|-\\w)))?\\s*(?P<t4>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:uncountable|believing|countable|believed|believes|mightest|thinking|believe|mighter|shoulds|thought|having|hoping|making|should|taking|thinks|trying|being|doing|going|haves|hoped|hopes|makes|might|musts|taken|takes|think|tried|tries|wills|been|does|done|goes|gone|have|hope|made|make|must|need|take|took|want|went|were|will|['’]re|are|can|did|dos|had|has|try|was|['’]m|['’]s|am|be|do|go|is)(?!(?!n['’]t)\\w|-\\w))"
+needs = ['chevy', 'discover', 'excel', 'google', 'hangouts', 'kindle', 'photoshop', 'react', 'skype', 'slack', 'twitter', 'yahoo', 'zoom']
+tags = ['t1=CC|PCT|IN', 't3=RB']
+not_tags = ['t3=NN.*|IN|EX|CC']
+unless = "(?i)(?:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:to)(?!(?!n['’]t)\\w|-\\w))\\s*(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:react|discover|google|slack|zoom|excel)(?!(?!n['’]t)\\w|-\\w))))"
+transforms = ["t2\u0009startupper\u0009\u0009\u0009"]
+replace = '{{0}}'
+suggest = ['{{0}}']
+examples = ["We got a lot of visitors before google was down.\n"]
 
 [[rule]]
 id = "languagetool.on-excel"

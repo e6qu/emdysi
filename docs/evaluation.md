@@ -2005,3 +2005,25 @@ False flags with parsing on the first development set (`false_flags`,
 the whole `core` pack, including the articles rule with its new lists and
 CMUdict): 4 flags in 2,498 sentences, 1.6 per 1,000, the same as before
 the dictionaries; none from `core.articles`.
+
+### LanguageTool rules with parts of speech
+
+The regex kind's tag conditions let LanguageTool rules that need
+open-class parts of speech convert, with the tags taken from the parse
+(`emdysi_check::tags`), and its transforms let suggestions change case,
+rewrite a matched word or inflect it for a tag (UniMorph). 755 rules with
+tag conditions convert; `lt_validate` parses each one's examples, and the
+579 that pass are kept. The pack has 2,579 rules.
+
+With parsing, on the first development set (`false_flags` with
+`PACK=packs/languagetool.toml`, before the transforms): 17 findings in
+2,498 sentences, 6.8 per 1,000, mostly style suggestions (*all of the*,
+*cross reference*, *a small number of*) and some real errors in the
+sources (*between 6 to 9*, *economical development*, *up to date* before
+a noun); two came from rules with tag conditions.
+
+On the real-error corpus (`real_errors` with
+`PACKS=packs/languagetool.toml`, the 2,162-rule pack): grammar errors
+caught stay at 24 of 199, and one corrected sentence is flagged. The
+converted rules target other errors than the ones in this corpus
+(missing function words, wrong forms), which need the grammar.
