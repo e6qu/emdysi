@@ -11,7 +11,7 @@ min_length = 4
 # English words, that the bundled word lists (SCOWL, cspell) leave out.
 ignore = [
   "alia", "curtsey", "curtseyed", "curtseys", "async", "cadvisor", "devs", "distinguisher", "gsoc", "hackmd", "iirc",
-  "implementor", "implementors", "libc", "nftables", "rootfs", "shoutout",
+  "implementor", "implementors", "libc", "nftables", "nightlies", "rootfs", "shoutout",
   "shoutouts", "subnet", "subnets", "subtrait", "subtraits", "supertrait",
   "supertraits", "zulip",
 ]

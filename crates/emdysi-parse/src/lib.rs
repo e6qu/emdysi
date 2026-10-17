@@ -1303,9 +1303,12 @@ impl Erg {
                 // not "-ing" on the noun "specif", nor "refacting" "re-" on
                 // the noun "fact".
                 let classes = self.stem_classes(&a.stem);
+                // (un- also takes adverbs: "unfrequently".)
                 let fits = a.rules.iter().all(|r| {
                     let c = r.split('_').next().unwrap_or("");
-                    !matches!(c, "v" | "n" | "j" | "det") || classes.contains(&c)
+                    !matches!(c, "v" | "n" | "j" | "det")
+                        || classes.contains(&c)
+                        || r.contains("-un_") && classes.contains(&"av")
                 });
                 inflectional <= 1
                     && !informal
