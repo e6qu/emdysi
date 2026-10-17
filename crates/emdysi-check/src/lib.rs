@@ -556,11 +556,26 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                                     .unwrap_or_default()
                                     .chars()
                                     .collect();
+                                // ... and only a wrong form of a word the
+                                // grammar knows ("buyed", "childs") can be
+                                // named within it: the variant has nothing to
+                                // say inside a name or a term ("kubelet"),
+                                // which most unknown words in edited text
+                                // are, and parsing it took a third of the
+                                // checking time.
                                 p.readings.first().is_some_and(|r| {
                                     r.words.iter().any(|w| {
                                         w.generic
                                             && !acronym(&original, w.from, w.to)
                                             && !masked_code(&masked, w.from, w.to)
+                                            && !erg
+                                                .inflections(
+                                                    &original[w.from.min(original.len())
+                                                        ..w.to.min(original.len())]
+                                                        .iter()
+                                                        .collect::<String>(),
+                                                )
+                                                .is_empty()
                                     })
                                 })
                             }));
