@@ -2000,3 +2000,8 @@ were grouped already).
 UniMorph inflections and the CMUdict articles: 192 of 377 (51%), up from
 183. Spelling 168 of 178 (from 159), grammar unchanged at 24 of 199, and
 no corrected sentence flagged.
+
+False flags with parsing on the first development set (`false_flags`,
+the whole `core` pack, including the articles rule with its new lists and
+CMUdict): 4 flags in 2,498 sentences, 1.6 per 1,000, the same as before
+the dictionaries; none from `core.articles`.
