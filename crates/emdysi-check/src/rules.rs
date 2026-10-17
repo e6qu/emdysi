@@ -528,6 +528,10 @@ impl Rule {
                         min: n("min", 3.0),
                         share: num("share").unwrap_or(0.4),
                     },
+                    "bold-lead-ins" => StructureCheck::BoldLeadIns {
+                        min: n("min", 3.0),
+                        share: num("share").unwrap_or(0.5),
+                    },
                     "paragraph-length" => StructureCheck::ParagraphLength {
                         max_words: n("max_words", 150.0),
                         max_sentences: n("max_sentences", usize::MAX as f64),
@@ -905,6 +909,7 @@ impl Rule {
             }
         } else {
             self.run_all(erg, a, g, &mut found);
+            let with_model = ask.is_some();
             if let (
                 Kind::Spelling {
                     model_threshold, ..
@@ -916,6 +921,22 @@ impl Rule {
             }
             // What only a model could confirm is not reported without one
             // (`choose_spellings` clears the mark of what it confirms).
+            // ... except, without a model, a misspelling with a single
+            // candidate that it only drops or adds letters to
+            // (|admistrators|, |neccesary|, |securly|): a word only
+            // substitutions make a known word of is more often a name or
+            // term (|grafana|, |mebibytes|).
+            for d in found.iter_mut().filter(|_| !with_model) {
+                let w = &a.source[d.range.clone()];
+                if d.needs_model
+                    && d.suggestions.len() == 1
+                    && w.chars().count() >= 6
+                    && w.chars().all(|c| !c.is_uppercase())
+                    && indels_only(w, &d.suggestions[0])
+                {
+                    d.needs_model = false;
+                }
+            }
             found.retain(|d| !d.needs_model);
         }
         if self.scope != Scope::All {
@@ -1300,11 +1321,13 @@ impl Rule {
                         if w.chars().count() < *min_length && !short_typo
                             || !w.chars().all(|c| c.is_lowercase() || c == '\'' || c == '-')
                             || w.contains("--")
+                            // Inline code, or a word around it (|`let`s|).
                             || s.text
                                 .chars()
+                                .zip(s.original.chars())
                                 .skip(t.from)
                                 .take(t.to - t.from)
-                                .all(|c| c == 'x')
+                                .any(|(m, o)| m != o)
                             || ignore.contains(w)
                             // ... and the plural of an ignored word (|zulips|).
                             || w.strip_suffix('s').is_some_and(|b| ignore.iter().any(|i| i == b))
@@ -1369,13 +1392,25 @@ impl Rule {
                                     && crate::dict::tier(&x).is_some()
                                     && x.starts_with(&stem)
                             });
-                            if !by_inflection && !by_derivation {
+                            // ... or a listed word with one letter typed
+                            // twice (|languagess|, |valuess|).
+                            let doubled = suggestions(erg, w, 5).0.iter().any(|x| {
+                                let x = x.to_lowercase();
+                                let c: Vec<char> = w.chars().collect();
+                                crate::dict::tier(&x).is_some()
+                                    && (1..c.len()).any(|i| {
+                                        c[i] == c[i - 1]
+                                            && c[..i].iter().chain(&c[i + 1..]).collect::<String>()
+                                                == x
+                                    })
+                            });
+                            if !by_inflection && !by_derivation && !doubled {
                                 continue;
                             }
                             // A rare correct plural can also be one edit from
                             // a listed word (|nestings|, |nestlings|): only
                             // the model can tell.
-                            derived_typo = !by_inflection;
+                            derived_typo = !by_inflection && !doubled;
                         }
                         if uses.get(&w.to_lowercase()).copied().unwrap_or(0) > 1 {
                             continue;
@@ -2523,11 +2558,13 @@ fn verified_fix(
             .chain(rep.chars().collect::<Vec<_>>().iter())
             .chain(masked[to..].iter())
             .collect();
-        let Ok(p) = erg.parse_limited(
-            fixed.trim(),
-            std::time::Duration::from_secs(5),
-            VERIFY_READINGS,
-        ) else {
+        let Ok(p) = crate::timing::timed(&crate::timing::VERIFY, || {
+            erg.parse_limited(
+                fixed.trim(),
+                std::time::Duration::from_secs(5),
+                VERIFY_READINGS,
+            )
+        }) else {
             continue;
         };
         // The correction must repair the analysis that names the error, not
@@ -2605,6 +2642,27 @@ fn match_case(like: &str, rep: &str) -> String {
 }
 
 /// Damerau-Levenshtein distance (optimal string alignment).
+/// Whether `b` is as few edits from `a` with insertions and deletions
+/// only as with substitutions too.
+fn indels_only(a: &str, b: &str) -> bool {
+    let (x, y): (Vec<char>, Vec<char>) = (a.chars().collect(), b.chars().collect());
+    // Longest common subsequence.
+    let mut row = vec![0usize; y.len() + 1];
+    for &cx in &x {
+        let mut prev = 0;
+        for (j, &cy) in y.iter().enumerate() {
+            let here = row[j + 1];
+            row[j + 1] = if cx == cy {
+                prev + 1
+            } else {
+                row[j + 1].max(row[j])
+            };
+            prev = here;
+        }
+    }
+    x.len() + y.len() - 2 * row[y.len()] == edit_distance(a, b)
+}
+
 pub fn edit_distance(a: &str, b: &str) -> usize {
     let a: Vec<char> = a.to_lowercase().chars().collect();
     let b: Vec<char> = b.to_lowercase().chars().collect();

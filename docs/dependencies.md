@@ -7,8 +7,11 @@ crate or its repository at the pinned version. Transitive dependencies count.
 
 Allowed SPDX licenses: `MIT`, `Apache-2.0`, `Apache-2.0 WITH LLVM-exception`,
 `BSD-2-Clause`, `BSD-3-Clause`, `ISC`, `Zlib`, `Unicode-3.0`,
-`Unicode-DFS-2016`, `Unlicense`, `CC0-1.0`. Anything else (including MPL,
-LGPL and GPL) requires a new decision.
+`Unicode-DFS-2016`, `Unlicense`, `CC0-1.0`, and, since emdysi is licensed
+under the AGPL-3.0-or-later (decision D15), `MPL-2.0`, `LGPL-2.1-or-later`,
+`LGPL-3.0-or-later`, `GPL-3.0-or-later` and `AGPL-3.0-or-later`. Anything
+else (GPL-2.0-only above all, which cannot be combined with GPLv3)
+requires a new decision.
 
 `deny.toml` enforces the allowlist in CI via `cargo-deny`.
 
@@ -122,9 +125,9 @@ weights and the test corpora) is listed with its source, version, license
 and use in [`vendored.md`](vendored.md), generated from
 [`VENDORED.toml`](../VENDORED.toml); the notices that must travel with it
 are in [`THIRD_PARTY_NOTICES.md`](../THIRD_PARTY_NOTICES.md). The policy
-for data is the same as for crates, except that share-alike text (CC BY-SA)
-may be used as test data in its own directory (see
-[`corpora/README.md`](../corpora/README.md)).
+for data is the same as for crates, and adds the share-alike licenses
+(CC BY-SA 4.0, and 3.0 adapted under 4.0), which may now be shipped as
+well as used for tests (decision D15).
 
 ## Not dependencies: the tiny test model
 

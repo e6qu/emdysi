@@ -2,8 +2,8 @@
 
 TDL files loaded after the ERG (`grammar/erg`), in file-name order, by
 `Erg::load_config` (`crates/emdysi-parse/src/lib.rs`). The ERG's own files
-are not changed. Written for this project (MIT, see the repository's
-`LICENSE`), in the ERG's conventions and on its types.
+are not changed. Written for this project (AGPL-3.0-or-later, see the
+repository's `LICENSE`), in the ERG's conventions and on its types.
 
 - `subjects.tdl`: a subject followed by an adjunct set off by commas
   (*The committee, however, decided to wait.*). The ERG's subject-head

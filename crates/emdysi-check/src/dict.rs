@@ -130,7 +130,8 @@ pub fn accepted(word: &str) -> bool {
     // |rebased| from |rebase|), or the singular of an accepted plural
     // (|finalizer| from |finalizers|): the technical lists name one form.
     let stem = |suffix: &str| w.strip_suffix(suffix).filter(|s| s.chars().count() >= 3);
-    stem("s").is_some_and(|s| set.contains(s))
+    // (Not a plural of a plural: |valuess| is no form of |values|.)
+    stem("s").is_some_and(|s| !s.ends_with('s') && set.contains(s))
         || stem("es").is_some_and(|s| set.contains(s))
         || stem("ed").is_some_and(|s| set.contains(s) || set.contains(&format!("{s}e")))
         || stem("d").is_some_and(|s| s.ends_with('e') && set.contains(s))

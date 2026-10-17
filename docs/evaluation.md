@@ -1187,6 +1187,73 @@ plain-language guides show a passage before and after its rewrite, and
 reference pages repeat a sentence in each tab. The check remains available
 as `check = "restatement"` of the `semantics` kind.
 
+### Machine-written prose from current models
+
+The vendored machine-written samples come from 2023 models, so the rules
+for newer tropes had nothing to measure against. `corpora/ai-current`
+(2026-10-17) holds 24 documents written for this project in the voice of
+current chat-model output: a blog post, a README, a launch announcement,
+a social post, a support reply, an explainer, a newsletter, a listicle,
+an onboarding guide, a talk summary, an answer, an essay, a cover letter,
+a product page, a meeting summary, a press release, a travel guide, a job
+posting, a sales email, a self-review, an abstract, a code review, an
+outage apology and a recipe introduction (5,675 words). They were written
+to be typical of their genre, not as parodies; but they were written,
+not sampled, so they cannot by themselves show that a pattern is typical.
+The evidence for each new rule is the other side: the edited corpora
+(654 documents, 410,000 words), where each new phrase or pattern occurs
+at most once.
+
+Patterns the packs missed in these documents, and the new rules:
+
+- hooks aimed at the reader (*Let's be honest*, *Sound familiar? You're
+  not alone*, *Ready to get started?*, *Spoiler:*): `reader-hooks`; *Let's
+  dive in* was left out, as the Rust book uses it;
+- a run of fragments and a two-word payoff (*No more spreadsheets. No
+  more manual matching. Just results.*): `just-fragment`;
+- the contrast frame across two sentences without *about*: with *just*
+  or *only* (*Rate limiting isn't just a nice-to-have. It's essential.*,
+  `not-just-then-is`) or ending in a short punchline (*Setbacks aren't the
+  end of your story. They're the plot twist.*, `not-then-punchline`); the
+  edited corpora have two such pairs, both without either feature (*It
+  isn't something to submit. It's a separate part of the instructions.*);
+- list items that open with a bold label (*\*\*Logs:\*\* What
+  happened.*): `bold-lead-ins`, a new structure check, once a document
+  when at least three fifths of its list items do (in the edited corpora,
+  36 of 2,348 list items open so; one document passes the threshold);
+- an emoji at the start of a heading or list item (edited blog posts use
+  emoji in running text, never at the start of a line), a line of
+  hashtags, letter and email formulas (*I hope this email finds you
+  well*; suggestions only, as the edited corpora have no letters), and
+  about 40 more stock phrases (*the real magic happens*, *has you
+  covered*, *will thank you*, *a must-visit*, *paves the way for*);
+- a sentence opening with *Whether you're* (7 in the 5,675 words of the
+  samples, once in the edited corpora: `whether-you`) and a listicle title
+  (*7 Proven Strategies to ...*, `listicle-title`, headings only).
+
+Documents each rule fires on (`en check --no-parse`, so without the rules
+that need a parse: the rule of three, participial tails):
+
+| Rule | Machine-written (24) | Edited (654) |
+|---|---|---|
+| `ai-tells.dense` | 14 | 0 |
+| `ai-tells.stock-phrases` | 16 | 3 |
+| `ai-tells.inflated` | 11 | 41 |
+| `ai-tells.bold-lead-ins` | 10 | 1 |
+| `ai-tells.vocabulary` | 9 | 27 |
+| `ai-tells.em-dash` | 8 | 7 |
+| `ai-tells.formulas` | 5 | 0 |
+| `ai-tells.openers` | 4 | 34 |
+| `ai-tells.not-x-but-y` | 3 | 92 |
+| `ai-tells.reader-hooks`, `just-fragment`, `its-about`, `emoji-heading`, `chatbot`, `rhetorical-question` | 2 each | 1, 0, 0, 0, 0, 6 |
+| `ai-tells.not-then-punchline`, `not-just-then-is`, `hashtags`, `emoji-list`, `setup` | 1 each | 0 |
+
+`ai-tells.dense`, the verdict that a text reads as generated, fires on 14
+of the 24 machine-written documents and none of the edited ones. The
+documents it misses carry their tropes in the shape of the whole (a
+social post of one-line paragraphs, an essay of aphorisms, an apology of
+stock contrition) at densities below its threshold.
+
 ## Grammar and spelling fixes with a decision model: the upper bound
 
 `core.grammar-fix` and the model's choice among spelling suggestions
@@ -1743,3 +1810,60 @@ reports) it is seldom the right one: *afters the update*, *cluster
 administered to*, *The API server i willing*. A single correction the
 grammar accepts is no evidence of an error.
 
+
+### Measured and rejected: work limits instead of time limits
+
+The parser's limits are wall-clock time, so whether a candidate
+correction verifies depends on the machine and its load: the
+perfect-model figure moves by a few pairs between runs of one binary,
+and by eleven on a cold parse cache. A limit on work instead (unifications
+tried, in the chart and when unpacking, shared by the searches of one
+parse) would make results the same everywhere, and was tried. It does
+not keep the time limits' behaviour: the rate varies too much by
+sentence (11 to 134 unifications a millisecond; 42 the median, 18 to 40
+on sentences over 30 words), and neither unifications, chart nodes nor a
+mix of the two predicts a search's time within 25% for half of them or a
+factor of 2.7 for nine in ten. Calibrated at the median rate, short
+sentences ran out of work before their former time and the perfect-model
+run lost eight corrections; calibrated at the 75th percentile, long
+sentences parsed for nearly twice their former time, and a single parse
+reached 2.4 GB, so four measurement processes ran out of memory. Time
+limits stay; measurements compare runs on a warm parse cache.
+
+### Spelling without a model: misspellings the morphology or the model hid
+
+Without a model, 35 of the 178 misspellings went unreported. Three causes,
+found by tracing each:
+
+- The grammar's morphology read them as word forms: *fileds* as *file*
+  + passive + plural (a passive, `_odlr`, was not counted as an
+  inflection), *specifing* as *-ing* on the noun *specif*, *refacting* as
+  *re-* on the noun *fact*, *returing* as *re-* on the name *turing*,
+  *witin* as the informal *wit* + *-in'*. A derived form now counts as a
+  known word only when each rule fits its stem's word class (*un-* also
+  takes adverbs: *unfrequently*), with one inflection at most, and not in
+  an informal form. Two real words the overgeneration used to let
+  through are now listed: *nightlies*, and *writeable*.
+- The technical lists' inferred plurals took *valuess* for a plural of
+  *values*: no plural of a plural now. And a word with one letter typed
+  twice (*languagess*) is a typo, not a derivation; main reported
+  *languagess* only by accident, through the junk form *languagesd*.
+- Findings with a single candidate two edits away, or a misspelled
+  derivation, waited for a model. Reported without one when the word is
+  lower case, at least six letters, and the candidate is reached by
+  dropping or adding letters only (*admistrators*, *neccesary*,
+  *securly*, *assignement*). Reporting every single candidate also
+  flagged *grafana* (*granada*), *mebibytes*, *syscalls*, *retpoline*,
+  *conversible* and *massebot*: words only substitutions make a known
+  word of are mostly names and terms. (That criterion was chosen after
+  seeing the held-out set's flags.) *distroless* is listed.
+
+A word glued to inline code (two `` `let`s ``) is no longer spell-checked:
+the code's masking made it *xxxs*, which only the old overgeneration let
+through. typos-dict, a curated misspelling table, cannot be used: it took
+in codespell's and Wikipedia's share-alike lists (see `docs/prior-art.md`).
+
+Spelling only (`en check --no-parse` on every document, against main):
+18 more real errors flagged in the real-error corpus; on the false-flag
+sets, three more flags, all real typos in the second development set
+(*borrowcking*, *implemenent*, *rationable*), and no false ones.

@@ -1289,11 +1289,50 @@ impl Erg {
             .iter()
             .any(|a| {
                 let derivational = a.rules.iter().filter(|r| r.ends_with("_dlr")).count();
-                // One inflection at most: "chosing" is not "chose" + "-ing".
-                let inflectional = a.rules.iter().filter(|r| r.ends_with("_olr")).count();
+                // One inflection at most: "chosing" is not "chose" + "-ing",
+                // nor "fileds" "file" + "-ed" (a passive, `_odlr`) + "-s".
+                let inflectional = a
+                    .rules
+                    .iter()
+                    .filter(|r| r.ends_with("_olr") || r.ends_with("_odlr"))
+                    .count();
+                // Informal forms ("walkin'") are no spellings: "witin" is
+                // not "wit" + "-in".
+                let informal = a.rules.iter().any(|r| r.contains("-nf_"));
+                // Each rule applies to a word of its class: "specifing" is
+                // not "-ing" on the noun "specif", nor "refacting" "re-" on
+                // the noun "fact".
+                let classes = self.stem_classes(&a.stem);
+                // (un- also takes adverbs: "unfrequently".)
+                let fits = a.rules.iter().all(|r| {
+                    let c = r.split('_').next().unwrap_or("");
+                    !matches!(c, "v" | "n" | "j" | "det")
+                        || classes.contains(&c)
+                        || r.contains("-un_") && classes.contains(&"av")
+                });
                 inflectional <= 1
+                    && !informal
+                    && fits
                     && (derivational == 0 || derivational == 1 && a.stem.chars().count() >= 4)
             })
+    }
+
+    /// Word classes of the one-word entries of `stem`, as the morphological
+    /// rules name them: "v", "n", "j" (adjectives), "det" and others.
+    fn stem_classes(&self, stem: &str) -> Vec<&str> {
+        self.lexicon
+            .entries_starting(stem)
+            .iter()
+            .map(|&e| &self.lexicon.entries[e])
+            .filter(|e| e.orth.len() == 1)
+            .map(
+                |e| match self.le_types[e.inst].split('_').next().unwrap_or("") {
+                    "aj" => "j",
+                    "d" => "det",
+                    c => c,
+                },
+            )
+            .collect()
     }
 
     /// Lexical types of the one-word entries for a word form: its own

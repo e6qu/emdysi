@@ -76,6 +76,11 @@ pub enum StructureCheck {
     LoneSubsection,
     /// Headings deeper than `max`.
     Depth { max: u8 },
+    /// List items that open with a bold label (|**Logs:** The record of
+    /// ...|), when a document has at least `min` of them and they are at
+    /// least `share` of its list items: the shape of model-written lists.
+    /// Reported once, on the first.
+    BoldLeadIns { min: usize, share: f64 },
     /// Paragraphs of one short sentence (at most `max_words` words), when
     /// a document has at least `min` of them and they make up at least
     /// `share` of its paragraphs: the dramatic one-line paragraphs of
@@ -382,6 +387,43 @@ pub fn run_structure(check: &StructureCheck, erg: &emdysi_parse::Erg, a: &Analys
                 for i in short {
                     out.push(block_hit(a, i).var("count", words(&a.blocks[i].text)));
                 }
+            }
+        }
+        StructureCheck::BoldLeadIns { min, share } => {
+            // The first block of each list item, and whether the source
+            // has it open with a bold label ending in a colon or full stop,
+            // inside the bold or right after it.
+            let label = fancy_regex::Regex::new(
+                r"^(?:\*\*|__)[^*_\n]{1,40}?(?:[:.](?:\*\*|__)|(?:\*\*|__)\s*[:.—–])",
+            )
+            .expect("bold label pattern");
+            let mut seen = std::collections::HashSet::new();
+            let items: Vec<(usize, bool)> = a
+                .blocks
+                .iter()
+                .enumerate()
+                .filter(|(_, b)| b.kind == BlockKind::ListItem && b.item > 0)
+                .filter(|(_, b)| seen.insert(b.item))
+                .map(|(i, b)| {
+                    let start = b.offsets.first().copied().unwrap_or(0);
+                    let from = a.source[..start]
+                        .char_indices()
+                        .rev()
+                        .nth(1)
+                        .map_or(start, |(k, _)| k);
+                    let bold = label.is_match(&a.source[from..]).unwrap_or(false);
+                    (i, bold)
+                })
+                .collect();
+            let bold: Vec<usize> = items.iter().filter(|x| x.1).map(|x| x.0).collect();
+            // Once a document, on the first such item: the shape of the
+            // lists is the finding, not each item.
+            if bold.len() >= *min && bold.len() as f64 >= *share * items.len() as f64 {
+                out.push(
+                    block_hit(a, bold[0])
+                        .var("count", bold.len())
+                        .var("items", items.len()),
+                );
             }
         }
         StructureCheck::ParagraphLength {
