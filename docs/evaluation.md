@@ -2042,7 +2042,12 @@ no parse cache):
 Spelling and grammar-error findings do not change, but 27 sentences (2%)
 lose their strict reading, and with it the findings of the rules that
 read the parse. The default stays at 10 seconds; `--timeout` remains for
-those who prefer speed. The time goes into sentences that reach the
-limit and keep searching (the fragment fallback after the limit made 81
-sentences take 5 to 9.5 seconds even with a 5-second limit), which is
-where the next speed work belongs.
+those who prefer speed.
+
+The 81 sentences the 5-second run put in the "5 to 9.5 s" row are not
+parses that overran the limit by seconds: parsed again on their own with
+the same limit, the 116 sentences that took 5 seconds or more took at
+most 5.4 seconds (the row's range is coarse). A parse's several searches
+(narrow, wide and wider beams, then without pruning) and their grace
+periods for unpacking now share one hard deadline, the limit plus a
+fifth of it (at most two seconds), which makes that bound explicit.

@@ -843,8 +843,10 @@ impl Erg {
         let t0 = std::time::Instant::now();
         // One limit for all the searches below (narrow, wide, wider and
         // unpruned beams), each with its grace periods: the time limit and
-        // one grace period of a fifth of it, at most two seconds. Without
-        // it, a 5-second limit let parses run 9.5 seconds.
+        // one grace period of a fifth of it, at most two seconds. (Each
+        // search starts only with a second left and its grace periods are
+        // short, so in practice a parse already ended within half a second
+        // of the limit; this makes the bound explicit.)
         let config = &ParserConfig {
             hard_deadline: Some(
                 t0 + config.timeout + (config.timeout / 5).min(Duration::from_secs(2)),
