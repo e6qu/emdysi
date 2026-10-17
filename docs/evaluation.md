@@ -1946,3 +1946,50 @@ and WordNet lists *in* (indium), *so* and *have* as nouns. With short
 and function words left out, 8 remain, of which four are sound (*the
 fidgets*, *megrim*, *plaice*, *retro* as a noun). Too few to justify a
 generated lexicon file yet; the filter is in `gaps.py` for a larger run.
+
+## Imported rule data: LanguageTool, slop and GitLab
+
+The three new opt-in packs, checked without parsing on every document of
+the three edited sets (654 documents: 221, 126 and 307) and on the 24
+samples of current-model prose (`corpora/ai-current`):
+
+| Pack | Rules | Machine-written: documents with findings | Findings | Edited: documents with findings | Findings |
+|---|---|---|---|---|---|
+| `languagetool` | 1,645 | 0 of 24 | 0 | 79 of 654 | 141 |
+| `slop` | 98 | 23 of 24 | 94 | 171 of 654 | 512 |
+| `gitlab` | 26 | 20 of 24 | 57 | 452 of 654 | 9,021 |
+
+**languagetool.** Its findings on edited text are mostly style
+suggestions (*all of the* for *all the*, *might perhaps*), and among them
+real errors in the sources: *setup* used as a verb (*they've setup a
+cloud instance*), *github* in prose, *up stairs*. On the real-error
+corpus it finds none of the 199 grammar errors (missing function words
+and wrong forms, which LanguageTool catches with its tagger, not with the
+word-only rules converted here); its findings there are style
+suggestions. An earlier run, before inline code was skipped, flagged *the
+`Some` variant* (a Rust type, not an article error). LanguageTool's
+wordiness and redundancy lists, measured in the same run, flagged 642 and
+95 phrases on edited text, many with wrong replacements (*as shown in* →
+*shows that*, *On the other hand* → *Although*) or flagging standard
+phrasal verbs (*shut down*, *open up*); they are left out, as
+LanguageTool itself ships them turned off.
+
+**slop.** Fires on 96% of the machine-written samples and 26% of edited
+documents. Most findings on both sides are its em-dash rule (41 of 94 on
+machine-written text, 184 of 512 on edited text), which its own
+description calls a house style; without it the pack still separates
+the two (*ai-vocab*, *promo*, *genuinely*, *performative-honesty* on the
+machine-written side; *stranded-auxiliary* and *load-bearing-adverbs* on
+edited prose, where they are mostly ordinary English). Opt-in, for a
+reader who wants the slop author's judgement on top of `ai-tells`.
+
+**gitlab.** GitLab's own documentation rules, converted faithfully:
+*inclusive-language* flags every *he*, *she* and *his* (4,574 findings,
+nearly all in the fiction and blog documents), *future-tense* every
+*will* (1,691). A house style for documentation written to GitLab's
+guide, not a general check.
+
+**Variant spellings.** The coherency pairs added to
+`terms.variant-spelling` change nothing on the edited sets: no document
+uses both spellings of a pair that differs in more than hyphens (those
+were grouped already).
