@@ -75,8 +75,8 @@ Where the work stands, and how to resume it on another machine.
    Measure the time with the model; if it is too slow, order the
    candidates by the model before parsing them (ask it among unverified
    versions first, then verify only its top choices), or parse them in
-   parallel (the parse time limit is wall-clock, so not inside runs that
-   already use every core). `SHARD=i/n` splits a `real_errors` run into
+   parallel (parse limits count work, not time, so results do not change
+   with the number of threads). `SHARD=i/n` splits a `real_errors` run into
    parts; `fix_bound` (no model) shows which stage loses each grammar
    error's correction, and should be run after any change to the
    candidates.

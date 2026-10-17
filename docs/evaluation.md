@@ -1743,3 +1743,24 @@ reports) it is seldom the right one: *afters the update*, *cluster
 administered to*, *The API server i willing*. A single correction the
 grammar accepts is no evidence of an error.
 
+### Work limits instead of time limits
+
+The parser's limits were wall-clock time: whether a candidate correction
+verified, and so whether an error was caught, depended on the machine
+and its load. The perfect-model figure moved by a few pairs between runs
+of the same binary, and by eleven on a cold parse cache (326 against 337),
+and a user's flags could differ from a colleague's.
+
+The parser now also stops at a work limit, in unifications tried (in the
+chart and when unpacking; a reused rule application counts as one), and
+the searches of one parse (narrow beam, wider beams, none) share it as
+they share the time. At the median rate on the real-error corpus's
+sentences, about 42 unifications a millisecond (`work_rate`, in
+`crates/emdysi-parse/examples`; 11 to 134 by sentence), the limits keep
+their former times: 425,000 per sentence (10 seconds), 127,500 for the
+grammar-error variant (3), 212,500 for a rule's correction (5), and for
+the model's candidates 85,000 each, more for long sentences, 1,275,000 in
+all (2 and 30 seconds). Time limits stay, as a safety net for a much
+slower machine: five times the work's worth for the candidates, 20
+seconds per sentence (`--timeout`; `--work` sets the work limit).
+
