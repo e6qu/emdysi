@@ -1,0 +1,6 @@
+# LanguageTool rules left out of packs/languagetool.toml because they fail
+# their own examples in emdysi although the converter's check passes, with
+# the reason. Read by scripts/import-languagetool.py.
+
+# emdysi's sentence segmentation ends a sentence at "Ph." in "Ph. D.".
+languagetool.ph-d

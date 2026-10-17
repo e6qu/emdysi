@@ -126,6 +126,92 @@ pub enum MatchOn {
     Surface,
 }
 
+/// A matched group changed for a suggestion: a regex replacement on its
+/// text, then the form for a Penn Treebank tag (from UniMorph, see
+/// [`crate::dict::inflect`]), then a change of case (`startupper`,
+/// `startlower`, `allupper`, `alllower`). In a pack, a string of five
+/// tab-separated fields: group, case, pattern, replacement, tag (empty
+/// for none).
+#[derive(Debug, Clone)]
+pub struct Transform {
+    group: String,
+    case: String,
+    pattern: Option<Regex>,
+    replacement: String,
+    tag: String,
+}
+
+impl Transform {
+    fn parse(spec: &str) -> Result<Transform, String> {
+        let f: Vec<&str> = spec.split('\t').collect();
+        let [group, case, pattern, replacement, tag] = f[..] else {
+            return Err(format!("a transform has five fields: {spec:?}"));
+        };
+        Ok(Transform {
+            group: group.to_string(),
+            case: case.to_string(),
+            pattern: if pattern.is_empty() {
+                None
+            } else {
+                Some(Regex::new(pattern).map_err(|e| format!("bad transform pattern: {e}"))?)
+            },
+            replacement: replacement.to_string(),
+            tag: tag.to_string(),
+        })
+    }
+
+    /// The changed text of the group in `m`; `None` if the group did not
+    /// match or has no form for the tag.
+    fn apply(&self, m: &fancy_regex::Captures<'_, str>) -> Option<String> {
+        let mut text = m.name(&self.group)?.as_str().to_string();
+        if let Some(p) = &self.pattern {
+            text = p.replace_all(&text, self.replacement.as_str()).into_owned();
+        }
+        if !self.tag.is_empty() {
+            let inflected = crate::dict::inflect(&text, &self.tag)?;
+            text = if text.chars().next().is_some_and(char::is_uppercase) {
+                upper_first(&inflected)
+            } else {
+                inflected
+            };
+        }
+        Some(match self.case.as_str() {
+            "startupper" => upper_first(&text),
+            "startlower" => {
+                let mut c = text.chars();
+                c.next()
+                    .map(|f| f.to_lowercase().chain(c).collect())
+                    .unwrap_or_default()
+            }
+            "allupper" => text.to_uppercase(),
+            "alllower" => text.to_lowercase(),
+            _ => text,
+        })
+    }
+}
+
+fn upper_first(s: &str) -> String {
+    let mut c = s.chars();
+    c.next()
+        .map(|f| f.to_uppercase().chain(c).collect())
+        .unwrap_or_default()
+}
+
+/// A template with `{{i}}` (transform `i` of `ts`) and `${name}` (a
+/// group) filled from `m`; `None` if a transform it uses has no result.
+fn fill(template: &str, m: &fancy_regex::Captures<'_, str>, ts: &[Transform]) -> Option<String> {
+    let mut t = template.to_string();
+    for (i, x) in ts.iter().enumerate() {
+        let key = format!("{{{{{i}}}}}");
+        if t.contains(&key) {
+            t = t.replace(&key, &x.apply(m)?.replace('$', "$$"));
+        }
+    }
+    let mut e = String::new();
+    m.expand(&t, &mut e);
+    Some(e)
+}
+
 /// A part-of-speech condition on a named group of a `regex` rule.
 #[derive(Debug, Clone)]
 pub struct TagCheck {
@@ -200,6 +286,9 @@ pub enum Kind {
         /// whose Penn Treebank tag (see [`crate::tags`]) matches, or (with
         /// `negate`) none that does. A rule with conditions needs a parse.
         tags: Vec<TagCheck>,
+        /// Changes to a matched group for suggestions and messages,
+        /// written `{{0}}`, `{{1}}`... in templates (see [`Transform`]).
+        transforms: Vec<Transform>,
     },
     /// The findings of other rules (ids starting with one of `of`), when a
     /// document has at least `min` of them and more than `max` per `per`
@@ -485,6 +574,10 @@ impl Rule {
                                 negate,
                             })
                         })
+                        .collect::<Result<_, PackError>>()?,
+                    transforms: get_list(t, "transforms")
+                        .iter()
+                        .map(|x| Transform::parse(x).map_err(|e| err(&e)))
                         .collect::<Result<_, PackError>>()?,
                 }
             }
@@ -1134,6 +1227,7 @@ impl Rule {
                 expand,
                 needs,
                 tags,
+                transforms,
             } => {
                 for (si, s) in a.sentences.iter().enumerate() {
                     if !tags.is_empty() && s.best().is_none() {
@@ -1171,17 +1265,27 @@ impl Rule {
                             continue;
                         }
                         let mut d = self.diag(a, si, from, to, m0.as_str());
-                        let expanded = |template: &str| {
-                            let mut e = String::new();
-                            m.expand(template, &mut e);
-                            e
-                        };
                         if let Some(rep) = replace {
-                            d.replacement = Some(expanded(rep));
+                            d.replacement = fill(rep, &m, transforms);
                         }
-                        d.suggestions = suggest.iter().map(|t| expanded(t)).collect();
+                        d.suggestions = suggest
+                            .iter()
+                            .filter_map(|t| fill(t, &m, transforms))
+                            .collect();
                         if *expand {
-                            d.message = expanded(&self.message).replace("{match}", m0.as_str());
+                            // Without a transform's result, the group as
+                            // written.
+                            let msg = fill(&self.message, &m, transforms).unwrap_or_else(|| {
+                                let mut t = self.message.clone();
+                                for (i, x) in transforms.iter().enumerate() {
+                                    t = t.replace(
+                                        &format!("{{{{{i}}}}}"),
+                                        &format!("${{{}}}", x.group),
+                                    );
+                                }
+                                fill(&t, &m, &[]).unwrap_or_default()
+                            });
+                            d.message = msg.replace("{match}", m0.as_str());
                         }
                         out.push(d);
                     }
@@ -3088,7 +3192,8 @@ fn tag_holds(s: &crate::Sentence, m: &fancy_regex::Captures<'_, str>, c: &TagChe
 /// Whether bytes `[from, to)` of `text` touch a URL or a file path: a
 /// run of non-space characters with |://|, a slash between letters
 /// (|src/main|, not |2/29|), or a dot between a letter or digit and two
-/// or more letters (|github.io|, |main.rs|, not |a.m.| or |e.g.|).
+/// or more letters, the first lower case (|github.io|, |main.rs|, not
+/// |a.m.|, |e.g.| or |B.Sc|).
 fn in_url_or_path(text: &str, from: usize, to: usize) -> bool {
     let start = text[..from].rfind(char::is_whitespace).map_or(0, |i| i + 1);
     let end = text[to..]
@@ -3099,7 +3204,11 @@ fn in_url_or_path(text: &str, from: usize, to: usize) -> bool {
     text[start..end].contains("://")
         || (1..c.len()).any(|i| {
             (c[i] == '/' && letter(i - 1) && letter(i + 1))
-                || (c[i] == '.' && c[i - 1].is_alphanumeric() && letter(i + 1) && letter(i + 2))
+                || (c[i] == '.'
+                    && c[i - 1].is_alphanumeric()
+                    && letter(i + 1)
+                    && letter(i + 2)
+                    && c[i + 1].is_lowercase())
         })
 }
 

@@ -397,16 +397,56 @@ def sequence(tokens, groups=True, conds=None):
     return "".join(parts)
 
 
+# The transforms of the rule being converted (see `transform`).
+TRANSFORMS = []
+CASES = {"startupper", "startlower", "allupper", "alllower", "preserve"}
+
+
+def transform(ch, n):
+    """A `<match>` with a case conversion, a regex replacement or a tag to
+    inflect for, as a transform of the rule (emdysi's `transforms`, five
+    tab-separated fields: group, case, pattern, replacement, tag); its
+    placeholder `{{i}}`."""
+    if set(ch.attrib) - {"no", "case_conversion", "regexp_match", "regexp_replace", "postag"}:
+        raise Skip("match attributes")
+    case = ch.get("case_conversion", "")
+    if case and case not in CASES:
+        raise Skip("match attributes")
+    pattern = ch.get("regexp_match", "")
+    replacement = re.sub(r"\$(\d)", r"${\1}", ch.get("regexp_replace", ""))
+    tag = ch.get("postag", "")
+    if tag and tag not in ("VBD", "VBN", "VBG", "VBZ", "VB", "VBP", "NNS", "NN"):
+        raise Skip("match attributes")
+    if pattern:
+        # Python's `re` is closer to emdysi's engine than `regex` (which
+        # takes LanguageTool's `(?)ife`); it lacks only `\p{...}`.
+        try:
+            regex.compile(pattern)
+            re.compile(re.sub(r"\\[pP]\{\w+\}", r"\\w", pattern))
+        except (regex.error, re.error):
+            raise Skip("match attributes")
+    spec = "\t".join((f"t{n}", "" if case == "preserve" else case, pattern, replacement, tag))
+    if spec not in TRANSFORMS:
+        TRANSFORMS.append(spec)
+    return f"{{{{{TRANSFORMS.index(spec)}}}}}"
+
+
 def template(el, optional, regexp_rule=False):
     """A suggestion or message as an expansion template; `None` when it
     has nothing but text."""
     out = [(el.text or "").replace("$", "$$")]
     for ch in el:
-        if ch.tag != "match" or set(ch.attrib) - {"no"}:
+        if ch.tag != "match":
             raise Skip(f"<{ch.tag} {dict(ch.attrib)}> in suggestion")
         n = int(ch.get("no"))
         if n in optional:
             raise Skip("suggestion uses an optional token")
+        if set(ch.attrib) - {"no"}:
+            if regexp_rule:
+                raise Skip("match attributes")
+            out.append(transform(ch, n))
+            out.append((ch.tail or "").replace("$", "$$"))
+            continue
         out.append(f"${{{n}}}" if regexp_rule else f"${{t{n}}}")
         out.append((ch.tail or "").replace("$", "$$"))
     s = "".join(out)
@@ -431,15 +471,19 @@ def message(el, optional, regexp_rule=False):
         elif ch.tag == "match" and set(ch.attrib) == {"no"}:
             n = int(ch.get("no"))
             parts.append(f"${{{n}}}" if regexp_rule else f"${{t{n}}}")
+        elif ch.tag == "match" and not regexp_rule:
+            parts.append(transform(ch, int(ch.get("no"))))
         else:
             raise Skip(f"<{ch.tag}> in message")
         parts.append(esc(ch.tail))
     text = "".join(parts)
+    if "{{" in text:
+        text = text.replace("{{", "\x00").replace("}}", "\x01")
     ref = (lambda m: f"${{{m.group(1)}}}") if regexp_rule else (lambda m: f"${{t{m.group(1)}}}")
     text = " ".join(re.sub(r"\\(\d)", ref, text).split())
-    if "${" not in text:
+    if "${" not in text and "\x00" not in text:
         text = text.replace("$$", "$")
-    return text, suggestions
+    return text.replace("\x00", "{{").replace("\x01", "}}"), suggestions
 
 
 def example(el):
@@ -457,6 +501,7 @@ def example(el):
 
 def convert(rule, group, category, file):
     """One LanguageTool rule as an emdysi rule (a dict), or raise Skip."""
+    TRANSFORMS.clear()
     if (group if group is not None else rule).get("id") in SKIP_RULES:
         raise Skip("left out")
     for el in (rule, group):
@@ -526,6 +571,7 @@ def convert(rule, group, category, file):
         "message": msg,
         "pattern": pat,
         "needs": needs,
+        "transforms": list(TRANSFORMS),
         "tags": [c for c, neg in conds if not neg],
         "not_tags": [c for c, neg in conds if neg],
         "unless": ("" if case else "(?i)") + "|".join(f"(?:{u})" for u in unless) if unless else None,
@@ -606,6 +652,14 @@ def slug(s):
     return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")
 
 
+# Rules that fail their examples in emdysi for reasons the converter's
+# check cannot see (sentence segmentation), with the reasons.
+EXCLUDED = {
+    line.strip()
+    for line in (ROOT / "scripts/languagetool-excluded.txt").read_text().splitlines()
+    if line.strip() and not line.startswith("#")
+}
+
 # Rules with part-of-speech conditions that pass their own examples with
 # emdysi's parse (written by crates/emdysi-check/examples/lt_validate.rs
 # from a `--candidates` pack).
@@ -635,6 +689,9 @@ def build(candidates=False):
             base = "languagetool." + slug(r["lt_id"])
             ids[base] = ids.get(base, 0) + 1
             r["id"] = base if ids[base] == 1 else f"{base}-{ids[base]}"
+            if r["id"] in EXCLUDED:
+                skipped["excluded"] = skipped.get("excluded", 0) + 1
+                continue
             tagged = bool(r["tags"] or r["not_tags"])
             if candidates and not tagged:
                 continue
@@ -672,8 +729,10 @@ def build(candidates=False):
             out.append("not_tags = [" + ", ".join(toml_str(c) for c in r["not_tags"]) + "]")
         if r["unless"]:
             out.append(f"unless = {toml_str(r['unless'])}")
-        if "${" in r["message"]:
+        if "${" in r["message"] or "{{" in r["message"]:
             out.append("expand = true")
+        if r["transforms"]:
+            out.append("transforms = [" + ", ".join(toml_str(t) for t in r["transforms"]) + "]")
         if len(r["suggest"]) == 1:
             out.append(f"replace = {toml_str(r['suggest'][0])}")
         if r["suggest"]:

@@ -360,3 +360,81 @@ pub fn coherent_key(word: &str) -> Option<&'static str> {
     });
     map.get(word).map(String::as_str)
 }
+
+/// `word` inflected for a Penn Treebank tag (VBD, VBN, VBG, VBZ, VB, VBP,
+/// NNS, NN), from UniMorph's English tables: the form with that tag of a
+/// lemma `word` is a form of (|go| or |went| with VBN gives |gone|). `None`
+/// when the tables do not have it. The case of the result is lower.
+pub fn inflect(word: &str, tag: &str) -> Option<String> {
+    type Forms = HashMap<String, Vec<(String, String)>>;
+    static MAP: OnceLock<(Forms, HashMap<String, Vec<String>>)> = OnceLock::new();
+    let (forms, lemmas) = MAP.get_or_init(|| {
+        let mut forms: Forms = HashMap::new();
+        let mut lemmas: HashMap<String, Vec<String>> = HashMap::new();
+        for line in UNIMORPH.lines() {
+            let mut it = line.split('\t');
+            let (Some(l), Some(f), Some(feats)) = (it.next(), it.next(), it.next()) else {
+                continue;
+            };
+            if l.contains(' ') || f.contains(' ') {
+                continue;
+            }
+            let (l, f) = (l.to_lowercase(), f.to_lowercase());
+            forms
+                .entry(l.clone())
+                .or_default()
+                .push((feats.to_string(), f.clone()));
+            let ls = lemmas.entry(f).or_default();
+            if !ls.contains(&l) {
+                ls.push(l);
+            }
+        }
+        (forms, lemmas)
+    });
+    let w = word.to_lowercase();
+    let want = match tag {
+        "VBD" => "V;PST",
+        "VBN" => "V;V.PTCP;PST",
+        "VBG" => "V;V.PTCP;PRS",
+        "VBZ" => "V;PRS;3;SG",
+        "NNS" => "N;PL",
+        "VB" | "VBP" | "NN" => "",
+        _ => return None,
+    };
+    let noun = tag.starts_with('N');
+    let candidates: Vec<&String> = std::iter::once(&w)
+        .filter(|l| forms.contains_key(*l))
+        .chain(lemmas.get(&w).into_iter().flatten())
+        .collect();
+    for l in candidates {
+        let fs = &forms[l];
+        // The lemma must have forms of the right word class.
+        if !fs
+            .iter()
+            .any(|(f, _)| f.starts_with(if noun { "N" } else { "V" }))
+        {
+            continue;
+        }
+        if want.is_empty() {
+            return Some(l.clone());
+        }
+        if let Some((_, f)) = fs.iter().find(|(f, _)| f == want) {
+            return Some(f.clone());
+        }
+    }
+    None
+}
+
+#[cfg(test)]
+mod inflect_tests {
+    use super::inflect;
+
+    #[test]
+    fn forms_for_tags() {
+        assert_eq!(inflect("went", "VBN").as_deref(), Some("gone"));
+        assert_eq!(inflect("go", "VBZ").as_deref(), Some("goes"));
+        assert_eq!(inflect("mice", "NN").as_deref(), Some("mouse"));
+        assert_eq!(inflect("mouse", "NNS").as_deref(), Some("mice"));
+        assert_eq!(inflect("writes", "VB").as_deref(), Some("write"));
+    }
+}
