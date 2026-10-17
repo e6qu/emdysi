@@ -175,3 +175,10 @@ full text is in the file named. Details, versions and changes are in
 - Copyright: Copyright (c) 2015 Titus Wormer
 - License: MIT License (`MIT`); full text in [`data/equality/license`](data/equality/license)
 - Used for: the tool (shipped)
+
+## Open English WordNet: single words with parts of speech, verb frames and irregular forms
+
+- Location: `data/oewn`
+- Copyright: Open English WordNet, Copyright (c) 2019-present, The Open English Wordnet Team; WordNet 3.1, Copyright 2011 by Princeton University
+- License: Creative Commons Attribution 4.0 (`CC-BY-4.0`); full text in [`data/oewn/LICENSE`](data/oewn/LICENSE), [`data/oewn/LICENSE-WordNet`](data/oewn/LICENSE-WordNet)
+- Used for: the tool (shipped)

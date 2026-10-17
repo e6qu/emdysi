@@ -1,9 +1,12 @@
 //! Why sentences get no full analysis: for each sentence (one per line of
 //! standard input) without a strict reading, each word in turn is replaced
 //! by plain words of the same shape (*water*, *things*, *Kim*, *quickly*,
-//! ...); the words whose replacement gives a strict reading are the
-//! culprits. Counts over all sentences show which kinds of words the
-//! grammar lacks most.
+//! *use*, *work*, *new*, ...); the words whose replacement gives a strict
+//! reading are the culprits, printed with the class of the word that
+//! replaced them (*provision:verb*: the sentence needs a transitive verb
+//! there). Counts over all sentences show which kinds of words the grammar
+//! lacks most; `scripts/oewn/gaps.py` turns them into lexical entries where
+//! Open English WordNet confirms the class.
 //!
 //! `cargo run --release -p emdysi-parse --example culprits < sentences.txt`
 
@@ -12,23 +15,44 @@ use std::collections::BTreeMap;
 use emdysi_parse::{Erg, default_grammar_dir, is_strict};
 
 /// Plain words to stand in for `w`, tried in turn.
-fn stand_ins(w: &str) -> &'static [&'static str] {
+fn stand_ins(w: &str) -> &'static [(&'static str, &'static str)] {
     let lower = w.to_lowercase();
     let capitalized = w.chars().next().is_some_and(char::is_uppercase)
         && w.chars().skip(1).any(char::is_lowercase);
     let all_caps = w.chars().all(|c| c.is_uppercase() || c.is_ascii_digit());
     if capitalized || all_caps {
-        &["Kim"]
+        &[("Kim", "name")]
     } else if w.chars().any(|c| c.is_ascii_digit()) {
-        &["ten"]
+        &[("ten", "number")]
     } else if lower.ends_with("ly") {
-        &["quickly"]
+        &[("quickly", "adverb"), ("new", "adjective")]
+    } else if lower.ends_with("ing") {
+        &[
+            ("using", "verb"),
+            ("working", "verb-intr"),
+            ("water", "noun"),
+        ]
+    } else if lower.ends_with("ed") {
+        &[
+            ("used", "verb"),
+            ("worked", "verb-intr"),
+            ("new", "adjective"),
+        ]
     } else if lower.ends_with('s') {
-        &["things", "water"]
+        &[
+            ("things", "noun"),
+            ("water", "noun"),
+            ("uses", "verb"),
+            ("works", "verb-intr"),
+        ]
     } else {
-        // A mass noun works without a determiner; a name, where a mass
-        // noun does not.
-        &["water", "Kim"]
+        &[
+            ("water", "noun"),
+            ("Kim", "name"),
+            ("use", "verb"),
+            ("work", "verb-intr"),
+            ("new", "adjective"),
+        ]
     }
 }
 
@@ -59,12 +83,12 @@ fn main() {
             if w.is_empty() {
                 continue;
             }
-            for alt in stand_ins(w) {
+            for (alt, class) in stand_ins(w) {
                 let replaced = words[i].replacen(w, alt, 1);
                 let mut v = words.clone();
                 v[i] = &replaced;
                 if strict(&v.join(" ")) {
-                    found.push(w.to_string());
+                    found.push(format!("{w}:{class}"));
                     break;
                 }
             }

@@ -106,16 +106,28 @@ reported. `{count}`, `{per}` and `{max}` are available in messages.
 
 Lower-case words that neither the bundled word list (ESDB/SCOWL, size 60,
 American and British spellings, both *-ise* and *-ize*), nor the rarer
-words of size 70 and the software terms of the cspell dictionaries
+words of sizes 70 and 80 and the software terms of the cspell dictionaries
 (accepted, never suggested), nor the grammar's lexicon and inflection rules
-know. Names, acronyms, numbers and inline code are skipped. A word is
-reported only when it looks like a typo: a known word is one edit away,
-and the word occurs once in the document (a word used twice or more is one
-of the document's terms, such as *kubelet*). Options are `min_length` (default 3) and
-`ignore` (a list of words). `{suggestion}` is available in messages. A
-suggestion is applied automatically only when it is clearly the most likely
-correction: a transposed or doubled letter, or the only known word one edit
-away.
+know. A form the grammar derives counts only when each of its rules fits
+its stem's word class, with one inflection at most and no informal form
+(*specifing* is not *-ing* on the noun *specif*). Names, acronyms,
+numbers, mentions (*@name*, and the same word elsewhere in the document),
+command-line options and inline code (and words glued to it) are skipped.
+A word is reported only when it looks like a typo: a known word is one
+edit away, or two for a long word with few common candidates, and the
+word occurs once in the document (a word used twice or more is one of
+the document's terms, such as *kubelet*). A known word with one letter
+typed twice (*languagess*) is a typo, a known word plus an affix is a
+coinage unless a word on the same stem is one edit away (*assignement*).
+Findings only a model can confirm (two edits away, misspelled
+derivations, typos in title-cased runs, three-letter words) are reported
+without a model only when there is a single candidate the word only drops
+or adds letters to (*neccesary*), and never fixed automatically. Options
+are `min_length` (default 3), `ignore` (a list of words; their plurals
+too) and `model_threshold`. `{suggestion}` is available in messages. A
+suggestion is applied automatically only when it is clearly the most
+likely correction: a transposed or doubled letter, or the only known word
+one edit away.
 
 ### `semantics`
 
@@ -268,6 +280,14 @@ one of:
 - `unnumbered-steps`: a bulleted list of three or more instructions with
   words of sequence (`pattern`: *then*, *next*, *finally*, *steps*, ...) in
   its items or the paragraph before it; `{count}`.
+- `one-line-paragraphs`: paragraphs of one sentence of at most
+  `max_words` words (default 8), when there are at least `min` (default 3)
+  and they are at least `share` (default 0.4) of the paragraphs; `{count}`;
+- `bold-lead-ins`: list items that open with a bold label ending in a
+  colon or full stop (*\*\*Logs:\*\* What happened.*), when there are at
+  least `min` (default 3) and they are at least `share` (default 0.5) of
+  the document's list items, reported once on the first; `{count}` (the
+  labelled items), `{items}` (all list items).
 
 ### `parallel`
 

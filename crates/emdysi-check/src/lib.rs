@@ -14,6 +14,45 @@ use emdysi_parse::{Erg, InputToken, Parse, Reading};
 use emdysi_text::blocks::{Block, BlockKind, markdown_blocks, plain_blocks};
 use emdysi_text::segment::sentences;
 
+/// Time spent in each stage of checking, summed over all threads since the
+/// process started (for profiling: see `examples/timing.rs`).
+pub mod timing {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    use std::time::{Duration, Instant};
+
+    pub static PARSE: AtomicU64 = AtomicU64::new(0);
+    pub static REPARSE: AtomicU64 = AtomicU64::new(0);
+    pub static MAL: AtomicU64 = AtomicU64::new(0);
+    pub static RULES: AtomicU64 = AtomicU64::new(0);
+    pub static VERIFY: AtomicU64 = AtomicU64::new(0);
+
+    /// Runs `f`, adding its time to `counter`.
+    pub fn timed<T>(counter: &AtomicU64, f: impl FnOnce() -> T) -> T {
+        let t = Instant::now();
+        let out = f();
+        counter.fetch_add(t.elapsed().as_nanos() as u64, Ordering::Relaxed);
+        out
+    }
+
+    /// Time per rule id, summed like the stages.
+    pub static RULE_TIMES: std::sync::Mutex<std::collections::BTreeMap<String, Duration>> =
+        std::sync::Mutex::new(std::collections::BTreeMap::new());
+
+    /// The stages and their times so far.
+    pub fn report() -> Vec<(&'static str, Duration)> {
+        [
+            ("parse", &PARSE),
+            ("re-parse (quoting, unpruned)", &REPARSE),
+            ("grammar-error variant", &MAL),
+            ("rules", &RULES),
+            ("rules' correction parses", &VERIFY),
+        ]
+        .into_iter()
+        .map(|(n, c)| (n, Duration::from_nanos(c.load(Ordering::Relaxed))))
+        .collect()
+    }
+}
+
 pub mod articles;
 pub mod assist;
 pub mod compounds;
@@ -431,7 +470,9 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                     } else {
                         let masked = parser_text(text, in_list);
                         let text = masked.as_deref().unwrap_or(text);
-                        match erg.parse_limited(text, opts.timeout, opts.max_readings) {
+                        match timing::timed(&timing::PARSE, || {
+                            erg.parse_limited(text, opts.timeout, opts.max_readings)
+                        }) {
                             Ok(p) => (Some(p), None),
                             Err(e) => (None, Some(e.to_string())),
                         }
@@ -457,7 +498,9 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                             return p;
                         }
                         let p = if p.readings.len() >= opts.max_readings {
-                            match erg.parse_limited(text, opts.timeout, ALL_READINGS) {
+                            match timing::timed(&timing::REPARSE, || {
+                                erg.parse_limited(text, opts.timeout, ALL_READINGS)
+                            }) {
                                 Ok(q) if q.readings.len() < ALL_READINGS && quoting_only(&q) => q,
                                 _ => return p,
                             }
@@ -471,7 +514,9 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                         let p = if p.complete {
                             p
                         } else {
-                            match erg.parse_unpruned(text, opts.timeout, ALL_READINGS) {
+                            match timing::timed(&timing::REPARSE, || {
+                                erg.parse_unpruned(text, opts.timeout, ALL_READINGS)
+                            }) {
                                 Ok(q)
                                     if q.complete
                                         && q.readings.len() < ALL_READINGS
@@ -534,11 +579,13 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                         let masked = parser_text(text, in_list);
                         let text = masked.as_deref().unwrap_or(text);
                         erg.mal().and_then(|m| {
-                            m.parse_limited(
-                                text,
-                                opts.timeout.min(MAL_TIMEOUT),
-                                opts.max_readings.min(MAL_READINGS),
-                            )
+                            timing::timed(&timing::MAL, || {
+                                m.parse_limited(
+                                    text,
+                                    opts.timeout.min(MAL_TIMEOUT),
+                                    opts.max_readings.min(MAL_READINGS),
+                                )
+                            })
                             .ok()
                             .map(|mut p| {
                                 p.readings.retain(|r| !unlicensed_quoting(r, text));
@@ -667,7 +714,16 @@ impl Checker {
             for rule in &pack.rules {
                 if self.enabled(&rule.id) {
                     let ask = ask.as_mut().map(|x| &mut **x as &mut dyn decisions::Ask);
+                    let t = std::time::Instant::now();
                     rule.run_with(erg, a, &glossary, ask, &mut out);
+                    let d = t.elapsed();
+                    timing::RULES
+                        .fetch_add(d.as_nanos() as u64, std::sync::atomic::Ordering::Relaxed);
+                    *timing::RULE_TIMES
+                        .lock()
+                        .unwrap()
+                        .entry(rule.id.clone())
+                        .or_default() += d;
                 }
             }
         }

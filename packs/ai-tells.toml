@@ -37,7 +37,17 @@ words = [
   "the real magic happens", "make or break", "hiding in plain sight",
   "has you covered", "will thank you", "this is just the beginning",
   "we can't wait to", "we can’t wait to", "every single time",
-  "game-changer", "game changer", "supercharge", "the gift of focus",
+  "game changer", "supercharge", "the gift of focus",
+  "paves the way for", "a pivotal moment", "uniquely positioned",
+  "real, lasting value", "a meaningful step toward", "important implications for",
+  "at the heart of everything we do", "whatever life throws at", "never look back",
+  "does it all", "and then some", "truly magical", "guaranteed to impress",
+  "brings people together", "it's no wonder", "it’s no wonder",
+  "has something for everyone", "won't soon forget", "won’t soon forget",
+  "a feast for the eyes", "hidden gem", "a must-visit", "adventure awaits",
+  "top of mind", "remarkable results", "worth your time", "above and beyond",
+  "make a real impact", "fostering a culture of", "actionable insights",
+  "data-driven decision-making",
 ]
 
 [[rule]]
@@ -140,10 +150,9 @@ kind = "words"
 match = "surface"
 severity = "warning"
 message = "Hook aimed at the reader ('{match}'); get to the point."
-description = "Phrases current chat models use to court the reader: a show of candour, an invitation to dive in, a guess at the reader's experience, a call to action. Each occurs at most once in the 410,000 words of the edited corpora (corpora/edited, corpora/edited-by-sa), and in most of the documents of corpora/ai-current."
+description = "Phrases current chat models use to court the reader: a show of candour, an invitation to dive in, a guess at the reader's experience, a call to action. Each occurs at most once in the 410,000 words of the edited corpora (corpora/edited, corpora/edited-by-sa), and in most of the documents of corpora/ai-current. ('Let's dive in' is left out: the Rust book uses it.)"
 words = [
   "let's be honest", "let’s be honest", "let's face it", "let’s face it",
-  "let's dive in", "let’s dive in", "let's dive into", "let’s dive into",
   "sound familiar?", "you're not alone", "you’re not alone",
   "ready to get started?", "ready to see it in action?", "spoiler:",
   "what most guides won't tell you", "what most guides won’t tell you",
@@ -155,6 +164,27 @@ examples = [
 ]
 acceptable = [
   "To be honest, the old release was faster.\n",
+]
+
+[[rule]]
+id = "ai-tells.formulas"
+kind = "words"
+match = "surface"
+severity = "suggestion"
+message = "Formula ('{match}'); start with what you have to say."
+description = "Openers and closers of letters, emails and reviews that model-written versions use by default. None occurs in the edited corpora, though these have no letters, so the evidence is weaker than for the other lists: people write them too, which is why this is only a suggestion."
+words = [
+  "i hope this email finds you well", "i hope this message finds you well",
+  "i am writing to express my", "i would welcome the opportunity to",
+  "i look forward to the possibility of", "please don't hesitate to",
+  "please don’t hesitate to", "don't hesitate to reach out",
+  "don’t hesitate to reach out", "feel free to push back", "pro tip:",
+]
+examples = [
+  "Hi Taylor,\n\nI hope this email finds you well!\n",
+]
+acceptable = [
+  "Hi Taylor,\n\nThe invoice is attached.\n",
 ]
 
 [[rule]]
@@ -279,6 +309,36 @@ acceptable = [
 ]
 
 [[rule]]
+id = "ai-tells.not-just-then-is"
+kind = "sentence-pair"
+severity = "suggestion"
+message = "Contrast across two sentences ('{match}' then 'It's ...'); state the point directly."
+description = "The negative-then-positive frame without 'about': 'Rate limiting isn't just a nice-to-have. It's essential.' The negative says 'just', 'only', 'merely' or 'simply'. Not in the edited corpora."
+pattern = "(?i)\\b(?:isn't|isn’t|aren't|aren’t|is not|are not|wasn't|wasn’t)\\s+(?:just|only|merely|simply)\\b.*"
+next = "(?i)^\\W*(?:it|they|that|this)(?:'s|’s|'re|’re|\\s+is|\\s+are)\\b"
+examples = [
+  "Rate limiting isn't just a nice-to-have. It's essential at scale.\n",
+]
+acceptable = [
+  "It isn't something to submit. It's a separate part of the instructions.\n",
+]
+
+[[rule]]
+id = "ai-tells.not-then-punchline"
+kind = "sentence-pair"
+severity = "suggestion"
+message = "Contrast across two sentences ending in a punchline ('{match}' then a short 'It's ...'); state the point directly."
+description = "A negative sentence answered by a short reframing: 'Setbacks aren't the end of your story. They're the plot twist.' The second sentence has at most five words after 'It's' or 'They're'. Not in the edited corpora, whose such pairs go on longer ('It's a separate part of the instructions')."
+pattern = "(?i)\\b(?:isn't|isn’t|aren't|aren’t|wasn't|wasn’t)\\b.*"
+next = "^\\W*(?:It|They|That)(?:'s|’s|'re|’re)\\s+\\w+(?:\\s+\\w+){0,3}[.!]\\W*$"
+examples = [
+  "Setbacks aren't the end of your story. They're the plot twist.\n",
+]
+acceptable = [
+  "It isn't something to submit. It's a separate part of the instructions.\n",
+]
+
+[[rule]]
 id = "ai-tells.rhetorical-question"
 kind = "sentence-pair"
 severity = "suggestion"
@@ -308,6 +368,22 @@ examples = [
 ]
 acceptable = [
   "The build takes ten minutes on a laptop and two on the build farm, which caches the dependencies.\n\nRun it with `make`.\n",
+]
+
+[[rule]]
+id = "ai-tells.bold-lead-ins"
+kind = "structure"
+check = "bold-lead-ins"
+min = 3
+share = 0.6
+severity = "suggestion"
+message = "{count} of the {items} list items open with a bold label, the shape of model-written lists; keep the labels only where readers scan for them."
+description = "List items that open with a bold label and a colon ('**Logs:** The detailed record...'), when at least three of a document's list items and at least three fifths of them do; reported once a document. In the machine-written samples of corpora/ai-current most list items open so; in the edited corpora, 36 of 2,348, and only one document (a Rust blog post listing project goals, 11 of 15) passes the threshold (a Kubernetes reference page with 7 of 13 does not)."
+examples = [
+  "The three pillars:\n\n- **Logs:** What happened.\n- **Metrics:** How it performs.\n- **Traces:** Where a request went.\n",
+]
+acceptable = [
+  "The three pillars:\n\n- Logs record what happened.\n- Metrics show how it performs.\n- **Traces:** Where a request went.\n",
 ]
 
 [[rule]]

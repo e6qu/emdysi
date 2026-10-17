@@ -528,6 +528,10 @@ impl Rule {
                         min: n("min", 3.0),
                         share: num("share").unwrap_or(0.4),
                     },
+                    "bold-lead-ins" => StructureCheck::BoldLeadIns {
+                        min: n("min", 3.0),
+                        share: num("share").unwrap_or(0.5),
+                    },
                     "paragraph-length" => StructureCheck::ParagraphLength {
                         max_words: n("max_words", 150.0),
                         max_sentences: n("max_sentences", usize::MAX as f64),
@@ -2554,11 +2558,13 @@ fn verified_fix(
             .chain(rep.chars().collect::<Vec<_>>().iter())
             .chain(masked[to..].iter())
             .collect();
-        let Ok(p) = erg.parse_limited(
-            fixed.trim(),
-            std::time::Duration::from_secs(5),
-            VERIFY_READINGS,
-        ) else {
+        let Ok(p) = crate::timing::timed(&crate::timing::VERIFY, || {
+            erg.parse_limited(
+                fixed.trim(),
+                std::time::Duration::from_secs(5),
+                VERIFY_READINGS,
+            )
+        }) else {
             continue;
         };
         // The correction must repair the analysis that names the error, not
