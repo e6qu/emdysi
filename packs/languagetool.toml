@@ -30693,6 +30693,23 @@ expand = true
 examples = ["She will join us on 29/02/2022.\n"]
 
 [[rule]]
+id = "languagetool.ph-d"
+kind = "regex"
+severity = "warning"
+message = "The abbreviation is usually written '{{0}}'."
+source = 'https://languagetool.org/insights/post/style-acronym-vs-abbreviation/#what-is-an-abbreviation; https://github.com/languagetool-org/languagetool/blob/5b59afaf3a12489eb34f09b555cb31f1174926c7/languagetool-language-modules/en/src/main/resources/org/languagetool/rules/en/grammar.xml (PH_D)'
+license = 'LanguageTool (LGPL-2.1-or-later, Copyright (C) 2001-2021 Daniel Naber, Marcin Miłkowski and the LanguageTool contributors; portions from After the Deadline, GPL-3.0-or-later). See data/languagetool/SOURCE.md.'
+pattern = "(?i)(?P<m>(?P<t1>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:Ph)(?!(?!n['’]t)\\w|-\\w))(?:(?P<t2>(?:\\.)))?\\s*(?P<t3>(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:D)(?!(?!n['’]t)\\w|-\\w))(?P<t4>(?:\\.)))"
+needs = ['ph']
+unless = "(?i)(?:(?-i:(?:(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:Ph)(?!(?!n['’]t)\\w|-\\w))(?:(?:\\.))(?:(?:(?=\\w)(?<!\\w)(?<!\\w-)|(?!\\w))(?:D)(?!(?!n['’]t)\\w|-\\w))(?:(?:\\.)))))"
+expand = true
+transforms = ["t1\u0009startupper\u0009^.*$\u0009Ph.D.\u0009"]
+replace = '{{0}}'
+suggest = ['{{0}}']
+examples = ["I got my PH.D. at an university in Germany.\n", "I got my Ph D. at an university in Germany.\n", "I got my Ph. D. at an university in Germany.\n", "He has a PH.D.!\n"]
+acceptable = ["He has a Ph.D.\n", "He has a PhD.\n"]
+
+[[rule]]
 id = "languagetool.ph-d-2"
 kind = "regex"
 severity = "warning"

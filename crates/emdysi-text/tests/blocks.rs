@@ -104,5 +104,8 @@ fn front_matter_is_not_prose() {
         .map(|b| b.text.trim().to_string())
         .filter(|t| !t.is_empty())
         .collect();
-    assert_eq!(texts, vec!["Intro.".to_string(), "After the break.".to_string()]);
+    assert_eq!(
+        texts,
+        vec!["Intro.".to_string(), "After the break.".to_string()]
+    );
 }

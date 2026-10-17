@@ -480,7 +480,7 @@ the parse: 755 such rules convert, and the 579 whose examples hold with
 emdysi's parse are kept (`scripts/languagetool-tagged.txt`, written by
 `crates/emdysi-check/examples/lt_validate.rs`; the test suite cannot
 parse every example of every rule, so this check runs when the pack is
-generated), 2,579 rules in all. Suggestions may change a matched word's
+generated), 2,580 rules in all. Suggestions may change a matched word's
 case, apply a regex replacement to it, or inflect it for a tag (from
 UniMorph): the regex kind's `transforms`. A rule is kept only if it finds the marked span of each of its
 incorrect examples and nothing in its correct ones; the examples come along

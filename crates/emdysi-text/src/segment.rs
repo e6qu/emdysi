@@ -22,8 +22,8 @@ const TITLES: &[&str] = &[
 const ABBREVIATIONS: &[&str] = &[
     "etc", "al", "co", "corp", "inc", "ltd", "llc", "jr", "sr", "bros", "dept", "univ", "assn",
     "ave", "blvd", "rd", "e.g", "i.e", "viz", "resp", "incl", "misc", "min", "max", "hr", "hrs",
-    "mins", "sec", "secs", "ph.d", "b.sc", "m.sc", "b.eng", "m.eng", "d.phil", "b.a", "m.a",
-    "b.s", "m.s",
+    "mins", "sec", "secs", "ph.d", "b.sc", "m.sc", "b.eng", "m.eng", "d.phil", "b.a", "m.a", "b.s",
+    "m.s",
 ];
 
 /// Words that typically open a sentence, used to decide whether an
