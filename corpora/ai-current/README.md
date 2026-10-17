@@ -7,8 +7,8 @@ request (a blog post, a README section, a launch announcement, a support
 reply, ...), written to be typical of the genre, not a parody: the
 patterns appear at the density they do in real output.
 
-- License: written for emdysi and covered by the repository's MIT
-  license. No text was copied from other sources; names, products and
+- License: written for emdysi and covered by the repository's license
+  (AGPL-3.0-or-later). No text was copied from other sources; names, products and
   figures are invented.
 - Use: `rule_rates` on `samples.tsv` (made from the `.md` files by
   `to_tsv.py`) against the edited documents of `corpora/edited`, to find

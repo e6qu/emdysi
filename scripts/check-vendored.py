@@ -29,13 +29,19 @@ REQUIRED = [
     "license_files", "copyright", "provenance", "modifications", "use",
     "source_doc",
 ]
+# Licenses compatible with emdysi's own, AGPL-3.0-or-later (decision D15):
+# permissive ones, share-alike ones (CC BY-SA 4.0 is one-way compatible
+# with GPLv3; 3.0 material is used under 4.0, as its license allows), and
+# the GNU licenses that can be combined with the AGPL.
 ALLOWED_LICENSES = {
     "MIT", "Apache-2.0", "BSD-2-Clause", "BSD-3-Clause", "ISC", "CC0-1.0",
     "CC-BY-3.0", "CC-BY-4.0", "Unlicense", "LicenseRef-SCOWL",
-    "LicenseRef-PublicDomain",
+    "LicenseRef-PublicDomain", "CC-BY-SA-3.0", "CC-BY-SA-4.0",
+    "GPL-3.0-or-later", "LGPL-2.1-or-later", "LGPL-3.0-or-later",
+    "AGPL-3.0-or-later", "GPL-2.0-or-later", "MPL-2.0",
 }
-# Allowed only in their own directory, never used to train shipped data.
-ISOLATED_LICENSES = {"CC-BY-SA-3.0", "CC-BY-SA-4.0"}
+# Licenses no longer kept apart (share-alike was test-only under MIT).
+ISOLATED_LICENSES: set = set()
 
 
 def files_under(rel):
@@ -62,6 +68,14 @@ LICENSE_NAMES = {
     "Apache-2.0": "Apache License 2.0",
     "CC-BY-4.0": "Creative Commons Attribution 4.0",
     "CC-BY-SA-3.0": "Creative Commons Attribution-ShareAlike 3.0",
+    "CC-BY-SA-4.0": "Creative Commons Attribution-ShareAlike 4.0",
+    "BSD-2-Clause": "BSD 2-Clause License",
+    "BSD-3-Clause": "BSD 3-Clause License",
+    "GPL-3.0-or-later": "GNU General Public License 3.0 or later",
+    "LGPL-2.1-or-later": "GNU Lesser General Public License 2.1 or later",
+    "LGPL-3.0-or-later": "GNU Lesser General Public License 3.0 or later",
+    "AGPL-3.0-or-later": "GNU Affero General Public License 3.0 or later",
+    "GPL-2.0-or-later": "GNU General Public License 2.0 or later",
     "CC0-1.0": "CC0 1.0 (public domain dedication)",
     "LicenseRef-PublicDomain": "Public domain",
     "LicenseRef-SCOWL": "SCOWL/ESDB permissive notice",
@@ -97,12 +111,15 @@ def vendored_md(reg):
         "both, that every file under `grammar/`, `corpora/` and `data/` belongs",
         "to exactly one entry, and that this page is current.",
         "",
-        "Policy ([`docs/dependencies.md`](dependencies.md)): only licenses",
-        "compatible with emdysi's MIT license are allowed (MIT, Apache-2.0,",
-        "BSD, ISC, CC0, CC BY, public domain, the SCOWL notice). Share-alike",
-        "material (CC BY-SA) is allowed only as test data in its own",
-        "directory and never shapes what the tool ships. Non-commercial,",
-        "no-derivatives, LDC and unclear licenses are not allowed. Material",
+        "Policy ([`docs/dependencies.md`](dependencies.md)): emdysi is",
+        "licensed under the GNU Affero General Public License 3.0 or later",
+        "(decision D15), and only licenses compatible with it are allowed:",
+        "permissive ones (MIT, Apache-2.0, BSD, ISC, CC0, CC BY, public",
+        "domain, the SCOWL notice), share-alike ones (CC BY-SA 4.0, and 3.0",
+        "used under 4.0) and the GNU licenses that combine with the AGPL",
+        "(GPL-3.0-or-later, LGPL, GPL-2.0-or-later). GPL-2.0-only,",
+        "non-commercial, no-derivatives, LDC and unclear licenses are not",
+        "allowed. Material",
         "marked *shipped* is compiled into or loaded by `en`; material",
         "marked *test* is used only by tests and evaluations. Rust crate",
         "dependencies are covered separately, by `cargo deny` and",
@@ -169,7 +186,8 @@ def notices_md(reg):
         "<!-- Generated from VENDORED.toml by scripts/check-vendored.py",
         "     --update; do not edit by hand. -->",
         "",
-        "emdysi is MIT-licensed ([`LICENSE`](LICENSE)). It includes the",
+        "emdysi is licensed under the GNU Affero General Public License 3.0 or",
+        "later ([`LICENSE`](LICENSE)). It includes the",
         "following third-party material, each under its own license, whose",
         "full text is in the file named. Details, versions and changes are in",
         "[`docs/vendored.md`](docs/vendored.md).",

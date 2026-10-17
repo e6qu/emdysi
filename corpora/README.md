@@ -10,11 +10,12 @@ Every corpus, with its source, version, license and use, is listed in
 
 Rules for adding a corpus:
 
-1. Check that the license permits redistribution (public domain, MIT/BSD/Apache, CC0,
-   CC BY). CC BY-SA material may be added only in its own subdirectory with the
-   license text, and must never be used to train shipped data.
-   NonCommercial (NC) or no-derivatives (ND) material, LDC data and text of
-   unclear copyright are not allowed.
+1. Check that the license permits redistribution and is compatible with
+   emdysi's, the AGPL-3.0-or-later (decision D15): public domain, MIT/BSD/
+   Apache, CC0, CC BY, CC BY-SA (4.0, or 3.0 adapted under 4.0), and the
+   GNU licenses that combine with the AGPL. NonCommercial (NC) or
+   no-derivatives (ND) material, GPL-2.0-only, LDC data and text of unclear
+   copyright are not allowed.
 2. Record the upstream URL, version/commit, license and a short provenance
    note in `<corpus>/SOURCE.md`, and copy the license text alongside.
 3. Verify the license from the primary source, not a secondary listing.
@@ -35,8 +36,8 @@ Rules for adding a corpus:
 |---|---|---|
 | [`erg-gold/`](erg-gold/SOURCE.md) | MIT (ERG annotations); text by the ERG authors or public domain | ERG test suites `mrs`, `csli`, `esd`, `control`, `ccs` and the public-domain `sh-spec` (Sherlock Holmes) with gold derivations |
 | [`golden-rules/`](golden-rules/SOURCE.md) | MIT | Sentence-segmentation test cases from pySBD / Pragmatic Segmenter |
-| [`ai-prose/`](ai-prose/README.md) | MIT (written for this project) | Short documents in the style of machine-written prose, plus a plainly written control, with the expected diagnostics of the built-in packs |
-| [`ai-treebank/`](ai-treebank/README.md) | MIT (annotations written for this project; Beemo sentences MIT) | 160 sentences of machine-written prose with the right ERG reading chosen by hand, for measuring parse ranking |
+| [`ai-prose/`](ai-prose/README.md) | AGPL-3.0-or-later (written for this project) | Short documents in the style of machine-written prose, plus a plainly written control, with the expected diagnostics of the built-in packs |
+| [`ai-treebank/`](ai-treebank/README.md) | AGPL-3.0-or-later (annotations written for this project; Beemo sentences MIT) | 160 sentences of machine-written prose with the right ERG reading chosen by hand, for measuring parse ranking |
 | [`blimp/`](blimp/SOURCE.md) | CC BY 4.0 | Sample of BLiMP (2,010 minimal pairs, 67 paradigms of syntax, morphology and semantics) |
 | [`zorro/`](zorro/SOURCE.md) | MIT | Sample of Zorro (690 minimal pairs, 23 paradigms) |
 | [`beemo/`](beemo/SOURCE.md) | MIT | Sample of Beemo (200 outputs of zephyr-7b-beta, Mistral-7B and Mixtral-8x7B with expert edits; No Robots prompts and human texts excluded) |

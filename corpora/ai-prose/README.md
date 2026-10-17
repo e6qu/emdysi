@@ -5,7 +5,7 @@ target (machine-written prose: stock phrases, hedging, vague attribution,
 signposting, chat-assistant residue), plus `control.md`, plainly written
 prose that should draw few or no diagnostics.
 
-- License: written for emdysi and covered by the repository's MIT license.
+- License: written for emdysi and covered by the repository's license (AGPL-3.0-or-later).
   No text was copied from other sources; names and figures are invented.
 - Use: `crates/emdysi-check/tests/corpus.rs` checks each `*.md` file with
   the built-in packs and compares the diagnostics with `expected/<name>.txt`.

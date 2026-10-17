@@ -3,7 +3,8 @@
 <!-- Generated from VENDORED.toml by scripts/check-vendored.py
      --update; do not edit by hand. -->
 
-emdysi is MIT-licensed ([`LICENSE`](LICENSE)). It includes the
+emdysi is licensed under the GNU Affero General Public License 3.0 or
+later ([`LICENSE`](LICENSE)). It includes the
 following third-party material, each under its own license, whose
 full text is in the file named. Details, versions and changes are in
 [`docs/vendored.md`](docs/vendored.md).

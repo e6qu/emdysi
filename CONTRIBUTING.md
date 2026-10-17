@@ -231,10 +231,11 @@ compiled into a crate, belongs to exactly one entry in
 [`VENDORED.toml`](VENDORED.toml). To add or update material:
 
 1. Verify its license from the primary source: the upstream license file
-   at the exact version, not a listing. Allowed: MIT, Apache-2.0, BSD, ISC,
-   CC0, CC BY, public domain, the SCOWL notice. CC BY-SA only as test data
-   in its own directory. Not allowed: NC, ND, LDC, GPL-family data, or
-   anything unclear. For machine-generated text, also check the
+   at the exact version, not a listing. Allowed (decision D15): MIT,
+   Apache-2.0, BSD, ISC, CC0, CC BY, public domain, the SCOWL notice,
+   CC BY-SA 4.0 (and 3.0, adapted under 4.0), GPL-3.0-or-later,
+   GPL-2.0-or-later, LGPL-2.1/3.0-or-later, MPL-2.0 and the AGPL. Not
+   allowed: GPL-2.0-only, NC, ND, LDC, or anything unclear. For machine-generated text, also check the
    generating model's terms on its output.
 2. Copy the license text alongside the material, and write a `SOURCE.md`:
    the upstream URL, version, what was taken, how it was converted (keep
@@ -261,5 +262,6 @@ the table, and keep `deny.toml` passing.
 
 ## License
 
-emdysi is MIT-licensed. By contributing, you agree that your contributions
-are licensed under the same terms ([`LICENSE`](LICENSE)).
+emdysi is licensed under the GNU Affero General Public License 3.0 or
+later. By contributing, you agree that your contributions are licensed
+under the same terms ([`LICENSE`](LICENSE)).

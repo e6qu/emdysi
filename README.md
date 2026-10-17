@@ -1,7 +1,8 @@
 # emdysi
 
 emdysi is an English parser and prose checker, written in Rust and
-MIT-licensed. Its command-line tool, `en`:
+licensed under the GNU Affero General Public License 3.0 or later. Its
+command-line tool, `en`:
 
 - parses English into phrase structure and meaning, and says when a
   sentence is ambiguous;
@@ -181,7 +182,14 @@ up, is in [docs/plan.md](docs/plan.md). In order:
 
 ## License
 
-emdysi is MIT-licensed ([`LICENSE`](LICENSE)). It includes third-party
-material under its own licenses, all compatible with MIT: see
+emdysi is free software: you can redistribute it and modify it under the
+terms of the GNU Affero General Public License as published by the Free
+Software Foundation, version 3 of the License or (at your option) any later
+version ([`LICENSE`](LICENSE)). It is distributed in the hope that it will
+be useful, but without any warranty. If you run a modified version as a
+network service, the AGPL obliges you to offer its source to the service's
+users. emdysi was MIT-licensed until 2026-10-17 (decision D15 in
+[docs/decisions.md](docs/decisions.md)). It includes third-party material
+under its own licenses, all compatible with the AGPL: see
 [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) and
 [docs/vendored.md](docs/vendored.md).
