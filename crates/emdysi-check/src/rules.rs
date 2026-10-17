@@ -916,16 +916,19 @@ impl Rule {
             }
             // What only a model could confirm is not reported without one
             // (`choose_spellings` clears the mark of what it confirms).
-            if std::env::var_os("EMDYSI_SINGLE").is_some() {
-                for d in found.iter_mut() {
-                    let w = &a.source[d.range.clone()];
-                    if d.needs_model
-                        && d.suggestions.len() == 1
-                        && w.chars().count() >= 6
-                        && w.chars().all(|c| !c.is_uppercase())
-                    {
-                        d.needs_model = false;
-                    }
+            // ... except a misspelling with a single candidate that it
+            // only drops or adds letters to (|admistrators|, |neccesary|,
+            // |securly|): a word only substitutions make a known word of is
+            // more often a name or term (|grafana|, |mebibytes|).
+            for d in found.iter_mut() {
+                let w = &a.source[d.range.clone()];
+                if d.needs_model
+                    && d.suggestions.len() == 1
+                    && w.chars().count() >= 6
+                    && w.chars().all(|c| !c.is_uppercase())
+                    && indels_only(w, &d.suggestions[0])
+                {
+                    d.needs_model = false;
                 }
             }
             found.retain(|d| !d.needs_model);
@@ -2631,6 +2634,27 @@ fn match_case(like: &str, rep: &str) -> String {
 }
 
 /// Damerau-Levenshtein distance (optimal string alignment).
+/// Whether `b` is as few edits from `a` with insertions and deletions
+/// only as with substitutions too.
+fn indels_only(a: &str, b: &str) -> bool {
+    let (x, y): (Vec<char>, Vec<char>) = (a.chars().collect(), b.chars().collect());
+    // Longest common subsequence.
+    let mut row = vec![0usize; y.len() + 1];
+    for &cx in &x {
+        let mut prev = 0;
+        for (j, &cy) in y.iter().enumerate() {
+            let here = row[j + 1];
+            row[j + 1] = if cx == cy {
+                prev + 1
+            } else {
+                row[j + 1].max(row[j])
+            };
+            prev = here;
+        }
+    }
+    x.len() + y.len() - 2 * row[y.len()] == edit_distance(a, b)
+}
+
 pub fn edit_distance(a: &str, b: &str) -> usize {
     let a: Vec<char> = a.to_lowercase().chars().collect();
     let b: Vec<char> = b.to_lowercase().chars().collect();

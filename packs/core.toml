@@ -10,10 +10,10 @@ min_length = 4
 # Technical vocabulary and tool names common in software writing, and a few
 # English words, that the bundled word lists (SCOWL, cspell) leave out.
 ignore = [
-  "alia", "curtsey", "curtseyed", "curtseys", "async", "cadvisor", "devs", "distinguisher", "gsoc", "hackmd", "iirc",
+  "alia", "curtsey", "curtseyed", "curtseys", "async", "cadvisor", "devs", "distinguisher", "distroless", "gsoc", "hackmd", "iirc",
   "implementor", "implementors", "libc", "nftables", "nightlies", "rootfs", "shoutout",
   "shoutouts", "subnet", "subnets", "subtrait", "subtraits", "supertrait",
-  "supertraits", "zulip",
+  "supertraits", "writeable", "zulip",
 ]
 message = "Unknown word '{match}'.{suggestion}"
 description = "Lower-case words that neither the grammar's lexicon nor its inflection rules account for. Names, mentions (@name), numbers and inline code are skipped. A fix is applied only when exactly one known word is one edit away."
