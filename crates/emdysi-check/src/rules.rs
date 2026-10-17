@@ -1312,11 +1312,13 @@ impl Rule {
                         if w.chars().count() < *min_length && !short_typo
                             || !w.chars().all(|c| c.is_lowercase() || c == '\'' || c == '-')
                             || w.contains("--")
+                            // Inline code, or a word around it (|`let`s|).
                             || s.text
                                 .chars()
+                                .zip(s.original.chars())
                                 .skip(t.from)
                                 .take(t.to - t.from)
-                                .all(|c| c == 'x')
+                                .any(|(m, o)| m != o)
                             || ignore.contains(w)
                             // ... and the plural of an ignored word (|zulips|).
                             || w.strip_suffix('s').is_some_and(|b| ignore.iter().any(|i| i == b))
@@ -1381,13 +1383,25 @@ impl Rule {
                                     && crate::dict::tier(&x).is_some()
                                     && x.starts_with(&stem)
                             });
-                            if !by_inflection && !by_derivation {
+                            // ... or a listed word with one letter typed
+                            // twice (|languagess|, |valuess|).
+                            let doubled = suggestions(erg, w, 5).0.iter().any(|x| {
+                                let x = x.to_lowercase();
+                                let c: Vec<char> = w.chars().collect();
+                                crate::dict::tier(&x).is_some()
+                                    && (1..c.len()).any(|i| {
+                                        c[i] == c[i - 1]
+                                            && c[..i].iter().chain(&c[i + 1..]).collect::<String>()
+                                                == x
+                                    })
+                            });
+                            if !by_inflection && !by_derivation && !doubled {
                                 continue;
                             }
                             // A rare correct plural can also be one edit from
                             // a listed word (|nestings|, |nestlings|): only
                             // the model can tell.
-                            derived_typo = !by_inflection;
+                            derived_typo = !by_inflection && !doubled;
                         }
                         if uses.get(&w.to_lowercase()).copied().unwrap_or(0) > 1 {
                             continue;
