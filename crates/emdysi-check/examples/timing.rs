@@ -7,6 +7,9 @@
 //! `cargo run --release -p emdysi-check --example timing -- FILE...`
 //!
 //! Set `EMDYSI_NO_CACHE=1` to time parsing rather than the parse cache.
+//! `TIMEOUT=SECONDS` sets the parser's time limit; the findings of
+//! each rule are listed too, to compare runs with different limits.
+
 use emdysi_check::{Checker, Format, Options, Pack, analyze, timing};
 use emdysi_parse::{Erg, default_grammar_dir};
 use std::time::Instant;
@@ -34,10 +37,17 @@ fn main() {
         .ok()
         .and_then(|n| n.parse().ok())
         .unwrap_or(1);
+    // `TIMEOUT=SECONDS` sets the parser's time limit (default 10).
+    let timeout = std::env::var("TIMEOUT")
+        .ok()
+        .and_then(|n| n.parse().ok())
+        .map(std::time::Duration::from_secs_f64);
     let opts = Options {
         threads,
+        timeout: timeout.unwrap_or(Options::default().timeout),
         ..Options::default()
     };
+    let mut findings: std::collections::BTreeMap<String, usize> = Default::default();
     let (mut sentences, mut words) = (0, 0);
     // Each parsed sentence's parse time, and whether it got a strict
     // reading and whether its search was complete.
@@ -54,7 +64,9 @@ fn main() {
         let a = analyze(&erg, &src, format, &opts);
         analyze_time += t.elapsed();
         let t = Instant::now();
-        checker.check(&erg, &a);
+        for d in checker.check(&erg, &a) {
+            *findings.entry(d.rule).or_default() += 1;
+        }
         check_time += t.elapsed();
         for p in a.sentences.iter().filter_map(|s| s.parse.as_ref()) {
             let strict = p.readings.iter().any(|r| emdysi_parse::is_strict(&r.root));
@@ -120,5 +132,10 @@ fn main() {
     println!("\n| Slowest rules | Seconds |\n|---|---|");
     for (id, d) in rules.iter().take(12) {
         println!("| `{id}` | {:.2} |", d.as_secs_f64());
+    }
+    // What the checks found, to compare runs with different limits.
+    println!("\n| Findings | Count |\n|---|---|");
+    for (id, n) in &findings {
+        println!("| `{id}` | {n} |");
     }
 }
