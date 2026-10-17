@@ -565,3 +565,33 @@ fn penn_tags_from_the_parse() {
         );
     }
 }
+
+#[test]
+fn an_article_before_a_verb_form_is_not_fixed_automatically() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let checker = Checker::new(packs());
+    let opts = Options {
+        threads: 1,
+        ..Options::default()
+    };
+    // Rust book: "Instead of an creating a whole `extern` block", fixed by
+    // dropping "an"; "a creating" would be wrong too.
+    let src = "Instead of an creating a whole block, we add the keyword.\n";
+    let a = analyze(&erg, src, Format::Markdown, &opts);
+    let d: Vec<_> = checker
+        .check(&erg, &a)
+        .into_iter()
+        .filter(|d| d.rule == "core.articles")
+        .collect();
+    assert_eq!(d.len(), 1, "{d:?}");
+    assert_eq!(d[0].replacement, None);
+    assert_eq!(d[0].suggestions, vec!["a".to_string()]);
+    // Before a noun the fix stays automatic.
+    let a = analyze(&erg, "It is an cluster.\n", Format::Markdown, &opts);
+    let d: Vec<_> = checker
+        .check(&erg, &a)
+        .into_iter()
+        .filter(|d| d.rule == "core.articles")
+        .collect();
+    assert_eq!(d[0].replacement.as_deref(), Some("a"), "{d:?}");
+}

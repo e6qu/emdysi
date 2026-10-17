@@ -1,7 +1,7 @@
 //! How often the checker claims an error in edited text, per genre: the
 //! false-flag rate of the `core` pack (spelling, grammar, consistency) on
 //! the samples in `corpora/edited/` and `corpora/edited-by-sa/`, per 1,000
-//! sentences: the first development set by default; `SET=heldout` for the
+//! sentences: the first development set by default (`SET=dev1`); `SET=heldout` for the
 //! held-out test set (`heldout-*.tsv`), `SET=dev2` for the second
 //! development set only. The target is at most
 //! one per 1,000 (99.9% precision on clean text).
@@ -70,7 +70,15 @@ fn main() {
     // The development set by default; `SET=heldout` measures the held-out
     // test set instead (heldout-*.tsv), which is not used while
     // developing the checks.
-    let set = std::env::var("SET").ok();
+    // `SET=dev1` names the default set; any other name than dev1, dev2
+    // and heldout is an error, not an empty run.
+    let set = std::env::var("SET").ok().filter(|s| s != "dev1");
+    if let Some(s) = &set {
+        assert!(
+            ["dev2", "heldout"].contains(&s.as_str()),
+            "unknown SET={s}: use dev1, dev2 or heldout"
+        );
+    }
     let mut files: Vec<std::path::PathBuf> = ["corpora/edited", "corpora/edited-by-sa"]
         .iter()
         .flat_map(|d| std::fs::read_dir(root.join(d)).unwrap())
