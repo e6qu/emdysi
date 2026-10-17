@@ -188,6 +188,35 @@ acceptable = [
 ]
 
 [[rule]]
+id = "ai-tells.whether-you"
+kind = "regex"
+severity = "suggestion"
+message = "Opening that casts a wide net ('{match}'); say who this is for, or drop it."
+description = "A sentence opening with 'Whether you're X or Y', the catch-all of model-written marketing and guides: 7 times in the 5,675 words of corpora/ai-current, once in the 410,000 words of the edited corpora."
+pattern = "^\\W*Whether\\s+(?:you're|you’re|you\\s+are)\\b"
+examples = [
+  "Whether you're a startup or a global enterprise, Ledgerline scales with you.\n",
+]
+acceptable = [
+  "Whether the cache is warm depends on the last run.\n",
+]
+
+[[rule]]
+id = "ai-tells.listicle-title"
+kind = "regex"
+scope = "heading"
+severity = "suggestion"
+message = "Listicle title ('{match}'); name the subject instead."
+description = "A heading that opens with a number and a promise ('7 Proven Strategies to ...', '5 Simple Ways'), the title of model-written listicles. Not in the edited corpora."
+pattern = "^\\W*\\d+\\s+(?:Proven|Essential|Simple|Easy|Powerful|Practical|Smart|Effective|Surprising|Ways|Tips|Strategies|Reasons|Secrets|Mistakes|Habits|Hacks)\\b"
+examples = [
+  "# 7 Proven Strategies to Supercharge Your Team\n\nIt works.\n",
+]
+acceptable = [
+  "# 3 Running the tests\n\nRun them.\n",
+]
+
+[[rule]]
 id = "ai-tells.just-fragment"
 kind = "sentence-pair"
 severity = "suggestion"

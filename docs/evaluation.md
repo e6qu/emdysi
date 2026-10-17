@@ -1226,7 +1226,10 @@ Patterns the packs missed in these documents, and the new rules:
   hashtags, letter and email formulas (*I hope this email finds you
   well*; suggestions only, as the edited corpora have no letters), and
   about 40 more stock phrases (*the real magic happens*, *has you
-  covered*, *will thank you*, *a must-visit*, *paves the way for*).
+  covered*, *will thank you*, *a must-visit*, *paves the way for*);
+- a sentence opening with *Whether you're* (7 in the 5,675 words of the
+  samples, once in the edited corpora: `whether-you`) and a listicle title
+  (*7 Proven Strategies to ...*, `listicle-title`, headings only).
 
 Documents each rule fires on (`en check --no-parse`, so without the rules
 that need a parse: the rule of three, participial tails):
