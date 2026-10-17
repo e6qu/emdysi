@@ -14,7 +14,7 @@ const TITLES: &[&str] = &[
     "lt", "sgt", "capt", "cmdr", "adm", "maj", "st", "mt", "ft", "no", "nos", "nr", "fig", "figs",
     "vol", "vols", "pp", "p", "ch", "sec", "eq", "art", "op", "cf", "vs", "ca", "approx", "dept",
     "est", "jan", "feb", "mar", "apr", "jun", "jul", "aug", "sep", "sept", "oct", "nov", "dec",
-    "n°",
+    "n°", "ph",
 ];
 
 /// Other common abbreviations: they end a sentence only when a typical
@@ -22,7 +22,8 @@ const TITLES: &[&str] = &[
 const ABBREVIATIONS: &[&str] = &[
     "etc", "al", "co", "corp", "inc", "ltd", "llc", "jr", "sr", "bros", "dept", "univ", "assn",
     "ave", "blvd", "rd", "e.g", "i.e", "viz", "resp", "incl", "misc", "min", "max", "hr", "hrs",
-    "mins", "sec", "secs",
+    "mins", "sec", "secs", "ph.d", "b.sc", "m.sc", "b.eng", "m.eng", "d.phil", "b.a", "m.a",
+    "b.s", "m.s",
 ];
 
 /// Words that typically open a sentence, used to decide whether an

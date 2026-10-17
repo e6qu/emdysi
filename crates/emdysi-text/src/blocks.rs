@@ -262,10 +262,14 @@ fn html_paragraphs(html: &str, base: usize) -> Option<Vec<Block>> {
 
 /// Prose blocks of a Markdown document.
 pub fn markdown_blocks(src: &str) -> Vec<Block> {
+    // Front matter (YAML between `---` lines, or Hugo's TOML between
+    // `+++` lines) is metadata, not prose.
     let opts = Options::ENABLE_TABLES
         | Options::ENABLE_FOOTNOTES
         | Options::ENABLE_STRIKETHROUGH
-        | Options::ENABLE_TASKLISTS;
+        | Options::ENABLE_TASKLISTS
+        | Options::ENABLE_YAML_STYLE_METADATA_BLOCKS
+        | Options::ENABLE_PLUSES_DELIMITED_METADATA_BLOCKS;
     let mut out = Vec::new();
     let mut cur: Option<Block> = None;
     let mut quote_depth = 0;

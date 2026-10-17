@@ -48,3 +48,25 @@ fn golden_rules() {
     // Known miss: pySBD splits `compounds. . . . The` before the dots.
     assert!(fail.len() <= 1, "too many segmentation failures");
 }
+
+#[test]
+fn academic_degrees() {
+    let cases: &[(&str, &[&str])] = &[
+        (
+            "I got my Ph. D. at a university in Germany.",
+            &["I got my Ph. D. at a university in Germany."],
+        ),
+        (
+            "She has a Ph.D. in physics. He has a B.Sc. from Leeds.",
+            &["She has a Ph.D. in physics.", "He has a B.Sc. from Leeds."],
+        ),
+        (
+            "Both of them hold a Ph.D. They met in Berlin.",
+            &["Both of them hold a Ph.D.", "They met in Berlin."],
+        ),
+    ];
+    for (text, want) in cases {
+        let got: Vec<&str> = sentences(text).into_iter().map(|r| &text[r]).collect();
+        assert_eq!(&got, want, "{text}");
+    }
+}

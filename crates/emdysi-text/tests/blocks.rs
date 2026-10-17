@@ -83,3 +83,26 @@ fn hugo_shortcodes() {
     assert_eq!(blocks[0].text, "Write {{< note >}} for a note.");
     assert_eq!(blocks[0].opaque, vec![6..18]);
 }
+
+#[test]
+fn front_matter_is_not_prose() {
+    for src in [
+        "---\ntitle: Object\nshort_description: >\n  A entity in the system.\n---\n\nThe body.\n",
+        "+++\ntitle = \"Object\"\n+++\n\nThe body.\n",
+    ] {
+        let texts: Vec<String> = markdown_blocks(src)
+            .iter()
+            .map(|b| b.text.trim().to_string())
+            .filter(|t| !t.is_empty())
+            .collect();
+        assert_eq!(texts, vec!["The body.".to_string()], "{src}");
+    }
+    // A thematic break later in a document is not front matter.
+    let src = "Intro.\n\n---\n\nAfter the break.\n";
+    let texts: Vec<String> = markdown_blocks(src)
+        .iter()
+        .map(|b| b.text.trim().to_string())
+        .filter(|t| !t.is_empty())
+        .collect();
+    assert_eq!(texts, vec!["Intro.".to_string(), "After the break.".to_string()]);
+}
