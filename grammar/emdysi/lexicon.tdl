@@ -534,6 +534,14 @@ opt_out_n1 := n_-_mc_le &
     SYNSEM [ LKEYS.KEYREL.PRED "_opt-out_n_1_rel",
              PHON.ONSET voc ] ].
 
+;; |all-hands| as a count noun for a meeting of everyone (|The all-hands has
+;; happened!|, Rust blog).
+
+all_hands_n1 := n_-_c_le &
+  [ ORTH < "all", "-", "hands" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_all-hands_n_1_rel",
+             PHON.ONSET voc ] ].
+
 :end :instance.
 
 ;;; Technical vocabulary the ERG lacks: |a borrow| (Rust), |swap| (memory
@@ -1227,6 +1235,19 @@ in_the_clear_pp := pp_-_i-vm_le &
 delete_n1 := n_-_c_le &
  [ ORTH < "delete" >,
    SYNSEM [ LKEYS.KEYREL.PRED "_delete_n_1_rel",
+            PHON.ONSET con ] ].
+
+:end :instance.
+
+;;; Gaps found in a fresh sample of edited sentences (`culprits`,
+;;; 2026-10-16): |mortifying|, an adjective the ERG lacks though it has
+;;; |humiliating| and |embarrassing| (in their form).
+
+:begin :instance :status lex-entry.
+
+mortifying_a1 := aj_-_i-prd_le &
+ [ ORTH < "mortifying" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_mortify_v_1_rel",
             PHON.ONSET con ] ].
 
 :end :instance.

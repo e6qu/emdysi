@@ -1690,3 +1690,56 @@ false: project jargon and handles in the Rust blog (*sret*, *tiif*,
 *epage*, *zulips*) and two readings of *has* (*The all-hands has
 happened!*).
 
+### Coverage: a conjunction with a comma, and a single verified correction
+
+`culprits` on the fresh 948-sentence sample (2026-10-16): 40 sentences
+without a strict reading, scattered, mostly archaic (*knew not how*,
+*beyond competition her favourite child*) or not prose. Two recurring
+gaps are fixed:
+
+- a sentence-initial coordinating conjunction followed by a comma (*And,
+  I have a deep passion for this problem.*, *Or, why did he thus come a
+  day before he was expected?*): the grammar reads a conjunction with a
+  comma as informal, so the parser is given the sentence without that
+  comma (a space keeps the offsets);
+- *mortifying*, an adjective the ERG lacks though it has *humiliating*
+  and *embarrassing*.
+
+And the consistency rule no longer counts *amongst*, *whilst* and
+*amidst* as British spellings: they are other words, used in American
+English too.
+
+From the false flags of the second development set:
+
+- a sentence that ends in a colon right after a subordinator (*CRDs are
+  a good fit if:*) is a lead-in to the list or block that completes it,
+  and is not parsed (no agreement error on *are*); a lead-in ending in
+  a preposition is still parsed, since *You should see the output
+  similar to:* is a real error;
+- *all-hands* is a count noun (*The all-hands has happened!*);
+- spelling skips a word the document also writes as a mention
+  (*@epage*), the plural of an ignored word (*zulips*), and command-line
+  options (*-funsigned-char*, *--dry-run*), which are now code-like
+  tokens for the parser too.
+
+Measured: real errors without a model unchanged (167 of 377, the same
+pairs); false flags 4 → 4 on the first development set, 53 → 50 on the
+second, 31 → 29 on the held-out set, each removed flag one of those
+above and none added. With a perfect model, 333 of 377 (88%; spelling
+172 of 178, unchanged) against 337 before: the grammar fixes that
+differ (*the case*, *of futures*, *Label*, *change*, and three gained)
+are ones whose verification runs into the 30-second budget, and the
+binary from before these changes misses *Label* and *change* too when
+they are rerun alone. The perfect-model figures move by a few pairs
+between runs, and more on a cold parse cache (326 on the first run
+after a lexicon change), since the budget is wall-clock time.
+
+Measured and rejected: reporting, without a model, a sentence without a
+strict reading for which exactly one candidate correction parses
+(`single_fix`). Of the grammar errors' sentences without one, about a
+fifth have a single verified correction, but apart from doubled words
+(*the the*, *and and*, *to to*, which the repeated-word rule already
+reports) it is seldom the right one: *afters the update*, *cluster
+administered to*, *The API server i willing*. A single correction the
+grammar accepts is no evidence of an error.
+

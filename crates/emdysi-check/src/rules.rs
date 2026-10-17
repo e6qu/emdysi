@@ -1217,6 +1217,14 @@ impl Rule {
                     .map(|t| t.form.as_str())
                     .filter(|f| f.chars().all(|c| !c.is_uppercase()))
                     .collect();
+                // People the document mentions (|@tiif|, |Comment by
+                // @epage|): the same word without the |@| is their name.
+                let mentioned: std::collections::HashSet<String> = a
+                    .source
+                    .split(|c: char| !(c.is_alphanumeric() || c == '@' || c == '-' || c == '_'))
+                    .filter_map(|w| w.strip_prefix('@'))
+                    .map(str::to_lowercase)
+                    .collect();
                 // Words the document capitalizes after the start of a
                 // sentence are names.
                 let names: std::collections::HashSet<&str> = a
@@ -1298,6 +1306,9 @@ impl Rule {
                                 .take(t.to - t.from)
                                 .all(|c| c == 'x')
                             || ignore.contains(w)
+                            // ... and the plural of an ignored word (|zulips|).
+                            || w.strip_suffix('s').is_some_and(|b| ignore.iter().any(|i| i == b))
+                            || mentioned.contains(w.as_str())
                             || g.knows_word(w)
                         {
                             continue;
@@ -1311,7 +1322,10 @@ impl Rule {
                             .split(['-', '\'', '’'])
                             .filter(|p| !p.is_empty())
                             .collect();
-                        if known(w) || parts.iter().all(|p| known(p)) {
+                        if known(w)
+                            || parts.iter().all(|p| known(p))
+                            || crate::in_code_like(&s.text, t.from, t.to)
+                        {
                             continue;
                         }
                         // A known word plus an affix ("promptability") is a
@@ -1771,6 +1785,14 @@ impl Rule {
                         .take(t.to - t.from)
                         .all(|c| c == 'x')
                 {
+                    continue;
+                }
+                // Other words, not other spellings: American English has
+                // |amongst| and |whilst| too, if less often.
+                if matches!(
+                    w.to_lowercase().as_str(),
+                    "amongst" | "whilst" | "amidst" | "among" | "while" | "amid"
+                ) {
                     continue;
                 }
                 for (v, other) in table.get(&w.to_lowercase()).into_iter().flatten() {

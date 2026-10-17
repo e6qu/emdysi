@@ -223,10 +223,11 @@ static CITATION: std::sync::LazyLock<fancy_regex::Regex> = std::sync::LazyLock::
 /// Code-like tokens in prose: template shortcodes (`{{< glossary_tooltip
 /// term_id="pod" >}}`, `{{% note %}}`, `{{ .Site.Title }}`), URLs, email
 /// addresses, paths (`src/main.rs`) and names with a file or domain
-/// extension (`cmd.exe`, `crates.io`).
+/// extension (`cmd.exe`, `crates.io`), and command-line options
+/// (`-funsigned-char`, `--dry-run`).
 static CODE_LIKE: std::sync::LazyLock<fancy_regex::Regex> = std::sync::LazyLock::new(|| {
     fancy_regex::Regex::new(
-        r"\{\{[<%]?[^{}]*?[>%]?\}\}|\bhttps?://[^\s<>()]+[^\s<>().,;:!?]|\b[\w.+-]+@[\w-]+(?:\.[\w-]+)+|(?<![\w/])(?:[\w.-]+/)+[\w-]*\.[A-Za-z0-9]+\b|(?<![\w/])/[\w.-]+(?:/[\w.-]+)+|\b[A-Za-z][\w-]*\.(?:io|com|org|net|dev|gov|edu|rs|exe|py|js|ts|md|toml|json|ya?ml|txt|html?|sh|go|c|h)\b",
+        r"\{\{[<%]?[^{}]*?[>%]?\}\}|\bhttps?://[^\s<>()]+[^\s<>().,;:!?]|\b[\w.+-]+@[\w-]+(?:\.[\w-]+)+|(?<![\w/])(?:[\w.-]+/)+[\w-]*\.[A-Za-z0-9]+\b|(?<![\w/])/[\w.-]+(?:/[\w.-]+)+|\b[A-Za-z][\w-]*\.(?:io|com|org|net|dev|gov|edu|rs|exe|py|js|ts|md|toml|json|ya?ml|txt|html?|sh|go|c|h)\b|(?<![\w-])--?[a-z][a-z0-9]*(?:-[a-z0-9]+)+\b|(?<![\w-])--[a-z][a-z0-9]+\b",
     )
     .expect("code-like pattern")
 });
@@ -263,8 +264,55 @@ pub(crate) fn acronym(original: &[char], f: usize, t: usize) -> bool {
             .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit())
 }
 
+/// Whether a sentence ends in a colon right after a subordinator (|CRDs are a
+/// good fit if:|): the clause it opens is the list or block that follows, so
+/// the sentence alone is incomplete on purpose.
+fn lead_in(text: &str) -> bool {
+    let Some(rest) = text.trim_end().strip_suffix(':') else {
+        return false;
+    };
+    let last = rest
+        .rsplit(|c: char| !c.is_alphabetic())
+        .next()
+        .unwrap_or("");
+    matches!(
+        last.to_lowercase().as_str(),
+        "if" | "when"
+            | "whenever"
+            | "whether"
+            | "because"
+            | "unless"
+            | "while"
+            | "where"
+            | "although"
+            | "though"
+            | "until"
+    )
+}
+
+/// Whether characters `from..to` of a sentence lie inside a code-like token
+/// ([`CODE_LIKE`]).
+pub(crate) fn in_code_like(text: &str, from: usize, to: usize) -> bool {
+    CODE_LIKE.find_iter(text).flatten().any(|m| {
+        let start = text[..m.start()].chars().count();
+        let end = start + m.as_str().chars().count();
+        start <= from && to <= end
+    })
+}
+
 pub(crate) fn parser_text(text: &str, in_list: bool) -> Option<String> {
-    let labelled = mask_label(text).filter(|_| in_list);
+    // A comma after a sentence-initial coordinating conjunction (|And, I
+    // have a deep passion for this|, |Or, why did he come?|) is dropped for
+    // the parser: the grammar reads a conjunction with a comma as informal,
+    // and edited prose writes it. A space keeps the offsets.
+    let unpunctuated = ["And, ", "But, ", "Or, ", "So, ", "Yet, "]
+        .iter()
+        .find(|c| text.starts_with(*c))
+        .map(|c| format!("{} {}", &c[..c.len() - 2], &text[c.len()..]));
+    let text = unpunctuated.as_deref().unwrap_or(text);
+    let labelled = mask_label(text)
+        .filter(|_| in_list)
+        .or(unpunctuated.clone());
     let base = labelled.as_deref().unwrap_or(text);
     let mut spans: Vec<(usize, usize, bool)> = CITATION
         .find_iter(base)
@@ -378,6 +426,8 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                                 opts.max_tokens
                             )),
                         )
+                    } else if lead_in(text) {
+                        (None, Some("a lead-in to what follows".to_string()))
                     } else {
                         let masked = parser_text(text, in_list);
                         let text = masked.as_deref().unwrap_or(text);

@@ -93,3 +93,7 @@ other	His affection for her drew him from home oftener than anything else could 
 other	An ill-behaved Pod can be removed via opt-out.	Hyphenated words the ERG lacks (grammar/emdysi/lexicon.tdl).
 other	Thanks to @oli-obk, autoscalers provision the Nodes.	A mention as one token (Erg::tokens) and transitive "provision" (grammar/emdysi/lexicon.tdl).
 other	We know the contents at compile time, and the evening altogether passed off pleasantly.	Nouns and an adverb position the ERG lacks (grammar/emdysi/lexicon.tdl).
+other	And, I have a deep passion for this problem.	A conjunction followed by a comma at the start (parser_text in crates/emdysi-check/src/lib.rs).
+other	Or, why did he thus come a day before he was expected?	A conjunction followed by a comma before a question (parser_text in crates/emdysi-check/src/lib.rs).
+other	The news was mortifying.	A participle adjective the ERG lacks (grammar/emdysi/lexicon.tdl).
+other	The all-hands has happened!	A hyphenated noun the ERG lacks (grammar/emdysi/lexicon.tdl).
