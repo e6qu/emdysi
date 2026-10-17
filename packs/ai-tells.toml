@@ -26,6 +26,10 @@ severity = "warning"
 message = "Stock phrase '{match}'."
 words = [
   "plays a crucial role", "plays a pivotal role", "a testament to",
+  "every step of the way", "can't wait to see what you", "can’t wait to see what you",
+  "part of our journey", "it's that easy", "it’s that easy", "it's that simple",
+  "it’s that simple", "and just like that", "your unique needs", "take the next step",
+  "well on your way", "rest assured", "happy coding", "happy learning",
   "in today's fast-paced world", "in today’s fast-paced world",
   "navigate the complexities", "rich tapestry", "shed light on",
   "deep dive", "dive into", "at the end of the day", "stands as a",
@@ -51,6 +55,17 @@ words = [
 ]
 
 [[rule]]
+id = "ai-tells.in-todays"
+kind = "regex"
+severity = "warning"
+message = "Stock opening '{match}': the setting every generated introduction starts from."
+description = "'In today's fast-paced world', 'In today's data-driven world', 'In today's digital landscape': a scene-setting formula of generated prose (in 2 of the 36 machine-written samples, never in the 410,000 words of the edited corpora)."
+source = "corpora/ai-current (docs/evaluation.md, Machine-written prose from current models)"
+pattern = "(?i)\\bin today[’']s (?:[a-z-]+,? ){0,3}(?:world|landscape|age|era|economy|environment|market)\\b"
+examples = ["In today's data-driven world, data skills matter.\n", "In today's fast-paced digital landscape, failures happen.\n"]
+acceptable = ["In today's meeting we decided to ship.\n"]
+
+[[rule]]
 id = "ai-tells.signposting"
 kind = "words"
 match = "surface"
@@ -74,7 +89,10 @@ words = [
   "certainly!", "i'd be happy to help", "i’d be happy to help",
   "feel free to ask", "let me know if you have any other questions",
   "let me break it down", "let me break this down", "i hope that helps",
+  "absolutely!",
 ]
+examples = ["Certainly! Here is the answer.\n", "Great question. The flag sets the limit.\n"]
+acceptable = ["It certainly helps.\n"]
 
 [[rule]]
 id = "ai-tells.not-x-but-y"
