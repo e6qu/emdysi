@@ -1762,3 +1762,41 @@ run lost eight corrections; calibrated at the 75th percentile, long
 sentences parsed for nearly twice their former time, and a single parse
 reached 2.4 GB, so four measurement processes ran out of memory. Time
 limits stay; measurements compare runs on a warm parse cache.
+
+### Spelling without a model: misspellings the morphology or the model hid
+
+Without a model, 35 of the 178 misspellings went unreported. Three causes,
+found by tracing each:
+
+- The grammar's morphology read them as word forms: *fileds* as *file*
+  + passive + plural (a passive, `_odlr`, was not counted as an
+  inflection), *specifing* as *-ing* on the noun *specif*, *refacting* as
+  *re-* on the noun *fact*, *returing* as *re-* on the name *turing*,
+  *witin* as the informal *wit* + *-in'*. A derived form now counts as a
+  known word only when each rule fits its stem's word class (*un-* also
+  takes adverbs: *unfrequently*), with one inflection at most, and not in
+  an informal form. Two real words the overgeneration used to let
+  through are now listed: *nightlies*, and *writeable*.
+- The technical lists' inferred plurals took *valuess* for a plural of
+  *values*: no plural of a plural now. And a word with one letter typed
+  twice (*languagess*) is a typo, not a derivation; main reported
+  *languagess* only by accident, through the junk form *languagesd*.
+- Findings with a single candidate two edits away, or a misspelled
+  derivation, waited for a model. Reported without one when the word is
+  lower case, at least six letters, and the candidate is reached by
+  dropping or adding letters only (*admistrators*, *neccesary*,
+  *securly*, *assignement*). Reporting every single candidate also
+  flagged *grafana* (*granada*), *mebibytes*, *syscalls*, *retpoline*,
+  *conversible* and *massebot*: words only substitutions make a known
+  word of are mostly names and terms. (That criterion was chosen after
+  seeing the held-out set's flags.) *distroless* is listed.
+
+A word glued to inline code (two `` `let`s ``) is no longer spell-checked:
+the code's masking made it *xxxs*, which only the old overgeneration let
+through. typos-dict, a curated misspelling table, cannot be used: it took
+in codespell's and Wikipedia's share-alike lists (see `docs/prior-art.md`).
+
+Spelling only (`en check --no-parse` on every document, against main):
+18 more real errors flagged in the real-error corpus; on the false-flag
+sets, three more flags, all real typos in the second development set
+(*borrowcking*, *implemenent*, *rationable*), and no false ones.
