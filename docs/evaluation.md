@@ -1754,13 +1754,15 @@ and a user's flags could differ from a colleague's.
 The parser now also stops at a work limit, in unifications tried (in the
 chart and when unpacking; a reused rule application counts as one), and
 the searches of one parse (narrow beam, wider beams, none) share it as
-they share the time. At the median rate on the real-error corpus's
-sentences, about 42 unifications a millisecond (`work_rate`, in
-`crates/emdysi-parse/examples`; 11 to 134 by sentence), the limits keep
-their former times: 425,000 per sentence (10 seconds), 127,500 for the
-grammar-error variant (3), 212,500 for a rule's correction (5), and for
-the model's candidates 85,000 each, more for long sentences, 1,275,000 in
-all (2 and 30 seconds). Time limits stay, as a safety net for a much
-slower machine: five times the work's worth for the candidates, 20
-seconds per sentence (`--timeout`; `--work` sets the work limit).
-
+they share the time. At 55 unifications a millisecond (`work_rate`, in
+`crates/emdysi-parse/examples`: faster than three in four of the
+real-error corpus's sentences parse; the median is 42, and 33 for parses
+over 1.5 seconds), the limits keep their former times: 550,000 per
+sentence (10 seconds), 165,000 for the grammar-error variant (3), 275,000
+for a rule's correction (5), and for the model's candidates 110,000 each,
+more for long sentences, 1,650,000 in all (2 and 30 seconds). Calibrated
+at the median instead, the perfect-model run lost eight corrections
+whose searches the former time limits let finish. Time limits stay, as a
+safety net for a much slower machine: five times the work's worth for
+the candidates, 30 seconds per sentence (`--timeout`; `--work` sets the
+work limit).

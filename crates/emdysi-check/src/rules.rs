@@ -2527,7 +2527,7 @@ fn verified_fix(
         let Ok(p) = erg.parse_bounded(
             fixed.trim(),
             std::time::Duration::from_secs(10),
-            212_500,
+            275_000,
             VERIFY_READINGS,
         ) else {
             continue;

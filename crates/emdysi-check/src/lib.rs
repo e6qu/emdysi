@@ -135,7 +135,7 @@ pub struct Options {
     pub max_tokens: usize,
     /// Work limit per sentence, in unifications tried (see
     /// `emdysi_parse::Erg::parse_bounded`): the same results on any
-    /// machine. About 10 seconds of parsing at a typical rate.
+    /// machine. About 10 seconds of parsing (see `assist::PARSE_WORK`).
     pub max_work: usize,
     /// Time limit per sentence, which stops a search only on a much slower
     /// machine than `max_work` assumes (or when set lower).
@@ -158,8 +158,8 @@ impl Default for Options {
             parse: true,
             threads: std::thread::available_parallelism().map_or(2, |n| n.get()),
             max_tokens: 100,
-            max_work: 425_000,
-            timeout: Duration::from_secs(20),
+            max_work: 550_000,
+            timeout: Duration::from_secs(30),
             max_readings: 100,
             diagnose: true,
             meaning: false,
@@ -169,7 +169,7 @@ impl Default for Options {
 
 /// Work limit (about 3 seconds' worth), time limit and readings for the
 /// grammar-error variant of the grammar.
-const MAL_WORK: usize = 127_500;
+const MAL_WORK: usize = 165_000;
 const MAL_TIMEOUT: Duration = Duration::from_secs(6);
 const MAL_READINGS: usize = 20;
 

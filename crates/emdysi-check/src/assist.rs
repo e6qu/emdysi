@@ -92,21 +92,22 @@ const INSERTED: &[&str] = &[
 /// sentence of up to `SHORT` words; longer ones get `PER_WORD` more per
 /// word, up to `LONGEST`. Work is unifications tried (see
 /// `ParserConfig::max_work`), so a candidate verifies or not the same way
-/// on any machine and under any load; at about 42 unifications a
-/// millisecond (the median on the sentences of the real-error corpus),
-/// these are 2 seconds, 320 milliseconds and 10 seconds.
-const PARSE_WORK: usize = 85_000;
+/// on any machine and under any load; at 55 unifications a millisecond
+/// (faster than three in four sentences of the real-error corpus parse,
+/// so a search the former time limits let finish still does), these are
+/// 2 seconds, 320 milliseconds and 10 seconds.
+const PARSE_WORK: usize = 110_000;
 const SHORT: usize = 15;
-const PER_WORD: usize = 13_600;
-const LONGEST: usize = 425_000;
+const PER_WORD: usize = 17_600;
+const LONGEST: usize = 550_000;
 /// Total work for verifying the candidate corrections of one sentence (30
 /// seconds at that rate): a candidate that does not parse can take its
 /// whole limit, and a doubted sentence has up to `MAX_CANDIDATES` of them.
-const BUDGET: usize = 1_275_000;
+const BUDGET: usize = 1_650_000;
 /// Unifications a millisecond, for a time limit that stops a parse only
 /// on a machine several times slower than that: a search slower than
 /// `SLACK` times its work's worth of time is cut off by time.
-const RATE: usize = 42;
+const RATE: usize = 55;
 const SLACK: usize = 5;
 
 const GRAMMAR_QUESTION: &str =
