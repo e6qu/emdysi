@@ -26,7 +26,7 @@ use crate::{InputToken, Node, Parse, Reading, Tag, Word};
 const KEEP: usize = 4;
 
 /// Bump when the layout below changes.
-const VERSION: u32 = 4;
+const VERSION: u32 = 3;
 const MAGIC: &[u8; 8] = b"EMDYSIPC";
 
 /// Two-lane FNV-1a hash, as a hex string.
@@ -139,12 +139,11 @@ pub(crate) fn key(
     let mut h = Hasher::new();
     let roots: Vec<&str> = config.roots.iter().map(|(n, _)| n.as_str()).collect();
     let settings = format!(
-        "{:?} {} {} {} {} {:?} {} {:?} {:?} {} {} {} {} {:?} {}",
+        "{:?} {} {} {} {:?} {} {:?} {:?} {} {} {} {} {:?} {}",
         roots,
         config.max_edges,
         config.max_nodes,
         config.timeout.as_millis(),
-        config.max_work,
         config.packing_restrictor.as_ref().map(Vec::len),
         config.max_readings,
         config.packing_top_type,
@@ -401,7 +400,6 @@ impl W {
         self.bool(p.exhausted);
         self.bool(p.complete);
         self.u64(p.elapsed.as_nanos() as u64);
-        self.usize(p.work);
         self.f64(p.temperature);
     }
 }
@@ -625,7 +623,6 @@ impl R<'_> {
             exhausted: self.bool()?,
             complete: self.bool()?,
             elapsed: Duration::from_nanos(self.u64()?),
-            work: self.usize()?,
             temperature: self.f64()?,
         })
     }

@@ -1743,26 +1743,22 @@ reports) it is seldom the right one: *afters the update*, *cluster
 administered to*, *The API server i willing*. A single correction the
 grammar accepts is no evidence of an error.
 
-### Work limits instead of time limits
 
-The parser's limits were wall-clock time: whether a candidate correction
-verified, and so whether an error was caught, depended on the machine
-and its load. The perfect-model figure moved by a few pairs between runs
-of the same binary, and by eleven on a cold parse cache (326 against 337),
-and a user's flags could differ from a colleague's.
+### Measured and rejected: work limits instead of time limits
 
-The parser now also stops at a work limit, in unifications tried (in the
-chart and when unpacking; a reused rule application counts as one), and
-the searches of one parse (narrow beam, wider beams, none) share it as
-they share the time. At 55 unifications a millisecond (`work_rate`, in
-`crates/emdysi-parse/examples`: faster than three in four of the
-real-error corpus's sentences parse; the median is 42, and 33 for parses
-over 1.5 seconds), the limits keep their former times: 550,000 per
-sentence (10 seconds), 165,000 for the grammar-error variant (3), 275,000
-for a rule's correction (5), and for the model's candidates 110,000 each,
-more for long sentences, 1,650,000 in all (2 and 30 seconds). Calibrated
-at the median instead, the perfect-model run lost eight corrections
-whose searches the former time limits let finish. Time limits stay, as a
-safety net for a much slower machine: five times the work's worth for
-the candidates, 30 seconds per sentence (`--timeout`; `--work` sets the
-work limit).
+The parser's limits are wall-clock time, so whether a candidate
+correction verifies depends on the machine and its load: the
+perfect-model figure moves by a few pairs between runs of one binary,
+and by eleven on a cold parse cache. A limit on work instead (unifications
+tried, in the chart and when unpacking, shared by the searches of one
+parse) would make results the same everywhere, and was tried. It does
+not keep the time limits' behaviour: the rate varies too much by
+sentence (11 to 134 unifications a millisecond; 42 the median, 18 to 40
+on sentences over 30 words), and neither unifications, chart nodes nor a
+mix of the two predicts a search's time within 25% for half of them or a
+factor of 2.7 for nine in ten. Calibrated at the median rate, short
+sentences ran out of work before their former time and the perfect-model
+run lost eight corrections; calibrated at the 75th percentile, long
+sentences parsed for nearly twice their former time, and a single parse
+reached 2.4 GB, so four measurement processes ran out of memory. Time
+limits stay; measurements compare runs on a warm parse cache.

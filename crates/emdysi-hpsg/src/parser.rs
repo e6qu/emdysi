@@ -437,11 +437,6 @@ pub struct ParserConfig {
     /// in the chart, as a memory limit.
     pub max_nodes: usize,
     pub timeout: Duration,
-    /// Upper bound on the work of a parse, in unifications tried (in the
-    /// chart and when unpacking), checked with the time limit: unlike it,
-    /// a limit that cuts a search off at the same point on any machine
-    /// and under any load. `usize::MAX` for none.
-    pub max_work: usize,
     /// Features ignored when comparing edges for ambiguity packing; `None`
     /// disables packing.
     pub packing_restrictor: Option<Vec<FeatId>>,
@@ -554,9 +549,6 @@ pub struct Parser<'g> {
     by_end: Vec<Vec<usize>>,
     n: usize,
     deadline: Instant,
-    /// The work (see [`ParserConfig::max_work`]) after which the search
-    /// stops.
-    work_limit: usize,
     stats: Stats,
     nodes: usize,
     scorer: Option<&'g dyn Scorer>,
@@ -631,23 +623,12 @@ impl<'g> Parser<'g> {
             by_end: Vec::new(),
             n: 0,
             deadline: Instant::now(),
-            work_limit: usize::MAX,
             stats: Stats::default(),
             nodes: 0,
             scorer: None,
             released: Arc::new(Dag::atomic(TOP)),
             memo: None,
         }
-    }
-
-    /// The work done so far (see [`ParserConfig::max_work`]).
-    fn work(&self) -> usize {
-        self.stats.attempts + self.stats.unpack_attempts
-    }
-
-    /// Whether the time or the work limit is reached.
-    fn spent(&self) -> bool {
-        self.work() > self.work_limit || Instant::now() > self.deadline
     }
 
     /// Reuse and record rule applications in `memo` (see [`UnifyMemo`]).
@@ -658,7 +639,6 @@ impl<'g> Parser<'g> {
 
     pub fn parse(mut self, lat: &Lattice, items: Vec<LexItem>) -> ParseResult {
         self.deadline = Instant::now() + self.config.timeout;
-        self.work_limit = self.config.max_work;
         // Map lattice vertices to chart positions.
         let used: HashSet<u32> = items.iter().flat_map(|i| [i.start, i.end]).collect();
         let order: Vec<u32> = lat
@@ -733,7 +713,7 @@ impl<'g> Parser<'g> {
         let mut exhausted = false;
         let mut lex_edges: Vec<Edge> = Vec::new();
         while let Some(e) = agenda.pop() {
-            if lex_edges.len() > self.config.max_edges || self.spent() {
+            if lex_edges.len() > self.config.max_edges || Instant::now() > self.deadline {
                 exhausted = true;
                 break;
             }
@@ -864,7 +844,7 @@ impl<'g> Parser<'g> {
             }
             if self.chart.len() > self.config.max_edges
                 || self.nodes > self.config.max_nodes
-                || self.spent()
+                || Instant::now() > self.deadline
             {
                 exhausted = true;
                 break;
@@ -1009,9 +989,6 @@ impl<'g> Parser<'g> {
         // when the search used up the time limit.
         let grace = (self.config.timeout / 5).min(Duration::from_secs(2));
         self.deadline = self.deadline.max(Instant::now() + grace);
-        self.work_limit = self
-            .work_limit
-            .max(self.work().saturating_add(self.config.max_work / 5));
         // Recover readings from spanning edges.
         let spanning: Vec<usize> = self
             .by_start
@@ -1068,7 +1045,8 @@ impl<'g> Parser<'g> {
         'outer: for pass in 0..2 {
             for &id in &spanning {
                 for k in 0.. {
-                    if readings.len() >= self.config.max_readings || self.spent() {
+                    if readings.len() >= self.config.max_readings || Instant::now() > self.deadline
+                    {
                         break 'outer;
                     }
                     if taken.contains(&(id, k)) {
@@ -1106,7 +1084,6 @@ impl<'g> Parser<'g> {
             // The fallback has its own short time allowance.
             let grace = (self.config.timeout / 5).min(Duration::from_secs(2));
             self.deadline = Instant::now() + grace;
-            self.work_limit = self.work().saturating_add(self.config.max_work / 5);
             if let Some(r) = self.fragment_cover(&mut memo) {
                 readings.push(r);
             }
@@ -1314,7 +1291,7 @@ impl<'g> Parser<'g> {
         }
         let mut out: Vec<Inst> = Vec::new();
         for a in alts {
-            if self.spent() {
+            if Instant::now() > self.deadline {
                 break;
             }
             let e = &self.chart[a];
@@ -1366,7 +1343,7 @@ impl<'g> Parser<'g> {
             // first daughter can share its unification with the rule.
             let mut found = 0;
             let mut next = 0;
-            while found < beam && next < combos.len() && !self.spent() {
+            while found < beam && next < combos.len() && Instant::now() <= self.deadline {
                 let take = (beam - found).min(combos.len() - next);
                 let chunk = &combos[next..next + take];
                 next += take;
@@ -1427,7 +1404,7 @@ impl<'g> Parser<'g> {
             firsts.sort_unstable();
             firsts.dedup();
             for first in firsts {
-                if self.spent() {
+                if Instant::now() > self.deadline {
                     break;
                 }
                 let group: Vec<usize> = (0..combos.len())
@@ -1497,7 +1474,7 @@ impl<'g> Parser<'g> {
             Some(e) => e,
             None => self.lazy_edge(id),
         };
-        while e.out.len() <= k && !e.finished && !self.spent() {
+        while e.out.len() <= k && !e.finished && Instant::now() <= self.deadline {
             self.lazy_step(&mut e, memo);
         }
         let r = e.out.get(k).cloned();
@@ -1670,7 +1647,7 @@ impl<'g> Parser<'g> {
             }
         }
         loop {
-            if r.found >= beam || self.spent() {
+            if r.found >= beam || Instant::now() > self.deadline {
                 return None;
             }
             // Score combinations until the best scored one cannot be beaten
