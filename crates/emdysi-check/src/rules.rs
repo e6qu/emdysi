@@ -916,6 +916,18 @@ impl Rule {
             }
             // What only a model could confirm is not reported without one
             // (`choose_spellings` clears the mark of what it confirms).
+            if std::env::var_os("EMDYSI_SINGLE").is_some() {
+                for d in found.iter_mut() {
+                    let w = &a.source[d.range.clone()];
+                    if d.needs_model
+                        && d.suggestions.len() == 1
+                        && w.chars().count() >= 6
+                        && w.chars().all(|c| !c.is_uppercase())
+                    {
+                        d.needs_model = false;
+                    }
+                }
+            }
             found.retain(|d| !d.needs_model);
         }
         if self.scope != Scope::All {
