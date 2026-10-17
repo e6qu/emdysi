@@ -28,6 +28,7 @@ const BUILTIN_PACKS: &[(&str, &str)] = &[
     ("wordlists", include_str!("../../../packs/wordlists.toml")),
     ("equality", include_str!("../../../packs/equality.toml")),
     ("slop", include_str!("../../../packs/slop.toml")),
+    ("proselint", include_str!("../../../packs/proselint.toml")),
     // LanguageTool's rules that need only words
     // (scripts/import-languagetool.py).
     (

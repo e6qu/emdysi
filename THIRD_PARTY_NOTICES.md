@@ -239,3 +239,10 @@ full text is in the file named. Details, versions and changes are in
 - Copyright: Copyright GitLab Inc.
 - License: Creative Commons Attribution-ShareAlike 4.0 (`CC-BY-SA-4.0`); full text in [`data/vale/gitlab/LICENSE`](data/vale/gitlab/LICENSE), [`data/vale/gitlab/LICENSE-CC-BY-SA-4.0.txt`](data/vale/gitlab/LICENSE-CC-BY-SA-4.0.txt)
 - Used for: the tool (shipped)
+
+## proselint's checks, their word lists and test sentences, and the pack generated from them
+
+- Location: `data/proselint`, `packs/proselint.toml`
+- Copyright: Copyright (c) 2014-2015 Jordan Suchow, Michael Pacer and Lara A. Ross; lists from After the Deadline (GPL), GNU diction (GPL) and write-good (MIT)
+- License: BSD 3-Clause License (`BSD-3-Clause`); full text in [`data/proselint/LICENSE.md`](data/proselint/LICENSE.md)
+- Used for: the tool (shipped)

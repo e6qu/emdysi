@@ -420,12 +420,250 @@ def slop_pack():
     return "\n".join(lines)
 
 
+PROSELINT = ROOT / "data/proselint"
+PROSELINT_LICENSE = (
+    "proselint (BSD-3-Clause, Copyright (c) 2014-2015 Jordan Suchow, Michael Pacer and Lara "
+    "A. Ross); portions from After the Deadline (GPL); see data/proselint/SOURCE.md."
+)
+PADDING = {
+    "RAW": "{}",
+    "SAFE_JOIN": "(?:{})",
+    "WORDS_IN_TEXT": r"\b{}\b",
+    "NONWORDS_IN_TEXT": r"\B{}\B",
+    "STRICT_WORDS_IN_TEXT": r"(?<![A-Za-z'-]){}(?![A-Za-z'-])",
+}
+
+
+class Unsupported(Exception):
+    pass
+
+
+def proselint_value(node, env, module_dir):
+    """The value of an expression in a proselint check module, read
+    without running the module: literals, module constants, data files,
+    `dict(line.split(...) for line in ...)`, and `Padding` formats."""
+    import ast
+
+    ev = lambda n: proselint_value(n, env, module_dir)
+    if isinstance(node, ast.Constant):
+        return node.value
+    if isinstance(node, (ast.Tuple, ast.List, ast.Set)):
+        return [ev(e) for e in node.elts]
+    if isinstance(node, ast.Dict):
+        return {ev(k): ev(v) for k, v in zip(node.keys, node.values)}
+    if isinstance(node, ast.Name):
+        if node.id in env:
+            return env[node.id]
+        raise Unsupported(node.id)
+    if isinstance(node, ast.BinOp) and isinstance(node.op, ast.Add):
+        return ev(node.left) + ev(node.right)
+    if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Attribute):
+        # Padding.WORDS_IN_TEXT
+        if getattr(node.value, "attr", None) == "Padding" or (
+            isinstance(node.value.value, ast.Name) and node.value.value.id == "Padding"
+        ):
+            return PADDING[node.attr]
+    if isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name):
+        if node.value.id == "Padding" and node.attr in PADDING:
+            return PADDING[node.attr]
+    if isinstance(node, ast.Call):
+        f = node.func
+        # (files(pkg) / "name").read_text(...).splitlines()
+        if isinstance(f, ast.Attribute) and f.attr == "splitlines":
+            inner = f.value
+            for n in ast.walk(inner):
+                if isinstance(n, ast.Constant) and isinstance(n.value, str) and n.value != "utf8":
+                    hits = list((PROSELINT / "checks").rglob(n.value))
+                    if len(hits) == 1:
+                        return hits[0].read_text(encoding="utf-8").splitlines()
+            raise Unsupported("data file")
+        # Padding.X.format(...)
+        if isinstance(f, ast.Attribute) and f.attr == "format":
+            return ev(f.value).format(*[ev(a) for a in node.args])
+        # Padding.safe_join(items)
+        if isinstance(f, ast.Attribute) and f.attr == "safe_join":
+            items = ev(node.args[0])
+            return "(?:" + "|".join(items) + ")" if len(items) > 1 else items[0]
+        if isinstance(f, ast.Name) and f.id in ("tuple", "list", "set") and node.args:
+            return list(ev(node.args[0]))
+        # dict(line.split(",", maxsplit=1) for line in RAW)
+        if isinstance(f, ast.Name) and f.id == "dict" and node.args:
+            g = node.args[0]
+            if isinstance(g, ast.GeneratorExp):
+                lines = ev(g.generators[0].iter)
+                sep = g.elt.args[0].value if g.elt.args else None
+                return dict(
+                    (k.strip(), v.strip())
+                    for k, v in (line.split(sep, 1) for line in lines if line.strip() and sep in line)
+                )
+            return dict(ev(node.args[0]))
+    if isinstance(node, ast.GeneratorExp) or isinstance(node, ast.ListComp):
+        raise Unsupported("comprehension")
+    raise Unsupported(type(node).__name__)
+
+
+def proselint_checks():
+    """(module, path, kind, fields, message) of every check, by module."""
+    import ast
+
+    out = []
+    for f in sorted((PROSELINT / "checks").rglob("*.py")):
+        tree = ast.parse(f.read_text(encoding="utf-8"))
+        module = ".".join(f.relative_to(PROSELINT / "checks").with_suffix("").parts)
+        env = {}
+        for st in tree.body:
+            if not isinstance(st, ast.Assign) or len(st.targets) != 1:
+                continue
+            name = getattr(st.targets[0], "id", None)
+            call = st.value
+            if (
+                isinstance(call, ast.Call)
+                and isinstance(call.func, ast.Name)
+                and call.func.id == "Check"
+            ):
+                kw = {k.arg: k.value for k in call.keywords}
+                ct = kw.get("check_type")
+                if not isinstance(ct, ast.Call):
+                    continue
+                kind = getattr(ct.func, "attr", "")
+                try:
+                    fields = {k.arg: proselint_value(k.value, env, f.parent) for k in ct.keywords}
+                    path = proselint_value(kw["path"], env, f.parent)
+                    message = proselint_value(kw["message"], env, f.parent)
+                except (Unsupported, KeyError, IndexError, AttributeError, TypeError, ValueError):
+                    continue
+                out.append((module, path, kind, fields, message))
+                continue
+            if name:
+                try:
+                    env[name] = proselint_value(st.value, env, f.parent)
+                except (Unsupported, KeyError, IndexError, AttributeError, TypeError, ValueError):
+                    pass
+    return out
+
+
+def proselint_examples():
+    """Module -> examples that must pass, from proselint's tests."""
+    import ast
+
+    tree = ast.parse((PROSELINT / "tests/examples.py").read_text(encoding="utf-8"))
+    for st in tree.body:
+        if isinstance(st, ast.AnnAssign) and getattr(st.target, "id", "") == "data":
+            data = ast.literal_eval(st.value)
+            return {m: list(ok) for m, _bad, ok in data}
+    return {}
+
+
+def proselint_pack():
+    """proselint's checks of four kinds (existence of patterns or of one
+    pattern, preferred forms of words or of patterns) as `existence`,
+    `regex` and `substitution` rules. Each module's passing test sentences
+    become its rules' `acceptable` documents; examples come from each
+    rule's own literal phrases."""
+    lines = [
+        "# Generated by scripts/import-rules.py from data/proselint; do not edit.",
+        "# Source: " + PROSELINT_LICENSE,
+        "",
+        "[pack]",
+        'name = "proselint"',
+        "description = " + q("Usage advice from proselint: clichés, redundancy, jargon, misused words and more (opt-in)."),
+    ]
+    import regex
+
+    passing = proselint_examples()
+    seen = {}
+
+    def flags_passing(patterns, acceptable, wrap=True):
+        """Whether a pattern finds something in a sentence proselint's
+        tests expect the module to pass (a condition of the check was lost
+        in conversion): such rules are left out."""
+        for p in patterns:
+            try:
+                c = regex.compile("(?i)" + (rf"(?<![\w-])(?:{p})(?![\w-])" if wrap else p))
+            except regex.error:
+                return True
+            if any(c.search(a) for a in acceptable):
+                return True
+        return False
+
+    for module, path, kind, fields, message in proselint_checks():
+        if kind not in ("Existence", "ExistenceSimple", "PreferredForms", "PreferredFormsSimple"):
+            continue
+        rid = "proselint." + kebab(path.replace(".", "-").replace("_", "-"))
+        seen[rid] = seen.get(rid, 0) + 1
+        if seen[rid] > 1:
+            rid += f"-{seen[rid]}"
+        top = module.split(".")[0]
+        acceptable = [t for t in passing.get(module, passing.get(top, [])) if t]
+        msg = message.replace("{}", "{match}", 1) if kind.startswith("Existence") else message
+        common = [
+            "severity = " + q("suggestion"),
+            "source = " + q(f"https://github.com/amperser/proselint ({path}); data/proselint/checks/{module.replace('.', '/')}.py"),
+            "license = " + q(PROSELINT_LICENSE),
+        ]
+        out = ["", "[[rule]]", "id = " + q(rid)]
+        if kind == "ExistenceSimple":
+            pat = fields.get("pattern")
+            if not isinstance(pat, str):
+                continue
+            if flags_passing([pat], acceptable, wrap=False):
+                continue
+            out += ['kind = "regex"', "message = " + q(msg.replace("{match}", "'{match}'") if "{match}" in msg else msg)] + common
+            out.append("pattern = " + q("(?i)" + pat))
+            lit = re.sub(r"\\b|\(\?[:!<=][^)]*\)", "", pat)
+            example = lit if re.fullmatch(r"[A-Za-z' -]+", lit or "") else None
+        elif kind == "Existence":
+            items = [str(t) for t in fields.get("items") or []]
+            if not items:
+                continue
+            exc0 = [str(e) for e in fields.get("exceptions") or []]
+            if not exc0 and flags_passing(items, acceptable):
+                continue
+            out += ['kind = "existence"', "message = " + q(msg)] + common + ["ignorecase = true"]
+            out.append("tokens = [" + ", ".join(q(t) for t in items) + "]")
+            exc = [str(e) for e in fields.get("exceptions") or []]
+            if exc:
+                out.append("exceptions = [" + ", ".join(q(e) for e in exc) + "]")
+            example = next((t for t in items if literal(t) and t not in exc), None)
+        else:
+            items = fields.get("items") or {}
+            if not isinstance(items, dict) or not items:
+                continue
+            simple = kind == "PreferredFormsSimple"
+            pairs = [(str(k), str(v)) for k, v in items.items() if str(k).strip()]
+            if simple:
+                pairs = [(re.escape(k).replace("\\ ", " ").replace("\\-", "-"), v) for k, v in pairs]
+            if flags_passing([k for k, _ in pairs], acceptable):
+                continue
+            m = message
+            if m.count("{}") >= 2:
+                m = m.replace("{}", "{replacement}", 1).replace("{}", "{match}", 1)
+            out += ['kind = "substitution"', "message = " + q(m)] + common + ["ignorecase = true"]
+            example = next((k for k, v in pairs if literal(k) and k.lower() != v.lower()), None)
+            if example:
+                out.append("examples = [" + q(example_doc(example, "text")) + "]")
+            if acceptable:
+                out.append("acceptable = [" + ", ".join(q(a + "\n") for a in acceptable) + "]")
+            out.append("[rule.swap]")
+            out += [q(k) + " = " + q(v) for k, v in pairs]
+            lines += out
+            continue
+        if example:
+            out.append("examples = [" + q(example_doc(example, "text")) + "]")
+        if acceptable:
+            out.append("acceptable = [" + ", ".join(q(a + "\n") for a in acceptable) + "]")
+        lines += out
+    lines.append("")
+    return "\n".join(lines)
+
+
 def main():
     check = "--check" in sys.argv[1:]
     outputs = {f"packs/{v[0]}.toml": vale_pack(*v) for v in VALE}
     outputs["packs/wordlists.toml"] = words_pack()
     outputs["packs/equality.toml"] = equality_pack()
     outputs["packs/slop.toml"] = slop_pack()
+    outputs["packs/proselint.toml"] = proselint_pack()
     stale = []
     for path, text in outputs.items():
         p = ROOT / path

@@ -452,8 +452,8 @@ modifiers.
 
 ## Imported packs
 
-Eight opt-in packs are generated from rule data vendored under `data/`
-(see [`VENDORED.toml`](../VENDORED.toml)), seven by
+Nine opt-in packs are generated from rule data vendored under `data/`
+(see [`VENDORED.toml`](../VENDORED.toml)), eight by
 `scripts/import-rules.py` and `languagetool` by
 `scripts/import-languagetool.py`; load them with `--pack NAME`:
 
@@ -466,6 +466,7 @@ Eight opt-in packs are generated from rule data vendored under `data/`
 | `wordlists` | words/hedges, words/weasels, words/fillers | MIT |
 | `equality` | retext-equality (the data behind alex): insensitive wording, `type: basic` entries only | MIT |
 | `languagetool` | LanguageTool's English pattern rules that need only words (grammar, confused words, collocations, style) | LGPL-2.1-or-later; portions from After the Deadline, GPL-3.0-or-later |
+| `proselint` | proselint's checks: clichés, redundancy, jargon, malapropisms, skunked terms and more | BSD-3-Clause; lists from After the Deadline and GNU diction (GPL) |
 | `slop` | bheijden/slop's rule sets for machine-written prose (its own, Simon Willison's, and one adapted from Wikipedia's "Signs of AI writing") | Apache-2.0; the Wikipedia-derived set CC BY-SA 4.0 |
 
 LanguageTool's rules are matched against tokens its own tagger has tagged;
@@ -506,8 +507,13 @@ run `python3 scripts/import-rules.py` (CI runs it with `--check`).
 
 The Red Hat Vale package (MIT) is deliberately not imported: it includes
 rules adapted from the IBM Style Guide, all rights to which "belong to
-IBM". proselint's lists from After the Deadline (GPL) became compatible
-with the move to the AGPL (decision D15) and are a candidate for import.
+IBM".
+
+`proselint` is read from proselint's Python check modules with Python's
+`ast` module, without running them: checks of four kinds (existence of
+patterns or of one pattern, preferred forms of words or of patterns)
+convert, with each rule's examples drawn from its own phrases and each
+module's passing test sentences as its `acceptable` documents.
 
 ## Glossaries
 

@@ -107,7 +107,7 @@ decides the matter (decision D11). If a rule needs new Rust code, add a
 kind in `crates/emdysi-check/src/rules.rs`, document it in `rules.md`, and
 test it.
 
-The `microsoft`, `google`, `elastic`, `gitlab`, `wordlists`, `equality` and `slop` packs are
+The `microsoft`, `google`, `elastic`, `gitlab`, `wordlists`, `equality`, `slop` and `proselint` packs are
 generated: change `scripts/import-rules.py` and run it, never the TOML. So
 is `languagetool`, by `scripts/import-languagetool.py` (needs the Python
 `regex` module).
