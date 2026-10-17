@@ -82,7 +82,10 @@ OPTIONS:
     --format plain|markdown  output format (default: plain)
     --no-parse             tokenize only; skip grammar-based checks
     --max-tokens N         do not parse sentences longer than N tokens (default 100)
-    --timeout SECS         time limit per sentence (default 10)
+    --work N               work limit per sentence, in unifications tried: the
+                           same results on any machine (default 425000, about
+                           10 seconds)
+    --timeout SECS         time limit per sentence, for a slow machine (default 20)
     --derivations          with `parse`, also print derivation trees
     --mrs                  with `parse`, also print the semantics (MRS)
     --model FILE.gguf      a local language model (needs a build with the
@@ -205,6 +208,11 @@ fn parse_args() -> Result<Args, String> {
                 a.opts.max_tokens = need(&mut it, &arg)?
                     .parse()
                     .map_err(|_| "--max-tokens needs a number")?
+            }
+            "--work" => {
+                a.opts.max_work = need(&mut it, &arg)?
+                    .parse()
+                    .map_err(|_| "--work needs a number")?
             }
             "--timeout" => {
                 a.opts.timeout = Duration::from_secs_f64(

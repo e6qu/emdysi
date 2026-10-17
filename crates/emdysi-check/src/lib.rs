@@ -133,6 +133,12 @@ pub struct Options {
     pub threads: usize,
     /// Sentences with more tokens than this are not parsed.
     pub max_tokens: usize,
+    /// Work limit per sentence, in unifications tried (see
+    /// `emdysi_parse::Erg::parse_bounded`): the same results on any
+    /// machine. About 10 seconds of parsing at a typical rate.
+    pub max_work: usize,
+    /// Time limit per sentence, which stops a search only on a much slower
+    /// machine than `max_work` assumes (or when set lower).
     pub timeout: Duration,
     /// Readings recovered per sentence; rules look at the best ones.
     pub max_readings: usize,
@@ -152,7 +158,8 @@ impl Default for Options {
             parse: true,
             threads: std::thread::available_parallelism().map_or(2, |n| n.get()),
             max_tokens: 100,
-            timeout: Duration::from_secs(10),
+            max_work: 425_000,
+            timeout: Duration::from_secs(20),
             max_readings: 100,
             diagnose: true,
             meaning: false,
@@ -160,8 +167,10 @@ impl Default for Options {
     }
 }
 
-/// Time limit and readings for the grammar-error variant of the grammar.
-const MAL_TIMEOUT: Duration = Duration::from_secs(3);
+/// Work limit (about 3 seconds' worth), time limit and readings for the
+/// grammar-error variant of the grammar.
+const MAL_WORK: usize = 127_500;
+const MAL_TIMEOUT: Duration = Duration::from_secs(6);
 const MAL_READINGS: usize = 20;
 
 /// Readings recovered to make sure none is left out: a parse with fewer
@@ -431,7 +440,12 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                     } else {
                         let masked = parser_text(text, in_list);
                         let text = masked.as_deref().unwrap_or(text);
-                        match erg.parse_limited(text, opts.timeout, opts.max_readings) {
+                        match erg.parse_bounded(
+                            text,
+                            opts.timeout,
+                            opts.max_work,
+                            opts.max_readings,
+                        ) {
                             Ok(p) => (Some(p), None),
                             Err(e) => (None, Some(e.to_string())),
                         }
@@ -457,7 +471,8 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                             return p;
                         }
                         let p = if p.readings.len() >= opts.max_readings {
-                            match erg.parse_limited(text, opts.timeout, ALL_READINGS) {
+                            match erg.parse_bounded(text, opts.timeout, opts.max_work, ALL_READINGS)
+                            {
                                 Ok(q) if q.readings.len() < ALL_READINGS && quoting_only(&q) => q,
                                 _ => return p,
                             }
@@ -471,7 +486,12 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                         let p = if p.complete {
                             p
                         } else {
-                            match erg.parse_unpruned(text, opts.timeout, ALL_READINGS) {
+                            match erg.parse_unpruned(
+                                text,
+                                opts.timeout,
+                                opts.max_work,
+                                ALL_READINGS,
+                            ) {
                                 Ok(q)
                                     if q.complete
                                         && q.readings.len() < ALL_READINGS
@@ -534,9 +554,10 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                         let masked = parser_text(text, in_list);
                         let text = masked.as_deref().unwrap_or(text);
                         erg.mal().and_then(|m| {
-                            m.parse_limited(
+                            m.parse_bounded(
                                 text,
                                 opts.timeout.min(MAL_TIMEOUT),
+                                opts.max_work.min(MAL_WORK),
                                 opts.max_readings.min(MAL_READINGS),
                             )
                             .ok()

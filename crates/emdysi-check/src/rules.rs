@@ -2523,9 +2523,11 @@ fn verified_fix(
             .chain(rep.chars().collect::<Vec<_>>().iter())
             .chain(masked[to..].iter())
             .collect();
-        let Ok(p) = erg.parse_limited(
+        // About 5 seconds' worth of work (see `Options::max_work`).
+        let Ok(p) = erg.parse_bounded(
             fixed.trim(),
-            std::time::Duration::from_secs(5),
+            std::time::Duration::from_secs(10),
+            212_500,
             VERIFY_READINGS,
         ) else {
             continue;

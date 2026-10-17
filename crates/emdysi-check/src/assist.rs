@@ -23,7 +23,7 @@
 //!   fix when it is likely enough and the sentence with it parses as well
 //!   as with any other candidate.
 
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use emdysi_parse::{Erg, InputToken};
 
@@ -88,17 +88,26 @@ const INSERTED: &[&str] = &[
     "the", "a", "an", "of", "to", "it", "you", "we", "is", "be", "in", "on", "with", "this",
     "should", "to be",
 ];
-/// Time limit for parsing a spelling candidate, and for a corrected
+/// Work limit for parsing a spelling candidate, and for a corrected
 /// sentence of up to `SHORT` words; longer ones get `PER_WORD` more per
-/// word, up to `LONGEST` (the checker's own limit).
-const PARSE_TIMEOUT: Duration = Duration::from_secs(2);
+/// word, up to `LONGEST`. Work is unifications tried (see
+/// `ParserConfig::max_work`), so a candidate verifies or not the same way
+/// on any machine and under any load; at about 42 unifications a
+/// millisecond (the median on the sentences of the real-error corpus),
+/// these are 2 seconds, 320 milliseconds and 10 seconds.
+const PARSE_WORK: usize = 85_000;
 const SHORT: usize = 15;
-const PER_WORD: Duration = Duration::from_millis(320);
-const LONGEST: Duration = Duration::from_secs(10);
-/// Total time for verifying the candidate corrections of one sentence: a
-/// candidate that does not parse can take its whole limit, and a doubted
-/// sentence has up to `MAX_CANDIDATES` of them.
-const BUDGET: Duration = Duration::from_secs(30);
+const PER_WORD: usize = 13_600;
+const LONGEST: usize = 425_000;
+/// Total work for verifying the candidate corrections of one sentence (30
+/// seconds at that rate): a candidate that does not parse can take its
+/// whole limit, and a doubted sentence has up to `MAX_CANDIDATES` of them.
+const BUDGET: usize = 1_275_000;
+/// Unifications a millisecond, for a time limit that stops a parse only
+/// on a machine several times slower than that: a search slower than
+/// `SLACK` times its work's worth of time is cut off by time.
+const RATE: usize = 42;
+const SLACK: usize = 5;
 
 const GRAMMAR_QUESTION: &str =
     "Which version of the sentence is correct English, as the writer meant it?";
@@ -133,12 +142,20 @@ fn capitalized(rep: &str) -> String {
 
 /// Whether the strict grammar accepts `text` (within a short time limit).
 pub fn strict(erg: &Erg, text: &str) -> bool {
-    strict_within(erg, text, PARSE_TIMEOUT)
+    strict_within(erg, text, PARSE_WORK).0
 }
 
-fn strict_within(erg: &Erg, text: &str, limit: Duration) -> bool {
-    erg.parse_limited(text.trim(), limit, 3)
-        .is_ok_and(|p| p.readings.iter().any(|r| emdysi_parse::is_strict(&r.root)))
+/// Whether the strict grammar accepts `text` within `work` (see
+/// `PARSE_WORK`), and the work the parse took.
+fn strict_within(erg: &Erg, text: &str, work: usize) -> (bool, usize) {
+    let timeout = Duration::from_millis((work / RATE * SLACK) as u64);
+    match erg.parse_bounded(text.trim(), timeout, work, 3) {
+        Ok(p) => (
+            p.readings.iter().any(|r| emdysi_parse::is_strict(&r.root)),
+            p.work,
+        ),
+        Err(_) => (false, 0),
+    }
 }
 
 /// The sentence before `si` in the same block, as context for the model.
@@ -557,19 +574,21 @@ fn seams(s: &Sentence) -> Vec<usize> {
 /// a long sentence that took the checker seconds to parse would otherwise
 /// time out corrected.
 pub fn verify(erg: &Erg, s: &Sentence, e: &Edit) -> bool {
-    verify_within(erg, s, e, LONGEST)
+    verify_within(erg, s, e, LONGEST).0
 }
 
-/// [`verify`] within at most `most`.
-fn verify_within(erg: &Erg, s: &Sentence, e: &Edit, most: Duration) -> bool {
-    let start = Instant::now();
+/// [`verify`] within at most `most` work, and the work it took.
+fn verify_within(erg: &Erg, s: &Sentence, e: &Edit, most: usize) -> (bool, usize) {
     let masked = s.text.chars().count() == s.original.chars().count();
     let text = if masked { &s.text } else { &s.original };
-    let extra = s.word_count().saturating_sub(SHORT) as u32;
-    let limit = (PARSE_TIMEOUT + PER_WORD * extra).min(LONGEST).min(most);
-    strict_within(erg, &with_full_stop(&e.apply(text)), limit)
-        || s.word_count() >= LOCAL_WORDS
-            && verify_locally(erg, text, e, most.saturating_sub(start.elapsed()))
+    let extra = s.word_count().saturating_sub(SHORT);
+    let limit = (PARSE_WORK + PER_WORD * extra).min(LONGEST).min(most);
+    let (ok, used) = strict_within(erg, &with_full_stop(&e.apply(text)), limit);
+    if ok || s.word_count() < LOCAL_WORDS {
+        return (ok, used);
+    }
+    let (ok, more) = verify_locally(erg, text, e, most.saturating_sub(used));
+    (ok, used + more)
 }
 
 /// Shortest sentence whose corrections may be verified clause by clause.
@@ -580,8 +599,8 @@ const LOCAL_WORDS: usize = 12;
 /// each parse can fail to parse whole within its time (search, M8), and
 /// its correction then never verifies. The window grows by one mark on
 /// each side, up to three times, and never reaches the whole sentence.
-fn verify_locally(erg: &Erg, text: &str, e: &Edit, most: Duration) -> bool {
-    let start = Instant::now();
+fn verify_locally(erg: &Erg, text: &str, e: &Edit, most: usize) -> (bool, usize) {
+    let mut used = 0;
     let chars: Vec<char> = text.chars().collect();
     let marks: Vec<usize> = chars
         .iter()
@@ -613,20 +632,23 @@ fn verify_locally(erg: &Erg, text: &str, e: &Edit, most: Duration) -> bool {
         }
         .apply(&part);
         let words = part.split_whitespace().count();
-        let limit = (PARSE_TIMEOUT + PER_WORD * words.saturating_sub(SHORT) as u32)
+        let limit = (PARSE_WORK + PER_WORD * words.saturating_sub(SHORT))
             .min(LONGEST)
-            .min(most.saturating_sub(start.elapsed()));
-        if limit.is_zero() {
-            return false;
+            .min(most.saturating_sub(used));
+        if limit == 0 {
+            return (false, used);
         }
-        if strict_within(erg, &with_full_stop(&fixed), limit) {
-            return !strict_within(erg, &with_full_stop(&part), limit);
+        let (fixed_ok, w) = strict_within(erg, &with_full_stop(&fixed), limit);
+        used += w;
+        if fixed_ok {
+            let (part_ok, w) = strict_within(erg, &with_full_stop(&part), limit);
+            return (!part_ok, used + w);
         }
         if before.get(k).is_none() && after.get(k).is_none() {
             break;
         }
     }
-    false
+    (false, used)
 }
 
 /// `text` ending in a full stop: one in place of a final colon, or added
@@ -650,18 +672,23 @@ fn with_full_stop(text: &str) -> String {
 /// sentence. Parsing stops once enough are found (the model is not shown
 /// more) or when `BUDGET` is spent.
 fn grammar_candidates(erg: &Erg, s: &Sentence, focus: &[(usize, usize)]) -> Vec<(Edit, String)> {
-    let start = Instant::now();
-    focused(edits(erg, s), focus)
+    let mut used = 0;
+    let mut out = Vec::new();
+    for e in focused(edits(erg, s), focus)
         .into_iter()
         .take(MAX_CANDIDATES)
-        .take_while(|_| start.elapsed() + Duration::from_millis(200) < BUDGET)
-        .filter(|e| verify_within(erg, s, e, BUDGET.saturating_sub(start.elapsed())))
-        .map(|e| {
+    {
+        if out.len() >= MAX_OPTIONS * MAX_ROUNDS || used + PARSE_WORK / 10 >= BUDGET {
+            break;
+        }
+        let (ok, w) = verify_within(erg, s, &e, BUDGET - used);
+        used += w;
+        if ok {
             let fixed = e.apply(&s.original);
-            (e, fixed)
-        })
-        .take(MAX_OPTIONS * MAX_ROUNDS)
-        .collect()
+            out.push((e, fixed));
+        }
+    }
+    out
 }
 
 /// The edits that touch one of the `focus` spans first, the others after

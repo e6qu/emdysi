@@ -334,6 +334,9 @@ pub struct Parse {
     /// without an analysis after a complete search is outside the grammar.
     pub complete: bool,
     pub elapsed: Duration,
+    /// The work the searches did, in unifications tried (see
+    /// [`ParserConfig::max_work`]).
+    pub work: usize,
     /// The ranking model's temperature: the probability of a reading among
     /// `readings` is proportional to `exp(score / temperature)`.
     pub temperature: f64,
@@ -665,6 +668,7 @@ impl Erg {
             // gigabytes.
             max_nodes: 25_000_000,
             timeout: Duration::from_secs(60),
+            max_work: usize::MAX,
             packing_restrictor,
             max_readings: 1000,
             packing_top_type: ace_setting(&config_src, "generalize-edge-top-types")
@@ -792,17 +796,37 @@ impl Erg {
         self.parse_with(text, &config)
     }
 
-    /// Parse one sentence like [`Erg::parse_limited`], without chart
+    /// Parse one sentence like [`Erg::parse_limited`], within at most
+    /// `max_work` unifications (see [`ParserConfig::max_work`]) as well as
+    /// `timeout`: where the work limit is reached first, the result is the
+    /// same on any machine.
+    pub fn parse_bounded(
+        &self,
+        text: &str,
+        timeout: Duration,
+        max_work: usize,
+        max_readings: usize,
+    ) -> Result<Parse, Error> {
+        let mut config = self.config.clone();
+        config.timeout = timeout;
+        config.max_work = max_work;
+        config.max_readings = max_readings;
+        self.parse_with(text, &config)
+    }
+
+    /// Parse one sentence like [`Erg::parse_bounded`], without chart
     /// pruning: a search that, when it finishes in time, misses no
     /// analysis.
     pub fn parse_unpruned(
         &self,
         text: &str,
         timeout: Duration,
+        max_work: usize,
         max_readings: usize,
     ) -> Result<Parse, Error> {
         let mut config = self.config.clone();
         config.timeout = timeout;
+        config.max_work = max_work;
         config.max_readings = max_readings;
         config.cell_beam = None;
         self.parse_with(text, &config)
@@ -921,6 +945,14 @@ impl Erg {
             .any(|(n, _)| is_strict(n) && n.trim_end_matches("_br") != "root_strict_excl")
             || text.trim_end().ends_with('!');
         let settled = |r: &ParseResult| !strict_possible && complete(r);
+        // The searches share the work limit as they share the time limit:
+        // a later one gets what the earlier ones left, and none starts with
+        // less than a tenth of it left (as none starts with less than a
+        // second).
+        let used = std::cell::Cell::new(0usize);
+        let work = |r: &ParseResult| r.stats.attempts + r.stats.unpack_attempts;
+        let work_left = || config.max_work.saturating_sub(used.get());
+        let out_of_work = || config.max_work != usize::MAX && work_left() < config.max_work / 10;
         // With chart pruning, a narrow beam first; the configured one only
         // when that finds no strict analysis and time remains.
         let result = match (self.first_beam, config.cell_beam) {
@@ -930,10 +962,12 @@ impl Erg {
                     ..config.clone()
                 };
                 let r = run(&narrow, items.clone());
+                used.set(used.get() + work(&r));
                 let left = config.timeout.saturating_sub(t0.elapsed());
                 if strict(&r)
                     || settled(&r)
                     || left < Duration::from_secs(1)
+                    || out_of_work()
                     || r.positions <= config.cell_beam_from
                 {
                     r
@@ -941,9 +975,11 @@ impl Erg {
                     let wide = ParserConfig {
                         unpack_beam: config.unpack_beam * WIDE_UNPACK,
                         timeout: left,
+                        max_work: work_left(),
                         ..config.clone()
                     };
                     let r2 = run(&wide, items.clone());
+                    used.set(used.get() + work(&r2));
                     if strict(&r2) || (complete(&r2) && !complete(&r)) {
                         r2
                     } else {
@@ -951,7 +987,11 @@ impl Erg {
                     }
                 }
             }
-            _ => run(config, items.clone()),
+            _ => {
+                let r = run(config, items.clone());
+                used.set(used.get() + work(&r));
+                r
+            }
         };
         // A wider beam, twice and then four times as wide (for the chart
         // and for unpacking), before searching
@@ -968,6 +1008,7 @@ impl Erg {
                 if strict(&result)
                     || settled(&result)
                     || left < Duration::from_secs(1)
+                    || out_of_work()
                     || result.positions <= config.cell_beam_from
                 {
                     break;
@@ -976,9 +1017,11 @@ impl Erg {
                     cell_beam: Some(beam * factor),
                     unpack_beam: config.unpack_beam * factor.min(WIDE_UNPACK),
                     timeout: left,
+                    max_work: work_left(),
                     ..config.clone()
                 };
                 let r = run(&wider, items.clone());
+                used.set(used.get() + work(&r));
                 if strict(&r) || (complete(&r) && !complete(&result)) {
                     result = r;
                 }
@@ -994,11 +1037,13 @@ impl Erg {
             && config.cell_beam.is_some()
             && result.positions > config.cell_beam_from
             && config.timeout.saturating_sub(t0.elapsed()) >= Duration::from_secs(1)
+            && !out_of_work()
         {
             let exhaustive = ParserConfig {
                 cell_beam: None,
                 unpack_beam: config.unpack_beam * WIDE_UNPACK,
                 timeout: config.timeout.saturating_sub(t0.elapsed()),
+                max_work: work_left(),
                 ..config.clone()
             };
             let r = run(&exhaustive, items);
@@ -1136,6 +1181,7 @@ impl Erg {
             lexical_items: n_items,
             exhausted: result.exhausted,
             complete: !result.exhausted && result.stats.pruned == 0,
+            work: used.get(),
             elapsed: t0.elapsed(),
             temperature: self.model.temperature,
         })
