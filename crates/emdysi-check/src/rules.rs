@@ -905,6 +905,7 @@ impl Rule {
             }
         } else {
             self.run_all(erg, a, g, &mut found);
+            let with_model = ask.is_some();
             if let (
                 Kind::Spelling {
                     model_threshold, ..
@@ -916,11 +917,12 @@ impl Rule {
             }
             // What only a model could confirm is not reported without one
             // (`choose_spellings` clears the mark of what it confirms).
-            // ... except a misspelling with a single candidate that it
-            // only drops or adds letters to (|admistrators|, |neccesary|,
-            // |securly|): a word only substitutions make a known word of is
-            // more often a name or term (|grafana|, |mebibytes|).
-            for d in found.iter_mut() {
+            // ... except, without a model, a misspelling with a single
+            // candidate that it only drops or adds letters to
+            // (|admistrators|, |neccesary|, |securly|): a word only
+            // substitutions make a known word of is more often a name or
+            // term (|grafana|, |mebibytes|).
+            for d in found.iter_mut().filter(|_| !with_model) {
                 let w = &a.source[d.range.clone()];
                 if d.needs_model
                     && d.suggestions.len() == 1

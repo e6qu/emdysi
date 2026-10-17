@@ -411,15 +411,18 @@ fn spelling_fix_chosen_in_context() {
 }
 
 #[test]
-fn a_word_two_edits_away_needs_the_model() {
+fn a_word_two_edits_away_is_fixed_with_the_model() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     let checker = core();
     let text = "It is neccesary to read the docs.\n";
     let a = analyze(&erg, text, Format::Markdown, &opts());
     let spelling = |d: &[Diagnostic]| d.iter().find(|d| d.rule == "core.spelling").cloned();
-    // |neccesary| is two edits from |necessary|: no finding without a
-    // model, since a rare correct word can be as far from a common one.
-    assert_eq!(spelling(&checker.check(&erg, &a)), None);
+    // |neccesary| is two edits from |necessary|, its only candidate, which
+    // it only drops and adds letters to: a finding without a model, but no
+    // fix, since a rare correct word can be as far from a common one.
+    let plain = spelling(&checker.check(&erg, &a)).unwrap();
+    assert_eq!(plain.replacement, None);
+    assert_eq!(plain.suggestions, vec!["necessary".to_string()]);
     // A model that prefers the common word confirms it, with the fix.
     let mut model = Prefers {
         want: "is necessary to",
@@ -495,16 +498,20 @@ fn a_three_letter_typo_needs_the_model() {
 }
 
 #[test]
-fn a_misspelled_derivation_needs_the_model() {
+fn a_misspelled_derivation_is_fixed_with_the_model() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     let checker = core();
     let text = "It works like an assignement here.\n";
     let a = analyze(&erg, text, Format::Markdown, &opts());
     let spelling = |d: &[Diagnostic]| d.iter().find(|d| d.rule == "core.spelling").cloned();
     // |assignement| reads as |assignee| plus |-ment|, a coinage, but
-    // |assignment| is one edit away inside the word: a typo only the model
-    // can confirm (|nestings| is as close to |nestlings|).
-    assert_eq!(spelling(&checker.check(&erg, &a)), None);
+    // |assignment| is one edit away inside the word: a typo, though only
+    // the model can confirm it (|nestings| is as close to |nestlings|).
+    // Without one, a finding without a fix: |assignment| is the only
+    // candidate, and the word only adds a letter to it.
+    let plain = spelling(&checker.check(&erg, &a)).unwrap();
+    assert_eq!(plain.replacement, None);
+    assert_eq!(plain.suggestions, vec!["assignment".to_string()]);
     let mut model = Prefers {
         want: "an assignment here",
         asked: Vec::new(),
