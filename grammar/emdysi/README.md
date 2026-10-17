@@ -163,6 +163,10 @@ repository's `LICENSE`), in the ERG's conventions and on its types.
   entail of*, *the first transports of rage*; *altogether* before a verb
   (*he altogether failed*), which the ERG has only after one;
   transitive *chunk* (*chunk the FAQ into sections*);
+  verbs of motion and position in locative inversion (*Into the room
+  walked a stranger*, *Behind the house lurked a shadow*), which the ERG
+  has for 24 verbs (*come*, *lie*, *stand*, `v_np_locinv-mv_le`): 26 more
+  in the same form, with each verb's intransitive predicate;
   unknown plural names with a determiner (*the Bennets were*, *the
   Gardiners*): a generic entry for words the tagger marks NNPS, in the
   ERG's type for plural names (`n_-_pn-pl-def_le`, *The Giants play

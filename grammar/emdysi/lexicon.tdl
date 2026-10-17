@@ -1260,3 +1260,144 @@ mortifying_a1 := aj_-_i-prd_le &
             PHON.ONSET con ] ].
 
 :end :instance.
+
+;;; Verbs of motion and position in locative inversion: |Into the room
+;;; walked a stranger.|, |Out of the cave crawled a bear.|, |Behind the
+;;; house lurked a shadow.| The ERG has the construction (locinv-mv, type
+;;; v_np_locinv-mv_le) for 24 verbs (|come|, |hang|, |lie|, |sit|,
+;;; |stand|, ...); these are common ones it lacks, in the same form and
+;;; with the predicate of each verb's intransitive entry.
+
+:begin :instance :status lex-entry.
+
+walk_v_locinv := v_np_locinv-mv_le &
+ [ ORTH < "walk" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_walk_v_1_rel",
+            PHON.ONSET con ] ].
+
+crawl_v_locinv := v_np_locinv-mv_le &
+ [ ORTH < "crawl" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_crawl_v_dir_rel",
+            PHON.ONSET con ] ].
+
+march_v_locinv := v_np_locinv-mv_le &
+ [ ORTH < "march" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_march_v_1_rel",
+            PHON.ONSET con ] ].
+
+rush_v_locinv := v_np_locinv-mv_le &
+ [ ORTH < "rush" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_rush_v_1_rel",
+            PHON.ONSET con ] ].
+
+fly_v_locinv := v_np_locinv-mv_le &
+ [ ORTH < "fly" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_fly_v_1_rel",
+            PHON.ONSET con ] ].
+
+step_v_locinv := v_np_locinv-mv_le &
+ [ ORTH < "step" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_step_v_1_rel",
+            PHON.ONSET con ] ].
+
+rise_v_locinv := v_np_locinv-mv_le &
+ [ ORTH < "rise" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_rise_v_1_rel",
+            PHON.ONSET con ] ].
+
+roll_v_locinv := v_np_locinv-mv_le &
+ [ ORTH < "roll" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_roll_v_1_rel",
+            PHON.ONSET con ] ].
+
+swim_v_locinv := v_np_locinv-mv_le &
+ [ ORTH < "swim" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_swim_v_1_rel",
+            PHON.ONSET con ] ].
+
+wander_v_locinv := v_np_locinv-mv_le &
+ [ ORTH < "wander" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_wander_v_1_rel",
+            PHON.ONSET con ] ].
+
+stroll_v_locinv := v_np_locinv-mv_le &
+ [ ORTH < "stroll" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_stroll_v_1_rel",
+            PHON.ONSET con ] ].
+
+creep_v_locinv := v_np_locinv-mv_le &
+ [ ORTH < "creep" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_creep_v_1_rel",
+            PHON.ONSET con ] ].
+
+climb_v_locinv := v_np_locinv-mv_le &
+ [ ORTH < "climb" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_climb_v_1_rel",
+            PHON.ONSET con ] ].
+
+drift_v_locinv := v_np_locinv-mv_le &
+ [ ORTH < "drift" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_drift_v_1_rel",
+            PHON.ONSET con ] ].
+
+leap_v_locinv := v_np_locinv-mv_le &
+ [ ORTH < "leap" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_leap_v_1_rel",
+            PHON.ONSET con ] ].
+
+jump_v_locinv := v_np_locinv-mv_le &
+ [ ORTH < "jump" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_jump_v_1_rel",
+            PHON.ONSET con ] ].
+
+dash_v_locinv := v_np_locinv-mv_le &
+ [ ORTH < "dash" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_dash_v_1_rel",
+            PHON.ONSET con ] ].
+
+stride_v_locinv := v_np_locinv-mv_le &
+ [ ORTH < "stride" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_stride_v_1_rel",
+            PHON.ONSET con ] ].
+
+sail_v_locinv := v_np_locinv-mv_le &
+ [ ORTH < "sail" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_sail_v_1_rel",
+            PHON.ONSET con ] ].
+
+stagger_v_locinv := v_np_locinv-mv_le &
+ [ ORTH < "stagger" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_stagger_v_1_rel",
+            PHON.ONSET con ] ].
+
+glide_v_locinv := v_np_locinv-mv_le &
+ [ ORTH < "glide" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_glide_v_1_rel",
+            PHON.ONSET con ] ].
+
+tumble_v_locinv := v_np_locinv-mv_le &
+ [ ORTH < "tumble" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_tumble_v_1_rel",
+            PHON.ONSET con ] ].
+
+emerge_v_locinv := v_np_locinv-mv_le &
+ [ ORTH < "emerge" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_emerge_v_1_rel",
+            PHON.ONSET voc ] ].
+
+burst_v_locinv := v_np_locinv-mv_le &
+ [ ORTH < "burst" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_burst_v_1_rel",
+            PHON.ONSET con ] ].
+
+gallop_v_locinv := v_np_locinv-mv_le &
+ [ ORTH < "gallop" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_gallop_v_1_rel",
+            PHON.ONSET con ] ].
+
+lurk_v_locinv := v_np_locinv-mv_le &
+ [ ORTH < "lurk" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_lurk_v_1_rel",
+            PHON.ONSET con ] ].
+
+:end :instance.
