@@ -19,6 +19,7 @@
 //! sentence the writer's correction has (an upper bound for any model).
 //! Either way the number of questions asked is reported. `SHARD=i/n`
 //! checks only every n-th pair, starting with the i-th.
+//! `PACKS=packs/a.toml,...` adds packs to `core`.
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -127,7 +128,16 @@ fn main() {
     };
     let core =
         Pack::parse(&std::fs::read_to_string(root.join("packs/core.toml")).unwrap()).unwrap();
-    let checker = Checker::new(vec![core]);
+    // `PACKS=packs/a.toml,packs/b.toml` adds packs to `core`.
+    let mut packs = vec![core];
+    for p in std::env::var("PACKS")
+        .unwrap_or_default()
+        .split(',')
+        .filter(|p| !p.is_empty())
+    {
+        packs.push(Pack::parse(&std::fs::read_to_string(root.join(p)).unwrap()).unwrap());
+    }
+    let checker = Checker::new(packs);
     let mut erg = Erg::load(&default_grammar_dir()).unwrap();
     // Parses are cached between runs (see `Erg::cache_parses`).
     if let Some(dir) = emdysi_parse::parse_cache_dir() {

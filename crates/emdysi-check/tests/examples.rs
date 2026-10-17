@@ -30,6 +30,14 @@ fn rule_examples() {
         .collect();
     for pack in &packs {
         for rule in &pack.rules {
+            // Rules with part-of-speech conditions need the parse for
+            // every example; there are a thousand and more of them, so
+            // they are checked once, when generated (see
+            // crates/emdysi-check/examples/lt_validate.rs).
+            if matches!(&rule.kind, emdysi_check::rules::Kind::Regex { tags, .. } if !tags.is_empty())
+            {
+                continue;
+            }
             // A rule over other rules' findings runs with all of them.
             let checker = if matches!(rule.kind, emdysi_check::rules::Kind::TellDensity { .. }) {
                 Checker::new(packs.clone())

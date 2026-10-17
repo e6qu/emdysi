@@ -17,6 +17,10 @@ again by the test suite with emdysi's own engine).
 
     python3 scripts/import-languagetool.py           # write the pack
     python3 scripts/import-languagetool.py --check   # fail if out of date
+    python3 scripts/import-languagetool.py --candidates FILE
+        # rules with part-of-speech conditions, for lt_validate:
+        # cargo run --release -p emdysi-check --example lt_validate FILE \\
+        #     > scripts/languagetool-tagged.txt
 
 Needs the `regex` module (pip install regex). The pack is registered in
 VENDORED.toml; do not edit it by hand.
@@ -202,9 +206,32 @@ def is_punct(s):
     return s != "" and not any(c.isalnum() for c in s)
 
 
-def token_regex(tok):
+# The tags emdysi derives from the parse (crates/emdysi-check/src/tags.rs).
+PARSE_TAGS = (
+    "CD EX WP PRP NNP NNPS NN NNS MD VBP VBZ VBD VBN VBG VB JJR JJS JJ RBR RBS WRB RB "
+    "TO IN PRP$ WDT DT CC"
+).split()
+
+
+def tag_pattern(el):
+    """A part-of-speech condition for the parse's tags, from a token's or
+    exception's `postag`; Skip if no tag the parse gives can match."""
+    tag = el.get("postag")
+    pat = tag if el.get("postag_regexp") == "yes" else regex.escape(tag)
+    try:
+        r = regex.compile(pat)
+    except regex.error:
+        raise Skip("bad tag pattern")
+    if not any(r.fullmatch(t) for t in PARSE_TAGS):
+        raise Skip("tag the parse does not give")
+    return pat
+
+
+def token_regex(tok, conds=None):
     """A token's pattern, with its exceptions as negative lookaheads: the
-    token's own, then (`scope="next"`) the next token's."""
+    token's own, then (`scope="next"`) the next token's. With `conds`, an
+    open-class part of speech becomes a condition on the token's group
+    (pattern, negated), checked against the parse; without, Skip."""
     extra = set(tok.attrib) - TOKEN_ATTRS
     if extra:
         raise Skip(f"token attributes {extra}")
@@ -221,8 +248,13 @@ def token_regex(tok):
     else:
         body = literal(text) if text else WORD
     if tag is not None:
-        words = closed_words(tag, tok.get("postag_regexp") == "yes")
-        body = f"(?:{words})" if not text else rf"(?=(?:{words})(?![\w'’]))(?:{body})"
+        try:
+            words = closed_words(tag, tok.get("postag_regexp") == "yes")
+            body = f"(?:{words})" if not text else rf"(?=(?:{words})(?![\w'’]))(?:{body})"
+        except Skip:
+            if conds is None or tok.get("negate") == "yes":
+                raise
+            conds.append((tag_pattern(tok), False))
     own, after = [], []
     for ch in tok:
         if ch.tag != "exception":
@@ -232,7 +264,13 @@ def token_regex(tok):
             raise Skip("exception attributes")
         e = text_of(ch)
         if ch.get("postag") is not None and not e:
-            e = closed_words(ch.get("postag"), ch.get("postag_regexp") == "yes")
+            try:
+                e = closed_words(ch.get("postag"), ch.get("postag_regexp") == "yes")
+            except Skip:
+                if conds is None or scope != "current" or ch.get("negate_pos"):
+                    raise
+                conds.append((tag_pattern(ch), True))
+                continue
         elif ch.get("inflected") == "yes":
             e = inflections(e, ch.get("regexp") == "yes")
         else:
@@ -270,7 +308,10 @@ def token_words(tok):
     if not text:
         tag = tok.get("postag")
         if tag and tag != "SENT_START":
-            text, is_re = closed_words(tag, tok.get("postag_regexp") == "yes"), True
+            try:
+                text, is_re = closed_words(tag, tok.get("postag_regexp") == "yes"), True
+            except Skip:
+                return None
             if text == NUMBER:
                 return None
         else:
@@ -320,7 +361,7 @@ def flatten(pattern):
     return out
 
 
-def sequence(tokens, groups=True):
+def sequence(tokens, groups=True, conds=None):
     """A regex for a token sequence; marked tokens form the group `m`.
     Every word token carries its own word boundaries, so the tokens may be
     separated by any space or none (LanguageTool splits *I've* into *I* and
@@ -328,7 +369,10 @@ def sequence(tokens, groups=True):
     parts = []
     in_m = False
     for i, (tok, marked) in enumerate(tokens, 1):
-        body, _ = token_regex(tok)
+        local = [] if groups and conds is not None else None
+        body, _ = token_regex(tok, local)
+        for pat, negate in local or []:
+            conds.append((f"t{i}={pat}", negate))
         sep = "" if i == 1 or tok.get("spacebefore") == "no" else r"\s*"
         if tok.get("spacebefore") == "yes" and i > 1:
             sep = r"\s+"
@@ -431,7 +475,8 @@ def convert(rule, group, category, file):
             raise Skip("pattern attributes")
         tokens = flatten(pattern)
         optional = {i for i, (t, _) in enumerate(tokens, 1) if t.get("min") == "0"}
-        body = sequence(tokens)
+        conds = []
+        body = sequence(tokens, conds=conds)
         needs = needs_of(tokens)
         regexp_rule = False
     elif rx is not None:
@@ -441,6 +486,7 @@ def convert(rule, group, category, file):
         body = text_of(rx)
         optional = set()
         needs = []
+        conds = []
         regexp_rule = True
     else:
         raise Skip("no pattern")
@@ -480,6 +526,8 @@ def convert(rule, group, category, file):
         "message": msg,
         "pattern": pat,
         "needs": needs,
+        "tags": [c for c, neg in conds if not neg],
+        "not_tags": [c for c, neg in conds if neg],
         "unless": ("" if case else "(?i)") + "|".join(f"(?:{u})" for u in unless) if unless else None,
         "suggest": suggestions,
         "examples": examples,
@@ -517,8 +565,11 @@ def validate(r):
     for text, span in r["examples"]:
         if span not in spans(text):
             raise Skip("misses its example")
+    # A rule with part-of-speech conditions may match a correct example
+    # here and still pass: the conditions are checked with the parse
+    # (crates/emdysi-check/examples/lt_validate.rs).
     for text in r["acceptable"]:
-        if spans(text):
+        if spans(text) and not (r["tags"] or r["not_tags"]):
             raise Skip("flags a correct example")
     # The suggestions must expand (a group they name must exist).
     for text, _ in r["examples"]:
@@ -555,9 +606,23 @@ def slug(s):
     return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")
 
 
-def build():
+# Rules with part-of-speech conditions that pass their own examples with
+# emdysi's parse (written by crates/emdysi-check/examples/lt_validate.rs
+# from a `--candidates` pack).
+VALIDATED = ROOT / "scripts/languagetool-tagged.txt"
+
+
+def build(candidates=False):
+    """The pack's text, the rules in it, and the reasons rules were left
+    out. With `candidates`, the pack holds every rule with part-of-speech
+    conditions instead, for lt_validate."""
     kept, skipped = [], {}
     ids = {}
+    validated = {
+        line.strip()
+        for line in (VALIDATED.read_text().splitlines() if VALIDATED.exists() else [])
+        if line.strip() and not line.startswith("#")
+    }
     for file in ("grammar.xml", "style.xml"):
         for rule, group, cat in rules_of(file):
             try:
@@ -570,6 +635,14 @@ def build():
             base = "languagetool." + slug(r["lt_id"])
             ids[base] = ids.get(base, 0) + 1
             r["id"] = base if ids[base] == 1 else f"{base}-{ids[base]}"
+            tagged = bool(r["tags"] or r["not_tags"])
+            if candidates and not tagged:
+                continue
+            if tagged and not candidates and r["id"] not in validated:
+                skipped["fails its examples with the parse"] = (
+                    skipped.get("fails its examples with the parse", 0) + 1
+                )
+                continue
             kept.append(r)
     out = [
         "# Generated by scripts/import-languagetool.py from data/languagetool/en/",
@@ -577,7 +650,7 @@ def build():
         "",
         "[pack]",
         'name = "languagetool"',
-        'description = "LanguageTool\'s English rules that need only words, not its tagger (opt-in)."',
+        'description = "LanguageTool\'s English rules: those that need only words, and those whose parts of speech the parse gives (opt-in)."',
         "",
     ]
     for r in kept:
@@ -593,6 +666,10 @@ def build():
         ]
         if r["needs"]:
             out.append("needs = [" + ", ".join(toml_str(w) for w in r["needs"]) + "]")
+        if r["tags"]:
+            out.append("tags = [" + ", ".join(toml_str(c) for c in r["tags"]) + "]")
+        if r["not_tags"]:
+            out.append("not_tags = [" + ", ".join(toml_str(c) for c in r["not_tags"]) + "]")
         if r["unless"]:
             out.append(f"unless = {toml_str(r['unless'])}")
         if "${" in r["message"]:
@@ -614,6 +691,12 @@ def build():
 
 
 def main():
+    if "--candidates" in sys.argv:
+        path = Path(sys.argv[sys.argv.index("--candidates") + 1])
+        text, kept, _ = build(candidates=True)
+        path.write_text(text)
+        print(f"{len(kept)} candidates with part-of-speech conditions", file=sys.stderr)
+        return
     text, kept, skipped = build()
     if "--check" in sys.argv:
         if OUT.read_text() != text:

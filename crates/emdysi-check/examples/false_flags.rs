@@ -15,7 +15,8 @@
 //! directory) for inspection: genre, document, rule, flagged text, message,
 //! sentence. Finished documents are also appended to OUT.tsv.journal, so
 //! that a rerun with the same OUT resumes an interrupted run; `THREADS`
-//! caps the documents checked at once.
+//! caps the documents checked at once; `PACK=packs/NAME.toml` measures
+//! another pack instead of `core`.
 //!
 //! With `EMDYSI_LM` set to a model (a spec as for `en --lm`), spelling and
 //! grammar corrections are chosen by the model among those the grammar
@@ -100,8 +101,9 @@ fn main() {
         .map(|l| l.split('\t').map(unescape).collect())
         .filter(|r: &Vec<String>| only.as_ref().is_none_or(|g| g.contains(&r[1])))
         .collect();
-    let core =
-        Pack::parse(&std::fs::read_to_string(root.join("packs/core.toml")).unwrap()).unwrap();
+    // `PACK=packs/NAME.toml` measures another pack instead of `core`.
+    let pack_path = std::env::var("PACK").unwrap_or_else(|_| "packs/core.toml".into());
+    let core = Pack::parse(&std::fs::read_to_string(root.join(&pack_path)).unwrap()).unwrap();
     let checker = Checker::new(vec![core]);
     let mut erg = Erg::load(&default_grammar_dir()).unwrap();
     // Parses are cached between runs (see `Erg::cache_parses`).

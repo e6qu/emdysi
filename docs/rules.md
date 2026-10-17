@@ -72,8 +72,17 @@ expanded the same way. `needs` lists words (lowercase) one of which a
 sentence must contain for the pattern to be tried (as a whole word if it
 is all letters and digits, else anywhere); the pattern is then compiled
 when a sentence first contains one, and matches inside a URL or file path
-are skipped. The `languagetool` pack, a thousand and more such rules, loads
-in a tenth of a second this way.
+are skipped. The `languagetool` pack, two thousand such rules, loads in a
+fraction of a second this way.
+
+`tags` and `not_tags` put part-of-speech conditions on named groups, as
+`"group=pattern"` strings (`"t2=NNS?"`): the group must cover a word of the
+sentence's best reading whose Penn Treebank tag matches the pattern, or,
+for `not_tags`, none whose tag does. The tags come from the parse: the
+lexical type and inflectional rules of each word (`n_pl_olr` makes NNS,
+`aj_*-cmp_le` JJR; *stay* in *will stay* is both VB and VBP, since the
+grammar gives both one rule). A rule with conditions needs a parse, and
+does nothing on a sentence without one.
 
 ### `construction`
 
@@ -464,7 +473,13 @@ emdysi has no such tagger, so only the rules whose tokens are words, word
 patterns, inflections of a word (expanded from UniMorph) or closed-class
 tags (determiners, pronouns, modals, prepositions: word lists) are
 converted, 1,645 of them, each to a `regex` rule whose tokens are named
-groups. A rule is kept only if it finds the marked span of each of its
+groups. Rules that also need open-class parts of speech (nouns, verbs,
+adjectives, adverbs) become rules with tag conditions, checked against
+the parse: 669 such rules convert, and the 517 whose examples hold with
+emdysi's parse are kept (`scripts/languagetool-tagged.txt`, written by
+`crates/emdysi-check/examples/lt_validate.rs`; the test suite cannot
+parse every example of every rule, so this check runs when the pack is
+generated), 2,162 rules in all. A rule is kept only if it finds the marked span of each of its
 incorrect examples and nothing in its correct ones; the examples come along
 as the rule's `examples` and `acceptable`, so the test suite checks them
 again. Rules that need parts of speech of open classes, chunks or filters,

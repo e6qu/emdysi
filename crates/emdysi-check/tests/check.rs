@@ -518,3 +518,50 @@ fn a_typo_of_a_word_the_document_uses() {
     assert_eq!(&src[sp.range.clone()], "crytographic");
     assert_eq!(sp.replacement.as_deref(), Some("cryptographic"));
 }
+
+#[test]
+fn penn_tags_from_the_parse() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let opts = Options {
+        threads: 1,
+        ..Options::default()
+    };
+    let src = "The dogs quickly chased him to a bigger house, and Kim will stay.\n";
+    let a = analyze(&erg, src, Format::Markdown, &opts);
+    let r = a.sentences[0].best().expect("a reading");
+    let tags: Vec<(String, &str)> = r
+        .words
+        .iter()
+        .flat_map(|w| {
+            emdysi_check::tags::penn_all(w)
+                .into_iter()
+                .map(|t| (w.surface.to_lowercase(), t))
+        })
+        .collect();
+    let want = [
+        ("the", "DT"),
+        ("dogs", "NNS"),
+        ("quickly", "RB"),
+        ("chased", "VBD"),
+        ("him", "PRP"),
+        ("to", "TO"),
+        ("a", "DT"),
+        ("bigger", "JJR"),
+        ("house", "NN"),
+        ("and", "CC"),
+        ("kim", "NNP"),
+        ("will", "MD"),
+        ("stay", "VB"),
+    ];
+    assert!(
+        !tags.iter().any(|(s, t)| s == "," && *t == "CD"),
+        "{tags:?}"
+    );
+    for (w, t) in want {
+        assert!(
+            tags.iter()
+                .any(|(s, g)| s.trim_end_matches([',', '.']) == w && *g == t),
+            "{w}/{t} not in {tags:?}"
+        );
+    }
+}

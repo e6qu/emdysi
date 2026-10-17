@@ -65,6 +65,7 @@ pub mod report;
 pub mod rules;
 pub mod semantics;
 pub mod structure;
+pub mod tags;
 pub mod terms;
 pub mod toml;
 

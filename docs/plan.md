@@ -24,7 +24,7 @@ unless stated:
 | False flags on edited text, per 1,000 sentences | 1.6 (first development set), 3.7 (second), 3.5 (held out, 8,371 sentences) | most of the second set's flags point at real errors or real spelling mixes in the source |
 | Gold analyses (ERG test suites) | MRS identical for all 2,966 reproduced; ranker 81.7% exact match held out | |
 | Speed | about 1.7 s of CPU per sentence of edited text (cold parse cache, one thread) | 2.1 s before the grammar-error variant was gated (2026-10-17); parsing is 82% of the time |
-| Rule data | 1,645 LanguageTool rules, 98 slop rules, 26 GitLab rules (opt-in packs); codespell, CMUdict, UniMorph, Open English WordNet, UD English EWT vendored | emdysi is AGPL-3.0-or-later since 2026-10-17 (decision D15), so share-alike and GPL data can be used |
+| Rule data | 2,162 LanguageTool rules (517 of them checked against the parse's parts of speech), 98 slop rules, 26 GitLab rules (opt-in packs); codespell, CMUdict, UniMorph, Open English WordNet, UD English EWT vendored | emdysi is AGPL-3.0-or-later since 2026-10-17 (decision D15), so share-alike and GPL data can be used |
 
 ## Priorities
 
@@ -60,10 +60,10 @@ unless stated:
    headings, reader hooks), and the `slop` pack adds bheijden/slop's
    tested patterns. The judgements no pattern can make (explaining the
    obvious, fake specificity) wait on the model.
-6. **Rule data with a tagger.** 2,508 more LanguageTool rules need parts
-   of speech of open classes; with the parser's own tags (or the tagger,
-   83% right among its guesses for unknown words on EWT) they could be
-   converted too.
+6. **More LanguageTool rules.** 517 rules now check parts of speech
+   against the parse; about 600 more need LanguageTool's chunker, and
+   about 500 case conversions in their suggestions. Both could be added
+   to the regex kind.
 
 Decided against, with measurements in evaluation.md: work limits in
 place of the parser's time limits (no work measure tracks time well
