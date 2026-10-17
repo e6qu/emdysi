@@ -534,6 +534,15 @@ opt_out_n1 := n_-_mc_le &
     SYNSEM [ LKEYS.KEYREL.PRED "_opt-out_n_1_rel",
              PHON.ONSET voc ] ].
 
+;; |many thanks| as a salutation, like the ERG's |thanks| (thanks_salut_v1,
+;; v_np*_salut_le) and |thanks much|: |Many thanks to the reviewers.|,
+;; common at the end of release notes and acknowledgements.
+
+many_thanks_salut := v_np*_salut_le &
+  [ ORTH < "many", "thanks" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_thank_v_1_rel",
+             PHON.ONSET con ] ].
+
 ;; |all-hands| as a count noun for a meeting of everyone (|The all-hands has
 ;; happened!|, Rust blog).
 

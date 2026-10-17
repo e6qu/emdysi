@@ -39,6 +39,9 @@ fn main() {
         ..Options::default()
     };
     let (mut sentences, mut words) = (0, 0);
+    // Each parsed sentence's parse time, and whether it got a strict
+    // reading and whether its search was complete.
+    let mut parses: Vec<(f64, bool, bool)> = Vec::new();
     let (mut analyze_time, mut check_time) = (std::time::Duration::ZERO, std::time::Duration::ZERO);
     for path in std::env::args().skip(1) {
         let src = std::fs::read_to_string(&path).unwrap();
@@ -53,6 +56,10 @@ fn main() {
         let t = Instant::now();
         checker.check(&erg, &a);
         check_time += t.elapsed();
+        for p in a.sentences.iter().filter_map(|s| s.parse.as_ref()) {
+            let strict = p.readings.iter().any(|r| emdysi_parse::is_strict(&r.root));
+            parses.push((p.elapsed.as_secs_f64(), strict, p.complete));
+        }
         sentences += a.sentences.len();
         words += a
             .sentences
@@ -73,6 +80,34 @@ fn main() {
             "| {name} | {:.1} | {:.0} |",
             d.as_secs_f64(),
             d.as_secs_f64() * 1000.0 / sentences.max(1) as f64
+        );
+    }
+    // Where the parse time goes: sentences by their parse time.
+    let all: f64 = parses.iter().map(|p| p.0).sum();
+    println!(
+        "\n| Parse time | Sentences | Share of parse time | With a strict reading | Search complete |\n|---|---|---|---|---|"
+    );
+    for (lo, hi) in [
+        (0.0, 0.5),
+        (0.5, 1.0),
+        (1.0, 2.0),
+        (2.0, 5.0),
+        (5.0, 9.5),
+        (9.5, f64::MAX),
+    ] {
+        let b: Vec<&(f64, bool, bool)> = parses.iter().filter(|p| p.0 >= lo && p.0 < hi).collect();
+        let t: f64 = b.iter().map(|p| p.0).sum();
+        let label = if hi == f64::MAX {
+            format!("{lo} s and over")
+        } else {
+            format!("{lo}-{hi} s")
+        };
+        println!(
+            "| {label} | {} | {:.0}% | {} | {} |",
+            b.len(),
+            100.0 * t / all.max(1e-9),
+            b.iter().filter(|p| p.1).count(),
+            b.iter().filter(|p| p.2).count()
         );
     }
     let mut rules: Vec<(String, std::time::Duration)> = timing::RULE_TIMES
