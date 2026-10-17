@@ -437,6 +437,10 @@ pub struct ParserConfig {
     /// in the chart, as a memory limit.
     pub max_nodes: usize,
     pub timeout: Duration,
+    /// A point in time the parse never goes past, grace periods for
+    /// unpacking and the fragment fallback included (for a caller that
+    /// runs several searches under one time limit).
+    pub hard_deadline: Option<Instant>,
     /// Features ignored when comparing edges for ambiguity packing; `None`
     /// disables packing.
     pub packing_restrictor: Option<Vec<FeatId>>,
@@ -637,8 +641,13 @@ impl<'g> Parser<'g> {
         self
     }
 
+    /// `t`, or the hard deadline if that is sooner.
+    fn capped(&self, t: Instant) -> Instant {
+        self.config.hard_deadline.map_or(t, |h| t.min(h))
+    }
+
     pub fn parse(mut self, lat: &Lattice, items: Vec<LexItem>) -> ParseResult {
-        self.deadline = Instant::now() + self.config.timeout;
+        self.deadline = self.capped(Instant::now() + self.config.timeout);
         // Map lattice vertices to chart positions.
         let used: HashSet<u32> = items.iter().flat_map(|i| [i.start, i.end]).collect();
         let order: Vec<u32> = lat
@@ -988,7 +997,7 @@ impl<'g> Parser<'g> {
         // Unpacking (and the fragment fallback) gets a short grace period
         // when the search used up the time limit.
         let grace = (self.config.timeout / 5).min(Duration::from_secs(2));
-        self.deadline = self.deadline.max(Instant::now() + grace);
+        self.deadline = self.capped(self.deadline.max(Instant::now() + grace));
         // Recover readings from spanning edges.
         let spanning: Vec<usize> = self
             .by_start
@@ -1083,7 +1092,7 @@ impl<'g> Parser<'g> {
         if readings.is_empty() && self.config.fragments {
             // The fallback has its own short time allowance.
             let grace = (self.config.timeout / 5).min(Duration::from_secs(2));
-            self.deadline = Instant::now() + grace;
+            self.deadline = self.capped(Instant::now() + grace);
             if let Some(r) = self.fragment_cover(&mut memo) {
                 readings.push(r);
             }

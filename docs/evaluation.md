@@ -2027,3 +2027,22 @@ On the real-error corpus (`real_errors` with
 caught stay at 24 of 199, and one corrected sentence is flagged. The
 converted rules target other errors than the ones in this corpus
 (missing function words, wrong forms), which need the grammar.
+
+### A lower time limit: 5 seconds instead of 10
+
+`timing` with `TIMEOUT=5` against the default 10 seconds, on the same
+24 documents of the first development set (1,388 sentences, one thread,
+no parse cache):
+
+| Limit | ms a sentence | Sentences with a strict reading | Findings that changed |
+|---|---|---|---|
+| 10 s | 1,703 | 1,083 | |
+| 5 s | 1,381 (−19%) | 1,056 (−27) | passive 208 → 201, agentless passive 127 → 120, rule of three 43 → 40, stacked negation 18 → 15, tense shift 14 → 12, noun stacks 34 → 32 |
+
+Spelling and grammar-error findings do not change, but 27 sentences (2%)
+lose their strict reading, and with it the findings of the rules that
+read the parse. The default stays at 10 seconds; `--timeout` remains for
+those who prefer speed. The time goes into sentences that reach the
+limit and keep searching (the fragment fallback after the limit made 81
+sentences take 5 to 9.5 seconds even with a 5-second limit), which is
+where the next speed work belongs.
