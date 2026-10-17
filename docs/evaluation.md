@@ -1187,6 +1187,70 @@ plain-language guides show a passage before and after its rewrite, and
 reference pages repeat a sentence in each tab. The check remains available
 as `check = "restatement"` of the `semantics` kind.
 
+### Machine-written prose from current models
+
+The vendored machine-written samples come from 2023 models, so the rules
+for newer tropes had nothing to measure against. `corpora/ai-current`
+(2026-10-17) holds 24 documents written for this project in the voice of
+current chat-model output: a blog post, a README, a launch announcement,
+a social post, a support reply, an explainer, a newsletter, a listicle,
+an onboarding guide, a talk summary, an answer, an essay, a cover letter,
+a product page, a meeting summary, a press release, a travel guide, a job
+posting, a sales email, a self-review, an abstract, a code review, an
+outage apology and a recipe introduction (5,675 words). They were written
+to be typical of their genre, not as parodies; but they were written,
+not sampled, so they cannot by themselves show that a pattern is typical.
+The evidence for each new rule is the other side: the edited corpora
+(654 documents, 410,000 words), where each new phrase or pattern occurs
+at most once.
+
+Patterns the packs missed in these documents, and the new rules:
+
+- hooks aimed at the reader (*Let's be honest*, *Sound familiar? You're
+  not alone*, *Ready to get started?*, *Spoiler:*): `reader-hooks`; *Let's
+  dive in* was left out, as the Rust book uses it;
+- a run of fragments and a two-word payoff (*No more spreadsheets. No
+  more manual matching. Just results.*): `just-fragment`;
+- the contrast frame across two sentences without *about*: with *just*
+  or *only* (*Rate limiting isn't just a nice-to-have. It's essential.*,
+  `not-just-then-is`) or ending in a short punchline (*Setbacks aren't the
+  end of your story. They're the plot twist.*, `not-then-punchline`); the
+  edited corpora have two such pairs, both without either feature (*It
+  isn't something to submit. It's a separate part of the instructions.*);
+- list items that open with a bold label (*\*\*Logs:\*\* What
+  happened.*): `bold-lead-ins`, a new structure check, once a document
+  when at least three fifths of its list items do (in the edited corpora,
+  36 of 2,348 list items open so; one document passes the threshold);
+- an emoji at the start of a heading or list item (edited blog posts use
+  emoji in running text, never at the start of a line), a line of
+  hashtags, letter and email formulas (*I hope this email finds you
+  well*; suggestions only, as the edited corpora have no letters), and
+  about 40 more stock phrases (*the real magic happens*, *has you
+  covered*, *will thank you*, *a must-visit*, *paves the way for*).
+
+Documents each rule fires on (`en check --no-parse`, so without the rules
+that need a parse: the rule of three, participial tails):
+
+| Rule | Machine-written (24) | Edited (654) |
+|---|---|---|
+| `ai-tells.dense` | 14 | 0 |
+| `ai-tells.stock-phrases` | 16 | 3 |
+| `ai-tells.inflated` | 11 | 41 |
+| `ai-tells.bold-lead-ins` | 10 | 1 |
+| `ai-tells.vocabulary` | 9 | 27 |
+| `ai-tells.em-dash` | 8 | 7 |
+| `ai-tells.formulas` | 5 | 0 |
+| `ai-tells.openers` | 4 | 34 |
+| `ai-tells.not-x-but-y` | 3 | 92 |
+| `ai-tells.reader-hooks`, `just-fragment`, `its-about`, `emoji-heading`, `chatbot`, `rhetorical-question` | 2 each | 1, 0, 0, 0, 0, 6 |
+| `ai-tells.not-then-punchline`, `not-just-then-is`, `hashtags`, `emoji-list`, `setup` | 1 each | 0 |
+
+`ai-tells.dense`, the verdict that a text reads as generated, fires on 14
+of the 24 machine-written documents and none of the edited ones. The
+documents it misses carry their tropes in the shape of the whole (a
+social post of one-line paragraphs, an essay of aphorisms, an apology of
+stock contrition) at densities below its threshold.
+
 ## Grammar and spelling fixes with a decision model: the upper bound
 
 `core.grammar-fix` and the model's choice among spelling suggestions
