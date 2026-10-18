@@ -224,6 +224,9 @@ fn nouns_the_erg_lacks() {
         "On the decease of the incumbent, he left.",
         "It is the entail of the estate.",
         "Use clear headings to chunk the FAQ into sections.",
+        "We print the vector using the debug macro.",
+        "The kubelet can garbage collect a container.",
+        "Unused images are garbage-collected.",
     ] {
         assert!(strict(&erg, text), "{text}");
     }
@@ -337,4 +340,35 @@ fn gapping() {
         "{}",
         p.readings[0].derivation
     );
+}
+
+#[test]
+fn than_phrase_after_a_modifier() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    for text in [
+        // The Rust book; the Kubernetes documentation.
+        "It needs less space on the stack than the other variant.",
+        "We could have chosen a different name for this parameter than the one in the struct.",
+        "It uses more memory in the cluster than the old one.",
+        "The file is larger in size than the limit.",
+    ] {
+        assert!(strict(&erg, text), "{text}");
+    }
+    // Not with a comma before the "than" phrase.
+    assert!(!strict(
+        &erg,
+        "It needs more space on the stack, than the other variant."
+    ));
+}
+
+#[test]
+fn verb_pain() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    for text in [
+        "It pains me to offend you.",
+        "It pains me that he left.",
+        "The memory pained her.",
+    ] {
+        assert!(strict(&erg, text), "{text}");
+    }
 }

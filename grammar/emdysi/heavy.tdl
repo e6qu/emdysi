@@ -40,6 +40,17 @@ v_mod_heavy_phrase := v_mod_vg_formal_phrase &
     HD-DTR.SYNSEM [ PUNCT.RPUNCT no_punct,
 		    LOCAL.CAT.VAL.COMPS.FIRST.LOCAL.CAT.HEAD supnoun ] ].
 
+;; A comparative's "than" phrase after a modifier of the compared word
+;; (|needs more space on the stack than the other variant|, |a different
+;; name for this parameter than the one in the struct|, |larger in size
+;; than|): the "than" phrase is a complement of the comparative's phrase
+;; (|more space|), and comes after the modifier, whatever their lengths.
+;; Without punctuation between them.
+v_mod_than_phrase := v_mod_vg_formal_phrase &
+  [ NH-DTR.SYNSEM.PUNCT.RPUNCT no_punct,
+    HD-DTR.SYNSEM [ PUNCT.RPUNCT no_punct,
+		    LOCAL.CAT.VAL.COMPS.FIRST.--MIN _than_p_compar_rel ] ].
+
 ;; An adjunct set off by a pair of commas: |He could, in her presence, be
 ;; rude.|, |examined, with deep attention, the windows|.
 v_mod_paired_phrase := v_mod_vg_formal_phrase &
@@ -63,6 +74,8 @@ v_mod_int_heavy_rule := binary_rule_left_to_right &
   v_mod_int_formal_phrase & v_mod_heavy_phrase.
 v_mod_scop_heavy_rule := binary_rule_left_to_right &
   v_mod_scop_formal_phrase & v_mod_heavy_phrase.
+v_mod_int_than_rule := binary_rule_left_to_right &
+  v_mod_int_formal_phrase & v_mod_than_phrase.
 v_mod_int_paired_rule := binary_rule_left_to_right &
   v_mod_int_formal_phrase & v_mod_paired_phrase.
 v_mod_scop_paired_rule := binary_rule_left_to_right &
@@ -77,6 +90,9 @@ hd-aj_vmod-hv_c := v_mod_int_heavy_rule &
 
 hd-aj_vmod-s-hv_c := v_mod_scop_heavy_rule &
   [ RNAME vlms ].
+
+hd-aj_vmod-than_c := v_mod_int_than_rule &
+  [ RNAME vlmi ].
 
 hd-aj_vmod-pc_c := v_mod_int_paired_rule &
   [ RNAME vlmi ].
