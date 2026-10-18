@@ -301,8 +301,8 @@ pub fn edits(erg: &Erg, s: &Sentence) -> Vec<Edit> {
     let chars: Vec<char> = s.original.chars().collect();
     let mut out = Vec::new();
     // The words of the best reading, if any: a sentence without even a
-    // fragment reading (|Binding objects link the policy to your cluster
-    // and provides scoping.|) still gets the edits of its tokens below.
+    // fragment reading (one whose parse timed out) still gets the edits of
+    // its tokens below.
     for w in s.best().iter().flat_map(|b| b.words.iter()) {
         if w.generic || !(w.le_type.starts_with("v_") || w.le_type.starts_with("n_")) {
             continue;

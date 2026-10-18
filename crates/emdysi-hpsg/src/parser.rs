@@ -467,6 +467,8 @@ pub struct ParserConfig {
     /// Lexical entries (instance indices) that lexical filtering leaves in
     /// place.
     pub unfiltered: Vec<usize>,
+    /// Rules (indices into the parser's rules) never applied.
+    pub excluded_rules: Vec<usize>,
     /// Lattice spans (start and end vertex) whose lexical edges get this
     /// much added to their score.
     pub lexical_bonus: Vec<((u32, u32), f64)>,
@@ -736,7 +738,8 @@ impl<'g> Parser<'g> {
             };
             let mut new = Vec::new();
             for (ri, rule) in self.rules.iter().enumerate() {
-                if !rule.lexical || rule.dtrs.len() != 1 {
+                if !rule.lexical || rule.dtrs.len() != 1 || self.config.excluded_rules.contains(&ri)
+                {
                     continue;
                 }
                 let pending = if rule.orth {
@@ -1110,15 +1113,59 @@ impl<'g> Parser<'g> {
 
     /// The fewest complete edges that together span the input (the
     /// best-scoring when tied), each with its best instantiation, as a
-    /// `fragment` reading.
+    /// `fragment` reading. An edge with no instantiation (unpacking can
+    /// fail where the packed chart did not) is left out and the cover
+    /// sought again, so that one such edge does not leave the sentence
+    /// without any reading.
     fn fragment_cover(&mut self, memo: &mut Memo) -> Option<Reading> {
+        let mut unusable: HashSet<usize> = HashSet::new();
+        'cover: loop {
+            if Instant::now() > self.deadline {
+                return None;
+            }
+            let pieces = self.cover_edges(&unusable)?;
+            let mut kids = Vec::new();
+            let mut dag: Option<(usize, Arc<Dag>)> = None;
+            for id in pieces {
+                let Some(inst) = self.inst(id, 0, memo) else {
+                    unusable.insert(id);
+                    continue 'cover;
+                };
+                let width = self.chart[id].end - self.chart[id].start;
+                if dag.as_ref().is_none_or(|(w, _)| width > *w) {
+                    dag = Some((width, inst.dag.clone()));
+                }
+                kids.push(inst.deriv);
+            }
+            let dag = dag?.1;
+            return Some(Reading {
+                root: "fragment".to_string(),
+                deriv: Arc::new(Deriv {
+                    kind: EdgeKind::Cover,
+                    start: 0,
+                    end: self.n,
+                    daughters: kids,
+                    dag: dag.clone(),
+                }),
+                dag,
+            });
+        }
+    }
+
+    /// The fewest complete edges, none of them `unusable`, that together
+    /// span the input (the best-scoring when tied), in order.
+    fn cover_edges(&self, unusable: &HashSet<usize>) -> Option<Vec<usize>> {
         let n = self.n;
         // best[j]: (pieces, score, last edge) of the best cover of 0..j.
         let mut best: Vec<Option<(usize, f64, usize)>> = vec![None; n + 1];
         best[0] = Some((0, 0.0, usize::MAX));
         let mut ending: Vec<Vec<usize>> = vec![Vec::new(); n + 1];
         for (id, e) in self.chart.iter().enumerate() {
-            if e.state == EdgeState::Active && e.complete() && e.end > e.start {
+            if e.state == EdgeState::Active
+                && e.complete()
+                && e.end > e.start
+                && !unusable.contains(&id)
+            {
                 ending[e.end].push(id);
             }
         }
@@ -1146,28 +1193,7 @@ impl<'g> Parser<'g> {
             j = self.chart[id].start;
         }
         pieces.reverse();
-        let mut kids = Vec::new();
-        let mut dag: Option<(usize, Arc<Dag>)> = None;
-        for id in pieces {
-            let inst = self.inst(id, 0, memo)?;
-            let width = self.chart[id].end - self.chart[id].start;
-            if dag.as_ref().is_none_or(|(w, _)| width > *w) {
-                dag = Some((width, inst.dag.clone()));
-            }
-            kids.push(inst.deriv);
-        }
-        let dag = dag?.1;
-        Some(Reading {
-            root: "fragment".to_string(),
-            deriv: Arc::new(Deriv {
-                kind: EdgeKind::Cover,
-                start: 0,
-                end: n,
-                daughters: kids,
-                dag: dag.clone(),
-            }),
-            dag,
-        })
+        Some(pieces)
     }
 
     /// Ambiguity packing (Oepen & Carroll 2000). Returns true if the edge
@@ -1925,7 +1951,9 @@ impl<'g> Parser<'g> {
         let rule = &self.rules[ri];
         let start = self.chart[dtrs[0]].start;
         let end = self.chart[*dtrs.last().unwrap()].end;
-        if rule.spanning_only && !(start == 0 && end == self.n) {
+        if (rule.spanning_only && !(start == 0 && end == self.n))
+            || self.config.excluded_rules.contains(&ri)
+        {
             return;
         }
         // The quick check was done when the edges were indexed (`fits`).

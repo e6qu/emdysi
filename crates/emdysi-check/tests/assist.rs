@@ -169,13 +169,18 @@ fn a_real_word_typo_is_corrected_at_the_word_named() {
 }
 
 #[test]
-fn a_sentence_without_any_reading_gets_candidates() {
+fn a_sentence_without_a_strict_reading_gets_candidates() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
-    // No reading at all, not even a fragment one: the candidates come from
-    // its words alone.
+    // Fragments only (its one full analysis reads |provides| as a verb of
+    // saying with nothing quoted, which is ruled out): the candidates come
+    // from its words and where its fragments meet.
     let text = "Binding objects link the policy to your cluster and provides scoping.\n";
     let a = analyze(&erg, text, Format::Markdown, &opts());
-    assert!(a.sentences[0].best().is_none());
+    assert!(!a.sentences[0].strict());
+    assert!(
+        a.sentences[0].best().is_some(),
+        "no reading, not even fragments"
+    );
     // The model names the word and prefers the correction.
     struct Names;
     impl Ask for Names {

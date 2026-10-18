@@ -139,7 +139,7 @@ pub(crate) fn key(
     let mut h = Hasher::new();
     let roots: Vec<&str> = config.roots.iter().map(|(n, _)| n.as_str()).collect();
     let settings = format!(
-        "{:?} {} {} {} {:?} {} {:?} {:?} {} {} {} {} {:?} {}",
+        "{:?} {} {} {} {:?} {} {:?} {:?} {} {} {} {} {:?} {} {:?}",
         roots,
         config.max_edges,
         config.max_nodes,
@@ -154,6 +154,7 @@ pub(crate) fn key(
         config.fragments,
         first_beam,
         trees_for,
+        config.excluded_rules,
     );
     h.feed(settings.as_bytes());
     h.feed(text.as_bytes());

@@ -102,3 +102,9 @@ other	Many thanks for your help.	The same, with for.
 other	On the table lay a book.	Locative inversion with a verb the ERG lists for it (v_np_locinv-mv_le).
 other	Into the room walked a stranger.	Locative inversion with a verb of motion the ERG lacks for it (grammar/emdysi/lexicon.tdl).
 other	Behind the house lurked a shadow.	The same, a verb of position.
+other	For best results, restart the server.	best without a determiner (grammar/emdysi/adjectives.tdl).
+other	These are your go-to libraries.	go-to, a hyphenated adjective (grammar/emdysi/adjectives.tdl).
+other	We tweeted the news.	A verb of the web with an object (grammar/emdysi/lexicon.tdl).
+other	We cherry-picked the commit.	A hyphenated verb of two words, inflected (grammar/emdysi/lexicon.tdl; the lexicon matches across the hyphen).
+other	We double-checked the results.	The ERG's own hyphenated verb, matched across the hyphen.
+other	Serde and its derive macros are popular.	The noun derive (grammar/emdysi/lexicon.tdl).

@@ -1401,3 +1401,64 @@ lurk_v_locinv := v_np_locinv-mv_le &
             PHON.ONSET con ] ].
 
 :end :instance.
+
+;;; Verbs of computing and the web the ERG lacks with an object: |We
+;;; tweeted the news|, |Retweet this post|, |Bookmark this page|, |We
+;;; rebased the branch|, |We cherry-picked the commit|. The ERG has |tweet|
+;;; without one (and with a clause) and |bookmark| as a noun; |retweet|,
+;;; |rebase| and |cherry-pick| get their nouns too, as a native entry
+;;; replaces the generic ones (|a retweet|, |after the rebase|). In the
+;;; form of the ERG's |email| and |text| (v_np*_le, object optional), and
+;;; of its |double-check| for the hyphenated one (two words in ORTH, so
+;;; that |cherry-picked| inflects). And the noun |derive| of Rust's
+;;; |derive macros| and |the derive attribute|, which the ERG has only as a
+;;; verb.
+
+:begin :instance :status lex-entry.
+
+tweet_v_np := v_np_le &
+ [ ORTH < "tweet" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_tweet_v_1_rel",
+            PHON.ONSET con ] ].
+
+retweet_v_np := v_np*_le &
+ [ ORTH < "retweet" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_retweet_v_1_rel",
+            PHON.ONSET con ] ].
+
+retweet_n := n_-_c_le &
+ [ ORTH < "retweet" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_retweet_n_1_rel",
+            PHON.ONSET con ] ].
+
+bookmark_v_np := v_np_le &
+ [ ORTH < "bookmark" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_bookmark_v_1_rel",
+            PHON.ONSET con ] ].
+
+rebase_v_np := v_np*_le &
+ [ ORTH < "rebase" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_rebase_v_1_rel",
+            PHON.ONSET con ] ].
+
+rebase_n := n_-_c_le &
+ [ ORTH < "rebase" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_rebase_n_1_rel",
+            PHON.ONSET con ] ].
+
+cherry_pick_v_np := v_np_le &
+ [ ORTH < "cherry", "pick" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_cherry+pick_v_1_rel",
+            PHON.ONSET con ] ].
+
+derive_n := n_-_c_le &
+ [ ORTH < "derive" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_derive_n_1_rel",
+            PHON.ONSET con ] ].
+
+cherry_pick_n := n_-_c_le &
+ [ ORTH < "cherry", "pick" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_cherry+pick_n_1_rel",
+            PHON.ONSET con ] ].
+
+:end :instance.

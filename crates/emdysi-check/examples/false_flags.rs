@@ -16,7 +16,10 @@
 //! sentence. Finished documents are also appended to OUT.tsv.journal, so
 //! that a rerun with the same OUT resumes an interrupted run; `THREADS`
 //! caps the documents checked at once; `PACK=packs/NAME.toml` measures
-//! another pack instead of `core`.
+//! another pack instead of `core`. `GAPS=FILE` writes the sentences
+//! whose parse search was complete but found no strict reading (the
+//! grammar's coverage gaps, not its timeouts), with their document, for
+//! the documents checked in this run.
 //!
 //! With `EMDYSI_LM` set to a model (a spec as for `en --lm`), spelling and
 //! grammar corrections are chosen by the model among those the grammar
@@ -124,6 +127,7 @@ fn main() {
     };
     let tallies: Mutex<BTreeMap<String, Tally>> = Mutex::default();
     let lines: Mutex<Vec<String>> = Mutex::default();
+    let gaps: Mutex<Vec<String>> = Mutex::default();
     // Each finished document is appended to OUT.tsv.journal, and a rerun
     // with the same OUT skips the documents already there: a long run that
     // is interrupted resumes where it stopped.
@@ -192,6 +196,16 @@ fn main() {
                         Format::Plain
                     };
                     let a = analyze(&erg, text, format, &opts);
+                    gaps.lock()
+                        .unwrap()
+                        .extend(a.sentences.iter().filter_map(|s| {
+                            let p = s.parse.as_ref()?;
+                            let strict =
+                                p.readings.iter().any(|r| emdysi_parse::is_strict(&r.root));
+                            (p.complete && !strict).then(|| {
+                                format!("{id}\t{}", s.original.trim().replace(['\t', '\n'], " "))
+                            })
+                        }));
                     let diags = checker.check_with(
                         &erg,
                         &a,
@@ -261,6 +275,11 @@ fn main() {
             });
         }
     });
+    if let Ok(path) = std::env::var("GAPS") {
+        let mut gaps = gaps.into_inner().unwrap();
+        gaps.sort();
+        std::fs::write(path, gaps.join("\n") + "\n").unwrap();
+    }
     let mut lines = lines.into_inner().unwrap();
     lines.sort();
     std::fs::write(

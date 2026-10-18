@@ -595,3 +595,26 @@ fn an_article_before_a_verb_form_is_not_fixed_automatically() {
         .collect();
     assert_eq!(d[0].replacement.as_deref(), Some("a"), "{d:?}");
 }
+
+#[test]
+fn two_capitals_take_the_article_of_their_first_letter() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let checker = Checker::new(packs());
+    let opts = Options {
+        threads: 1,
+        ..Options::default()
+    };
+    let flagged = |src: &str| {
+        let a = analyze(&erg, src, Format::Markdown, &opts);
+        checker
+            .check(&erg, &a)
+            .into_iter()
+            .filter(|d| d.rule == "core.articles")
+            .map(|d| d.replacement.unwrap_or_default())
+            .collect::<Vec<_>>()
+    };
+    // Rust blog: "an MI 250X" (em-eye), not "mi" as the dictionary says.
+    assert!(flagged("We covered an MI 250X and an RTX 4050.\n").is_empty());
+    assert!(flagged("It is a US company.\n").is_empty());
+    assert_eq!(flagged("It is an US company.\n"), vec!["a".to_string()]);
+}
