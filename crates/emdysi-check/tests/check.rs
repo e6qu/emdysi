@@ -660,3 +660,25 @@ fn run_on_clauses_at_a_pronoun() {
             .is_empty()
     );
 }
+
+#[test]
+fn grammar_error_corrections_are_words() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let checker = Checker::new(packs());
+    let opts = Options {
+        threads: 1,
+        ..Options::default()
+    };
+    // After the Rust compiler's development guide: |been| was corrected by
+    // |beened|, an unknown word that parsed.
+    let src = "Make sure that the places cannot been moved.\n";
+    let a = analyze(&erg, src, Format::Markdown, &opts);
+    for d in checker.check(&erg, &a) {
+        assert!(
+            !d.suggestions.iter().any(|s| s.contains("beened")),
+            "{}: {:?}",
+            d.rule,
+            d.suggestions
+        );
+    }
+}

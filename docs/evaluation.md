@@ -2172,3 +2172,36 @@ and 64, the same flags as before; real errors 191 → 192 of 374 (*let's
 we dive*, the Rust book; the Kubernetes *feature it by setting* is one
 sentence in a longer paragraph whose other sentences the grammar does
 not analyse).
+
+### Speed after the hyphen and fragment changes
+
+An earlier comparison suggested the lattice and fragment changes of
+2026-10-18 slowed the first development set by 14%. Measured again
+without the parse cache, the two builds one after the other on three
+threads: 1,542 s before, 1,558 s after (1%, within the noise), with the
+same 4 flags. The 14% came from runs sharing the CPU.
+
+### Measured and rejected: errors in sentences with unknown words
+
+Without a strict analysis, an error is named only when every unknown word
+(other than an acronym or masked code) lies within it: the unknown word
+may be why the sentence did not parse. Of the 14 real grammar errors
+whose finished search names nothing, two fall to this, *link the policy
+to your cluster and provides scoping* (*scoping* unknown) and *will be
+have one* (*xxxxxx*, masked code in a word). Lifting the condition, and
+leaving the rest to the verification of the correction, caught both
+(192 → 194 of 374) and one real error on the second development set
+(*cannot been moved*), but added six false flags: 31 → 35 on the held-out
+set, 64 → 67 on the second, among them *Rustfix changes the above code
+to*, *not well enough to leave her room* (after *Miss Bennet*), *Between
+them bloomed a long ... relationship* (unknown *amicable*, and a
+construction the grammar lacks) and Austen's *Bingley is come*. Keeping
+it for capitalized unknown words only would still leave two of the six.
+Not adopted.
+
+It showed a bug, fixed: the correction of *been* in *cannot been moved*
+was *beened*. A wrong form is corrected by its inflections, and a regular
+form of an irregular verb parses as an unknown word, so it passed
+verification. Inflections not in the word lists are no longer tried
+(test `grammar_error_corrections_are_words`). False flags and real errors
+are unchanged by it, suggestions included.
