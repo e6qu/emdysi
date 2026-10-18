@@ -224,6 +224,9 @@ fn nouns_the_erg_lacks() {
         "On the decease of the incumbent, he left.",
         "It is the entail of the estate.",
         "Use clear headings to chunk the FAQ into sections.",
+        "We print the vector using the debug macro.",
+        "The kubelet can garbage collect a container.",
+        "Unused images are garbage-collected.",
     ] {
         assert!(strict(&erg, text), "{text}");
     }

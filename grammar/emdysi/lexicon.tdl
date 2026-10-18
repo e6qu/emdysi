@@ -1412,7 +1412,10 @@ lurk_v_locinv := v_np_locinv-mv_le &
 ;;; of its |double-check| for the hyphenated one (two words in ORTH, so
 ;;; that |cherry-picked| inflects). And the noun |derive| of Rust's
 ;;; |derive macros| and |the derive attribute|, which the ERG has only as a
-;;; verb.
+;;; verb; likewise the noun |debug| (|the debug macro|, |debug output|),
+;;; a mass noun like the ERG's |garbage|, and the verb |garbage collect|
+;;; (|The kubelet can garbage collect a container|, |garbage-collected|),
+;;; with an optional object.
 
 :begin :instance :status lex-entry.
 
@@ -1459,6 +1462,16 @@ derive_n := n_-_c_le &
 cherry_pick_n := n_-_c_le &
  [ ORTH < "cherry", "pick" >,
    SYNSEM [ LKEYS.KEYREL.PRED "_cherry+pick_n_1_rel",
+            PHON.ONSET con ] ].
+
+debug_n := n_-_m_le &
+ [ ORTH < "debug" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_debug_n_1_rel",
+            PHON.ONSET con ] ].
+
+garbage_collect_v_np := v_np*_le &
+ [ ORTH < "garbage", "collect" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_garbage+collect_v_1_rel",
             PHON.ONSET con ] ].
 
 :end :instance.

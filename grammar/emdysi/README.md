@@ -181,7 +181,8 @@ repository's `LICENSE`), in the ERG's conventions and on its types.
   verbs of computing and the web with an object (*We tweeted the news*,
   *Retweet this post*, *Bookmark this page*, *We rebased the branch*, *We
   cherry-picked the commit*), with the nouns *retweet*, *rebase* and
-  *cherry-pick*, and the noun *derive* (*derive macros*); the verb
+  *cherry-pick*, the noun *derive* (*derive macros*), the noun *debug*
+  (*the debug macro*) and the verb *garbage collect*; the verb
   *pain* (*It pains me to offend you*, *The memory pained her*), in the
   form of the ERG's *hurt* and *distress*;
   verbs of motion and position in locative inversion (*Into the room
