@@ -137,7 +137,13 @@ repository's `LICENSE`), in the ERG's conventions and on its types.
   five tokens long (`Rule::heavy_object_parents`). *We saw yesterday the
   cats* stays informal. An adjunct set off by a pair of commas is formal
   whatever follows it (*He could, in her presence, be rude.*):
-  `hd-aj_vmod-pc_c` and `hd-aj_vmod-s-pc_c`.
+  `hd-aj_vmod-pc_c` and `hd-aj_vmod-s-pc_c`. A comparative's *than*
+  phrase after a modifier of the compared word (*needs more space on the
+  stack than the other variant*, *a different name for this parameter
+  than the one in the struct*, *larger in size than the limit*) is formal
+  too: the *than* phrase is a complement of *more space*, and
+  `hd-aj_vmod-than_c` lets a modifier come before it when nothing else
+  is left to take and no comma intervenes.
 - `lexicon.tdl`: adjectives used as plural nouns for people with "the"
   (*the brave*, *the free*, *the meek*), in the form of the ERG's 94 such
   entries (type `n_-_c-pl-def_le`, e.g. *the poor*); adjectives used as
@@ -175,7 +181,9 @@ repository's `LICENSE`), in the ERG's conventions and on its types.
   verbs of computing and the web with an object (*We tweeted the news*,
   *Retweet this post*, *Bookmark this page*, *We rebased the branch*, *We
   cherry-picked the commit*), with the nouns *retweet*, *rebase* and
-  *cherry-pick*, and the noun *derive* (*derive macros*);
+  *cherry-pick*, and the noun *derive* (*derive macros*); the verb
+  *pain* (*It pains me to offend you*, *The memory pained her*), in the
+  form of the ERG's *hurt* and *distress*;
   verbs of motion and position in locative inversion (*Into the room
   walked a stranger*, *Behind the house lurked a shadow*), which the ERG
   has for 24 verbs (*come*, *lie*, *stand*, `v_np_locinv-mv_le`): 26 more

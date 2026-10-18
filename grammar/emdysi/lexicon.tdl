@@ -1462,3 +1462,22 @@ cherry_pick_n := n_-_c_le &
             PHON.ONSET con ] ].
 
 :end :instance.
+
+;;; |pain| as a verb, with |it| for its subject and a clause or an
+;;; infinitive after the object (|It pains me to offend you|, |It pains
+;;; me that he left|) and with an object alone (|The memory pained her|).
+;;; The ERG has the noun only; in the form of its |hurt| and |distress|.
+
+:begin :instance :status lex-entry.
+
+pain_v_np := v_np_le &
+ [ ORTH < "pain" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_pain_v_1_rel",
+            PHON.ONSET con ] ].
+
+pain_v_np_it := v_np-cp_it-s_le &
+ [ ORTH < "pain" >,
+   SYNSEM [ LKEYS.KEYREL.PRED "_pain_v_1_rel",
+            PHON.ONSET con ] ].
+
+:end :instance.
