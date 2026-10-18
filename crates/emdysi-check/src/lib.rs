@@ -556,6 +556,22 @@ pub fn analyze(erg: &Erg, source: &str, format: Format, opts: &Options) -> Analy
                         };
                         let mut p = p;
                         p.readings.retain(|r| !unlicensed_quoting(r, text));
+                        // With every reading ruled out (|You can tweet
+                        // them|, read only as quoting |them|), parse again
+                        // without the quoting rules, for what else there
+                        // is: at least fragments, not no analysis at all.
+                        if p.readings.is_empty() {
+                            if let Ok(q) = timing::timed(&timing::REPARSE, || {
+                                erg.parse_excluding(
+                                    text,
+                                    opts.timeout,
+                                    opts.max_readings,
+                                    QUOTING_RULES,
+                                )
+                            }) {
+                                return q;
+                            }
+                        }
                         p
                     });
                     let strict = parse.as_ref().is_some_and(|p| {

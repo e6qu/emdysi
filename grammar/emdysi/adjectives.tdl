@@ -26,3 +26,48 @@ comma_adj_pct := pt_-_comma-adj_le &
   [ ORTH < "," > ].
 
 :end :instance.
+
+;;; |best| in a noun phrase without a determiner: |For best results,
+;;; restart the server.|, |with best regards|. The ERG's superlatives
+;;; (aj_-_i-sup_lexent) modify only a noun with an explicit determiner
+;;; (MOD..ALTMIN explicit_quant_noagr_q_rel, *|a best source|), so these
+;;; set phrases had no analysis. This copy modifies only a bare noun
+;;; phrase's noun (udef_q_rel), so |the best results| keeps its one
+;;; reading, and is for |best| alone: other superlatives without a
+;;; determiner (*|We chose cheapest options|) stay errors.
+
+:begin :type.
+
+aj_-_i-sup-bare_le := compar_superl_adj_word &
+  [ SYNSEM adj_unsp_ind_onearg_synsem &
+    [ LOCAL [ CAT [ HEAD superl_adj & [ MINORS.ALTMIN superl_rel,
+                                        MOD < [ LOCAL.CAT.HEAD.MINORS.ALTMIN
+                                                udef_q_rel ] > ],
+                    VAL.SPR.FIRST.--MIN ord_or_very_rel ],
+              CONT.RELS <! relation, relation !> ],
+      LKEYS.ALTKEYREL.PRED superl_rel ] ].
+
+:end :type.
+
+:begin :instance :status lex-entry.
+
+best_a_bare := aj_-_i-sup-bare_le &
+  [ ORTH < "best" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_good_a_at-for-of_rel",
+             PHON.ONSET con ] ].
+
+:end :instance.
+
+;;; |go-to|, the one usually turned to: |These are your go-to libraries.|
+;;; An ordinary intersective adjective, in the ERG's form for hyphenated
+;;; words (the hyphen a word of its own, as in |check-up|), so that |go to|
+;;; without the hyphen is not one.
+
+:begin :instance :status lex-entry.
+
+go_to_a1 := aj_-_i_le &
+  [ ORTH < "go", "-", "to" >,
+    SYNSEM [ LKEYS.KEYREL.PRED "_go-to_a_1_rel",
+             PHON.ONSET con ] ].
+
+:end :instance.

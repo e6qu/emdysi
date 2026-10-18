@@ -50,7 +50,16 @@ repository's `LICENSE`), in the ERG's conventions and on its types.
   admits the comma only as its informal comma entry (`comma_inf_pct`);
   `comma_adj_pct` is the same comma for adjectives only (not for a
   conjunction, whose head the adjective type does not exclude: *Kim and,
-  Sandy left*), not informal.
+  Sandy left*), not informal. *best* in a noun phrase without a
+  determiner (*For best results, restart the server.*, *with best
+  regards*): the ERG's superlatives modify only a noun with an explicit
+  determiner; `best_a_bare` modifies only a bare noun phrase's noun
+  (`udef_q_rel`), so *the best results* keeps its one reading, and is for
+  *best* alone (*We chose cheapest options* stays an error); the parser
+  keeps it out of partitives (*the best arose*), which `best_a1` has
+  (`Erg::licensed`). *go-to* (*your go-to libraries*), in the ERG's form
+  for hyphenated words (ORTH < "go", "-", "to" >, as *check-up*), so that
+  *go to* is not one.
 - `adjuncts.tdl`: fronted prepositional phrases and adverbs without a
   comma (*In 2019 we released the book.*, *Yesterday we left.*): the ERG's
   no-comma filler-head rules (`flr-hd_nwh-nc_c`, `-nmc_c`) are informal;
@@ -163,6 +172,10 @@ repository's `LICENSE`), in the ERG's conventions and on its types.
   entail of*, *the first transports of rage*; *altogether* before a verb
   (*he altogether failed*), which the ERG has only after one;
   transitive *chunk* (*chunk the FAQ into sections*);
+  verbs of computing and the web with an object (*We tweeted the news*,
+  *Retweet this post*, *Bookmark this page*, *We rebased the branch*, *We
+  cherry-picked the commit*), with the nouns *retweet*, *rebase* and
+  *cherry-pick*, and the noun *derive* (*derive macros*);
   verbs of motion and position in locative inversion (*Into the room
   walked a stranger*, *Behind the house lurked a shadow*), which the ERG
   has for 24 verbs (*come*, *lie*, *stand*, `v_np_locinv-mv_le`): 26 more

@@ -685,6 +685,7 @@ impl Erg {
                 .copied()
                 .into_iter()
                 .collect(),
+            excluded_rules: Vec::new(),
         };
         let lexicon = Lexicon::new(&grammar, morph, lex_paths);
         let labeler = Labeler::new(&grammar, &mut u).ok_or_else(|| err("no parse-node labels"))?;
@@ -806,6 +807,25 @@ impl Erg {
         config.timeout = timeout;
         config.max_readings = max_readings;
         config.cell_beam = None;
+        self.parse_with(text, &config)
+    }
+
+    /// Parse one sentence like [`Erg::parse_limited`], without the rules
+    /// named (`v_inv-quot_dlr`, ...): for the analyses that remain once
+    /// readings that need them are ruled out, fragments included.
+    pub fn parse_excluding(
+        &self,
+        text: &str,
+        timeout: Duration,
+        max_readings: usize,
+        rules: &[&str],
+    ) -> Result<Parse, Error> {
+        let mut config = self.config.clone();
+        config.timeout = timeout;
+        config.max_readings = max_readings;
+        config.excluded_rules = (0..self.rules.len())
+            .filter(|&i| rules.contains(&self.rules[i].name.as_str()))
+            .collect();
         self.parse_with(text, &config)
     }
 
@@ -1219,7 +1239,27 @@ impl Erg {
                 }
             }
         }
+        // |best| without a determiner (best_a_bare, grammar/emdysi/
+        // adjectives.tdl) is for a bare noun phrase's noun: a partitive
+        // (|the best arose|) has |best_a1| already.
+        if let EdgeKind::Rule(ri) = &d.kind {
+            if self.rules[*ri].name.starts_with("aj_prt-")
+                && d.daughters
+                    .iter()
+                    .any(|x| self.uses_entry(x, "best_a_bare"))
+            {
+                return false;
+            }
+        }
         d.daughters.iter().all(|x| self.licensed(x))
+    }
+
+    /// Whether a derivation has this lexical entry.
+    fn uses_entry(&self, d: &Deriv, name: &str) -> bool {
+        match &d.kind {
+            EdgeKind::Lex { inst, .. } => self.grammar.instances[*inst].name == name,
+            _ => d.daughters.iter().any(|x| self.uses_entry(x, name)),
+        }
     }
 
     /// Whether a derivation has a word inside one of these character
@@ -1756,7 +1796,10 @@ impl Erg {
 
     /// Runs of three or more lower-case words joined by hyphens with no
     /// spaces, as token ranges, and whether the lexicon has the run as one
-    /// entry (|state-of-the-art|).
+    /// entry (|state-of-the-art|); and runs of two that it has as one
+    /// entry, the last word perhaps inflected (|double-checked|, ORTH <
+    /// "double", "check" >; |check-ups|, < "check", "-", "up" >), which, as
+    /// known compounds, only get the compound's bonus and preference.
     fn hyphen_chains(&self, tokens: &[InputToken]) -> Vec<(usize, usize, bool)> {
         let word =
             |t: &InputToken| !t.form.is_empty() && t.form.chars().all(|c| c.is_ascii_lowercase());
@@ -1781,10 +1824,31 @@ impl Erg {
             // (|re-|, a sentence-initial capital) and not a compound the
             // lexicon has with its hyphens.
             let attached = |k: usize| tokens.get(k).is_some_and(|t| t.form == "-");
-            if words >= 3
-                && !(i > 0 && attached(i - 1) && tokens[i - 1].to == tokens[i].from)
-                && !attached(j)
-            {
+            let lone =
+                !(i > 0 && attached(i - 1) && tokens[i - 1].to == tokens[i].from) && !attached(j);
+            if words == 2 && lone {
+                let (first, second) = (
+                    tokens[i].form.to_lowercase(),
+                    tokens[i + 2].form.to_lowercase(),
+                );
+                let lex = &self.lexicon;
+                let stems = lex.morph.analyze(&second, &|s| lex.is_stem(s), 3);
+                // ORTH < "double", "check" > or, the hyphen a word of its
+                // own, < "check", "-", "up" >.
+                let known = lex.entries_starting(&first).iter().any(|&e| {
+                    let orth = &lex.entries[e].orth;
+                    let last = match orth.as_slice() {
+                        [_, last] => last,
+                        [_, h, last] if h == "-" => last,
+                        _ => return false,
+                    };
+                    *last == second || stems.iter().any(|a| a.stem == *last)
+                });
+                if known {
+                    out.push((i, j, true));
+                }
+            }
+            if words >= 3 && lone {
                 let forms: Vec<String> =
                     tokens[i..j].iter().map(|t| t.form.to_lowercase()).collect();
                 let known = self

@@ -227,7 +227,15 @@ pub fn run_articles(a: &Analysis) -> Vec<Hit> {
             {
                 continue;
             }
-            let Some(vowel) = sound(word) else {
+            // Two capitals are spelled out (|an MI 250X|, |a US company|),
+            // not read as the word the dictionary has (|mi|, |us|): the
+            // sound of the first letter's name, unless listed as written.
+            let spelled = acronym && word.chars().count() == 2 && !listed().contains_key(word);
+            let Some(vowel) = (if spelled {
+                word.chars().next().map(|c| "AEFHILMNORSX".contains(c))
+            } else {
+                sound(word)
+            }) else {
                 continue;
             };
             if vowel != an && is_determiner(s, art.from, art.to) {

@@ -226,10 +226,21 @@ impl Lexicon {
         out: &mut Vec<LexItem>,
     ) {
         let last = k + 1 == entry.orth.len();
-        let next: Vec<(usize, u32)> = lat
-            .alive()
-            .filter(|(_, e)| e.start == at)
-            .map(|(i, e)| (i, e.end))
+        // The words of a hyphenated entry (|double-check|, ORTH < "double",
+        // "check" >) are separate tokens with the hyphen one of its own
+        // between them: the item spans it, as ACE's lookup, which leaves
+        // the hyphen out of the forms it matches, does.
+        let starting = |at: u32| lat.alive().filter(move |(_, e)| e.start == at);
+        let next: Vec<(usize, u32)> = starting(at)
+            .flat_map(|(i, e)| {
+                let hyphen = forms.get(&i).is_some_and(|f| f == "-");
+                let after: Vec<(usize, u32)> = if hyphen {
+                    starting(e.end).map(|(j, f)| (j, f.end)).collect()
+                } else {
+                    Vec::new()
+                };
+                std::iter::once((i, e.end)).chain(after)
+            })
             .collect();
         for (id, end) in next {
             let Some(form) = forms.get(&id) else { continue };
