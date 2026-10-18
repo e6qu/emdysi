@@ -2205,3 +2205,34 @@ form of an irregular verb parses as an unknown word, so it passed
 verification. Inflections not in the word lists are no longer tried
 (test `grammar_error_corrections_are_words`). False flags and real errors
 are unchanged by it, suggestions included.
+
+### Coverage gaps in the documentation of the second development set
+
+`false_flags` with `GAPS` on the second development set: 3,142 sentences
+whose search finished without a strict reading, 405 of them full
+sentences (162 from the novel, 146 from the Rust blog, 69 from the
+Kubernetes documentation, 21 from the Rust book). Many are real errors in
+the sources (*the replies where overwhelmingly positive*, *our a subset
+of*, *the the*); of the documentation's, those that are edited English
+came down to:
+
+- A comparative's *than* phrase after a modifier of the compared word:
+  *needs less space on the stack than the Cons variant*, *a different name
+  for this generic parameter than the generic parameter declared in the
+  struct definition*, *more memory in the cluster than*. The *than* phrase
+  is a complement of *more space*, and the ERG lets a modifier come before
+  a complement only with its verb-adjunct-complement phrase, which it marks
+  informal (`hd-aj_vmod_c`). `heavy.tdl` has formal copies of that phrase
+  for a heavy object; `hd-aj_vmod-than_c` is one for a *than* phrase,
+  without a comma in between.
+- Words: the noun *debug* (*the debug macro*), the verb *garbage collect*,
+  and the verb *pain* (*It pains me to offend you*, from the novel).
+
+Left: *X, Y, or both* (the ERG's *both* is a noun phrase and cannot end a
+coordination of verbs or participles), *than* with a clause that has a
+gap (*more CPU than they request*, *than is specified*), *short for* with
+an adjective (*The dyn keyword is short for dynamic*; with a noun phrase
+it parses, though by a reading with *short* a noun, which the ranker
+prefers to an entry for *short for*, so none was added), and documentation
+shorthand without a subject or determiner (*Specifies the duration that
+...*, *at node, pod and container level*).
