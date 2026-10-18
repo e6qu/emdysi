@@ -2236,3 +2236,8 @@ it parses, though by a reading with *short* a noun, which the ranker
 prefers to an entry for *short for*, so none was added), and documentation
 shorthand without a subject or determiner (*Specifies the duration that
 ...*, *at node, pod and container level*).
+
+Measured with the parse cache cold: false flags 4 on the first
+development set and 31 on the held-out set, the same flags as before;
+real errors 192 of 374, the same pairs. The gaps above are from the
+second development set, so it is measured again too:
