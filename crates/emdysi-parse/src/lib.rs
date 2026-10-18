@@ -973,6 +973,13 @@ impl Erg {
                 );
             }
         };
+        // A search past the narrow beam that runs out of its limits
+        // without a strict analysis ends the cascade: no wider search, and
+        // none without a beam. On the first development set no later
+        // search found a strict analysis after one did, nor finished, while
+        // they took a tenth of the parsing time (EMDYSI_STAGES; see
+        // evaluation.md, "Giving up after an exhausted search").
+        let mut given_up = false;
         let result = match (self.first_beam, config.cell_beam) {
             (Some(first), Some(beam)) if first < beam => {
                 let narrow = ParserConfig {
@@ -996,6 +1003,7 @@ impl Erg {
                     };
                     let r2 = run(&wide, items.clone());
                     log("wide", &r2);
+                    given_up = r2.exhausted && !strict(&r2);
                     if strict(&r2) || (complete(&r2) && !complete(&r)) {
                         r2
                     } else {
@@ -1023,6 +1031,7 @@ impl Erg {
                 let left = config.timeout.saturating_sub(t0.elapsed());
                 if strict(&result)
                     || settled(&result)
+                    || given_up
                     || left < Duration::from_secs(1)
                     || result.positions <= config.cell_beam_from
                 {
@@ -1036,6 +1045,7 @@ impl Erg {
                 };
                 let r = run(&wider, items.clone());
                 log(if factor == 2 { "wider2" } else { "wider4" }, &r);
+                given_up = r.exhausted && !strict(&r);
                 if strict(&r) || (complete(&r) && !complete(&result)) {
                     result = r;
                 }
@@ -1048,6 +1058,7 @@ impl Erg {
         // also loses strict analyses of sentences it leaves informal ones).
         let result = if !strict(&result)
             && !settled(&result)
+            && !given_up
             && config.cell_beam.is_some()
             && result.positions > config.cell_beam_from
             && config.timeout.saturating_sub(t0.elapsed()) >= Duration::from_secs(1)
