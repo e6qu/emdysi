@@ -2277,3 +2277,19 @@ timing, not the change; the other is a sentence missing from the second
 run's log, which was resumed after an interruption. Simulated on the
 first run's log, giving up loses no strict analysis there either, and
 saves 14%.
+
+### Measured and rejected: fewer searches for long sentences
+
+After the change above, a third of the held-out set's parsing time (about
+3,400 of 10,699 seconds, 534 sentences) still goes into a search that
+runs out without a strict analysis. Such a search does not show itself
+early: it runs out after a median 3.3 seconds (mostly at its limit on
+edges), while searches that find a strict analysis take up to 6. Length
+tells more: past the narrow beam, a strict analysis is found later for
+70–90% of sentences under 40 words, 25% of those of 40 to 49, and 6% of
+those of 50 or more (none on the first development set), and every one
+of the latter came from the configured beam. Searching no further than
+the configured beam for sentences of 50 words or more would save 207
+seconds (2%) on the held-out set, and lose one strict analysis and one
+search that proves a sentence outside the grammar; before giving up
+after an exhausted search it would have saved 727. Not adopted.
