@@ -653,4 +653,10 @@ fn run_on_clauses_at_a_pronoun() {
     // set, where the semicolon was once suggested).
     assert!(found("Then, we can create a vector to hold that enum and so, ultimately, hold different types.\n").is_empty());
     assert!(found("Your lists will be easier to read if you:\n").is_empty());
+    // Nor at the end (the novel; the Rust blog).
+    assert!(found("But I dare not hope it.\n").is_empty());
+    assert!(
+        found("Tyler suggested adding this as a future possibility to RFC#3808 and FCPing it.\n")
+            .is_empty()
+    );
 }

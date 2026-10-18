@@ -139,11 +139,11 @@ up, is in [docs/plan.md](docs/plan.md). In order:
    corrections the grammar has verified. The machinery is done and tested
    with stand-ins; with a perfect model the share of real errors caught
    rose from 49% to 89% (337 of 377, measured before three pairs that were
-   all front matter left the corpus; 51% without a model now, 191 of 374). What a real model gets, and whether
+   all front matter left the corpus; 51% without a model now, 192 of 374). What a real model gets, and whether
    it beats a much larger model alone, is the open question:
    `scripts/model-eval/run.sh` measures it once the model can be
    downloaded.
-2. **Grammar errors without a model:** 24 of 197 real grammar errors are
+2. **Grammar errors without a model:** 25 of 197 real grammar errors are
    caught today.
 3. **Speed:** about 2.4 s of CPU per sentence of edited text.
 4. **Coverage of edited text (M19)** and **machine-written prose from

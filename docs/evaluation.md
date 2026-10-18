@@ -2150,3 +2150,25 @@ none of the 9 (each fails later, at naming or at verifying a correction)
 and added a false flag on the first development set (*Components that
 make up a node.*, corrected to *makes* by way of *[Components that]
 makes up a node*). Not adopted.
+
+### Run-on clauses at a pronoun
+
+The grammar-error variant names two clauses run together
+(`cl-cl_runon_c`) but had no correction to try for one, so it was never
+reported. Where such a run-on meets at a subject pronoun with no
+punctuation between, and the pronoun has words after it, two are now
+tried: a semicolon before the pronoun after a noun, adjective or adverb
+(*We fixed it; we shipped it*), and the pronoun deleted after a noun or a
+verb (*let's we dive* → *let's dive*, *enable this feature it by setting*
+→ *enable this feature by setting*). A run-on whose repairs all fail
+still blocks other claims, as one with nothing to try did: it may want a
+comma (*How he lived I know not*).
+
+Each condition came from a false flag: a semicolon after *let's* (*let's;
+we dive*), after a comma (*Then,; we can*), after a conjunction (*easier
+to read if; you*), and a pronoun deleted at the end of a sentence (*But I
+dare not hope it.*, *... and FCPing it.*). Measured: false flags 4, 31
+and 64, the same flags as before; real errors 191 → 192 of 374 (*let's
+we dive*, the Rust book; the Kubernetes *feature it by setting* is one
+sentence in a longer paragraph whose other sentences the grammar does
+not analyse).

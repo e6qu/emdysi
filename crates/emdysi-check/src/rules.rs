@@ -2604,7 +2604,11 @@ fn candidate_fixes(
                 i += 1;
             }
             let w: String = chars[start..i].iter().collect::<String>().to_lowercase();
+            // A pronoun that starts a clause, or is a stray subject, has
+            // words after it (not |hope it.|, |FCPing it.|).
+            let more = chars[i.min(to)..to].iter().any(|c| c.is_alphabetic());
             if start > from + 1
+                && more
                 && chars[start - 1] == ' '
                 && chars[start - 2].is_alphanumeric()
                 && ["i", "we", "you", "he", "she", "it", "they"].contains(&w.as_str())
