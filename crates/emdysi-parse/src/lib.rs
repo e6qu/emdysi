@@ -956,6 +956,30 @@ impl Erg {
         let settled = |r: &ParseResult| !strict_possible && complete(r);
         // With chart pruning, a narrow beam first; the configured one only
         // when that finds no strict analysis and time remains.
+        // EMDYSI_STAGES=1 prints, for each sentence, each search tried
+        // with the time it ended and whether it found a strict or a complete
+        // analysis (for deciding how long a search is worth it).
+        let stages = std::env::var_os("EMDYSI_STAGES").is_some();
+        let log = |name: &str, r: &ParseResult| {
+            if stages {
+                eprintln!(
+                    "stage\t{name}\t{}\t{:.2}\t{}\t{}\t{}\t{}",
+                    if strict_possible { "main" } else { "variant" },
+                    t0.elapsed().as_secs_f64(),
+                    strict(r),
+                    complete(r),
+                    r.exhausted,
+                    text.trim()
+                );
+            }
+        };
+        // A search past the narrow beam that runs out of its limits
+        // without a strict analysis ends the cascade: no wider search, and
+        // none without a beam. On the first development set no later
+        // search found a strict analysis after one did, nor finished, while
+        // they took a tenth of the parsing time (EMDYSI_STAGES; see
+        // evaluation.md, "Giving up after an exhausted search").
+        let mut given_up = false;
         let result = match (self.first_beam, config.cell_beam) {
             (Some(first), Some(beam)) if first < beam => {
                 let narrow = ParserConfig {
@@ -963,6 +987,7 @@ impl Erg {
                     ..config.clone()
                 };
                 let r = run(&narrow, items.clone());
+                log("narrow", &r);
                 let left = config.timeout.saturating_sub(t0.elapsed());
                 if strict(&r)
                     || settled(&r)
@@ -977,6 +1002,8 @@ impl Erg {
                         ..config.clone()
                     };
                     let r2 = run(&wide, items.clone());
+                    log("wide", &r2);
+                    given_up = r2.exhausted && !strict(&r2);
                     if strict(&r2) || (complete(&r2) && !complete(&r)) {
                         r2
                     } else {
@@ -984,7 +1011,11 @@ impl Erg {
                     }
                 }
             }
-            _ => run(config, items.clone()),
+            _ => {
+                let r = run(config, items.clone());
+                log("single", &r);
+                r
+            }
         };
         // A wider beam, twice and then four times as wide (for the chart
         // and for unpacking), before searching
@@ -1000,6 +1031,7 @@ impl Erg {
                 let left = config.timeout.saturating_sub(t0.elapsed());
                 if strict(&result)
                     || settled(&result)
+                    || given_up
                     || left < Duration::from_secs(1)
                     || result.positions <= config.cell_beam_from
                 {
@@ -1012,6 +1044,8 @@ impl Erg {
                     ..config.clone()
                 };
                 let r = run(&wider, items.clone());
+                log(if factor == 2 { "wider2" } else { "wider4" }, &r);
+                given_up = r.exhausted && !strict(&r);
                 if strict(&r) || (complete(&r) && !complete(&result)) {
                     result = r;
                 }
@@ -1024,6 +1058,7 @@ impl Erg {
         // also loses strict analyses of sentences it leaves informal ones).
         let result = if !strict(&result)
             && !settled(&result)
+            && !given_up
             && config.cell_beam.is_some()
             && result.positions > config.cell_beam_from
             && config.timeout.saturating_sub(t0.elapsed()) >= Duration::from_secs(1)
@@ -1035,6 +1070,7 @@ impl Erg {
                 ..config.clone()
             };
             let r = run(&exhaustive, items);
+            log("unpruned", &r);
             // A search without pruning that finishes is kept even with
             // fragments only: it proves the sentence is outside the
             // grammar, which the pruned search cannot.

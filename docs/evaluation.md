@@ -2240,4 +2240,40 @@ shorthand without a subject or determiner (*Specifies the duration that
 Measured with the parse cache cold: false flags 4 on the first
 development set and 31 on the held-out set, the same flags as before;
 real errors 192 of 374, the same pairs. The gaps above are from the
-second development set, so it is measured again too:
+second development set, so it is measured again too: 64 false flags, the
+same flags as before.
+
+### Giving up after an exhausted search
+
+A sentence without a strict analysis runs through the whole cascade of
+searches until its time is up: a narrow beam, the configured one, twice
+and four times as wide, then none (`Erg::parse_uncached`).
+`EMDYSI_STAGES=1` now logs each search with the time it ended and what it
+found. On the first development set without the parse cache:
+
+| First strict analysis found by | Sentences | Seconds |
+|---|---|---|
+| narrow beam | 1,447 | 775 |
+| configured beam | 331 | 579 |
+| twice as wide | 181 | 476 |
+| four times as wide | 51 | 183 |
+| no beam | 16 | 71 |
+| none | 439 | 1,382 |
+
+The 439 without one took 40% of the parsing time; 132 of them ran 5
+seconds or more (median 36 words), most until a search ran out of its
+limits. Once the configured beam or a wider one had run out without a
+strict analysis, no later search found one, nor finished (which would
+prove the sentence outside the grammar for the grammar-error variant):
+those later searches took 350 of 3,466 seconds. They are no longer tried.
+
+On the held-out set, without the parse cache: the same 31 false flags;
+parsing 12,624 → 10,699 seconds for the grammar (15% less), 2,003 →
+1,969 for its grammar-error variant; strict analyses 6,135 → 6,133 of
+8,027 sentences. Of the two lost, one is a sentence whose search for a
+strict analysis ended at the time limit in the second run (9.7 seconds in
+the first, past 10 in the second), with the wider searches tried in both:
+timing, not the change; the other is a sentence missing from the second
+run's log, which was resumed after an interruption. Simulated on the
+first run's log, giving up loses no strict analysis there either, and
+saves 14%.
