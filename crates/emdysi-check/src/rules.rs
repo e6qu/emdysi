@@ -2594,8 +2594,8 @@ fn candidate_fixes(
     // Two clauses run together at a subject pronoun: a semicolon before it
     // when the pronoun starts a second clause (|We fixed it; we shipped
     // it|), else the pronoun deleted with the space before it, a stray one
-    // (|let's we dive|, |enable this feature it by setting|). Not at the
-    // first word, and no semicolon after a verb.
+    // (|let's we dive|, |enable this feature it by setting|). Only where
+    // the clauses meet without punctuation, and by the word before.
     if e.code == "cl-cl_runon_c" {
         let mut i = from;
         while i < to.min(chars.len()) {
@@ -2604,26 +2604,33 @@ fn candidate_fixes(
                 i += 1;
             }
             let w: String = chars[start..i].iter().collect::<String>().to_lowercase();
-            if start > from
+            if start > from + 1
                 && chars[start - 1] == ' '
+                && chars[start - 2].is_alphanumeric()
                 && ["i", "we", "you", "he", "she", "it", "they"].contains(&w.as_str())
             {
-                // Not after a verb, which a semicolon would leave
-                // elliptical (|let's; we dive|).
-                let after_verb = s
+                // The word before, in the likeliest analysis: a clause can
+                // end in a noun, adjective or adverb (|fixed it; we|), not
+                // in a verb, which a semicolon would leave elliptical
+                // (|let's; we dive|), nor in a conjunction or preposition
+                // (|easier to read if; you|). A stray pronoun follows a
+                // noun or a verb.
+                let before = s
                     .mal_parse
                     .iter()
                     .flat_map(|m| m.readings.first())
-                    .any(|r| {
-                        r.words
-                            .iter()
-                            .any(|w| w.to + 1 == start && w.le_type.starts_with("v_"))
-                    });
-                if !after_verb {
+                    .flat_map(|r| r.words.iter())
+                    .find(|w| w.to + 1 == start)
+                    .map(|w| w.le_type.as_str())
+                    .unwrap_or("");
+                let class = |p: &[&str]| p.iter().any(|x| before.starts_with(x));
+                if class(&["n_", "aj_", "av_"]) {
                     let pronoun: String = chars[start..i].iter().collect();
                     out.push((start - 1, i, format!("; {pronoun}")));
                 }
-                out.push((start - 1, i, String::new()));
+                if class(&["n_", "v_"]) {
+                    out.push((start - 1, i, String::new()));
+                }
             }
             i += 1;
         }

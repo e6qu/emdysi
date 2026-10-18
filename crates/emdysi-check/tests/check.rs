@@ -649,4 +649,8 @@ fn run_on_clauses_at_a_pronoun() {
         vec![(" we".to_string(), vec!["; we".to_string()])]
     );
     assert!(found("We fixed it; we shipped it.\n").is_empty());
+    // Not after a comma, nor after a conjunction (both from the held-out
+    // set, where the semicolon was once suggested).
+    assert!(found("Then, we can create a vector to hold that enum and so, ultimately, hold different types.\n").is_empty());
+    assert!(found("Your lists will be easier to read if you:\n").is_empty());
 }
