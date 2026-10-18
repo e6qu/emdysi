@@ -54,7 +54,9 @@ unless stated:
    nothing; the 4% of sentences that reach the time limit take 31% of
    parse time and yield almost no strict readings. Next: make those
    sentences cheaper (tag-based chart pruning, an earlier fragment
-   fallback). A model adds candidate verification on top (up to 120
+   fallback). Done (2026-10-18): the searches after one that ran out
+   without a strict analysis are no longer tried, 15% less parsing time
+   on the held-out set, no strict analysis lost (evaluation.md). A model adds candidate verification on top (up to 120
    parses for a doubted sentence).
 4. **Coverage of edited text (M19).** About 4% of edited sentences get no
    strict reading (40 of a 948-sentence sample, mostly archaic or not
