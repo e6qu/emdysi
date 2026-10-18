@@ -1820,9 +1820,18 @@ impl Rule {
                             continue;
                         };
                         let mut d = self.diag(a, si, from, to, &span(from, to));
+                        // A run-on (see `candidate_fixes`) is told by its
+                        // repair: a missing semicolon or a pronoun too many.
+                        let feedback = if e.code != "cl-cl_runon_c" {
+                            e.feedback.clone()
+                        } else if fix.starts_with(';') {
+                            "Two clauses run together without punctuation.".to_string()
+                        } else {
+                            format!("'{}' looks like one word too many.", span(from, to).trim())
+                        };
                         d.message = d
                             .message
-                            .replace("{feedback}", &e.feedback)
+                            .replace("{feedback}", &feedback)
                             .replace("{code}", &e.code);
                         d.suggestions = vec![fix];
                         out.push(d);
@@ -1853,7 +1862,11 @@ impl Rule {
                             && !verified
                                 .iter()
                                 .any(|(v, _)| v.from == e.from && v.to == e.to)
-                            && candidate_fixes(erg, s, e, &names).is_empty()
+                            // A run-on's few repairs (see `candidate_fixes`)
+                            // failing does not rule it out: it may want a
+                            // comma.
+                            && (e.code == "cl-cl_runon_c"
+                                || candidate_fixes(erg, s, e, &names).is_empty())
                     });
                     if fixes.is_empty() || untried {
                         continue;
@@ -2578,6 +2591,55 @@ fn candidate_fixes(
     let prev_word: String = prev.chars().skip(prev_word_start).collect();
     let mut out: Vec<(usize, usize, String)> = Vec::new();
     let has = |k: &[&str]| k.iter().any(|x| f.contains(x));
+    // Two clauses run together at a subject pronoun: a semicolon before it
+    // when the pronoun starts a second clause (|We fixed it; we shipped
+    // it|), else the pronoun deleted with the space before it, a stray one
+    // (|let's we dive|, |enable this feature it by setting|). Only where
+    // the clauses meet without punctuation, and by the word before.
+    if e.code == "cl-cl_runon_c" {
+        let mut i = from;
+        while i < to.min(chars.len()) {
+            let start = i;
+            while i < to && chars[i].is_alphabetic() {
+                i += 1;
+            }
+            let w: String = chars[start..i].iter().collect::<String>().to_lowercase();
+            // A pronoun that starts a clause, or is a stray subject, has
+            // words after it (not |hope it.|, |FCPing it.|).
+            let more = chars[i.min(to)..to].iter().any(|c| c.is_alphabetic());
+            if start > from + 1
+                && more
+                && chars[start - 1] == ' '
+                && chars[start - 2].is_alphanumeric()
+                && ["i", "we", "you", "he", "she", "it", "they"].contains(&w.as_str())
+            {
+                // The word before, in the likeliest analysis: a clause can
+                // end in a noun, adjective or adverb (|fixed it; we|), not
+                // in a verb, which a semicolon would leave elliptical
+                // (|let's; we dive|), nor in a conjunction or preposition
+                // (|easier to read if; you|). A stray pronoun follows a
+                // noun or a verb.
+                let before = s
+                    .mal_parse
+                    .iter()
+                    .flat_map(|m| m.readings.first())
+                    .flat_map(|r| r.words.iter())
+                    .find(|w| w.to + 1 == start)
+                    .map(|w| w.le_type.as_str())
+                    .unwrap_or("");
+                let class = |p: &[&str]| p.iter().any(|x| before.starts_with(x));
+                if class(&["n_", "aj_", "av_"]) {
+                    let pronoun: String = chars[start..i].iter().collect();
+                    out.push((start - 1, i, format!("; {pronoun}")));
+                }
+                if class(&["n_", "v_"]) {
+                    out.push((start - 1, i, String::new()));
+                }
+            }
+            i += 1;
+        }
+        return out;
+    }
     if word.contains(char::is_whitespace) {
         return out;
     }
@@ -2884,6 +2946,10 @@ fn verified_fix(
                     erroneous.iter().any(|w| keeps(w, &fixed))
                 })
         }) {
+            // A run-on's repair is at one place in the clause it spans.
+            if e.code == "cl-cl_runon_c" {
+                return Some((from, to, rep));
+            }
             let new: String = chars[from.min(e.from)..from]
                 .iter()
                 .chain(rep.chars().collect::<Vec<_>>().iter())

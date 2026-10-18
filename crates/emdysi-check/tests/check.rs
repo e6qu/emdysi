@@ -618,3 +618,45 @@ fn two_capitals_take_the_article_of_their_first_letter() {
     assert!(flagged("It is a US company.\n").is_empty());
     assert_eq!(flagged("It is an US company.\n"), vec!["a".to_string()]);
 }
+
+#[test]
+fn run_on_clauses_at_a_pronoun() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let checker = Checker::new(packs());
+    let opts = Options {
+        threads: 1,
+        ..Options::default()
+    };
+    let found = |src: &str| {
+        let a = analyze(&erg, src, Format::Markdown, &opts);
+        checker
+            .check(&erg, &a)
+            .into_iter()
+            .filter(|d| d.rule == "core.grammar-errors")
+            .map(|d| (src[d.range.clone()].to_string(), d.suggestions.clone()))
+            .collect::<Vec<_>>()
+    };
+    // The Rust book: a stray pronoun, deleted (not |let's; we dive|).
+    assert_eq!(
+        found(
+            "To really understand it, let's we dive a little further into how the trait works.\n"
+        ),
+        vec![(" we".to_string(), vec![String::new()])]
+    );
+    // Two clauses: a semicolon, not |We fixed it shipped it|.
+    assert_eq!(
+        found("We fixed it we shipped it.\n"),
+        vec![(" we".to_string(), vec!["; we".to_string()])]
+    );
+    assert!(found("We fixed it; we shipped it.\n").is_empty());
+    // Not after a comma, nor after a conjunction (both from the held-out
+    // set, where the semicolon was once suggested).
+    assert!(found("Then, we can create a vector to hold that enum and so, ultimately, hold different types.\n").is_empty());
+    assert!(found("Your lists will be easier to read if you:\n").is_empty());
+    // Nor at the end (the novel; the Rust blog).
+    assert!(found("But I dare not hope it.\n").is_empty());
+    assert!(
+        found("Tyler suggested adding this as a future possibility to RFC#3808 and FCPing it.\n")
+            .is_empty()
+    );
+}

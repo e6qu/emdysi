@@ -19,9 +19,9 @@ unless stated:
 
 | Measure | Now | Notes |
 |---|---|---|
-| Real errors caught (377, from documentation histories) | 192 (51%): spelling 168 of 178, grammar 24 of 199 | 167 before the spelling work of 2026-10-17, 183 before codespell's list |
-| ... with a perfect model choosing among verified corrections | 337 (89%): grammar 165 of 199 | the upper bound for any model; no real model measured yet |
-| False flags on edited text, per 1,000 sentences | 1.6 (first development set), 3.7 (second), 3.5 (held out, 8,371 sentences) | most of the second set's flags point at real errors or real spelling mixes in the source |
+| Real errors caught (374, from documentation histories) | 192 (51%): spelling 167 of 177, grammar 25 of 197 | 167 before the spelling work of 2026-10-17, 183 before codespell's list; 377 pairs until three that were all front matter left (2026-10-17) |
+| ... with a perfect model choosing among verified corrections | 337 of 377 (89%): grammar 165 of 199 | the upper bound for any model, measured before the corpus repair; no real model measured yet |
+| False flags on edited text, per 1,000 sentences | 1.6 (first development set, 4 flags), 4.8 (second, 64), 3.7 (held out, 31 in 8,371 sentences) | most of the second set's flags point at real errors or real spelling mixes in the source (`docs/evaluation.md`) |
 | Gold analyses (ERG test suites) | MRS identical for all 2,966 reproduced; ranker 81.7% exact match held out | |
 | Speed | about 1.7 s of CPU per sentence of edited text (cold parse cache, one thread) | 2.1 s before the grammar-error variant was gated (2026-10-17); parsing is 82% of the time |
 | Rule data | 2,580 LanguageTool rules (579 of them checked against the parse's parts of speech), 98 slop rules, 26 GitLab rules (opt-in packs); codespell, CMUdict, UniMorph, Open English WordNet, UD English EWT vendored | emdysi is AGPL-3.0-or-later since 2026-10-17 (decision D15), so share-alike and GPL data can be used |
@@ -36,13 +36,19 @@ unless stated:
    beats a much larger model alone. Blocked in the cloud environment so
    far: its network policy denies huggingface.co. See "Running the model
    evaluation" below.
-2. **Grammar errors without a model.** 24 of 199 is the weakest number in
+2. **Grammar errors without a model.** 25 of 197 is the weakest number in
    the table. The mal-rule variant names errors only when a complete
-   search finds nothing else; most real grammar errors (missing function
-   words, wrong forms) leave the sentence parseable by some informal
-   reading or cut off by the search. What a model-free path could reach
-   is bounded by `fix_bound` (142 of 199 corrections verifiable); the
-   problem is choosing among the verified ones without a model.
+   search finds fragments only. Of the 172 real grammar errors missed
+   (2026-10-18), 126 leave a strict reading (a wrong word that is still
+   English, or a legal but unlikely analysis: *you wants* as *you* plus a
+   plural noun, *A quota can either limits* with *quota can* a compound,
+   a capitalized first word read as a name), 19 a search that does not
+   finish, 14 a finished search where the variant names nothing, and 9
+   readings under the ERG's informal, robust or fragment roots (widening
+   the diagnosis to them caught none; see evaluation.md). What a
+   model-free path could reach is bounded by `fix_bound` (142 of 199
+   corrections verifiable, before the corpus repair); the problem is
+   choosing among the verified ones without a model.
 3. **Speed.** 1.7 s of CPU per sentence is still minutes for a long
    document. Profiled (`timing`): the parser takes 82%, rules almost
    nothing; the 4% of sentences that reach the time limit take 31% of
@@ -64,7 +70,7 @@ unless stated:
    against the parse, and suggestions inflect, change case and rewrite
    matched words; about 600 more need LanguageTool's chunker. None of
    the converted rules catches the real grammar errors (24 of 199 with
-   the pack or without): those need the grammar.
+   the pack or without, when measured): those need the grammar.
 
 Decided against, with measurements in evaluation.md: work limits in
 place of the parser's time limits (no work measure tracks time well
