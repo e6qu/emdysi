@@ -44,8 +44,8 @@ v_mod_heavy_phrase := v_mod_vg_formal_phrase &
 ;; (|needs more space on the stack than the other variant|, |a different
 ;; name for this parameter than the one in the struct|, |larger in size
 ;; than|): the "than" phrase is a complement of the comparative's phrase
-;; (|more space|), and comes last as the modifier is shorter. Without
-;; punctuation; any length.
+;; (|more space|), and comes after the modifier, whatever their lengths.
+;; Without punctuation between them.
 v_mod_than_phrase := v_mod_vg_formal_phrase &
   [ NH-DTR.SYNSEM.PUNCT.RPUNCT no_punct,
     HD-DTR.SYNSEM [ PUNCT.RPUNCT no_punct,
