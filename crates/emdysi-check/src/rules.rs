@@ -1820,9 +1820,18 @@ impl Rule {
                             continue;
                         };
                         let mut d = self.diag(a, si, from, to, &span(from, to));
+                        // A run-on (see `candidate_fixes`) is told by its
+                        // repair: a missing semicolon or a pronoun too many.
+                        let feedback = if e.code != "cl-cl_runon_c" {
+                            e.feedback.clone()
+                        } else if fix.starts_with(';') {
+                            "Two clauses run together without punctuation.".to_string()
+                        } else {
+                            format!("'{}' looks like one word too many.", span(from, to).trim())
+                        };
                         d.message = d
                             .message
-                            .replace("{feedback}", &e.feedback)
+                            .replace("{feedback}", &feedback)
                             .replace("{code}", &e.code);
                         d.suggestions = vec![fix];
                         out.push(d);
@@ -1853,7 +1862,11 @@ impl Rule {
                             && !verified
                                 .iter()
                                 .any(|(v, _)| v.from == e.from && v.to == e.to)
-                            && candidate_fixes(erg, s, e, &names).is_empty()
+                            // A run-on's few repairs (see `candidate_fixes`)
+                            // failing does not rule it out: it may want a
+                            // comma.
+                            && (e.code == "cl-cl_runon_c"
+                                || candidate_fixes(erg, s, e, &names).is_empty())
                     });
                     if fixes.is_empty() || untried {
                         continue;
@@ -2578,6 +2591,44 @@ fn candidate_fixes(
     let prev_word: String = prev.chars().skip(prev_word_start).collect();
     let mut out: Vec<(usize, usize, String)> = Vec::new();
     let has = |k: &[&str]| k.iter().any(|x| f.contains(x));
+    // Two clauses run together at a subject pronoun: a semicolon before it
+    // when the pronoun starts a second clause (|We fixed it; we shipped
+    // it|), else the pronoun deleted with the space before it, a stray one
+    // (|let's we dive|, |enable this feature it by setting|). Not at the
+    // first word, and no semicolon after a verb.
+    if e.code == "cl-cl_runon_c" {
+        let mut i = from;
+        while i < to.min(chars.len()) {
+            let start = i;
+            while i < to && chars[i].is_alphabetic() {
+                i += 1;
+            }
+            let w: String = chars[start..i].iter().collect::<String>().to_lowercase();
+            if start > from
+                && chars[start - 1] == ' '
+                && ["i", "we", "you", "he", "she", "it", "they"].contains(&w.as_str())
+            {
+                // Not after a verb, which a semicolon would leave
+                // elliptical (|let's; we dive|).
+                let after_verb = s
+                    .mal_parse
+                    .iter()
+                    .flat_map(|m| m.readings.first())
+                    .any(|r| {
+                        r.words
+                            .iter()
+                            .any(|w| w.to + 1 == start && w.le_type.starts_with("v_"))
+                    });
+                if !after_verb {
+                    let pronoun: String = chars[start..i].iter().collect();
+                    out.push((start - 1, i, format!("; {pronoun}")));
+                }
+                out.push((start - 1, i, String::new()));
+            }
+            i += 1;
+        }
+        return out;
+    }
     if word.contains(char::is_whitespace) {
         return out;
     }
@@ -2884,6 +2935,10 @@ fn verified_fix(
                     erroneous.iter().any(|w| keeps(w, &fixed))
                 })
         }) {
+            // A run-on's repair is at one place in the clause it spans.
+            if e.code == "cl-cl_runon_c" {
+                return Some((from, to, rep));
+            }
             let new: String = chars[from.min(e.from)..from]
                 .iter()
                 .chain(rep.chars().collect::<Vec<_>>().iter())

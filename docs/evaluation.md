@@ -2077,3 +2077,76 @@ book), and *rest assured* was taken out again.
 Found on the way: a word-list item ending in punctuation never matched,
 as the tokenizer makes the punctuation a token of its own; the chatbot
 rule's *certainly!* had never fired. Items are now split the same way.
+
+### Where things stand after the front-matter and segmentation fixes
+
+The measurements left open by the fixes of 2026-10-17 (Markdown front
+matter, *Ph. D.*, the repaired real-error corpus), on the default 10-second
+limit:
+
+| Measure | Result |
+|---|---|
+| False flags, first development set | 4 in 2,498 sentences (1.6 per 1,000) |
+| False flags, second development set | 65 in 13,442 (4.8 per 1,000), from 86 on 2026-10-06 |
+| False flags, held-out set | 31 in 8,371 (3.7 per 1,000) |
+| Real errors caught without a model | 191 of 374 (51%): spelling 167 of 177, grammar 24 of 197 |
+
+The real-error corpus lost three pairs to the repair (paragraphs that were
+all front matter): 374 pairs, of which 177 spelling and 197 grammar.
+
+Most of the second set's flags are real: the six repeated words, typos in
+the sources (*reseearchers*, *anyeone*, *durnig*, *implemenent*,
+*righly*, *consided*, *inspite*, *atleast*), *a* before an acronym said
+with a vowel (*a MVP*, *a MCP*, *a FRT*, *a AMD*, *a HTTP*), the novel's
+own spellings (*an union*, *an husband*, *expence*), and spelling that
+mixes American and British within one document. Two were false: *an MI
+250X* (CMUdict has *mi*, the note) and an agreement error claimed in the
+novel's *has left all her friends--has eloped*. What else is left is
+project jargon and handles (*compiletest*, *sret*, *mgca*, *tiif*).
+
+### No sentence without a reading; hyphenated words of the lexicon
+
+`false_flags` with `GAPS=FILE` lists the sentences whose search finished
+without a strict reading: the grammar's coverage gaps, not its timeouts.
+On the first development set, 333; 66 of them full sentences, the rest
+headings and fragments. What they showed:
+
+- A sentence could end up with no reading at all, not even fragments.
+  When every reading took a verb of saying to quote something that is not
+  quoted (*You can tweet them*, read as *"Yes," tweeted Kim*), the checker
+  dropped them (`unlicensed_quoting`), and the parser's fragment fallback
+  runs only when it finds nothing itself. Such a sentence is now parsed
+  again without the two quoting rules (`Erg::parse_excluding`). The
+  fragment cover, too, gave up when one edge of the cheapest cover could
+  not be instantiated; that edge is now left out and the cover sought
+  again.
+- The lexicon's hyphenated words of several parts were out of reach.
+  The lattice makes the hyphen a token of its own, so ORTH < "double",
+  "check" > never met *double-checked*, nor *fine-tune* *fine-tuned*: the
+  multi-word lookup now steps over a hyphen token, as ACE's does. Such
+  compounds of two words also get the compound bonus, so the ranker keeps
+  the whole word over a reading that takes the hyphen for a dash.
+- Words and constructions the grammar lacked: *best* without a determiner
+  (*For best results*), *go-to*, *tweet*, *retweet*, *bookmark*,
+  *rebase* and *cherry-pick* with an object, and the noun *derive*
+  (*derive macros*). See `grammar/emdysi/README.md`.
+- Two capitals are spelled out: *an MI 250X*, *a US company*.
+
+Measured against the numbers above: false flags 4 → 4 on the first
+development set and 31 → 31 on the held-out set, the same flags; 65 → 64
+on the second (both false flags above gone, one added: *a HA control
+plane*, which takes *an*). Real errors 191 → 191, the same pairs.
+
+### Measured and rejected: diagnosing sentences with informal readings
+
+Of the 173 real grammar errors not caught, 126 have a strict reading (the
+grammar sees nothing wrong: mostly a wrong word that is still English),
+19 a search that did not finish, 14 a finished search where the
+grammar-error variant names nothing, and 9 a finished search with
+readings under the ERG's informal, robust or fragment roots. Those 9 are
+not diagnosed: an error is claimed only when every reading is a fragment
+cover. Diagnosing any finished search without a strict reading caught
+none of the 9 (each fails later, at naming or at verifying a correction)
+and added a false flag on the first development set (*Components that
+make up a node.*, corrected to *makes* by way of *[Components that]
+makes up a node*). Not adopted.
