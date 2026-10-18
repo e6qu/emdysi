@@ -2705,6 +2705,12 @@ fn candidate_fixes(
                 if agreement && !number_pair(&lower, &form) {
                     continue;
                 }
+                // Only a word: a form made by a regular rule from an
+                // irregular one (|beened| from |been|) parses as an
+                // unknown word, and so passes verification.
+                if crate::dict::tier(&form).is_none() && !crate::dict::accepted_common(&form) {
+                    continue;
+                }
                 out.push((from, to, match_case(word, &form)));
             }
         }
