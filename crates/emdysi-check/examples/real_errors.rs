@@ -262,6 +262,10 @@ fn main() {
                     t.pairs += 1;
                     t.caught += usize::from(!hits.is_empty());
                     t.after += usize::from(!false_hits.is_empty());
+                    let done = lines.lock().unwrap().len();
+                    if done % 10 == 0 {
+                        eprintln!("{done} of {} pairs", rows.len());
+                    }
                 }
             });
         }
