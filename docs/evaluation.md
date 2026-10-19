@@ -2082,6 +2082,22 @@ all are screened in, so even 0.4% of them changed is several false flags
 per 1,000 sentences, against a target of one. With E2B, the corrections
 it would add are bought with about as many false ones.
 
+E4B is no better on these. The 22 questions of that run with the
+writer's correction and 150 of those without, scored by both models
+(`examples/versions`, threshold 0.8):
+
+| Temperature | E2B: corrected, originals changed | E4B |
+|---|---|---|
+| 3 | 11 of 22, 13 of 150 | 8 of 22, 9 of 150 |
+| 4 | 7, 7 | 6, 5 |
+| 5 | 4, 2 | 3, 2 |
+| 7 | 3, 0 | 3, 1 |
+
+The larger model was more precise on the easier questions, where the
+grammar already catches the error; on the errors only a model could add,
+neither separates the writer's correction from changes to correct
+sentences.
+
 ## Where checking time goes
 
 `timing` (`crates/emdysi-check/examples`) checks documents on one thread
