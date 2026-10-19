@@ -15,7 +15,8 @@
 //! directory) for inspection: genre, document, rule, flagged text, message,
 //! sentence. Finished documents are also appended to OUT.tsv.journal, so
 //! that a rerun with the same OUT resumes an interrupted run; `THREADS`
-//! caps the documents checked at once; `PACK=packs/NAME.toml` measures
+//! caps the documents checked at once; `SHARD=i/n` checks only every n-th
+//! document, starting with the i-th; `PACK=packs/NAME.toml` measures
 //! another pack instead of `core`. `GAPS=FILE` writes the sentences
 //! whose parse search was complete but found no strict reading (the
 //! grammar's coverage gaps, not its timeouts), with their document, for
@@ -112,6 +113,20 @@ fn main() {
         .map(|l| l.split('\t').map(unescape).collect())
         .filter(|r: &Vec<String>| only.as_ref().is_none_or(|g| g.contains(&r[1])))
         .collect();
+    // SHARD=i/n: only every n-th document, starting with the i-th (a sample
+    // for a quick measurement, e.g. with a model).
+    let rows: Vec<Vec<String>> = match std::env::var("SHARD").ok().and_then(|s| {
+        let (i, n) = s.split_once('/')?;
+        Some((i.parse::<usize>().ok()?, n.parse::<usize>().ok()?))
+    }) {
+        Some((i, n)) if n > 0 => rows
+            .into_iter()
+            .enumerate()
+            .filter(|(k, _)| k % n == i)
+            .map(|(_, r)| r)
+            .collect(),
+        _ => rows,
+    };
     // `PACK=packs/NAME.toml` measures another pack instead of `core`.
     let pack_path = std::env::var("PACK").unwrap_or_else(|_| "packs/core.toml".into());
     let core = Pack::parse(&std::fs::read_to_string(root.join(&pack_path)).unwrap()).unwrap();
