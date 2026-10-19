@@ -2051,6 +2051,37 @@ the versions, the model chose it 7 times out of 7; it gained nothing over
 the grammar alone because, on those pairs, the correction was never
 among them.
 
+Where a model can gain, then: the 34 pairs of the first quarter that a
+perfect model catches and the grammar alone does not (`PAIRS=`), every
+sentence screened in, E2B at likelihood temperature 5:
+
+| | Result |
+|---|---|
+| Caught | 3 of 34 (all wrong inflections; none of the 20 function-word errors) |
+| Questions with the writer's correction among the versions | 20, the model's choice in 16 |
+| Flags on the corrected text at the changed words | 1 (*from the file*: *from the* deleted, 81%) |
+
+The model mostly prefers the writer's correction when it sees it, but
+with too small a margin: the corrections it chose had 0.65 to 0.77 at
+temperature 5, under the 0.8 that is reported. The 558 grammar questions
+of the runs at temperature 5 (31 with the writer's correction, 527 with
+the original right), with the probabilities rescaled to other
+temperatures:
+
+| Temperature, threshold | Corrections chosen and reported | Originals changed |
+|---|---|---|
+| 3, 0.8 | 25 of 31 | 37 of 527 (7%) |
+| 4, 0.8 | 22 | 22 (4.2%) |
+| 5, 0.8 | 19 | 9 (1.7%) |
+| 6, 0.8 | 18 | 5 (0.9%) |
+| 7, 0.8 | 15 | 2 (0.4%) |
+| 5, 0.6 | 25 | 52 (9.9%) |
+
+Every sentence the grammar accepts gets at least one such question when
+all are screened in, so even 0.4% of them changed is several false flags
+per 1,000 sentences, against a target of one. With E2B, the corrections
+it would add are bought with about as many false ones.
+
 ## Where checking time goes
 
 `timing` (`crates/emdysi-check/examples`) checks documents on one thread
