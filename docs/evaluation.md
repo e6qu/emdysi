@@ -2012,6 +2012,26 @@ in with the surprise on another word, so the right edit was not among
 the versions shown (*name* for *the name*). A missing word hardly
 surprises the model where the gap is.
 
+Nor do the model's own expectations find errors better
+(`LanguageModel::alternatives`, `examples/alternatives`, E2B on the
+minimal pairs): at each token, how much likelier a function word or the
+next token is than the token itself. Nearly every sentence, right or
+wrong, has a place where some alternative wins by several nats; counting
+an alternative only where the model expects it with some probability
+removes signal with the noise:
+
+| Expected word at least | Corrected word has the highest gain | Among the three highest | AUC |
+|---|---|---|---|
+| any | 33.0% | 63.3% | 0.602 |
+| 0.05 | 27.3% | 47.7% | 0.584 |
+| 0.1 | 27.3% | 40.2% | 0.585 |
+| 0.25 | 22.3% | 31.1% | 0.552 |
+| 0.5 | 16.4% | 20.6% | 0.525 |
+
+Whatever is read from one pass over the sentence, this model finds
+errors about as well as by surprise (AUC 0.60). What it does well is
+compare whole versions.
+
 ## Where checking time goes
 
 `timing` (`crates/emdysi-check/examples`) checks documents on one thread
