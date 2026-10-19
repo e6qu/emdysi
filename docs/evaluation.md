@@ -2307,3 +2307,32 @@ exhausted search (1,276 seconds, 1,456 before it):
 | 40 (none narrower) | 3,066 s | 2,020 | 4, the same |
 
 Kept at 20.
+
+### Measured and rejected: pruning lexical entries by a statistical tagger
+
+The rule-based tagger proposes tags only for the grammar's generic
+entries (its first guess is right for 69% of words). To rule out entries
+of the wrong word class, an averaged perceptron with the usual word-shape
+and context features was trained on UD English EWT's training set (three
+seconds) and measured on its development set: the first tag is right for
+93.6% of tokens, the word class (noun, verb, adjective, adverb,
+preposition) for 94.5% of content words, and for 99.0% of the 80% whose
+best tag beats every tag of another class by a margin of 16, 99.7% of the
+48% beyond 32. Entries of a class the tagger ruled out at that margin
+were dropped before parsing, leniently (verbs and adjectives, nouns in
+-ing and verbs, adverbs and adjectives or prepositions not ruled out
+against each other). Against the gold profiles, without the parse cache:
+
+| Profile | Margin | Gold tree found | Ranked first | Time |
+|---|---|---|---|---|
+| csli | none | 908 of 921 | 885 | 94 s |
+| csli | 32 | 895 | 872 | 105 s |
+| csli | 16 | 886 | 863 | 101 s |
+| sh-spec | none | 359 of 576 | 313 | 775 s |
+| sh-spec | 32 | 356 | 314 | 774 s |
+| sh-spec | 16 | 345 | 304 | 784 s |
+
+Gold analyses are lost and no time is saved: a word's entries of another
+class are few next to what the chart builds from the entries it keeps,
+and the tagger's errors land on exactly the words whose class the
+sentence needs. Not adopted; the experiment is not in the repository.
