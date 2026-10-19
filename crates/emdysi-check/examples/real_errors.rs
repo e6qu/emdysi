@@ -29,7 +29,8 @@
 //! also go to FILE.versions.tsv, as `en decide --eval` reads them, to
 //! score again without parsing. `LETTERS` asks for a letter even where a model that
 //! scores text would compare the versions of a sentence by likelihood.
-//! `PACKS=packs/a.toml,...` adds packs to `core`. `EXPLAIN=FILE` writes
+//! `PACKS=packs/a.toml,...` adds packs to `core`; `CORE=FILE` replaces
+//! `core` itself (another threshold, say). `EXPLAIN=FILE` writes
 //! the grammar's account of each missed grammar error (see the `why`
 //! example).
 
@@ -139,7 +140,9 @@ fn main() {
         Err(_) => rows,
     };
     let core =
-        Pack::parse(&std::fs::read_to_string(root.join("packs/core.toml")).unwrap()).unwrap();
+        // `CORE=FILE`: another version of the `core` pack, e.g. with other
+        // thresholds.
+        Pack::parse(&std::fs::read_to_string(root.join(std::env::var("CORE").unwrap_or_else(|_| "packs/core.toml".into()))).unwrap()).unwrap();
     // `PACKS=packs/a.toml,packs/b.toml` adds packs to `core`.
     let mut packs = vec![core];
     for p in std::env::var("PACKS")
