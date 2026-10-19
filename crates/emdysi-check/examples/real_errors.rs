@@ -338,6 +338,22 @@ impl emdysi_check::decisions::Ask for ModelAsk {
             .versions(context, question, versions)
             .ok()
     }
+
+    fn surprise(
+        &mut self,
+        context: &str,
+        text: &str,
+        spans: &[(usize, usize)],
+    ) -> Option<Vec<f64>> {
+        // LETTERS: the screening and locating questions instead.
+        if std::env::var_os("LETTERS").is_some() {
+            return None;
+        }
+        QUESTIONS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        emdysi_lm::decide::Decider::new(&mut *self.0)
+            .surprise(context, text, spans)
+            .ok()
+    }
 }
 
 fn model() -> Option<ModelAsk> {
@@ -421,6 +437,71 @@ impl emdysi_check::decisions::Ask for Logged<'_> {
         let p = self.inner.versions(context, question, versions)?;
         self.record(question, versions, &p);
         Some(p)
+    }
+
+    /// Logged as a question of kind `surprise-wrong` or `surprise-right`
+    /// (the perfect screening answer) whose options are the words, the
+    /// right one the word a perfect model names as wrong; the
+    /// probabilities are the words' surprise, and `p(original)` the
+    /// highest.
+    fn surprise(
+        &mut self,
+        context: &str,
+        text: &str,
+        spans: &[(usize, usize)],
+    ) -> Option<Vec<f64>> {
+        use emdysi_check::assist::*;
+        let v = self.inner.surprise(context, text, spans)?;
+        // The words labelled as `assist::word_options` labels them.
+        let mut labels: Vec<String> = Vec::new();
+        for &(f, t) in spans {
+            let core = text[f..t].trim_matches(|c: char| !c.is_alphanumeric());
+            let seen = labels
+                .iter()
+                .filter(|l| l.split(" (").next() == Some(core))
+                .count();
+            labels.push(if seen == 0 {
+                core.to_string()
+            } else {
+                format!("{core} ({})", seen + 1)
+            });
+        }
+        let labels: Vec<&str> = labels.iter().map(String::as_str).collect();
+        let sentence = text.trim();
+        let wrong = self.oracle.answer(
+            &format!("{SCREEN_QUESTION}\n\nSentence: {sentence}"),
+            &["yes", "no"],
+        )[1] > 0.5;
+        let right = self
+            .oracle
+            .answer(
+                &format!("{LOCATE_QUESTION}\n\nSentence: {sentence}"),
+                &labels,
+            )
+            .iter()
+            .position(|&p| p > 0.5)
+            .unwrap_or(0);
+        let argmax = (0..v.len())
+            .max_by(|&a, &b| v[a].total_cmp(&v[b]))
+            .unwrap_or(0);
+        let peak = v.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+        let all = v
+            .iter()
+            .map(|x| format!("{x:.2}"))
+            .collect::<Vec<_>>()
+            .join(",");
+        let kind = if wrong {
+            "surprise-wrong"
+        } else {
+            "surprise-right"
+        };
+        self.log.lock().unwrap().push(format!(
+            "{}\t{kind}\t{}\t{right}\t{argmax}\t{:.2}\t{peak:.2}\t{all}",
+            self.tag,
+            v.len(),
+            v.get(right).copied().unwrap_or(0.0),
+        ));
+        Some(v)
     }
 }
 

@@ -32,6 +32,18 @@ pub trait Ask {
     fn versions(&mut self, context: &str, question: &str, versions: &[&str]) -> Option<Vec<f64>> {
         self.ask(context, question, versions)
     }
+    /// How surprising each word of `text` (byte ranges `spans`) is where
+    /// it stands, after `context`, beyond how surprising it is alone (see
+    /// `emdysi_lm::decide::Decider::surprise`); `None` when the model
+    /// cannot score text, and then it is asked questions instead.
+    fn surprise(
+        &mut self,
+        _context: &str,
+        _text: &str,
+        _spans: &[(usize, usize)],
+    ) -> Option<Vec<f64>> {
+        None
+    }
 }
 
 /// What a [`Decide`] rule asks about.

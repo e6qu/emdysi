@@ -208,6 +208,60 @@ impl<'a> Decider<'a> {
         }
     }
 
+    /// How surprising each of `spans` (byte ranges of words in `text`) is
+    /// where it stands, after `context`: the negative log-probability of
+    /// its tokens in the text, less that of the same word among the text's
+    /// words listed one per line. A rare word is surprising anywhere and
+    /// scores about 0; a word that does not fit where it stands (a doubled
+    /// *the*, *allows to*) scores high, and so does the word after a gap.
+    /// Needs a backend that scores tokens ([`LanguageModel::token_logprobs`]).
+    pub fn surprise(
+        &mut self,
+        context: &str,
+        text: &str,
+        spans: &[(usize, usize)],
+    ) -> Result<Vec<f64>, DecideError> {
+        let prefix = if context.trim().is_empty() {
+            String::new()
+        } else {
+            format!("{} ", context.trim())
+        };
+        // A token counts for the word its first non-space character is in.
+        let tally = |tokens: Vec<(usize, f64)>, src: &str, spans: &[(usize, usize)]| {
+            let mut out = vec![0.0; spans.len()];
+            for (at, lp) in tokens {
+                let rest = src.get(at..).unwrap_or("");
+                let at = at + rest.len() - rest.trim_start().len();
+                if let Some(k) = spans.iter().position(|&(f, t)| f <= at && at < t) {
+                    out[k] -= lp;
+                }
+            }
+            out
+        };
+        let here = self
+            .lm
+            .token_logprobs(&prefix, text)
+            .ok_or(DecideError::Unsupported)?;
+        let here = tally(here, text, spans);
+        let words: Vec<&str> = spans.iter().map(|&(f, t)| &text[f..t]).collect();
+        let list = words.join("\n");
+        let mut at = 0;
+        let listed: Vec<(usize, usize)> = words
+            .iter()
+            .map(|w| {
+                let span = (at, at + w.len());
+                at += w.len() + 1;
+                span
+            })
+            .collect();
+        let alone = self
+            .lm
+            .token_logprobs("", &list)
+            .ok_or(DecideError::Unsupported)?;
+        let alone = tally(alone, &list, &listed);
+        Ok(here.iter().zip(alone).map(|(h, a)| h - a).collect())
+    }
+
     /// The probability that `statement` is true.
     pub fn holds(&mut self, context: &str, statement: &str) -> Result<f64, DecideError> {
         let q = format!("Is this true? {statement}");
@@ -388,6 +442,19 @@ mod tests {
             d.choose("", "Which?", &["x", "y"]),
             Err(DecideError::Unsupported)
         );
+    }
+
+    #[test]
+    fn surprise_of_words() {
+        // The second |the| is unlikely after the first; alone, every word
+        // has the default -1.
+        let mut lm = Script::parse("logprob\tthe the\t-6\nlogprob\tkubelet\t-9\n").unwrap();
+        let mut d = Decider::new(&mut lm);
+        let text = "Restart the the kubelet.";
+        let spans = [(0, 7), (8, 11), (12, 15), (16, 24)];
+        let s = d.surprise("", text, &spans).unwrap();
+        // |kubelet.| does not end with |kubelet|: -1 like the rest.
+        assert_eq!(s, vec![0.0, 0.0, 5.0, 0.0]);
     }
 
     #[test]

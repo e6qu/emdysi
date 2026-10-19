@@ -530,6 +530,15 @@ impl emdysi_check::decisions::Ask for ModelAsk<'_> {
     fn versions(&mut self, context: &str, question: &str, versions: &[&str]) -> Option<Vec<f64>> {
         self.d.versions(context, question, versions).ok()
     }
+
+    fn surprise(
+        &mut self,
+        context: &str,
+        text: &str,
+        spans: &[(usize, usize)],
+    ) -> Option<Vec<f64>> {
+        self.d.surprise(context, text, spans).ok()
+    }
 }
 
 /// Check, with the model for `decide` rules when there is one.

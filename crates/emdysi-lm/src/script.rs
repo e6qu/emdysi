@@ -17,7 +17,10 @@
 //! - `generate`: the reply to a chat whose user message contains the
 //!   pattern.
 //! - `logprob`: the log-probability per token of a text containing the
-//!   pattern (tokens are words here).
+//!   pattern (tokens are words here). Scored token by token
+//!   ([`LanguageModel::token_logprobs`]), a word gets the log-probability
+//!   of the first directive whose pattern ends the text up to and
+//!   including it, else -1.
 
 use crate::LanguageModel;
 
@@ -81,6 +84,22 @@ impl LanguageModel for Script {
             Directive::Logprob(p, lp) if text.contains(p.as_str()) => Some((lp * n as f64, n)),
             _ => None,
         })
+    }
+
+    fn token_logprobs(&mut self, prefix: &str, text: &str) -> Option<Vec<(usize, f64)>> {
+        let mut out = Vec::new();
+        let mut at = 0;
+        for w in text.split_whitespace() {
+            let start = at + text[at..].find(w)?;
+            at = start + w.len();
+            let so_far = format!("{prefix}{}", &text[..at]);
+            let lp = self.directives.iter().find_map(|d| match d {
+                Directive::Logprob(p, lp) if so_far.ends_with(p.as_str()) => Some(*lp),
+                _ => None,
+            });
+            out.push((start, lp.unwrap_or(-1.0)));
+        }
+        Some(out)
     }
 
     fn generate(&mut self, _: &str, user: &str, _: usize, _: f32, _: u32) -> Option<String> {

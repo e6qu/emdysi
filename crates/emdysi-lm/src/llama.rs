@@ -136,6 +136,11 @@ impl LanguageModel for LlamaLm {
     }
 
     fn logprob(&mut self, prefix: &str, text: &str) -> Option<(f64, usize)> {
+        let lp = self.token_logprobs(prefix, text)?;
+        Some((lp.iter().map(|t| t.1).sum(), lp.len()))
+    }
+
+    fn token_logprobs(&mut self, prefix: &str, text: &str) -> Option<Vec<(usize, f64)>> {
         let head = self.tokenize(prefix, true);
         let all = self.tokenize(&format!("{prefix}{text}"), true);
         if all.len() <= head.len() || all.len() as u32 >= self.n_ctx {
@@ -147,15 +152,25 @@ impl LanguageModel for LlamaLm {
             batch.add(t, i as i32, &[0], true).ok()?;
         }
         ctx.decode(&mut batch).ok()?;
-        let mut sum = 0.0;
         // Each token of `text` is predicted by the logits at the previous
-        // position; the first token after BOS needs a predecessor.
+        // position; the first token after BOS needs a predecessor. Offsets
+        // are counted on the tokens' text after BOS.
         let start = head.len().max(1);
-        for (i, t) in all.iter().enumerate().skip(start) {
+        let bos = usize::from(all.first() == Some(&self.model.vocab().bos()));
+        let mut at: usize = all[bos.min(start)..start]
+            .iter()
+            .map(|&t| self.piece(t).len())
+            .sum();
+        let mut out = Vec::new();
+        for (i, &t) in all.iter().enumerate().skip(start) {
             let logits = ctx.get_logits_ith(i as i32 - 1);
-            sum += log_softmax_at(logits, t.0 as usize);
+            out.push((
+                at.saturating_sub(prefix.len()),
+                log_softmax_at(logits, t.0 as usize),
+            ));
+            at += self.piece(t).len();
         }
-        Some((sum, all.len() - start))
+        Some(out)
     }
 
     fn generate(
