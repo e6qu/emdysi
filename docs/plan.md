@@ -34,8 +34,11 @@ unless stated:
    question of the whole design is what a 2 GB model (Gemma 4 E2B, 4-bit
    GGUF, or similar) actually gets, and whether grammar plus small model
    beats a much larger model alone. Blocked in the cloud environment so
-   far: its network policy denies huggingface.co. See "Running the model
-   evaluation" below.
+   far: its network policy denies huggingface.co (still a 403 from the
+   proxy on 2026-10-19, after access was granted, so the change seems to
+   apply only to sessions started afterwards). This is the next thing to
+   do in a session that can reach it; see "Running the model evaluation"
+   below.
 2. **Grammar errors without a model.** 25 of 197 is the weakest number in
    the table. The mal-rule variant names errors only when a complete
    search finds fragments only. Of the 172 real grammar errors missed
@@ -57,11 +60,15 @@ unless stated:
    without a strict analysis are no longer tried, 15% less parsing time
    on the held-out set, no strict analysis lost (evaluation.md).
    Measured and rejected since: fewer searches for long sentences,
-   another width for the first beam, and pruning lexical entries by a
-   statistical tagger (gold analyses lost, no time saved). What is left
+   another width for the first beam, pruning lexical entries by a
+   statistical tagger (gold analyses lost, no time saved) and keeping a
+   rule's structure loaded in the unifier between attempts (same
+   readings, no time saved). Exact-size copies in the unifier saved 6%
+   (2026-10-19). What is left
    is the cost of searches that do find the strict analysis with a wide
    beam; making them cheaper means a faster parser core, not a cleverer
-   cascade. A model adds candidate verification on top (up to 120
+   cascade: a structure-sharing unifier, days of work for an estimated
+   5–10%. A model adds candidate verification on top (up to 120
    parses for a doubted sentence).
 4. **Coverage of edited text (M19).** About 4% of edited sentences get no
    strict reading (40 of a 948-sentence sample, mostly archaic or not
@@ -83,6 +90,24 @@ unless stated:
    matched words; about 600 more need LanguageTool's chunker. None of
    the converted rules catches the real grammar errors (24 of 199 with
    the pack or without, when measured): those need the grammar.
+
+7. **Parse ranking.** The shipped averaged perceptron is 81.7% exact
+   match held out and right for 57 of 97 judged machine-written
+   sentences. Log-linear (84.8% held out) and head-word features (84.3%)
+   score better on the gold profiles but worse on the judged sentences
+   (48 and 35), and chart pruning guided by the ranker loses the right
+   reading for 12 of 97 with other models (evaluation.md). A fair
+   comparison needs readings judged independently of any one ranker,
+   from several rankers' top choices, with pruning that does not depend
+   on the model being evaluated; that judging is slow and wants a
+   person's spot checks.
+
+Status on 2026-10-19: apart from the model evaluation, every item above
+is either bounded by the model (126 of the 172 missed grammar errors
+parse as correct English) or a multi-day effort with an uncertain gain
+(the unifier rewrite, independent ranking judgements). Both development
+sets have been mined for coverage gaps. Start a new session with the
+model evaluation.
 
 Decided against, with measurements in evaluation.md: work limits in
 place of the parser's time limits (no work measure tracks time well
@@ -126,7 +151,14 @@ default in LanguageTool too).
    measurement processes at once (memory). A spelling change can be
    checked in minutes with `en check --no-parse` over the corpora's
    documents against the main build.
-3. **Running the model evaluation.** Download Gemma 4 E2B
+3. **Running the model evaluation.** First check that the session can
+   reach the model host: `curl -sS -o /dev/null -w '%{http_code}\n'
+   https://huggingface.co` should print 200, not a `CONNECT tunnel
+   failed, response 403`. If it fails, the environment's network access
+   (cloud environment menu, Edit) needs huggingface.co under allowed
+   domains, or a broader level; the downloads themselves may redirect to
+   other hosts (`cas-bridge.xethub.hf.co`, `cdn-lfs.huggingface.co`),
+   which need allowing too. Download Gemma 4 E2B
    instruction-tuned, 4-bit GGUF (about 2 GB); build with
    `--features llama` or serve it with `llama-server`; set
    `EMDYSI_LM=gguf:/path/to/model.gguf` (or `http://HOST:PORT`). Then
