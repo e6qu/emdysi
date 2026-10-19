@@ -53,10 +53,15 @@ unless stated:
    document. Profiled (`timing`): the parser takes 82%, rules almost
    nothing; the 4% of sentences that reach the time limit take 31% of
    parse time and yield almost no strict readings. Next: make those
-   sentences cheaper (tag-based chart pruning, an earlier fragment
-   fallback). Done (2026-10-18): the searches after one that ran out
+   sentences cheaper. Done (2026-10-18): the searches after one that ran out
    without a strict analysis are no longer tried, 15% less parsing time
-   on the held-out set, no strict analysis lost (evaluation.md). A model adds candidate verification on top (up to 120
+   on the held-out set, no strict analysis lost (evaluation.md).
+   Measured and rejected since: fewer searches for long sentences,
+   another width for the first beam, and pruning lexical entries by a
+   statistical tagger (gold analyses lost, no time saved). What is left
+   is the cost of searches that do find the strict analysis with a wide
+   beam; making them cheaper means a faster parser core, not a cleverer
+   cascade. A model adds candidate verification on top (up to 120
    parses for a doubted sentence).
 4. **Coverage of edited text (M19).** About 4% of edited sentences get no
    strict reading (40 of a 948-sentence sample, mostly archaic or not
