@@ -119,9 +119,6 @@ OPTIONS:
                            probability of its text instead of asking for a
                            letter (options that are versions of a sentence;
                            a GGUF model)
-    --no-normalize         with --likelihood, compare the versions' plain
-                           log-probabilities, not less those of their words
-                           alone
     --temperature T        with `decide`, calibration temperature (default 1)
     --samples N            with `rewrite`, model rewrites per sentence (default 3)
     --grammar DIR          grammar directory (default: the bundled ERG)
@@ -152,7 +149,6 @@ struct Args {
     eval: Option<PathBuf>,
     debias: bool,
     likelihood: bool,
-    normalize: bool,
     temperature: f64,
     decide_readings: bool,
     context_readings: bool,
@@ -190,7 +186,6 @@ fn parse_args() -> Result<Args, String> {
         eval: None,
         debias: true,
         likelihood: false,
-        normalize: true,
         temperature: 1.0,
         decide_readings: false,
         context_readings: true,
@@ -254,7 +249,6 @@ fn parse_args() -> Result<Args, String> {
             "--eval" => a.eval = Some(PathBuf::from(need(&mut it, &arg)?)),
             "--no-debias" => a.debias = false,
             "--likelihood" => a.likelihood = true,
-            "--no-normalize" => a.normalize = false,
             "--decide-readings" => a.decide_readings = true,
             "--no-context-readings" => a.context_readings = false,
             "--temperature" => {
@@ -523,7 +517,6 @@ impl<'a> ModelAsk<'a> {
         let mut d = emdysi_lm::decide::Decider::new(lm);
         d.debias = args.debias;
         d.likelihood = args.likelihood;
-        d.normalize = args.normalize;
         d.temperature = args.temperature;
         ModelAsk { d }
     }
@@ -573,7 +566,6 @@ fn decide(args: &Args) -> Result<bool, String> {
     let mut d = Decider::new(&mut *lm);
     d.debias = args.debias;
     d.likelihood = args.likelihood;
-    d.normalize = args.normalize;
     d.temperature = args.temperature;
     if let Some(path) = &args.eval {
         let src = std::fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;

@@ -11,7 +11,9 @@ A version's score is its log-probability plus an adjustment; a
 correction is made when the best other version beats the original by the
 margin or more. For each way of scoring, the margin that corrects the
 most real errors while changing at most MAX_CHANGED (default 1) of the
-questions whose original is right, and what it gets.
+questions whose original is right, and what it gets. Then the choice as
+`core.grammar-fix` makes it (probability 0.8 or more, above the
+original's) from plain log-probabilities at several temperatures.
 """
 
 import sys
@@ -35,6 +37,29 @@ def outcome(questions, score, margin):
         s = [score(lp, n, alone) for lp, n, alone in vs]
         best = max(range(1, len(s)), key=lambda i: s[i])
         if s[best] - s[0] < margin:
+            continue
+        if r == 0:
+            changed += 1
+        elif r == best:
+            right += 1
+        else:
+            wrong += 1
+    return right, wrong, changed
+
+
+def softmax_outcome(questions, temperature, threshold):
+    """As `core.grammar-fix` decides: the versions' plain log-probabilities
+    at `temperature`, and the best correction reported when its
+    probability is `threshold` or more and above the original's."""
+    right = wrong = changed = 0
+    for r, vs in questions:
+        s = [lp / temperature for lp, _, _ in vs]
+        top = max(s)
+        p = [2.718281828459045 ** (x - top) for x in s]
+        total = sum(p)
+        p = [x / total for x in p]
+        best = max(range(1, len(p)), key=lambda i: p[i])
+        if p[best] < threshold or p[best] <= p[0]:
             continue
         if r == 0:
             changed += 1
@@ -71,6 +96,12 @@ def main():
         else:
             m, r, w, ch = best
             print(f"| {name} | {m:g} | {r} of {errors} | {w} | {ch} of {clean} |")
+    print("\nAs core.grammar-fix decides, plain log-probabilities at a temperature, threshold 0.8:\n")
+    print("| Temperature | Corrected right | Corrected wrong | Originals changed |")
+    print("|---|---|---|---|")
+    for t in (1, 2, 3, 4, 5, 6, 7, 8, 10):
+        r, w, ch = softmax_outcome(questions, t, 0.8)
+        print(f"| {t} | {r} of {errors} | {w} | {ch} of {clean} |")
 
 
 if __name__ == "__main__":

@@ -140,12 +140,17 @@ pub struct Decider<'a> {
     /// versions of one sentence. Needs a backend that scores text
     /// ([`LanguageModel::logprob`]); the question is not shown.
     pub likelihood: bool,
-    /// With `likelihood`, subtract from each option's log-probability that
-    /// of its words alone (SLOR, Lau et al. 2017), when the backend scores
-    /// tokens: otherwise a version without a word is more likely only for
-    /// being shorter.
-    pub normalize: bool,
+    /// With `likelihood`, the options' log-probabilities are divided by
+    /// this before they become probabilities: a version of a sentence is
+    /// often a few nats more likely than the writer's without being what
+    /// they meant (|need to have| against |need to save|), so a choice
+    /// should take a large margin. At 5 (2026-10-19), 0.8 against a single
+    /// alternative takes about 7 nats.
+    pub likelihood_temperature: f64,
 }
+
+/// The default [`Decider::likelihood_temperature`].
+pub const LIKELIHOOD_TEMPERATURE: f64 = 5.0;
 
 impl<'a> Decider<'a> {
     pub fn new(lm: &'a mut dyn LanguageModel) -> Decider<'a> {
@@ -154,7 +159,7 @@ impl<'a> Decider<'a> {
             temperature: 1.0,
             debias: true,
             likelihood: false,
-            normalize: true,
+            likelihood_temperature: LIKELIHOOD_TEMPERATURE,
         }
     }
 
@@ -178,25 +183,12 @@ impl<'a> Decider<'a> {
             } else {
                 format!("{} ", context.trim())
             };
-            let mut lp = options
+            let t = self.likelihood_temperature;
+            let lp = options
                 .iter()
-                .map(|o| self.lm.logprob(&prefix, o.trim()).map(|(lp, _)| lp))
+                .map(|o| self.lm.logprob(&prefix, o.trim()).map(|(lp, _)| lp / t))
                 .collect::<Option<Vec<f64>>>()
                 .ok_or(DecideError::Unsupported)?;
-            if self.normalize {
-                // The words of all options, scored alone in one list.
-                let mut words: Vec<&str> =
-                    options.iter().flat_map(|o| o.split_whitespace()).collect();
-                words.sort_unstable();
-                words.dedup();
-                if let Some(cost) = alone(&mut *self.lm, &words) {
-                    for (l, o) in lp.iter_mut().zip(options) {
-                        for w in o.split_whitespace() {
-                            *l += cost[words.binary_search(&w).unwrap_or(0)];
-                        }
-                    }
-                }
-            }
             return Ok(Raw { orders: vec![lp] });
         }
         let identity: Vec<usize> = (0..n).collect();
@@ -442,23 +434,23 @@ mod tests {
             Script::parse("first\t\tA=0.9 B=0.1\nlogprob\twere\t-1\nlogprob\twas\t-2\n").unwrap();
         let mut d = Decider::new(&mut lm);
         d.likelihood = true;
-        d.normalize = false;
-        let raw = d
-            .choose("", "Which?", &["They was here.", "They were here."])
-            .unwrap();
-        // Three words each: -6 against -3.
-        assert!(
-            (raw[1] - 1.0 / (1.0 + (-3.0f64).exp())).abs() < 1e-9,
-            "{raw:?}"
-        );
-        // Less the words alone (the scripted model scores each word in the
-        // list as it does in the sentence: |was| -2, the others -1): -2
-        // against 0.
-        d.normalize = true;
+        d.likelihood_temperature = 1.0;
         let p = d
             .choose("", "Which?", &["They was here.", "They were here."])
             .unwrap();
-        assert!((p[1] - 1.0 / (1.0 + (-2.0f64).exp())).abs() < 1e-9, "{p:?}");
+        // Three words each: -6 against -3.
+        assert!((p[1] - 1.0 / (1.0 + (-3.0f64).exp())).abs() < 1e-9, "{p:?}");
+        // At the default temperature the margin counts for less.
+        d.likelihood_temperature = LIKELIHOOD_TEMPERATURE;
+        let q = d
+            .choose("", "Which?", &["They was here.", "They were here."])
+            .unwrap();
+        let t = LIKELIHOOD_TEMPERATURE;
+        assert!(
+            (q[1] - 1.0 / (1.0 + (-3.0 / t).exp())).abs() < 1e-9,
+            "{q:?}"
+        );
+        d.likelihood_temperature = 1.0;
         // Versions of a sentence are scored by likelihood without asking.
         d.likelihood = false;
         let v = d
