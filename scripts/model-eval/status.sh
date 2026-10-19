@@ -10,7 +10,8 @@
 # file. The estimate is from the pairs done since the journal was created
 # (a resumed run's estimate counts the earlier pairs too). With a LOG, how
 # the model answers by kind of question; SCREEN (default 3) is the surprise
-# a sentence is screened in at.
+# a sentence is screened in at. BASE compares with runs without a model
+# and with a perfect one (see below).
 set -euo pipefail
 out=${1:?usage: status.sh OUT.tsv [ERR] [LOG]}
 err=${2:-}
@@ -36,6 +37,24 @@ awk -F'\t' '{
   for (k in pairs) printf "  %-22s %4d of %4d caught, %d flagged after the fix\n", k, caught[k], pairs[k], after[k]
   printf "  %-22s %4d of %4d caught (%.0f%%), %d flagged after the fix\n", "all", c, all, 100 * c / all, a
 }' "$journal" | sort
+# BASE: a directory with the same pairs checked without a model
+# (grammar.tsv) and with a perfect one (oracle.tsv), as `real_errors`
+# writes them; the pairs done so far are compared, by kind, text before
+# and text after.
+if [ -n "${BASE:-}" ] && [ -f "$BASE/grammar.tsv" ]; then
+  awk -F'\t' '
+    /^#/ { next }
+    FILENAME ~ /grammar.tsv$/ { g[$1 FS $4 FS $5] = $2; next }
+    FILENAME ~ /oracle.tsv$/ { o[$1 FS $4 FS $5] = $2; next }
+    {
+      k = $2 FS $5 FS $6; n++
+      m = ($3 == "true"); gg = (g[k] == "true"); oo = (o[k] == "true")
+      cm += m; cg += gg; co += oo; if (m && !gg) gain++; if (gg && !m) loss++
+    }
+    END {
+      printf "  on these %d pairs: grammar alone %d, the model %d (%d gained, %d lost), a perfect model %d\n", n, cg, cm, gain, loss, co
+    }' "$BASE/grammar.tsv" "$BASE/oracle.tsv" "$journal"
+fi
 # The log's lines: pair, kind of error, side, kind of question, options,
 # the perfect answer, the model's, p(right), p(original) (for surprise:
 # the highest surprise), ...
