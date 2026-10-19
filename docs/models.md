@@ -91,6 +91,22 @@ Models prefer some positions (often A). By default each question is asked
 twice, with the options in the given and the reverse order, and the two
 answers are averaged; `--no-debias` asks once.
 
+Small models prefer some positions far more than that cancels: Gemma 4
+E2B answers A to almost any question, and the two orders average out near
+one half (docs/evaluation.md). Where the options are versions of one
+sentence, a model that scores text compares them directly instead: the
+probability of each version after the context (`--likelihood`; E2B 92%
+right on the real-error questions, against 75% with letters). Spelling
+and grammar corrections are chosen this way whenever the model allows it
+(a GGUF file in-process; a server only if it returns the log-probabilities
+of an echoed prompt), and with letters otherwise. With such a model,
+whether a sentence the grammar accepts is worth correcting, and which of
+its words is wrong, is not asked either but read from each word's
+*surprise*: the negative log-probability of its tokens where it stands,
+less that of the same word in a list of the sentence's words (a rare word
+is surprising anywhere; a doubled *the*, or the word after a gap, only
+where it stands).
+
 ### Calibration
 
 A model's probabilities are often overconfident. `en decide --eval FILE.tsv`
@@ -154,17 +170,20 @@ calibrated model.
     (*consumes*/*consume*), changing a function word to another of its
     class (*are*/*is*, *for*/*to*, *which*/*that*, *or*/*and*), dropping
     one or inserting one (*the*, *of*, *to*, *you*, ...), or a real-word
-    typo for a common word one edit away (*Manger*/*Manager*); the model is
-    first asked which word is wrong, and the edits at that word are tried
-    first, then those nearest where the grammar's partial analyses meet. A sentence
-    the grammar accepts is corrected the same way only when the model,
-    asked first (*Is this sentence correct English, as written?*), doubts
-    it with probability 0.5 or more (`screen` of `core.grammar-fix`), since
+    typo for a common word one edit away (*Manger*/*Manager*); the edits
+    at the words the model finds most surprising (up to three), or, with a
+    model that cannot score text, at the word it names when asked which
+    word is wrong, are tried first, then those nearest where the grammar's
+    partial analyses meet. A sentence the grammar accepts is corrected the
+    same way only when one of its words is 3 nats or more surprising
+    (`screen_surprise` of `core.grammar-fix`), or, without scores, when
+    the model, asked first (*Is this sentence correct English, as
+    written?*), doubts it with probability 0.5 or more (`screen`), since
     many errors leave a sentence grammatical. Up to 120 edits are parsed,
     and up to 27 that the strict grammar accepts are shown to the model
-    with the original (*Which version of the sentence is correct English,
-    as the writer meant it?*), nine at a time and then the choices
-    together, and `core.grammar-fix` reports one, with the fix, when the
+    with the original, compared by likelihood or asked (*Which version of
+    the sentence is correct English, as the writer meant it?*), nine at a
+    time and then the choices together, and `core.grammar-fix` reports one, with the fix, when the
     model prefers it with probability 0.8 or more. *The quick brown fox jump over the
     crazy wall.* is the case it is for: the grammar reads it as a noun
     phrase (a jump), so it cannot claim an error alone; the model alone
