@@ -4,8 +4,9 @@
 //!
 //! `cargo run --release -p emdysi-lm --features llama --example surprisal -- SPEC FILE.tsv`
 //!
-//! A word's surprisal is the negative log-probability of its tokens (a
-//! word is a run of non-space characters). Reported:
+//! A word's surprise is `Decider::surprise`: the negative log-probability
+//! of its tokens where it stands, less that of the word alone (with `RAW`,
+//! without that correction). Reported:
 //!
 //! - locating: how often the most surprising word of the sentence as
 //!   written is the corrected word (for an insertion, the word after the
@@ -14,6 +15,8 @@
 //!   sentence as written from the corrected one (the area under the ROC
 //!   curve: 0.5 is chance), with and without the first word, whose
 //!   surprisal without context is high whatever the sentence.
+//!
+//! `SHOW` prints each sentence as written with its words' surprise.
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -102,62 +105,39 @@ fn main() {
     }
 }
 
-/// The words of `text` as (start, end, surprisal), from its tokens: a
-/// token belongs to the word its first non-space character is in.
+/// The words of `text` (runs of non-space characters) as (start, end,
+/// surprise): `Decider::surprise`, or with `RAW` the plain negative
+/// log-probability of the word's tokens.
 fn words(lm: &mut dyn emdysi_lm::LanguageModel, text: &str) -> Option<Vec<(usize, usize, f64)>> {
-    let tokens = lm.token_logprobs("", text)?;
-    let mut out: Vec<(usize, usize, f64)> = Vec::new();
-    let mut i = 0;
-    let b = text.as_bytes();
-    while i < b.len() {
-        if b[i].is_ascii_whitespace() {
-            i += 1;
-            continue;
-        }
-        let from = i;
-        while i < b.len() && !b[i].is_ascii_whitespace() {
-            i += 1;
-        }
-        out.push((from, i, 0.0));
-    }
-    for (at, lp) in tokens {
-        // Skip leading spaces of the token's text.
-        let mut at = at;
-        while at < b.len() && b[at].is_ascii_whitespace() {
-            at += 1;
-        }
-        if let Some(w) = out.iter_mut().find(|w| w.0 <= at && at < w.1) {
-            w.2 -= lp;
-        }
-    }
-    if std::env::var_os("RAW").is_some() {
-        return Some(out);
-    }
-    // Each word's surprisal without the sentence: the words as a list, one
-    // per line. A rare word is surprising anywhere; a wrong word is
-    // surprising where it stands.
-    let list: Vec<&str> = out.iter().map(|w| &text[w.0..w.1]).collect();
-    let joined = list.join("\n");
-    let mut starts = Vec::new();
+    let mut spans = Vec::new();
     let mut at = 0;
-    for w in &list {
-        starts.push((at, at + w.len()));
-        at += w.len() + 1;
+    for w in text.split_whitespace() {
+        let from = at + text[at..].find(w)?;
+        at = from + w.len();
+        spans.push((from, at));
     }
-    let mut alone = vec![0.0; list.len()];
-    for (at, lp) in lm.token_logprobs("", &joined)? {
-        let mut at = at;
-        while at < joined.len() && joined.as_bytes()[at].is_ascii_whitespace() {
-            at += 1;
+    let scores = if std::env::var_os("RAW").is_some() {
+        let mut out = vec![0.0; spans.len()];
+        for (at, lp) in lm.token_logprobs("", text)? {
+            let rest = text.get(at..).unwrap_or("");
+            let at = at + rest.len() - rest.trim_start().len();
+            if let Some(k) = spans.iter().position(|&(f, t)| f <= at && at < t) {
+                out[k] -= lp;
+            }
         }
-        if let Some(k) = starts.iter().position(|w| w.0 <= at && at < w.1) {
-            alone[k] -= lp;
-        }
-    }
-    for (w, a) in out.iter_mut().zip(alone) {
-        w.2 -= a;
-    }
-    Some(out)
+        out
+    } else {
+        emdysi_lm::decide::Decider::new(lm)
+            .surprise("", text, &spans)
+            .ok()?
+    };
+    Some(
+        spans
+            .iter()
+            .zip(scores)
+            .map(|(&(f, t), x)| (f, t, x))
+            .collect(),
+    )
 }
 
 /// The probability that a score from `pos` is higher than one from `neg`
