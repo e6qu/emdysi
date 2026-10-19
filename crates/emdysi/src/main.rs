@@ -526,6 +526,10 @@ impl emdysi_check::decisions::Ask for ModelAsk<'_> {
     fn ask(&mut self, context: &str, question: &str, options: &[&str]) -> Option<Vec<f64>> {
         self.d.choose(context, question, options).ok()
     }
+
+    fn versions(&mut self, context: &str, question: &str, versions: &[&str]) -> Option<Vec<f64>> {
+        self.d.versions(context, question, versions).ok()
+    }
 }
 
 /// Check, with the model for `decide` rules when there is one.

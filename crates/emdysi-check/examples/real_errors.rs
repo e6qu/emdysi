@@ -22,7 +22,8 @@
 //! `LOG=FILE` with a model writes each question it is asked to FILE, with
 //! its probabilities and the answer a perfect model gives: how well the
 //! model screens, locates and chooses, and the probabilities to tune the
-//! thresholds on.
+//! thresholds on. `LETTERS` asks for a letter even where a model that
+//! scores text would compare the versions of a sentence by likelihood.
 //! `PACKS=packs/a.toml,...` adds packs to `core`. `EXPLAIN=FILE` writes
 //! the grammar's account of each missed grammar error (see the `why`
 //! example).
@@ -326,6 +327,17 @@ impl emdysi_check::decisions::Ask for ModelAsk {
             .choose(context, question, options)
             .ok()
     }
+
+    fn versions(&mut self, context: &str, question: &str, versions: &[&str]) -> Option<Vec<f64>> {
+        // LETTERS: ask for a letter even when the model scores text.
+        if std::env::var_os("LETTERS").is_some() {
+            return self.ask(context, question, versions);
+        }
+        QUESTIONS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        emdysi_lm::decide::Decider::new(&mut *self.0)
+            .versions(context, question, versions)
+            .ok()
+    }
 }
 
 fn model() -> Option<ModelAsk> {
@@ -400,8 +412,21 @@ struct Logged<'a> {
 
 impl emdysi_check::decisions::Ask for Logged<'_> {
     fn ask(&mut self, context: &str, question: &str, options: &[&str]) -> Option<Vec<f64>> {
-        use emdysi_check::assist::*;
         let p = self.inner.ask(context, question, options)?;
+        self.record(question, options, &p);
+        Some(p)
+    }
+
+    fn versions(&mut self, context: &str, question: &str, versions: &[&str]) -> Option<Vec<f64>> {
+        let p = self.inner.versions(context, question, versions)?;
+        self.record(question, versions, &p);
+        Some(p)
+    }
+}
+
+impl Logged<'_> {
+    fn record(&self, question: &str, options: &[&str], p: &[f64]) {
+        use emdysi_check::assist::*;
         let argmax = |v: &[f64]| {
             (0..v.len())
                 .max_by(|&a, &b| v[a].total_cmp(&v[b]))
@@ -428,11 +453,10 @@ impl emdysi_check::decisions::Ask for Logged<'_> {
             "{}\t{kind}\t{}\t{right}\t{}\t{:.4}\t{:.4}\t{all}",
             self.tag,
             options.len(),
-            argmax(&p),
+            argmax(p),
             p[right],
             p[0]
         ));
-        Some(p)
     }
 }
 

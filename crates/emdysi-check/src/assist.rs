@@ -861,7 +861,7 @@ pub fn grammar(
             let options: Vec<&str> = std::iter::once(s.original.trim())
                 .chain(group.iter().map(|&i| cands[i].1.trim()))
                 .collect();
-            let probs = ask.ask(&ctx, GRAMMAR_QUESTION, &options)?;
+            let probs = ask.versions(&ctx, GRAMMAR_QUESTION, &options)?;
             let (best, &p) = probs
                 .iter()
                 .enumerate()
@@ -929,7 +929,7 @@ pub fn spelling(
         return None;
     }
     let options: Vec<&str> = cands.iter().map(|c| c.1.trim()).collect();
-    let probs = ask.ask(&context(a, si), SPELLING_QUESTION, &options)?;
+    let probs = ask.versions(&context(a, si), SPELLING_QUESTION, &options)?;
     let (best, &p) = probs.iter().enumerate().max_by(|x, y| x.1.total_cmp(y.1))?;
     if p < threshold {
         return None;

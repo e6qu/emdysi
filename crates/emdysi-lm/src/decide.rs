@@ -140,7 +140,7 @@ impl<'a> Decider<'a> {
             let prefix = if context.trim().is_empty() {
                 String::new()
             } else {
-                format!("{}\n\n", context.trim())
+                format!("{} ", context.trim())
             };
             let lp = options
                 .iter()
@@ -186,6 +186,26 @@ impl<'a> Decider<'a> {
     ) -> Result<Vec<f64>, DecideError> {
         let raw = self.raw(context, question, options)?;
         Ok(probabilities(&raw, self.temperature))
+    }
+
+    /// The probability of each of `versions` of one sentence: by their
+    /// likelihood after the context when the model scores text (much more
+    /// accurate for small models than a letter, which they choose largely
+    /// by position), else as the answer to `question`.
+    pub fn versions(
+        &mut self,
+        context: &str,
+        question: &str,
+        versions: &[&str],
+    ) -> Result<Vec<f64>, DecideError> {
+        let letters = !self.likelihood;
+        self.likelihood = true;
+        let p = self.choose(context, question, versions);
+        self.likelihood = !letters;
+        match p {
+            Err(DecideError::Unsupported) if letters => self.choose(context, question, versions),
+            p => p,
+        }
     }
 
     /// The probability that `statement` is true.
@@ -349,9 +369,20 @@ mod tests {
             .unwrap();
         // Three words each: -6 against -3.
         assert!((p[1] - 1.0 / (1.0 + (-3.0f64).exp())).abs() < 1e-9, "{p:?}");
-        // A backend that cannot score text cannot answer.
+        // Versions of a sentence are scored by likelihood without asking.
+        d.likelihood = false;
+        let v = d
+            .versions("", "Which?", &["They was here.", "They were here."])
+            .unwrap();
+        assert_eq!(v, p);
+        assert!(!d.likelihood);
+        // A backend that cannot score text cannot answer, except with
+        // letters.
         let mut lm = Script::parse("first\t\tA=0.9 B=0.1\n").unwrap();
         let mut d = Decider::new(&mut lm);
+        d.debias = false;
+        let v = d.versions("", "Which?", &["x", "y"]).unwrap();
+        assert!((v[0] - 0.9).abs() < 1e-9);
         d.likelihood = true;
         assert_eq!(
             d.choose("", "Which?", &["x", "y"]),

@@ -26,6 +26,12 @@ use crate::structure::Hit;
 /// or `None` if no answer could be had.
 pub trait Ask {
     fn ask(&mut self, context: &str, question: &str, options: &[&str]) -> Option<Vec<f64>>;
+    /// The probability of each of `versions` of one sentence: by default
+    /// the answer to `question` with them as options; a model that scores
+    /// text compares their likelihood instead.
+    fn versions(&mut self, context: &str, question: &str, versions: &[&str]) -> Option<Vec<f64>> {
+        self.ask(context, question, versions)
+    }
 }
 
 /// What a [`Decide`] rule asks about.
