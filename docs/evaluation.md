@@ -2336,3 +2336,16 @@ Gold analyses are lost and no time is saved: a word's entries of another
 class are few next to what the chart builds from the entries it keeps,
 and the tagger's errors land on exactly the words whose class the
 sentence needs. Not adopted; the experiment is not in the repository.
+
+### Profiling the parser core: copies of exactly their size
+
+`samply` on 40 held-out sentences that needed a wider beam (two to six
+seconds each): unification and copying take most of the time, as
+before, and allocation about 14% of it, most of that growing vectors.
+A copy of a unified structure was built in vectors sized like the last
+copy; copies of very different sizes alternate, so a large one after a
+small one grew its vectors several times. The copy is now built in
+scratch vectors kept by the unifier and moved into vectors of exactly
+its size at the end (one allocation each, no slack kept in the chart).
+The same readings for all 40 sentences; 299 → 283 and 314 → 292
+seconds in two runs each, alternating (6% less).

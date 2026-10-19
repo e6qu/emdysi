@@ -60,10 +60,13 @@ pub struct Unifier {
     pub explain: bool,
     pub clash_types: (TypeId, TypeId),
     pub clash_path: Vec<FeatId>,
-    /// Scratch space for copying: the queue of nodes, and the sizes of the
-    /// last copy (to size the next one).
+    /// Scratch space for copying: the queue of nodes, and the nodes and
+    /// arcs of the copy being built (moved into a DAG of exactly their
+    /// size at the end, so that copies of different sizes in turn do not
+    /// grow a fresh vector each time).
     order: Vec<u32>,
-    last_copy: (usize, usize),
+    copy_nodes: Vec<Node>,
+    copy_arcs: Vec<(FeatId, u32)>,
     cycle_state: Vec<u8>,
     cycle_stack: Vec<(u32, u32)>,
     /// Changes since the last checkpoint: (node, stamp, forward, type,
@@ -436,9 +439,11 @@ impl Unifier {
         self.copy_stamp[root as usize] = cg;
         self.copy[root as usize] = 0;
         let mut dag = Dag {
-            nodes: Vec::with_capacity(self.last_copy.0),
-            arcs: Vec::with_capacity(self.last_copy.1),
+            nodes: std::mem::take(&mut self.copy_nodes),
+            arcs: std::mem::take(&mut self.copy_arcs),
         };
+        dag.nodes.clear();
+        dag.arcs.clear();
         // Whether some arc points back to a node numbered no later than its
         // source: in breadth-first numbering, a cycle needs one.
         let mut back = false;
@@ -483,12 +488,14 @@ impl Unifier {
             i += 1;
         }
         self.order = order;
-        self.last_copy = (dag.nodes.len(), dag.arcs.len());
-        if back && is_cyclic_with(&dag, &mut self.cycle_state, &mut self.cycle_stack) {
-            None
-        } else {
-            Some(dag)
-        }
+        let cyclic = back && is_cyclic_with(&dag, &mut self.cycle_state, &mut self.cycle_stack);
+        let out = (!cyclic).then(|| Dag {
+            nodes: dag.nodes.as_slice().to_vec(),
+            arcs: dag.arcs.as_slice().to_vec(),
+        });
+        self.copy_nodes = dag.nodes;
+        self.copy_arcs = dag.arcs;
+        out
     }
 
     /// The index in the copy of the node `v` stands for, queueing it if it
