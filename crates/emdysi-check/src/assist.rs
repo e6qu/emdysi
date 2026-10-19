@@ -100,9 +100,13 @@ const LONGEST: Duration = Duration::from_secs(10);
 /// sentence has up to `MAX_CANDIDATES` of them.
 const BUDGET: Duration = Duration::from_secs(30);
 
-const GRAMMAR_QUESTION: &str =
+/// The question that asks the model to choose among a sentence and its
+/// corrections the grammar accepts (the original first).
+pub const GRAMMAR_QUESTION: &str =
     "Which version of the sentence is correct English, as the writer meant it?";
-const SPELLING_QUESTION: &str = "Which version of the sentence did the writer mean?";
+/// The question that asks the model to choose among a sentence's spelling
+/// suggestions.
+pub const SPELLING_QUESTION: &str = "Which version of the sentence did the writer mean?";
 
 /// `text` with the characters `from..to` replaced.
 fn replace(text: &str, from: usize, to: usize, rep: &str) -> String {

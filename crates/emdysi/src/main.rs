@@ -115,6 +115,10 @@ OPTIONS:
                            is preferred)
     --no-debias            with `decide`, ask once instead of also with the
                            options reversed
+    --likelihood           with `decide`, score each option by the model's
+                           probability of its text instead of asking for a
+                           letter (options that are versions of a sentence;
+                           a GGUF model)
     --temperature T        with `decide`, calibration temperature (default 1)
     --samples N            with `rewrite`, model rewrites per sentence (default 3)
     --grammar DIR          grammar directory (default: the bundled ERG)
@@ -144,6 +148,7 @@ struct Args {
     scale: Option<(i32, i32)>,
     eval: Option<PathBuf>,
     debias: bool,
+    likelihood: bool,
     temperature: f64,
     decide_readings: bool,
     context_readings: bool,
@@ -180,6 +185,7 @@ fn parse_args() -> Result<Args, String> {
         scale: None,
         eval: None,
         debias: true,
+        likelihood: false,
         temperature: 1.0,
         decide_readings: false,
         context_readings: true,
@@ -242,6 +248,7 @@ fn parse_args() -> Result<Args, String> {
             }
             "--eval" => a.eval = Some(PathBuf::from(need(&mut it, &arg)?)),
             "--no-debias" => a.debias = false,
+            "--likelihood" => a.likelihood = true,
             "--decide-readings" => a.decide_readings = true,
             "--no-context-readings" => a.context_readings = false,
             "--temperature" => {
@@ -509,6 +516,7 @@ impl<'a> ModelAsk<'a> {
     fn new(lm: &'a mut dyn emdysi_lm::LanguageModel, args: &Args) -> ModelAsk<'a> {
         let mut d = emdysi_lm::decide::Decider::new(lm);
         d.debias = args.debias;
+        d.likelihood = args.likelihood;
         d.temperature = args.temperature;
         ModelAsk { d }
     }
@@ -544,6 +552,7 @@ fn decide(args: &Args) -> Result<bool, String> {
         .ok_or("decide needs a model: --model FILE.gguf, --server URL or --lm SPEC")?;
     let mut d = Decider::new(&mut *lm);
     d.debias = args.debias;
+    d.likelihood = args.likelihood;
     d.temperature = args.temperature;
     if let Some(path) = &args.eval {
         let src = std::fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;

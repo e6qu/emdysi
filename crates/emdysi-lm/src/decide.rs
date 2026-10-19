@@ -105,6 +105,11 @@ pub struct Decider<'a> {
     pub temperature: f64,
     /// Ask again with the options reversed and average the two answers.
     pub debias: bool,
+    /// Score each option by the model's probability of its text after the
+    /// context, instead of asking for a letter: for options that are
+    /// versions of one sentence. Needs a backend that scores text
+    /// ([`LanguageModel::logprob`]); the question is not shown.
+    pub likelihood: bool,
 }
 
 impl<'a> Decider<'a> {
@@ -113,6 +118,7 @@ impl<'a> Decider<'a> {
             lm,
             temperature: 1.0,
             debias: true,
+            likelihood: false,
         }
     }
 
@@ -129,6 +135,19 @@ impl<'a> Decider<'a> {
         }
         if n > LETTERS.len() {
             return Err(DecideError::TooManyOptions(n));
+        }
+        if self.likelihood {
+            let prefix = if context.trim().is_empty() {
+                String::new()
+            } else {
+                format!("{}\n\n", context.trim())
+            };
+            let lp = options
+                .iter()
+                .map(|o| self.lm.logprob(&prefix, o.trim()).map(|(lp, _)| lp))
+                .collect::<Option<Vec<f64>>>()
+                .ok_or(DecideError::Unsupported)?;
+            return Ok(Raw { orders: vec![lp] });
         }
         let identity: Vec<usize> = (0..n).collect();
         let mut orders = vec![identity.clone()];
@@ -316,6 +335,28 @@ mod tests {
         d.debias = false;
         let p = d.choose("", "Which?", &["x", "y"]).unwrap();
         assert!((p[0] - 0.6).abs() < 1e-9);
+    }
+
+    #[test]
+    fn choose_by_likelihood() {
+        // The letters favour A, the texts favour the second option.
+        let mut lm =
+            Script::parse("first\t\tA=0.9 B=0.1\nlogprob\twere\t-1\nlogprob\twas\t-2\n").unwrap();
+        let mut d = Decider::new(&mut lm);
+        d.likelihood = true;
+        let p = d
+            .choose("", "Which?", &["They was here.", "They were here."])
+            .unwrap();
+        // Three words each: -6 against -3.
+        assert!((p[1] - 1.0 / (1.0 + (-3.0f64).exp())).abs() < 1e-9, "{p:?}");
+        // A backend that cannot score text cannot answer.
+        let mut lm = Script::parse("first\t\tA=0.9 B=0.1\n").unwrap();
+        let mut d = Decider::new(&mut lm);
+        d.likelihood = true;
+        assert_eq!(
+            d.choose("", "Which?", &["x", "y"]),
+            Err(DecideError::Unsupported)
+        );
     }
 
     #[test]
