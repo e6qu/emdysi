@@ -17,7 +17,7 @@ use llama_cpp_2::token::LlamaToken;
 use crate::LanguageModel;
 
 pub struct LlamaLm {
-    backend: LlamaBackend,
+    backend: &'static LlamaBackend,
     model: LlamaModel,
     n_ctx: u32,
     threads: i32,
@@ -34,12 +34,23 @@ impl std::fmt::Display for LoadError {
 
 impl std::error::Error for LoadError {}
 
+/// llama.cpp's backend, initialized once for every model of the process:
+/// a second initialization fails, so two models (one per thread) need the
+/// same one.
+fn backend() -> Result<&'static LlamaBackend, LoadError> {
+    static BACKEND: std::sync::OnceLock<Result<LlamaBackend, String>> = std::sync::OnceLock::new();
+    BACKEND
+        .get_or_init(|| LlamaBackend::init().map_err(|e| e.to_string()))
+        .as_ref()
+        .map_err(|e| LoadError(e.clone()))
+}
+
 impl LlamaLm {
     /// Load a GGUF model. `n_ctx` bounds prompt plus output length (at most
     /// the length the model was trained with).
     pub fn load(path: &Path, n_ctx: u32) -> Result<LlamaLm, LoadError> {
-        let backend = LlamaBackend::init().map_err(|e| LoadError(e.to_string()))?;
-        let model = LlamaModel::load_from_file(&backend, path, &LlamaModelParams::default())
+        let backend = backend()?;
+        let model = LlamaModel::load_from_file(backend, path, &LlamaModelParams::default())
             .map_err(|e| LoadError(format!("{}: {e}", path.display())))?;
         // EMDYSI_LM_THREADS: fewer threads, for several models at once.
         let threads = std::env::var("EMDYSI_LM_THREADS")
@@ -65,7 +76,7 @@ impl LlamaLm {
             .with_n_ctx(NonZeroU32::new(self.n_ctx))
             .with_n_batch(self.n_ctx)
             .with_n_threads(self.threads);
-        self.model.new_context(&self.backend, params).ok()
+        self.model.new_context(self.backend, params).ok()
     }
 
     fn tokenize(&self, text: &str, bos: bool) -> Vec<LlamaToken> {
