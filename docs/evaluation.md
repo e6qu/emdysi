@@ -2349,3 +2349,9 @@ scratch vectors kept by the unifier and moved into vectors of exactly
 its size at the end (one allocation each, no slack kept in the chart).
 The same readings for all 40 sentences; 299 → 283 and 314 → 292
 seconds in two runs each, alternating (6% less).
+
+Measured and not adopted: keeping a rule's structure in the unifier's
+tables from one unification to the next when the next uses the same
+rule (a new generation clears the per-node state, so the rule need not
+be copied in again). The same readings, and no time saved: 182 → 190
+and 184 → 184 seconds on the same 40 sentences.
