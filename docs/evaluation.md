@@ -2277,3 +2277,75 @@ timing, not the change; the other is a sentence missing from the second
 run's log, which was resumed after an interruption. Simulated on the
 first run's log, giving up loses no strict analysis there either, and
 saves 14%.
+
+### Measured and rejected: fewer searches for long sentences
+
+After the change above, a third of the held-out set's parsing time (about
+3,400 of 10,699 seconds, 534 sentences) still goes into a search that
+runs out without a strict analysis. Such a search does not show itself
+early: it runs out after a median 3.3 seconds (mostly at its limit on
+edges), while searches that find a strict analysis take up to 6. Length
+tells more: past the narrow beam, a strict analysis is found later for
+70–90% of sentences under 40 words, 25% of those of 40 to 49, and 6% of
+those of 50 or more (none on the first development set), and every one
+of the latter came from the configured beam. Searching no further than
+the configured beam for sentences of 50 words or more would save 207
+seconds (2%) on the held-out set, and lose one strict analysis and one
+search that proves a sentence outside the grammar; before giving up
+after an exhausted search it would have saved 727. Not adopted.
+
+### Measured: the width of the first beam
+
+The cascade starts with a beam of 20 before the configured 40. On the
+first development set without the parse cache, after giving up after an
+exhausted search (1,276 seconds, 1,456 before it):
+
+| First beam | Parsing, grammar | Strict analyses | False flags |
+|---|---|---|---|
+| 20 (as is) | 2,968 s | 2,027 | 4 |
+| 30 | 3,021 s | 2,029 | 4, the same |
+| 40 (none narrower) | 3,066 s | 2,020 | 4, the same |
+
+Kept at 20.
+
+### Measured and rejected: pruning lexical entries by a statistical tagger
+
+The rule-based tagger proposes tags only for the grammar's generic
+entries (its first guess is right for 69% of words). To rule out entries
+of the wrong word class, an averaged perceptron with the usual word-shape
+and context features was trained on UD English EWT's training set (three
+seconds) and measured on its development set: the first tag is right for
+93.6% of tokens, the word class (noun, verb, adjective, adverb,
+preposition) for 94.5% of content words, and for 99.0% of the 80% whose
+best tag beats every tag of another class by a margin of 16, 99.7% of the
+48% beyond 32. Entries of a class the tagger ruled out at that margin
+were dropped before parsing, leniently (verbs and adjectives, nouns in
+-ing and verbs, adverbs and adjectives or prepositions not ruled out
+against each other). Against the gold profiles, without the parse cache:
+
+| Profile | Margin | Gold tree found | Ranked first | Time |
+|---|---|---|---|---|
+| csli | none | 908 of 921 | 885 | 94 s |
+| csli | 32 | 895 | 872 | 105 s |
+| csli | 16 | 886 | 863 | 101 s |
+| sh-spec | none | 359 of 576 | 313 | 775 s |
+| sh-spec | 32 | 356 | 314 | 774 s |
+| sh-spec | 16 | 345 | 304 | 784 s |
+
+Gold analyses are lost and no time is saved: a word's entries of another
+class are few next to what the chart builds from the entries it keeps,
+and the tagger's errors land on exactly the words whose class the
+sentence needs. Not adopted; the experiment is not in the repository.
+
+### Profiling the parser core: copies of exactly their size
+
+`samply` on 40 held-out sentences that needed a wider beam (two to six
+seconds each): unification and copying take most of the time, as
+before, and allocation about 14% of it, most of that growing vectors.
+A copy of a unified structure was built in vectors sized like the last
+copy; copies of very different sizes alternate, so a large one after a
+small one grew its vectors several times. The copy is now built in
+scratch vectors kept by the unifier and moved into vectors of exactly
+its size at the end (one allocation each, no slack kept in the chart).
+The same readings for all 40 sentences; 299 → 283 and 314 → 292
+seconds in two runs each, alternating (6% less).

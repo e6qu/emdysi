@@ -23,7 +23,7 @@ unless stated:
 | ... with a perfect model choosing among verified corrections | 337 of 377 (89%): grammar 165 of 199 | the upper bound for any model, measured before the corpus repair; no real model measured yet |
 | False flags on edited text, per 1,000 sentences | 1.6 (first development set, 4 flags), 4.8 (second, 64), 3.7 (held out, 31 in 8,371 sentences) | most of the second set's flags point at real errors or real spelling mixes in the source (`docs/evaluation.md`) |
 | Gold analyses (ERG test suites) | MRS identical for all 2,966 reproduced; ranker 81.7% exact match held out | |
-| Speed | about 1.7 s of CPU per sentence of edited text (cold parse cache, one thread) | 2.1 s before the grammar-error variant was gated (2026-10-17); parsing is 82% of the time |
+| Speed | about 1.3 s of parsing per sentence of edited text (held-out set, cold parse cache, 2026-10-18), plus 0.25 s for the grammar-error variant | 1.7 s of CPU per sentence before giving up after an exhausted search, 2.1 s before the grammar-error variant was gated (2026-10-17); parsing is most of the time |
 | Rule data | 2,580 LanguageTool rules (579 of them checked against the parse's parts of speech), 98 slop rules, 26 GitLab rules (opt-in packs); codespell, CMUdict, UniMorph, Open English WordNet, UD English EWT vendored | emdysi is AGPL-3.0-or-later since 2026-10-17 (decision D15), so share-alike and GPL data can be used |
 
 ## Priorities
@@ -49,20 +49,30 @@ unless stated:
    model-free path could reach is bounded by `fix_bound` (142 of 199
    corrections verifiable, before the corpus repair); the problem is
    choosing among the verified ones without a model.
-3. **Speed.** 1.7 s of CPU per sentence is still minutes for a long
+3. **Speed.** 1.3 s of parsing per sentence is still minutes for a long
    document. Profiled (`timing`): the parser takes 82%, rules almost
    nothing; the 4% of sentences that reach the time limit take 31% of
    parse time and yield almost no strict readings. Next: make those
-   sentences cheaper (tag-based chart pruning, an earlier fragment
-   fallback). Done (2026-10-18): the searches after one that ran out
+   sentences cheaper. Done (2026-10-18): the searches after one that ran out
    without a strict analysis are no longer tried, 15% less parsing time
-   on the held-out set, no strict analysis lost (evaluation.md). A model adds candidate verification on top (up to 120
+   on the held-out set, no strict analysis lost (evaluation.md).
+   Measured and rejected since: fewer searches for long sentences,
+   another width for the first beam, and pruning lexical entries by a
+   statistical tagger (gold analyses lost, no time saved). What is left
+   is the cost of searches that do find the strict analysis with a wide
+   beam; making them cheaper means a faster parser core, not a cleverer
+   cascade. A model adds candidate verification on top (up to 120
    parses for a doubted sentence).
 4. **Coverage of edited text (M19).** About 4% of edited sentences get no
    strict reading (40 of a 948-sentence sample, mostly archaic or not
-   prose). Remaining recurring gaps: locative inversion, verbless *Many
-   thanks to X*, extraposed *than* clauses, bare names before nouns
-   (*Longbourn estate*).
+   prose). Locative inversion, verbless *Many thanks to X*, bare names
+   before nouns (*Longbourn estate*) and a *than* phrase after a
+   modifier now parse. Remaining recurring gaps (evaluation.md, second
+   development set): *X, Y, or both* after verbs or participles, *than*
+   with a gapped clause (*more CPU than they request*), *short for* with
+   an adjective, and documentation shorthand without a subject or
+   determiner. Both development sets have now been mined for gaps; the
+   held-out set is kept for measuring.
 5. **Machine-written prose (M21).** 24 samples of current-model prose
    (`corpora/ai-current`) found the newer tropes (bold lead-ins, emoji
    headings, reader hooks), and the `slop` pack adds bheijden/slop's
