@@ -4,7 +4,11 @@
 //! context, versions separated by '|' with the original first, index of
 //! the right one, 0 when the original is right).
 //!
-//! `cargo run --release -p emdysi-lm --features llama --example versions -- SPEC FILE.tsv`
+//! `cargo run --release -p emdysi-lm --features llama --example versions -- SPEC FILE.tsv [SCORES.tsv]`
+//!
+//! SCORES.tsv keeps every version's log-probability, number of tokens and
+//! surprise of its words alone, to try other comparisons without the
+//! model; progress goes to standard error.
 //!
 //! Each version is scored once; then, for each way of comparing them and
 //! each margin (in nats), a correction is made when the best version beats
@@ -18,19 +22,26 @@
 
 use emdysi_lm::LanguageModel;
 
-/// The scores of a question's versions by each way of comparing them.
+/// The scores of a question's versions by each way of comparing them,
+/// and the number of tokens and the surprise of the words alone of each.
 struct Scored {
     right: usize,
     plain: Vec<f64>,
     normalized: Vec<f64>,
     per_token: Vec<f64>,
+    tokens: Vec<usize>,
+    alone: Vec<f64>,
 }
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
-    let [spec, file] = &args[..] else {
-        eprintln!("usage: versions SPEC FILE.tsv");
-        std::process::exit(2);
+    let (spec, file, dump) = match &args[..] {
+        [spec, file] => (spec, file, None),
+        [spec, file, dump] => (spec, file, Some(dump)),
+        _ => {
+            eprintln!("usage: versions SPEC FILE.tsv [SCORES.tsv]");
+            std::process::exit(2);
+        }
     };
     let mut lm = emdysi_lm::open(spec).unwrap();
     let src = std::fs::read_to_string(file).unwrap();
@@ -47,6 +58,23 @@ fn main() {
         if let Some(s) = score(&mut *lm, context, &options, right) {
             all.push(s);
         }
+        if all.len() % 10 == 0 {
+            eprintln!("{} questions scored", all.len());
+        }
+    }
+    // SCORES.tsv: per question, the right version, then per version its
+    // log-probability, tokens and the surprise of its words alone.
+    if let Some(path) = dump {
+        let lines: Vec<String> = all
+            .iter()
+            .map(|s| {
+                let v: Vec<String> = (0..s.plain.len())
+                    .map(|i| format!("{:.4} {} {:.4}", s.plain[i], s.tokens[i], s.alone[i]))
+                    .collect();
+                format!("{}\t{}", s.right, v.join("\t"))
+            })
+            .collect();
+        std::fs::write(path, lines.join("\n") + "\n").unwrap();
     }
     let errors = all.iter().filter(|s| s.right > 0).count();
     let clean = all.len() - errors;
@@ -99,30 +127,33 @@ fn score(
     };
     let mut plain = Vec::new();
     let mut per_token = Vec::new();
+    let mut tokens = Vec::new();
     for o in options {
         let (lp, n) = lm.logprob(&prefix, o.trim())?;
         plain.push(lp);
         per_token.push(lp / n.max(1) as f64);
+        tokens.push(n);
     }
     // As `Decider::raw` normalizes: plus the surprise of the words alone.
     let mut words: Vec<&str> = options.iter().flat_map(|o| o.split_whitespace()).collect();
     words.sort_unstable();
     words.dedup();
     let cost = emdysi_lm::decide::alone(lm, &words)?;
-    let normalized = options
+    let alone: Vec<f64> = options
         .iter()
-        .zip(&plain)
-        .map(|(o, lp)| {
-            lp + o
-                .split_whitespace()
+        .map(|o| {
+            o.split_whitespace()
                 .map(|w| cost[words.binary_search(&w).unwrap_or(0)])
                 .sum::<f64>()
         })
         .collect();
+    let normalized = plain.iter().zip(&alone).map(|(lp, a)| lp + a).collect();
     Some(Scored {
         right,
         plain,
         normalized,
         per_token,
+        tokens,
+        alone,
     })
 }
