@@ -1868,6 +1868,150 @@ Spelling only (`en check --no-parse` on every document, against main):
 sets, three more flags, all real typos in the second development set
 (*borrowcking*, *implemenent*, *rationable*), and no false ones.
 
+## Grammar and spelling fixes with a real model
+
+The first measurements with a real model (plan M20, 2026-10-19): Gemma 4
+E2B instruction-tuned, 4-bit (`gemma-4-E2B-it-Q4_0.gguf` from
+`ggml-org/gemma-4-E2B-it-GGUF`, 2.8 GB), run in-process through
+llama.cpp on four CPU cores, and Gemma 4 E4B (4.6 GB) for comparison.
+The larger Gemma 4 models (26B-A4B, 31B; 15 GB and more at 4 bits) do not
+fit in the 16 GB of the development machine next to the parser.
+
+### Letters measure position, not English
+
+The decision engine asked every question with lettered options and read
+the probability of each letter as the first token of the reply, asked
+again in reverse order and averaged (decision D12). On the 374 questions
+of `scripts/model-eval/questions.py` (each real error as a minimal pair:
+the sentence as written and as corrected, in random order) E2B chose
+right 74.9% of the time on the half not used to fit the temperature
+(79.7% on the half it was fitted on), with a calibration error of 0.20.
+Its answers are mostly position:
+
+| Question (E2B, asked once) | yes / A | no / B |
+|---|---|---|
+| *Is this sentence correct English?* The results was clear. (yes, no) | 0.79 | 0.21 |
+| The same, options reversed (no, yes) | 0.66 (no) | 0.34 (yes) |
+| *Is this sentence correct English?* The results were clear. (yes, no) | 0.83 | 0.17 |
+| The same, options reversed (no, yes) | 0.79 (no) | 0.21 (yes) |
+
+It answers A whatever the sentence; averaged over both orders, every
+screening answer lands between 0.38 and 0.47 for "no", for wrong and
+right sentences alike, so with `screen = 0.5` no sentence the grammar
+accepts was ever corrected. Asked which word of a sentence is wrong, it
+put about 0.46 on the first word and 0.46 on the last. E4B separates
+the two sentences above better (0.70 for "yes" on the right one against
+0.50 on the wrong one, averaged) but prefers B as strongly as E2B
+prefers A.
+
+### Likelihood instead of letters
+
+A model that scores text can instead compare the versions of a sentence
+directly: the probability of each version after the context
+(`Decider::versions`, `en decide --likelihood`). On the same 374
+questions:
+
+| Model | Letters, accuracy | Likelihood, accuracy | Likelihood, calibration error (fitted temperature) |
+|---|---|---|---|
+| Gemma 4 E2B | 74.9% (held out) | 92.0% | 0.048 (0.025 at 2.3) |
+| Gemma 4 E4B | | 94.4% | 0.015 at 2.5 |
+
+The grammar and spelling choices of `assist` now use likelihood whenever
+the backend scores text (GGUF in-process; a server that echoes prompt
+log-probabilities), and letters otherwise. The larger model gains 2.4
+points.
+
+For the two other questions, whether a sentence the grammar accepts is
+worth correcting and which word is wrong, a word's *surprise* replaces
+the question (`Decider::surprise`): the negative log-probability of its
+tokens where it stands, less that of the same word in a list of the
+sentence's words, one per line. The correction matters: by raw
+probability a rare word (*kubelet*, 18.8 nats) outscores a doubled *the*
+(11.6); corrected, the doubled *the* scores 4.4 and *kubelet* -1.9. On
+the minimal pairs (E2B, `examples/surprisal`):
+
+| Measure | E2B | E4B |
+|---|---|---|
+| The corrected word is the most surprising word of the sentence as written (373) | 116 (31.1%) | 112 (30.0%) |
+| ... among the three most surprising | 179 (48.0%) | 174 (46.6%) |
+| Highest word surprise, sentence as written against corrected (AUC) | 0.603 | 0.594 |
+
+| Highest surprise at least (E2B) | Sentences as written | As corrected |
+|---|---|---|
+| 1 nat | 87% | 83% |
+| 2 | 72% | 59% |
+| 3 | 54% | 37% |
+| 4 | 32% | 18% |
+| 5 | 22% | 11% |
+| 6 | 15% | 6% |
+
+The larger model locates and screens no better: the limit is the
+measure, not the model's size.
+
+Screening by surprise is weak, but it decides only which sentences get
+candidate corrections; what is reported is decided by the likelihood
+comparison. A sentence the grammar accepts is now corrected when a word
+reaches `screen_surprise` (3 nats by default), and the edits at the three
+most surprising words are tried first.
+
+### Correct sentences changed: a margin, not a length correction
+
+The first real-error run with likelihood choices showed what the minimal
+pairs could not: most questions come from sentences that were right as
+written (screened in by a surprising word, or never fully analysed), and
+plain likelihood changes many of them, often with near certainty. Of 151
+version questions from the first 22 pairs of a quarter run, 140 had the
+original right; at the shipped threshold (0.8, temperature 1) 37 of them
+were changed. A version without a word wins by being shorter (*need to
+have all the fields* to *need all the fields*); a function word inserted
+can win too.
+
+Subtracting each version's words alone (SLOR, Lau et al. 2017) made it
+worse: in a list of words, a function word or a rare word costs much more
+than in a sentence, so the correction rewards inserting *a* (*a
+responsibility*, 100%) and rare replacements (*need to have* to *need to
+cave*, *hale*, *pave*, *save*). The 151 questions scored again offline
+(`examples/versions`, `scripts/model-eval/margins.py`):
+
+| Comparison | Errors corrected (11) | Originals changed (140) |
+|---|---|---|
+| Less the words alone, margin 10 nats | 2 | 20 |
+| Plain log-probability, margin 9 nats | 9 | 5 |
+| Plain, margin 17 nats | 3 | 0 |
+| Per token, margin 0.55 nats | 5 | 5 |
+| Plain plus 1 nat per token, margin 10.5 | 7 | 2 |
+| Plain at temperature 5, 0.8 and above the original | 8 | 2 |
+
+The writer's version deserves the benefit of the doubt: a correction must
+be far more likely than the original, and more likely than the other
+corrections. `Decider` now divides the plain log-probabilities by a
+likelihood temperature of 5 (`LIKELIHOOD_TEMPERATURE`), so that the 0.8 of
+`core.grammar-fix` takes about 7 nats against a single alternative.
+
+The same 151 questions with E4B (0.8 and above the original):
+
+| Likelihood temperature | E2B: corrected, originals changed | E4B |
+|---|---|---|
+| 3 | 9 of 11, 11 of 140 | 9 of 11, 5 of 140 |
+| 4 | 9 of 11, 9 of 140 | 8 of 11, 1 of 140 |
+| 5 | 8 of 11, 2 of 140 | 7 of 11, 0 of 140 |
+| 6 | 6 of 11, 1 of 140 | 4 of 11, 0 of 140 |
+
+E4B chooses more precisely; neither finds errors better.
+
+### Where the errors are lost
+
+On the paragraphs that writers corrected, the screen hardly tells wrong
+sentences from right ones: of the sentences of the first quarter of the
+pairs that the grammar accepts, a word reached 3 nats in 47% of the wrong
+ones and 36% of the right ones (2 nats: 62% and 63%). Of the first
+errors a perfect model catches and E2B does not, three were never
+screened in (*to* for *you to*, *file* for *the file*, *checks* for
+*checked*: highest surprise 2.9, 1.8 and 1.5 nats) and one was screened
+in with the surprise on another word, so the right edit was not among
+the versions shown (*name* for *the name*). A missing word hardly
+surprises the model where the gap is.
+
 ## Where checking time goes
 
 `timing` (`crates/emdysi-check/examples`) checks documents on one thread
