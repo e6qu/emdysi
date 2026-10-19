@@ -25,7 +25,9 @@
 //! `LOG=FILE` with a model appends each question it is asked to FILE, with
 //! its probabilities and the answer a perfect model gives: how well the
 //! model screens, locates and chooses, and the probabilities to tune the
-//! thresholds on. `LETTERS` asks for a letter even where a model that
+//! thresholds on; the questions that choose among versions of a sentence
+//! also go to FILE.versions.tsv, as `en decide --eval` reads them, to
+//! score again without parsing. `LETTERS` asks for a letter even where a model that
 //! scores text would compare the versions of a sentence by likelihood.
 //! `PACKS=packs/a.toml,...` adds packs to `core`. `EXPLAIN=FILE` writes
 //! the grammar's account of each missed grammar error (see the `why`
@@ -187,9 +189,12 @@ fn main() {
     // Appended as the questions are asked.
     let log_path = std::env::var("LOG").ok();
     let log = log_path.as_ref().map(|p| {
-        Appender::open(
-            p,
-            "# pair\tkind\tside\tquestion\toptions\tright\tchosen\tp(right)\tp(original)\tprobabilities",
+        (
+            Appender::open(
+                p,
+                "# pair\tkind\tside\tquestion\toptions\tright\tchosen\tp(right)\tp(original)\tprobabilities",
+            ),
+            Appender::open(&format!("{p}.versions.tsv"), ""),
         )
     });
     let next = Mutex::new(0usize);
@@ -236,7 +241,8 @@ fn main() {
                             let mut logged = lm.as_mut().zip(log.as_ref()).map(|(m, log)| Logged {
                                 inner: m,
                                 oracle: &oracle,
-                                log,
+                                log: &log.0,
+                                versions: &log.1,
                                 tag: format!("{i}\t{kind}\t{side}"),
                             });
                             let ask: Option<&mut dyn emdysi_check::decisions::Ask> = if oracle_on {
@@ -449,6 +455,8 @@ struct Logged<'a> {
     inner: &'a mut ModelAsk,
     oracle: &'a Oracle,
     log: &'a Appender,
+    /// The versions questions, as `en decide --eval` reads them.
+    versions: &'a Appender,
     tag: String,
 }
 
@@ -462,6 +470,23 @@ impl emdysi_check::decisions::Ask for Logged<'_> {
     fn versions(&mut self, context: &str, question: &str, versions: &[&str]) -> Option<Vec<f64>> {
         let p = self.inner.versions(context, question, versions)?;
         self.record(question, versions, &p);
+        let flat = |t: &str| t.replace(['\t', '\n', '|'], " ");
+        let right = self
+            .oracle
+            .answer(question, versions)
+            .iter()
+            .position(|&x| x > 0.5)
+            .unwrap_or(0);
+        self.versions.push(format!(
+            "{}\t{}\t{}\t{right}",
+            flat(question),
+            flat(context),
+            versions
+                .iter()
+                .map(|v| flat(v))
+                .collect::<Vec<_>>()
+                .join("|")
+        ));
         Some(p)
     }
 

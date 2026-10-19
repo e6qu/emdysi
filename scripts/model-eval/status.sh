@@ -20,7 +20,7 @@ journal="$out.journal"
 done=$(wc -l < "$journal")
 total=""
 if [ -n "$err" ] && [ -f "$err" ]; then
-  total=$(grep -o 'of [0-9]* pairs' "$err" | tail -1 | awk '{print $2}')
+  total=$(grep -o 'of [0-9]* pairs' "$err" | tail -1 | awk '{print $2}' || true)
 fi
 # When the journal was created (0 where the file system does not say).
 start=$(stat -c %W "$journal" 2>/dev/null || echo 0)

@@ -98,6 +98,36 @@ pub fn probabilities(raw: &Raw, temperature: f64) -> Vec<f64> {
     out
 }
 
+/// The surprise (negative log-probability) of each of `spans` of `src`,
+/// from scored tokens: a token counts for the span its first non-space
+/// character is in.
+fn tally(tokens: Vec<(usize, f64)>, src: &str, spans: &[(usize, usize)]) -> Vec<f64> {
+    let mut out = vec![0.0; spans.len()];
+    for (at, lp) in tokens {
+        let rest = src.get(at..).unwrap_or("");
+        let at = at + rest.len() - rest.trim_start().len();
+        if let Some(k) = spans.iter().position(|&(f, t)| f <= at && at < t) {
+            out[k] -= lp;
+        }
+    }
+    out
+}
+
+/// The surprise of each of `words` alone: scored as a list, one per line.
+pub fn alone(lm: &mut dyn LanguageModel, words: &[&str]) -> Option<Vec<f64>> {
+    let list = words.join("\n");
+    let mut at = 0;
+    let spans: Vec<(usize, usize)> = words
+        .iter()
+        .map(|w| {
+            let span = (at, at + w.len());
+            at += w.len() + 1;
+            span
+        })
+        .collect();
+    Some(tally(lm.token_logprobs("", &list)?, &list, &spans))
+}
+
 pub struct Decider<'a> {
     pub lm: &'a mut dyn LanguageModel,
     /// Calibration temperature ([`fit_temperature`]); 1 keeps the model's
@@ -110,6 +140,11 @@ pub struct Decider<'a> {
     /// versions of one sentence. Needs a backend that scores text
     /// ([`LanguageModel::logprob`]); the question is not shown.
     pub likelihood: bool,
+    /// With `likelihood`, subtract from each option's log-probability that
+    /// of its words alone (SLOR, Lau et al. 2017), when the backend scores
+    /// tokens: otherwise a version without a word is more likely only for
+    /// being shorter.
+    pub normalize: bool,
 }
 
 impl<'a> Decider<'a> {
@@ -119,6 +154,7 @@ impl<'a> Decider<'a> {
             temperature: 1.0,
             debias: true,
             likelihood: false,
+            normalize: true,
         }
     }
 
@@ -142,11 +178,25 @@ impl<'a> Decider<'a> {
             } else {
                 format!("{} ", context.trim())
             };
-            let lp = options
+            let mut lp = options
                 .iter()
                 .map(|o| self.lm.logprob(&prefix, o.trim()).map(|(lp, _)| lp))
                 .collect::<Option<Vec<f64>>>()
                 .ok_or(DecideError::Unsupported)?;
+            if self.normalize {
+                // The words of all options, scored alone in one list.
+                let mut words: Vec<&str> =
+                    options.iter().flat_map(|o| o.split_whitespace()).collect();
+                words.sort_unstable();
+                words.dedup();
+                if let Some(cost) = alone(&mut *self.lm, &words) {
+                    for (l, o) in lp.iter_mut().zip(options) {
+                        for w in o.split_whitespace() {
+                            *l += cost[words.binary_search(&w).unwrap_or(0)];
+                        }
+                    }
+                }
+            }
             return Ok(Raw { orders: vec![lp] });
         }
         let identity: Vec<usize> = (0..n).collect();
@@ -226,39 +276,13 @@ impl<'a> Decider<'a> {
         } else {
             format!("{} ", context.trim())
         };
-        // A token counts for the word its first non-space character is in.
-        let tally = |tokens: Vec<(usize, f64)>, src: &str, spans: &[(usize, usize)]| {
-            let mut out = vec![0.0; spans.len()];
-            for (at, lp) in tokens {
-                let rest = src.get(at..).unwrap_or("");
-                let at = at + rest.len() - rest.trim_start().len();
-                if let Some(k) = spans.iter().position(|&(f, t)| f <= at && at < t) {
-                    out[k] -= lp;
-                }
-            }
-            out
-        };
         let here = self
             .lm
             .token_logprobs(&prefix, text)
             .ok_or(DecideError::Unsupported)?;
         let here = tally(here, text, spans);
         let words: Vec<&str> = spans.iter().map(|&(f, t)| &text[f..t]).collect();
-        let list = words.join("\n");
-        let mut at = 0;
-        let listed: Vec<(usize, usize)> = words
-            .iter()
-            .map(|w| {
-                let span = (at, at + w.len());
-                at += w.len() + 1;
-                span
-            })
-            .collect();
-        let alone = self
-            .lm
-            .token_logprobs("", &list)
-            .ok_or(DecideError::Unsupported)?;
-        let alone = tally(alone, &list, &listed);
+        let alone = alone(&mut *self.lm, &words).ok_or(DecideError::Unsupported)?;
         Ok(here.iter().zip(alone).map(|(h, a)| h - a).collect())
     }
 
@@ -418,11 +442,23 @@ mod tests {
             Script::parse("first\t\tA=0.9 B=0.1\nlogprob\twere\t-1\nlogprob\twas\t-2\n").unwrap();
         let mut d = Decider::new(&mut lm);
         d.likelihood = true;
-        let p = d
+        d.normalize = false;
+        let raw = d
             .choose("", "Which?", &["They was here.", "They were here."])
             .unwrap();
         // Three words each: -6 against -3.
-        assert!((p[1] - 1.0 / (1.0 + (-3.0f64).exp())).abs() < 1e-9, "{p:?}");
+        assert!(
+            (raw[1] - 1.0 / (1.0 + (-3.0f64).exp())).abs() < 1e-9,
+            "{raw:?}"
+        );
+        // Less the words alone (the scripted model scores each word in the
+        // list as it does in the sentence: |was| -2, the others -1): -2
+        // against 0.
+        d.normalize = true;
+        let p = d
+            .choose("", "Which?", &["They was here.", "They were here."])
+            .unwrap();
+        assert!((p[1] - 1.0 / (1.0 + (-2.0f64).exp())).abs() < 1e-9, "{p:?}");
         // Versions of a sentence are scored by likelihood without asking.
         d.likelihood = false;
         let v = d
