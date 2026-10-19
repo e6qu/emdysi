@@ -60,9 +60,14 @@ unless stated:
    parses for a doubted sentence).
 4. **Coverage of edited text (M19).** About 4% of edited sentences get no
    strict reading (40 of a 948-sentence sample, mostly archaic or not
-   prose). Remaining recurring gaps: locative inversion, verbless *Many
-   thanks to X*, extraposed *than* clauses, bare names before nouns
-   (*Longbourn estate*).
+   prose). Locative inversion, verbless *Many thanks to X*, bare names
+   before nouns (*Longbourn estate*) and a *than* phrase after a
+   modifier now parse. Remaining recurring gaps (evaluation.md, second
+   development set): *X, Y, or both* after verbs or participles, *than*
+   with a gapped clause (*more CPU than they request*), *short for* with
+   an adjective, and documentation shorthand without a subject or
+   determiner. Both development sets have now been mined for gaps; the
+   held-out set is kept for measuring.
 5. **Machine-written prose (M21).** 24 samples of current-model prose
    (`corpora/ai-current`) found the newer tropes (bold lead-ins, emoji
    headings, reader hooks), and the `slop` pack adds bheijden/slop's

@@ -2293,3 +2293,17 @@ the configured beam for sentences of 50 words or more would save 207
 seconds (2%) on the held-out set, and lose one strict analysis and one
 search that proves a sentence outside the grammar; before giving up
 after an exhausted search it would have saved 727. Not adopted.
+
+### Measured: the width of the first beam
+
+The cascade starts with a beam of 20 before the configured 40. On the
+first development set without the parse cache, after giving up after an
+exhausted search (1,276 seconds, 1,456 before it):
+
+| First beam | Parsing, grammar | Strict analyses | False flags |
+|---|---|---|---|
+| 20 (as is) | 2,968 s | 2,027 | 4 |
+| 30 | 3,021 s | 2,029 | 4, the same |
+| 40 (none narrower) | 3,066 s | 2,020 | 4, the same |
+
+Kept at 20.
