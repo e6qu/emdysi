@@ -2032,6 +2032,25 @@ Whatever is read from one pass over the sentence, this model finds
 errors about as well as by surprise (AUC 0.60). What it does well is
 compare whole versions.
 
+Without a model that locates the error, the right edit is rarely among
+the versions shown. Where `fix_bound` loses the writer's correction of
+the 197 grammar errors when the edits keep their own order (`NOFOCUS=1`,
+2026-10-19):
+
+| Stage | Errors |
+|---|---|
+| Reachable (a sentence the grammar rejects) | 38 |
+| Reachable once the sentence is screened in | 39 |
+| Past the 120 candidates parsed | 60 |
+| Past the 27 versions shown | 32 |
+| Not parsed, not a candidate, corrected sentence not strict, or across sentences | 28 |
+
+Put every sentence the grammar accepts to E2B (`screen_surprise` off, an
+eighth of the pairs, 19 done): when the writer's correction was among
+the versions, the model chose it 7 times out of 7; it gained nothing over
+the grammar alone because, on those pairs, the correction was never
+among them.
+
 ## Where checking time goes
 
 `timing` (`crates/emdysi-check/examples`) checks documents on one thread
