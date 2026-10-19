@@ -100,9 +100,13 @@ const LONGEST: Duration = Duration::from_secs(10);
 /// sentence has up to `MAX_CANDIDATES` of them.
 const BUDGET: Duration = Duration::from_secs(30);
 
-const GRAMMAR_QUESTION: &str =
+/// The question that asks the model to choose among a sentence and its
+/// corrections the grammar accepts (the original first).
+pub const GRAMMAR_QUESTION: &str =
     "Which version of the sentence is correct English, as the writer meant it?";
-const SPELLING_QUESTION: &str = "Which version of the sentence did the writer mean?";
+/// The question that asks the model to choose among a sentence's spelling
+/// suggestions.
+pub const SPELLING_QUESTION: &str = "Which version of the sentence did the writer mean?";
 
 /// `text` with the characters `from..to` replaced.
 fn replace(text: &str, from: usize, to: usize, rep: &str) -> String {
@@ -805,16 +809,48 @@ fn real_word_edits(s: &Sentence) -> Vec<Edit> {
 /// follows it.
 pub const SCREEN_QUESTION: &str = "Is this sentence correct English, as written?";
 
+/// When a sentence the grammar accepts is worth correcting: when the
+/// model doubts it, asked (`doubt`: it answers "no" with that probability
+/// or more), or, with a model that scores text, when one of its words is
+/// `surprise` nats or more surprising where it stands than alone.
+#[derive(Debug, Clone, Copy)]
+pub struct Screen {
+    pub doubt: f64,
+    pub surprise: f64,
+}
+
+/// The default `surprise` of [`Screen`] (`screen_surprise` of
+/// `core.grammar-fix`).
+pub const SCREEN_SURPRISE: f64 = 3.0;
+
+/// Most words the edits are tried at first, the most surprising ones.
+const LOCATE_WORDS: usize = 3;
+
+/// The model's surprise at each word of `s` (see [`Ask::surprise`]), with
+/// the words' character spans, when it can score text.
+fn surprise(ask: &mut dyn Ask, context: &str, s: &Sentence) -> Option<Vec<(usize, usize, f64)>> {
+    let words = word_options(s);
+    let bytes: Vec<usize> = s
+        .original
+        .char_indices()
+        .map(|(b, _)| b)
+        .chain([s.original.len()])
+        .collect();
+    let spans: Vec<(usize, usize)> = words.iter().map(|w| (bytes[w.0], bytes[w.1])).collect();
+    let v = ask.surprise(context, &s.original, &spans)?;
+    Some(words.iter().zip(v).map(|(w, x)| (w.0, w.1, x)).collect())
+}
+
 /// Grammar corrections chosen by the model (see the module comment). A
-/// sentence the strict grammar accepts is considered only with `screen`:
-/// when the model doubts it (answers "no" with that probability or more),
-/// since an error can leave a sentence grammatical (|for| for |to|).
+/// sentence the strict grammar accepts is considered only with `screen`
+/// (see [`Screen`]), since an error can leave a sentence grammatical
+/// (|for| for |to|).
 pub fn grammar(
     erg: &Erg,
     a: &Analysis,
     ask: &mut dyn Ask,
     threshold: f64,
-    screen: Option<f64>,
+    screen: Option<Screen>,
 ) -> Vec<Correction> {
     let mut out = Vec::new();
     for (si, s) in a.sentences.iter().enumerate() {
@@ -833,20 +869,41 @@ pub fn grammar(
             let stopped = with_full_stop(text);
             stopped.trim() != text.trim() && strict(erg, &stopped)
         };
-        if grammatical {
-            let Some(min) = screen else { continue };
-            let question = format!("{SCREEN_QUESTION}\n\nSentence: {}", s.original.trim());
-            let doubt = ask
-                .ask(&context(a, si), &question, &["yes", "no"])
-                .map_or(0.0, |p| p[1]);
-            if doubt < min {
+        if grammatical && screen.is_none() {
+            continue;
+        }
+        let ctx = context(a, si);
+        let surprised = surprise(ask, &ctx, s);
+        if let (true, Some(min)) = (grammatical, screen) {
+            let doubted = match &surprised {
+                Some(words) => words.iter().any(|w| w.2 >= min.surprise),
+                None => {
+                    let question = format!("{SCREEN_QUESTION}\n\nSentence: {}", s.original.trim());
+                    let doubt = ask
+                        .ask(&ctx, &question, &["yes", "no"])
+                        .map_or(0.0, |p| p[1]);
+                    doubt >= min.doubt
+                }
+            };
+            if !doubted {
                 continue;
             }
         }
-        let ctx = context(a, si);
-        // The edits at the word the model says is wrong come first: in a
-        // sentence the grammar accepts, most edits parse too.
-        let focus = locate(ask, &ctx, s);
+        // The edits at the word the model finds most surprising, or says is
+        // wrong, come first: in a sentence the grammar accepts, most edits
+        // parse too.
+        let focus = match surprised {
+            Some(mut words) => {
+                words.retain(|w| w.2 > 0.0);
+                words.sort_by(|x, y| y.2.total_cmp(&x.2));
+                words
+                    .iter()
+                    .take(LOCATE_WORDS)
+                    .map(|w| (w.0, w.1))
+                    .collect()
+            }
+            None => locate(ask, &ctx, s),
+        };
         let cands = grammar_candidates(erg, s, &focus);
         if cands.is_empty() {
             continue;
@@ -857,7 +914,7 @@ pub fn grammar(
             let options: Vec<&str> = std::iter::once(s.original.trim())
                 .chain(group.iter().map(|&i| cands[i].1.trim()))
                 .collect();
-            let probs = ask.ask(&ctx, GRAMMAR_QUESTION, &options)?;
+            let probs = ask.versions(&ctx, GRAMMAR_QUESTION, &options)?;
             let (best, &p) = probs
                 .iter()
                 .enumerate()
@@ -925,7 +982,7 @@ pub fn spelling(
         return None;
     }
     let options: Vec<&str> = cands.iter().map(|c| c.1.trim()).collect();
-    let probs = ask.ask(&context(a, si), SPELLING_QUESTION, &options)?;
+    let probs = ask.versions(&context(a, si), SPELLING_QUESTION, &options)?;
     let (best, &p) = probs.iter().enumerate().max_by(|x, y| x.1.total_cmp(y.1))?;
     if p < threshold {
         return None;

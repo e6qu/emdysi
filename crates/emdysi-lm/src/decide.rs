@@ -105,6 +105,11 @@ pub struct Decider<'a> {
     pub temperature: f64,
     /// Ask again with the options reversed and average the two answers.
     pub debias: bool,
+    /// Score each option by the model's probability of its text after the
+    /// context, instead of asking for a letter: for options that are
+    /// versions of one sentence. Needs a backend that scores text
+    /// ([`LanguageModel::logprob`]); the question is not shown.
+    pub likelihood: bool,
 }
 
 impl<'a> Decider<'a> {
@@ -113,6 +118,7 @@ impl<'a> Decider<'a> {
             lm,
             temperature: 1.0,
             debias: true,
+            likelihood: false,
         }
     }
 
@@ -129,6 +135,19 @@ impl<'a> Decider<'a> {
         }
         if n > LETTERS.len() {
             return Err(DecideError::TooManyOptions(n));
+        }
+        if self.likelihood {
+            let prefix = if context.trim().is_empty() {
+                String::new()
+            } else {
+                format!("{} ", context.trim())
+            };
+            let lp = options
+                .iter()
+                .map(|o| self.lm.logprob(&prefix, o.trim()).map(|(lp, _)| lp))
+                .collect::<Option<Vec<f64>>>()
+                .ok_or(DecideError::Unsupported)?;
+            return Ok(Raw { orders: vec![lp] });
         }
         let identity: Vec<usize> = (0..n).collect();
         let mut orders = vec![identity.clone()];
@@ -167,6 +186,80 @@ impl<'a> Decider<'a> {
     ) -> Result<Vec<f64>, DecideError> {
         let raw = self.raw(context, question, options)?;
         Ok(probabilities(&raw, self.temperature))
+    }
+
+    /// The probability of each of `versions` of one sentence: by their
+    /// likelihood after the context when the model scores text (much more
+    /// accurate for small models than a letter, which they choose largely
+    /// by position), else as the answer to `question`.
+    pub fn versions(
+        &mut self,
+        context: &str,
+        question: &str,
+        versions: &[&str],
+    ) -> Result<Vec<f64>, DecideError> {
+        let letters = !self.likelihood;
+        self.likelihood = true;
+        let p = self.choose(context, question, versions);
+        self.likelihood = !letters;
+        match p {
+            Err(DecideError::Unsupported) if letters => self.choose(context, question, versions),
+            p => p,
+        }
+    }
+
+    /// How surprising each of `spans` (byte ranges of words in `text`) is
+    /// where it stands, after `context`: the negative log-probability of
+    /// its tokens in the text, less that of the same word among the text's
+    /// words listed one per line. A rare word is surprising anywhere and
+    /// scores about 0; a word that does not fit where it stands (a doubled
+    /// *the*, *allows to*) scores high, and so does the word after a gap.
+    /// Needs a backend that scores tokens ([`LanguageModel::token_logprobs`]).
+    pub fn surprise(
+        &mut self,
+        context: &str,
+        text: &str,
+        spans: &[(usize, usize)],
+    ) -> Result<Vec<f64>, DecideError> {
+        let prefix = if context.trim().is_empty() {
+            String::new()
+        } else {
+            format!("{} ", context.trim())
+        };
+        // A token counts for the word its first non-space character is in.
+        let tally = |tokens: Vec<(usize, f64)>, src: &str, spans: &[(usize, usize)]| {
+            let mut out = vec![0.0; spans.len()];
+            for (at, lp) in tokens {
+                let rest = src.get(at..).unwrap_or("");
+                let at = at + rest.len() - rest.trim_start().len();
+                if let Some(k) = spans.iter().position(|&(f, t)| f <= at && at < t) {
+                    out[k] -= lp;
+                }
+            }
+            out
+        };
+        let here = self
+            .lm
+            .token_logprobs(&prefix, text)
+            .ok_or(DecideError::Unsupported)?;
+        let here = tally(here, text, spans);
+        let words: Vec<&str> = spans.iter().map(|&(f, t)| &text[f..t]).collect();
+        let list = words.join("\n");
+        let mut at = 0;
+        let listed: Vec<(usize, usize)> = words
+            .iter()
+            .map(|w| {
+                let span = (at, at + w.len());
+                at += w.len() + 1;
+                span
+            })
+            .collect();
+        let alone = self
+            .lm
+            .token_logprobs("", &list)
+            .ok_or(DecideError::Unsupported)?;
+        let alone = tally(alone, &list, &listed);
+        Ok(here.iter().zip(alone).map(|(h, a)| h - a).collect())
     }
 
     /// The probability that `statement` is true.
@@ -316,6 +409,52 @@ mod tests {
         d.debias = false;
         let p = d.choose("", "Which?", &["x", "y"]).unwrap();
         assert!((p[0] - 0.6).abs() < 1e-9);
+    }
+
+    #[test]
+    fn choose_by_likelihood() {
+        // The letters favour A, the texts favour the second option.
+        let mut lm =
+            Script::parse("first\t\tA=0.9 B=0.1\nlogprob\twere\t-1\nlogprob\twas\t-2\n").unwrap();
+        let mut d = Decider::new(&mut lm);
+        d.likelihood = true;
+        let p = d
+            .choose("", "Which?", &["They was here.", "They were here."])
+            .unwrap();
+        // Three words each: -6 against -3.
+        assert!((p[1] - 1.0 / (1.0 + (-3.0f64).exp())).abs() < 1e-9, "{p:?}");
+        // Versions of a sentence are scored by likelihood without asking.
+        d.likelihood = false;
+        let v = d
+            .versions("", "Which?", &["They was here.", "They were here."])
+            .unwrap();
+        assert_eq!(v, p);
+        assert!(!d.likelihood);
+        // A backend that cannot score text cannot answer, except with
+        // letters.
+        let mut lm = Script::parse("first\t\tA=0.9 B=0.1\n").unwrap();
+        let mut d = Decider::new(&mut lm);
+        d.debias = false;
+        let v = d.versions("", "Which?", &["x", "y"]).unwrap();
+        assert!((v[0] - 0.9).abs() < 1e-9);
+        d.likelihood = true;
+        assert_eq!(
+            d.choose("", "Which?", &["x", "y"]),
+            Err(DecideError::Unsupported)
+        );
+    }
+
+    #[test]
+    fn surprise_of_words() {
+        // The second |the| is unlikely after the first; alone, every word
+        // has the default -1.
+        let mut lm = Script::parse("logprob\tthe the\t-6\nlogprob\tkubelet\t-9\n").unwrap();
+        let mut d = Decider::new(&mut lm);
+        let text = "Restart the the kubelet.";
+        let spans = [(0, 7), (8, 11), (12, 15), (16, 24)];
+        let s = d.surprise("", text, &spans).unwrap();
+        // |kubelet.| does not end with |kubelet|: -1 like the rest.
+        assert_eq!(s, vec![0.0, 0.0, 5.0, 0.0]);
     }
 
     #[test]

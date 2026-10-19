@@ -28,6 +28,12 @@ pub trait LanguageModel {
     /// Log-probability (natural log) of `text` following `prefix`, and the
     /// number of tokens of `text`. `None` if the backend cannot score text.
     fn logprob(&mut self, prefix: &str, text: &str) -> Option<(f64, usize)>;
+    /// Log-probability of each token of `text` following `prefix`, with the
+    /// byte offset in `text` where the token starts (a token that starts in
+    /// `prefix` counts from 0). `None` if the backend cannot score tokens.
+    fn token_logprobs(&mut self, _prefix: &str, _text: &str) -> Option<Vec<(usize, f64)>> {
+        None
+    }
     /// Generate a continuation of a chat prompt: `system` instructions and
     /// a `user` message. `temperature` 0 is greedy; `seed` makes sampling
     /// reproducible. Generation stops at the end of a line.

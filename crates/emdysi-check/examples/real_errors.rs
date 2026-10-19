@@ -19,6 +19,11 @@
 //! sentence the writer's correction has (an upper bound for any model).
 //! Either way the number of questions asked is reported. `SHARD=i/n`
 //! checks only every n-th pair, starting with the i-th.
+//! `LOG=FILE` with a model writes each question it is asked to FILE, with
+//! its probabilities and the answer a perfect model gives: how well the
+//! model screens, locates and chooses, and the probabilities to tune the
+//! thresholds on. `LETTERS` asks for a letter even where a model that
+//! scores text would compare the versions of a sentence by likelihood.
 //! `PACKS=packs/a.toml,...` adds packs to `core`. `EXPLAIN=FILE` writes
 //! the grammar's account of each missed grammar error (see the `why`
 //! example).
@@ -154,6 +159,9 @@ fn main() {
     // `EXPLAIN=FILE`: the grammar's account of each missed grammar error.
     let explain_path = std::env::var("EXPLAIN").ok();
     let explain: Option<Mutex<Vec<String>>> = explain_path.as_ref().map(|_| Mutex::default());
+    // `LOG=FILE`: each question asked of the model, with the perfect answer.
+    let log_path = std::env::var("LOG").ok();
+    let log: Mutex<Vec<String>> = Mutex::default();
     let next = Mutex::new(0usize);
     std::thread::scope(|s| {
         let threads = std::env::var("THREADS")
@@ -164,6 +172,7 @@ fn main() {
             s.spawn(|| {
                 let mut lm = model();
                 let oracle_on = std::env::var_os("ORACLE").is_some();
+                let truth_on = oracle_on || log_path.is_some();
                 loop {
                     let i = {
                         let mut n = next.lock().unwrap();
@@ -177,7 +186,7 @@ fn main() {
                     // The corrected sentences as the checker sees them (the
                     // rendered Markdown, without link targets or code marks).
                     let mut oracle = Oracle {
-                        truth: if oracle_on {
+                        truth: if truth_on {
                             analyze(&erg, after, Format::Markdown, &opts)
                                 .sentences
                                 .iter()
@@ -188,22 +197,32 @@ fn main() {
                             String::new()
                         },
                     };
-                    let mut check = |text: &str, from: usize, to: usize| -> Vec<Diagnostic> {
-                        let a = analyze(&erg, text, Format::Markdown, &opts);
-                        let ask: Option<&mut dyn emdysi_check::decisions::Ask> = if oracle_on {
-                            Some(&mut oracle)
-                        } else {
-                            lm.as_mut()
-                                .map(|m| m as &mut dyn emdysi_check::decisions::Ask)
+                    let mut check =
+                        |text: &str, from: usize, to: usize, side: &str| -> Vec<Diagnostic> {
+                            let a = analyze(&erg, text, Format::Markdown, &opts);
+                            let mut logged =
+                                lm.as_mut().filter(|_| log_path.is_some()).map(|m| Logged {
+                                    inner: m,
+                                    oracle: &oracle,
+                                    log: &log,
+                                    tag: format!("{i}\t{kind}\t{side}"),
+                                });
+                            let ask: Option<&mut dyn emdysi_check::decisions::Ask> = if oracle_on {
+                                Some(&mut oracle)
+                            } else if let Some(l) = logged.as_mut() {
+                                Some(l)
+                            } else {
+                                lm.as_mut()
+                                    .map(|m| m as &mut dyn emdysi_check::decisions::Ask)
+                            };
+                            checker
+                                .check_with(&erg, &a, ask)
+                                .into_iter()
+                                .filter(|d| d.range.start < to && from < d.range.end)
+                                .collect()
                         };
-                        checker
-                            .check_with(&erg, &a, ask)
-                            .into_iter()
-                            .filter(|d| d.range.start < to && from < d.range.end)
-                            .collect()
-                    };
-                    let hits = check(before, from, to);
-                    let false_hits = check(after, afrom, ato);
+                    let hits = check(before, from, to, "before");
+                    let false_hits = check(after, afrom, ato, "after");
                     // Why a grammar error was missed: the grammar's account
                     // of each sentence the change touches.
                     if hits.is_empty() && kind.starts_with("grammar") {
@@ -252,6 +271,18 @@ fn main() {
         out.sort();
         std::fs::write(path, out.join("\n")).unwrap();
     }
+    if let Some(path) = &log_path {
+        let mut log = log.into_inner().unwrap();
+        log.sort_by_key(|l| l.split('\t').next().and_then(|n| n.parse::<usize>().ok()));
+        std::fs::write(
+            path,
+            "# pair\tkind\tside\tquestion\toptions\tright\tchosen\tp(right)\tp(original)\tprobabilities\n"
+                .to_string()
+                + &log.join("\n")
+                + "\n",
+        )
+        .unwrap();
+    }
     let mut lines = lines.into_inner().unwrap();
     lines.sort();
     std::fs::write(
@@ -296,6 +327,33 @@ impl emdysi_check::decisions::Ask for ModelAsk {
             .choose(context, question, options)
             .ok()
     }
+
+    fn versions(&mut self, context: &str, question: &str, versions: &[&str]) -> Option<Vec<f64>> {
+        // LETTERS: ask for a letter even when the model scores text.
+        if std::env::var_os("LETTERS").is_some() {
+            return self.ask(context, question, versions);
+        }
+        QUESTIONS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        emdysi_lm::decide::Decider::new(&mut *self.0)
+            .versions(context, question, versions)
+            .ok()
+    }
+
+    fn surprise(
+        &mut self,
+        context: &str,
+        text: &str,
+        spans: &[(usize, usize)],
+    ) -> Option<Vec<f64>> {
+        // LETTERS: the screening and locating questions instead.
+        if std::env::var_os("LETTERS").is_some() {
+            return None;
+        }
+        QUESTIONS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        emdysi_lm::decide::Decider::new(&mut *self.0)
+            .surprise(context, text, spans)
+            .ok()
+    }
 }
 
 fn model() -> Option<ModelAsk> {
@@ -320,11 +378,17 @@ struct Oracle {
 impl emdysi_check::decisions::Ask for Oracle {
     fn ask(&mut self, _context: &str, question: &str, options: &[&str]) -> Option<Vec<f64>> {
         QUESTIONS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        Some(self.answer(question, options))
+    }
+}
+
+impl Oracle {
+    fn answer(&self, question: &str, options: &[&str]) -> Vec<f64> {
         if let Some(sentence) = question
             .strip_prefix(emdysi_check::assist::LOCATE_QUESTION)
             .and_then(|q| q.split("Sentence: ").nth(1))
         {
-            return Some(locate(sentence.trim(), &self.truth, options));
+            return locate(sentence.trim(), &self.truth, options);
         }
         // Screening: the sentence is correct if the corrected text has it.
         if let Some(sentence) = question
@@ -332,7 +396,7 @@ impl emdysi_check::decisions::Ask for Oracle {
             .and_then(|q| q.split("Sentence: ").nth(1))
         {
             let ok = self.truth.contains(sentence.trim());
-            return Some(if ok { vec![1.0, 0.0] } else { vec![0.0, 1.0] });
+            return if ok { vec![1.0, 0.0] } else { vec![0.0, 1.0] };
         }
         // An option that is a whole corrected sentence, else one inside
         // one: |will generate ...| is inside |This will generate ...|.
@@ -344,11 +408,136 @@ impl emdysi_check::decisions::Ask for Oracle {
         if std::env::var_os("SPELLDBG").is_some() {
             eprintln!("Q {question:?}\n  options {options:?}\n  right {right}");
         }
-        Some(
-            (0..options.len())
-                .map(|i| if i == right { 1.0 } else { 0.0 })
-                .collect(),
-        )
+        (0..options.len())
+            .map(|i| if i == right { 1.0 } else { 0.0 })
+            .collect()
+    }
+}
+
+/// The model, with each question it answers logged next to the perfect
+/// answer (`LOG`): pair, kind of error, side (the text before or after the
+/// fix), kind of question, number of options, the perfect answer, the
+/// model's choice, its probabilities for both and for the first option
+/// (the original, in a grammar question), and all its probabilities.
+struct Logged<'a> {
+    inner: &'a mut ModelAsk,
+    oracle: &'a Oracle,
+    log: &'a Mutex<Vec<String>>,
+    tag: String,
+}
+
+impl emdysi_check::decisions::Ask for Logged<'_> {
+    fn ask(&mut self, context: &str, question: &str, options: &[&str]) -> Option<Vec<f64>> {
+        let p = self.inner.ask(context, question, options)?;
+        self.record(question, options, &p);
+        Some(p)
+    }
+
+    fn versions(&mut self, context: &str, question: &str, versions: &[&str]) -> Option<Vec<f64>> {
+        let p = self.inner.versions(context, question, versions)?;
+        self.record(question, versions, &p);
+        Some(p)
+    }
+
+    /// Logged as a question of kind `surprise-wrong` or `surprise-right`
+    /// (the perfect screening answer) whose options are the words, the
+    /// right one the word a perfect model names as wrong; the
+    /// probabilities are the words' surprise, and `p(original)` the
+    /// highest.
+    fn surprise(
+        &mut self,
+        context: &str,
+        text: &str,
+        spans: &[(usize, usize)],
+    ) -> Option<Vec<f64>> {
+        use emdysi_check::assist::*;
+        let v = self.inner.surprise(context, text, spans)?;
+        // The words labelled as `assist::word_options` labels them.
+        let mut labels: Vec<String> = Vec::new();
+        for &(f, t) in spans {
+            let core = text[f..t].trim_matches(|c: char| !c.is_alphanumeric());
+            let seen = labels
+                .iter()
+                .filter(|l| l.split(" (").next() == Some(core))
+                .count();
+            labels.push(if seen == 0 {
+                core.to_string()
+            } else {
+                format!("{core} ({})", seen + 1)
+            });
+        }
+        let labels: Vec<&str> = labels.iter().map(String::as_str).collect();
+        let sentence = text.trim();
+        let wrong = self.oracle.answer(
+            &format!("{SCREEN_QUESTION}\n\nSentence: {sentence}"),
+            &["yes", "no"],
+        )[1] > 0.5;
+        let right = self
+            .oracle
+            .answer(
+                &format!("{LOCATE_QUESTION}\n\nSentence: {sentence}"),
+                &labels,
+            )
+            .iter()
+            .position(|&p| p > 0.5)
+            .unwrap_or(0);
+        let argmax = (0..v.len())
+            .max_by(|&a, &b| v[a].total_cmp(&v[b]))
+            .unwrap_or(0);
+        let peak = v.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+        let all = v
+            .iter()
+            .map(|x| format!("{x:.2}"))
+            .collect::<Vec<_>>()
+            .join(",");
+        let kind = if wrong {
+            "surprise-wrong"
+        } else {
+            "surprise-right"
+        };
+        self.log.lock().unwrap().push(format!(
+            "{}\t{kind}\t{}\t{right}\t{argmax}\t{:.2}\t{peak:.2}\t{all}",
+            self.tag,
+            v.len(),
+            v.get(right).copied().unwrap_or(0.0),
+        ));
+        Some(v)
+    }
+}
+
+impl Logged<'_> {
+    fn record(&self, question: &str, options: &[&str], p: &[f64]) {
+        use emdysi_check::assist::*;
+        let argmax = |v: &[f64]| {
+            (0..v.len())
+                .max_by(|&a, &b| v[a].total_cmp(&v[b]))
+                .unwrap_or(0)
+        };
+        let right = argmax(&self.oracle.answer(question, options));
+        let kind = if question.starts_with(LOCATE_QUESTION) {
+            "locate"
+        } else if question.starts_with(SCREEN_QUESTION) {
+            "screen"
+        } else if question == GRAMMAR_QUESTION {
+            "grammar"
+        } else if question == SPELLING_QUESTION {
+            "spelling"
+        } else {
+            "other"
+        };
+        let all = p
+            .iter()
+            .map(|x| format!("{x:.4}"))
+            .collect::<Vec<_>>()
+            .join(",");
+        self.log.lock().unwrap().push(format!(
+            "{}\t{kind}\t{}\t{right}\t{}\t{:.4}\t{:.4}\t{all}",
+            self.tag,
+            options.len(),
+            argmax(p),
+            p[right],
+            p[0]
+        ));
     }
 }
 

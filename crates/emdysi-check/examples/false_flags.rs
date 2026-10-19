@@ -352,6 +352,23 @@ impl emdysi_check::decisions::Ask for ModelAsk {
             .choose(context, question, options)
             .ok()
     }
+
+    fn versions(&mut self, context: &str, question: &str, versions: &[&str]) -> Option<Vec<f64>> {
+        emdysi_lm::decide::Decider::new(&mut *self.0)
+            .versions(context, question, versions)
+            .ok()
+    }
+
+    fn surprise(
+        &mut self,
+        context: &str,
+        text: &str,
+        spans: &[(usize, usize)],
+    ) -> Option<Vec<f64>> {
+        emdysi_lm::decide::Decider::new(&mut *self.0)
+            .surprise(context, text, spans)
+            .ok()
+    }
 }
 
 fn model() -> Option<ModelAsk> {

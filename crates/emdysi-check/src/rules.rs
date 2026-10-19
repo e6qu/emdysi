@@ -343,7 +343,11 @@ pub enum Kind {
     /// Grammar corrections the strict grammar accepts and a decision model
     /// prefers with probability `threshold` or more (see `assist`); without
     /// a model, nothing.
-    AssistedGrammar { threshold: f64, screen: Option<f64> },
+    AssistedGrammar {
+        threshold: f64,
+        screen: Option<f64>,
+        screen_surprise: f64,
+    },
     /// Sentences without a strict (fully grammatical) analysis.
     Grammar,
     /// Specific grammatical errors, named by the grammar-error variant of
@@ -657,6 +661,7 @@ impl Rule {
             "assisted-grammar" => Kind::AssistedGrammar {
                 threshold: num("threshold").unwrap_or(0.8),
                 screen: num("screen"),
+                screen_surprise: num("screen_surprise").unwrap_or(crate::assist::SCREEN_SURPRISE),
             },
             "grammar" => Kind::Grammar,
             "grammar-errors" => Kind::GrammarErrors,
@@ -1086,9 +1091,18 @@ impl Rule {
                 let hits = crate::decisions::run_decide(d, a, ask);
                 found.extend(hits.into_iter().map(|h| self.hit_diag(h)));
             }
-        } else if let Kind::AssistedGrammar { threshold, screen } = &self.kind {
+        } else if let Kind::AssistedGrammar {
+            threshold,
+            screen,
+            screen_surprise,
+        } = &self.kind
+        {
             if let Some(ask) = ask {
-                for c in crate::assist::grammar(erg, a, ask, *threshold, *screen) {
+                let screen = screen.map(|p| crate::assist::Screen {
+                    doubt: p,
+                    surprise: *screen_surprise,
+                });
+                for c in crate::assist::grammar(erg, a, ask, *threshold, screen) {
                     let mut d = self.diag(a, c.sentence, c.from, c.to, &c.text);
                     d.message = d
                         .message

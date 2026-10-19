@@ -133,6 +133,77 @@ fn an_error_the_grammar_accepts_needs_the_model_to_doubt_it() {
     assert_eq!(d[0].replacement.as_deref(), Some("in"));
 }
 
+/// A model that scores text: surprised by `word` where it stands, and
+/// prefers the version containing `want`; never asked to screen or locate.
+struct Surprised {
+    word: &'static str,
+    surprise: f64,
+    want: &'static str,
+}
+
+impl Ask for Surprised {
+    fn ask(&mut self, context: &str, question: &str, options: &[&str]) -> Option<Vec<f64>> {
+        assert!(
+            !question.starts_with(emdysi_check::assist::SCREEN_QUESTION)
+                && !question.starts_with(emdysi_check::assist::LOCATE_QUESTION),
+            "{question}"
+        );
+        Prefers {
+            want: self.want,
+            asked: Vec::new(),
+        }
+        .ask(context, question, options)
+    }
+
+    fn surprise(
+        &mut self,
+        _context: &str,
+        text: &str,
+        spans: &[(usize, usize)],
+    ) -> Option<Vec<f64>> {
+        Some(
+            spans
+                .iter()
+                .map(|&(f, t)| {
+                    if &text[f..t] == self.word {
+                        self.surprise
+                    } else {
+                        0.0
+                    }
+                })
+                .collect(),
+        )
+    }
+}
+
+#[test]
+fn a_surprising_word_screens_a_sentence_the_grammar_accepts() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let text = "He is interested on chess.\n";
+    let a = analyze(&erg, text, Format::Markdown, &opts());
+    let fixes = |model: &mut Surprised| -> Vec<Diagnostic> {
+        core()
+            .check_with(&erg, &a, Some(model))
+            .into_iter()
+            .filter(|d| d.rule == "core.grammar-fix")
+            .collect()
+    };
+    let d = fixes(&mut Surprised {
+        word: "on",
+        surprise: 6.0,
+        want: "interested in chess",
+    });
+    assert_eq!(d.len(), 1, "{d:?}");
+    assert_eq!(d[0].replacement.as_deref(), Some("in"));
+    // Below `screen_surprise`, the sentence is left alone.
+    let d = fixes(&mut Surprised {
+        word: "on",
+        surprise: 1.0,
+        want: "interested in chess",
+    });
+    assert!(d.is_empty(), "{d:?}");
+}
+
 #[test]
 fn a_real_word_typo_is_corrected_at_the_word_named() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
