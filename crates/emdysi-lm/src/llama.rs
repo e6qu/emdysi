@@ -91,6 +91,16 @@ impl LlamaLm {
     }
 }
 
+/// `ln(sum(exp(logits)))`.
+fn log_sum_exp(logits: &[f32]) -> f64 {
+    let max = logits.iter().copied().fold(f32::NEG_INFINITY, f32::max) as f64;
+    max + logits
+        .iter()
+        .map(|&l| (l as f64 - max).exp())
+        .sum::<f64>()
+        .ln()
+}
+
 fn log_softmax_at(logits: &[f32], i: usize) -> f64 {
     let max = logits.iter().copied().fold(f32::NEG_INFINITY, f32::max) as f64;
     let sum: f64 = logits.iter().map(|&l| (l as f64 - max).exp()).sum();
@@ -144,7 +154,27 @@ impl LanguageModel for LlamaLm {
         Some((lp.iter().map(|t| t.1).sum(), lp.len()))
     }
 
-    fn token_logprobs(&mut self, prefix: &str, text: &str) -> Option<Vec<(usize, f64)>> {
+    fn alternatives(
+        &mut self,
+        prefix: &str,
+        text: &str,
+        words: &[&str],
+    ) -> Option<Vec<crate::Alternatives>> {
+        // The tokens a word can start with, with or without a space.
+        let starts: Vec<Vec<LlamaToken>> = words
+            .iter()
+            .map(|w| {
+                let mut ids: Vec<LlamaToken> = Vec::new();
+                for form in [w.to_string(), format!(" {w}")] {
+                    if let Some(&t) = self.tokenize(&form, false).first() {
+                        if !ids.contains(&t) {
+                            ids.push(t);
+                        }
+                    }
+                }
+                ids
+            })
+            .collect();
         let head = self.tokenize(prefix, true);
         let all = self.tokenize(&format!("{prefix}{text}"), true);
         if all.len() <= head.len() || all.len() as u32 >= self.n_ctx {
@@ -168,10 +198,17 @@ impl LanguageModel for LlamaLm {
         let mut out = Vec::new();
         for (i, &t) in all.iter().enumerate().skip(start) {
             let logits = ctx.get_logits_ith(i as i32 - 1);
-            out.push((
-                at.saturating_sub(prefix.len()),
-                log_softmax_at(logits, t.0 as usize),
-            ));
+            let norm = log_sum_exp(logits);
+            let lp = |t: LlamaToken| logits[t.0 as usize] as f64 - norm;
+            out.push(crate::Alternatives {
+                at: at.saturating_sub(prefix.len()),
+                actual: lp(t),
+                next: all.get(i + 1).map(|&n| lp(n)),
+                words: starts
+                    .iter()
+                    .map(|ids| ids.iter().map(|&t| lp(t)).fold(f64::NEG_INFINITY, f64::max))
+                    .collect(),
+            });
             at += self.piece(t).len();
         }
         Some(out)
