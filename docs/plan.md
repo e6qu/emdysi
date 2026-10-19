@@ -39,21 +39,26 @@ unless stated:
      correct originals and keep 8 of 11 corrections (E4B: 0 and 7).
      Subtracting the words alone (SLOR) is far worse.
    - Finding errors is the weak part, for both models alike: a word's
-     surprise locates the corrected word 30% of the time and barely
-     separates wrong sentences from right ones (AUC 0.60), so most
-     errors in sentences the grammar accepts are never put to the
-     model. On the first pairs of a quarter run E2B gained nothing over
-     the grammar alone, where a perfect model gains about as much again.
+     surprise, or the model's own next-word expectations, locate the
+     corrected word about 30% of the time and barely separate wrong
+     sentences from right ones (AUC 0.60). Without a locator the right
+     edit is mostly past the candidates parsed (120) or the versions
+     shown (27): 92 of 197 grammar errors (`NOFOCUS=1 fix_bound`).
+   - Where a model can gain (the 34 pairs of a quarter that a perfect
+     model catches and the grammar does not), E2B with every sentence
+     screened in caught 3, all wrong inflections. When it saw the
+     writer's correction it mostly chose it, but with too little margin
+     to tell it from changes to correct sentences; E4B is no better there.
 
-   Next: find errors with the signal that works, the comparison of
-   versions. Either put every sentence the grammar accepts to it (cost:
-   the candidates' parses; margin from the false-flag sample), or
-   propose edits from the model's own next-word probabilities in one
-   pass (a function word far likelier at a gap or in place of a word)
-   and verify only those with the grammar. Then measure false flags on
-   the development sets with the model, and the much larger model the
-   design is to be compared with (a server with more memory: the larger
-   Gemma 4 models do not fit next to the parser in 16 GB).
+   So with a 2–4 GB model on a CPU, grammar plus model adds little beyond
+   the grammar. Still to do: false flags with the model on the
+   development sets, to set the defaults (the likelihood temperature, the
+   screen) so that the model never costs precision; then a much larger
+   model, served from a machine with more memory, on the same saved
+   questions (`LOG.versions.tsv`, `examples/versions`) to see whether
+   the design pays off with a stronger one. Until then priority 2 is
+   where recall can still be gained without one.
+
 2. **Grammar errors without a model.** 25 of 197 is the weakest number in
    the table. The mal-rule variant names errors only when a complete
    search finds fragments only. Of the 172 real grammar errors missed
