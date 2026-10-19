@@ -41,7 +41,11 @@ impl LlamaLm {
         let backend = LlamaBackend::init().map_err(|e| LoadError(e.to_string()))?;
         let model = LlamaModel::load_from_file(&backend, path, &LlamaModelParams::default())
             .map_err(|e| LoadError(format!("{}: {e}", path.display())))?;
-        let threads = std::thread::available_parallelism().map_or(4, |n| n.get() as i32);
+        // EMDYSI_LM_THREADS: fewer threads, for several models at once.
+        let threads = std::env::var("EMDYSI_LM_THREADS")
+            .ok()
+            .and_then(|n| n.parse().ok())
+            .unwrap_or_else(|| std::thread::available_parallelism().map_or(4, |n| n.get() as i32));
         let trained = model.n_ctx_train();
         let n_ctx = if trained > 0 {
             n_ctx.min(trained)

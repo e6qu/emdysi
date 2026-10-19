@@ -27,6 +27,10 @@ one, the `EMDYSI_LM` environment variable names the model the same way as
 | `--server URL` (or `--lm URL`, `--lm URL#MODEL`) | any server with the OpenAI-compatible API: llama.cpp's `llama-server`, `mlx_lm.server`, Ollama, LM Studio, vLLM | whatever the server runs: GGUF, MLX, ... | the server's top tokens (up to 20) |
 | `--lm script:FILE` | a scripted stand-in ([`script.rs`](../crates/emdysi-lm/src/script.rs)) for tests and trials | | as scripted |
 
+An in-process model uses every core; `EMDYSI_LM_THREADS=N` caps its
+threads, for several models at once (the measurement examples open one
+per `THREADS`).
+
 `--server-model NAME` sets the model name sent to the server when it serves
 several.
 
