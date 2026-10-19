@@ -21,7 +21,8 @@
 //! With `ORACLE` set instead, a perfect model answers: the version of a
 //! sentence the writer's correction has (an upper bound for any model).
 //! Either way the number of questions asked is reported. `SHARD=i/n`
-//! checks only every n-th pair, starting with the i-th.
+//! checks only every n-th pair, starting with the i-th; `PAIRS=i,j,...`
+//! only those pairs, by position after SHARD (as the journal numbers them).
 //! `LOG=FILE` with a model appends each question it is asked to FILE, with
 //! its probabilities and the answer a perfect model gives: how well the
 //! model screens, locates and chooses, and the probabilities to tune the
@@ -135,6 +136,23 @@ fn main() {
                     let key = if r[2].is_empty() { &r[3] } else { &r[2] };
                     only.contains(&key.as_str())
                 })
+                .collect()
+        }
+        Err(_) => rows,
+    };
+    // PAIRS=i,j,...: only these pairs, by their position after SHARD and
+    // ONLY (as the journal numbers them), e.g. those a perfect model
+    // catches and the grammar alone does not.
+    let rows: Vec<Vec<String>> = match std::env::var("PAIRS") {
+        Ok(pairs) => {
+            let keep: Vec<usize> = pairs
+                .split(',')
+                .filter_map(|i| i.trim().parse().ok())
+                .collect();
+            rows.into_iter()
+                .enumerate()
+                .filter(|(k, _)| keep.contains(k))
+                .map(|(_, r)| r)
                 .collect()
         }
         Err(_) => rows,
