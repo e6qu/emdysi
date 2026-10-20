@@ -66,9 +66,15 @@ unless stated:
      instead of 3 (beyond the model-free rules of that day), 2.6 times
      faster.
 
+   - False flags with every version shown, after three guards (no *of*
+     in *so odd a*, bold labels end their blocks, no determiner swap in
+     a sentence the grammar accepts) and a fourth for what that run
+     showed (no preposition cut to a part of itself): 3 flags in 683
+     sentences (British usage, a real error, and *within* to *in*, now
+     answered).
+
    So with a 2–4 GB model on a CPU, grammar plus model adds a little
-   beyond the grammar. Left: the false-flag rate of the current defaults
-   on a whole sample, and the second development set (a quarter is about
+   beyond the grammar. Left: the second development set (a quarter is about
    3,300 sentences); then a much larger model,
    served from a machine with more memory, on the saved questions
    (`LOG.versions.tsv`, `examples/versions`) to see whether the design

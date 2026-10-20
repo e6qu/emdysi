@@ -975,15 +975,34 @@ pub fn grammar(
         // tolerable| without |to be|): only a doubled word is dropped.
         // Nor is one determiner for another (|these hearings| for |the
         // hearings|) a correction there: both read, and which one is the
-        // writer's choice.
+        // writer's choice. Nor is a preposition cut to a part of itself
+        // (|within an area| to |in an area|), likelier only for being
+        // the commoner word.
         if grammatical {
             let determiner = |w: &str| {
                 ["this", "these", "that", "those", "the"]
                     .contains(&w.trim().to_lowercase().as_str())
             };
+            let part_of_preposition = |w: &str, r: &str| {
+                let (w, r) = (w.trim().to_lowercase(), r.trim().to_lowercase());
+                [
+                    "within",
+                    "into",
+                    "onto",
+                    "upon",
+                    "without",
+                    "throughout",
+                    "inside",
+                ]
+                .contains(&w.as_str())
+                    && !r.is_empty()
+                    && r != w
+                    && w.contains(&r)
+            };
             cands.retain(|(e, _)| {
                 (!e.replacement.trim().is_empty() || doubled(s, e))
                     && !(determiner(&e.text) && determiner(&e.replacement))
+                    && !part_of_preposition(&e.text, &e.replacement)
             });
         }
         if cands.is_empty() {

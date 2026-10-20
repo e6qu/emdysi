@@ -337,6 +337,25 @@ fn a_determiner_is_not_swapped_in_a_sentence_the_grammar_accepts() {
 }
 
 #[test]
+fn a_preposition_is_not_cut_to_a_part_of_itself_in_a_sentence_the_grammar_accepts() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let text = "Open space was provided for residents within an area that was being built up.\n";
+    let a = analyze(&erg, text, Format::Markdown, &opts());
+    assert!(a.sentences[0].strict());
+    let mut model = Surprised {
+        word: "within",
+        surprise: 6.0,
+        want: "residents in an area",
+    };
+    let d: Vec<Diagnostic> = core()
+        .check_with(&erg, &a, Some(&mut model))
+        .into_iter()
+        .filter(|d| d.rule == "core.grammar-fix")
+        .collect();
+    assert!(d.is_empty(), "{d:?}");
+}
+
+#[test]
 fn a_real_word_typo_is_corrected_at_the_word_named() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     // |Manger| is a word, so the spelling check passes it and the grammar

@@ -2204,6 +2204,19 @@ The bold labels (18 lines in 3 documents of the development sets) leave
 the claims of `core` on those documents and the real errors caught
 (208 of 374) as they were.
 
+With the three answers in place, the same sample again (683 sentences:
+the bold labels now end their blocks; 10,400 s): 3 flags (4.4 per
+1,000), the British *government … have argued*, the real error *all same
+ease*, and one new: *residents within an area* to *in an area* (87%),
+a version that had not been among the five compared in full before.
+Both read; the model prefers the commoner word. A preposition is no
+longer cut to a part of itself (*within*, *into*, *onto*, *upon*,
+*without*, *throughout*, *inside*) in a sentence the grammar accepts;
+none of the model's gains below is such a cut, and the corpus's *with*
+to *within* goes the other way. So on this sample, of the 6 flags
+before: 0 false ones are left of the 4, and the new one is answered
+(not yet re-measured).
+
 On the 34 real-error pairs where a model can gain (`SHARD=0/4`, the
 `PAIRS` of the model runs above), the three guards cost nothing: the
 model still gains the same 4 (*how* to *on how*, *serer* to *server*,
