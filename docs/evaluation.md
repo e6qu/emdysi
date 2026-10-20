@@ -2276,6 +2276,17 @@ run). Codespell's rare list without the title-case gate
 would flag real words in the development sets (*wit*, *revered*,
 *implementors*), so it is used only there.
 
+Measured and left as is: reporting two-edit typos without a model. Of
+the spelling findings left to a model (tokenization only, every edited
+sample and both sides of the real-error pairs), the two-edit ones in
+lower case are one real error (*partilar*) against nine correct terms of
+the edited text (*grafana*, *mebibytes*, *syscalls*, *borrowck*,
+*hijinks*, *naturedly*...). The other missed misspellings are not
+findings at all: *authoratitively* and *ephermal* are two edits from
+words too rare for the two-edit rule, *Servies* is capitalized in the
+middle of a sentence (a name), and *informations* is an inflection the
+word lists know.
+
 ### Measured and rejected: the grammar-error variant on sentences the grammar accepts
 
 126 of the missed grammar errors leave a strict reading, and the
