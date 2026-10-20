@@ -1605,10 +1605,23 @@ impl Rule {
                             .split(['-', '\'', '’'])
                             .filter(|p| !p.is_empty())
                             .collect();
-                        if known(w)
+                        // A word codespell lists as a misspelling is one even
+                        // when only the rare or technical lists have it
+                        // (|homogenous| for |homogeneous|), not when it is a
+                        // common word or one the grammar knows (|quitted|).
+                        let accepted = known(w)
                             || parts.iter().all(|p| known(p))
-                            || crate::in_code_like(&s.text, t.from, t.to)
-                        {
+                            || crate::in_code_like(&s.text, t.from, t.to);
+                        // (Not a suffix named: |endings such as -ment|.)
+                        let after_hyphen =
+                            t.from > 0 && s.text.chars().nth(t.from - 1).is_some_and(|c| c == '-');
+                        let listed = accepted
+                            && !after_hyphen
+                            && crate::dict::tier(w).is_none()
+                            && !erg.known_word(w)
+                            && !crate::dict::inflection_of_known(w)
+                            && crate::dict::codespell(w).is_some();
+                        if accepted && !listed {
                             continue;
                         }
                         // A misspelling codespell lists (from English
@@ -1618,9 +1631,17 @@ impl Rule {
                         // codespell gives only one.
                         if let Some((fixes, sure)) = crate::dict::codespell(w) {
                             let mut d = self.diag(a, si, t.from, t.to, w);
-                            d.message = d
-                                .message
-                                .replace("{suggestion}", &format!(" Did you mean '{}'?", fixes[0]));
+                            d.message = if listed {
+                                format!(
+                                    "'{w}' is a rare word, and usually a misspelling: did you mean '{}'?",
+                                    fixes[0]
+                                )
+                            } else {
+                                d.message.replace(
+                                    "{suggestion}",
+                                    &format!(" Did you mean '{}'?", fixes[0]),
+                                )
+                            };
                             d.suggestions = fixes.to_vec();
                             if sure {
                                 d.replacement = Some(fixes[0].clone());

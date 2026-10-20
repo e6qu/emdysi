@@ -19,7 +19,7 @@ unless stated:
 
 | Measure | Now | Notes |
 |---|---|---|
-| Real errors caught (374, from documentation histories) | 202 (54%): spelling 167 of 177, grammar 35 of 197 | 192 before doubled words were reported whatever the analysis and `core.allow-to` (2026-10-20); 167 before the spelling work of 2026-10-17, 183 before codespell's list; 377 pairs until three that were all front matter left (2026-10-17) |
+| Real errors caught (374, from documentation histories) | 208 (56%): spelling 167 of 177, grammar 41 of 197 | 202 before rare words codespell lists as misspellings (*homogenous*, six times), 192 before doubled words were reported whatever the analysis and `core.allow-to` (2026-10-20); 167 before the spelling work of 2026-10-17, 183 before codespell's list; 377 pairs until three that were all front matter left (2026-10-17) |
 | ... with a perfect model choosing among verified corrections | 337 of 377 (89%): grammar 165 of 199 | the upper bound for any model, measured before the corpus repair; no real model measured yet |
 | False flags on edited text, per 1,000 sentences | 1.6 (first development set, 4 flags), 4.8 (second, 64), 3.7 (held out, 31 in 8,371 sentences) | most of the second set's flags point at real errors or real spelling mixes in the source (`docs/evaluation.md`) |
 | Gold analyses (ERG test suites) | MRS identical for all 2,966 reproduced; ranker 81.7% exact match held out | |
@@ -69,9 +69,9 @@ unless stated:
    pays off with a stronger one. Until then priority 2 is where recall
    can be gained without one.
 
-2. **Grammar errors without a model.** 35 of 197 is the weakest number in
+2. **Grammar errors without a model.** 41 of 197 is the weakest number in
    the table (25 before 2026-10-20: doubled words in sentences the grammar
-   accepts, `core.allow-to`). The mal-rule variant names errors only when a complete
+   accepts, `core.allow-to`, rare words codespell lists). The mal-rule variant names errors only when a complete
    search finds fragments only. Of the 172 real grammar errors missed
    (2026-10-18), 126 leave a strict reading (a wrong word that is still
    English, or a legal but unlikely analysis: *you wants* as *you* plus a

@@ -2171,6 +2171,16 @@ In the development sets the listed words occur doubled five times and
 caught without a model: 202 of 374 (54%; grammar errors 35 of 197),
 against 192; no flag on the corrected text.
 
+- `core.spelling` consulted codespell's list of common misspellings only
+  for words no list knows; *homogenous* (for *homogeneous*) is in a rare
+  word list and a technical one, so it passed. A word codespell lists
+  is now a misspelling unless it is a common word, the grammar knows it
+  (*quitted*, a period form) or it follows a hyphen (*endings such as
+  -ment*). Of the 447 such words, none is newly flagged in either
+  development set (`en check --no-parse` on all 347 documents); in the
+  real-error corpus the gain is one word written six times: 208 of 374
+  (56%; grammar errors 41 of 197).
+
 A pattern for a missing *the* before *following* (*executes following
 actions:*) would catch two more and match nothing in the development
 sets, but it was shaped on those two errors; it is left out.

@@ -63,6 +63,35 @@ fn words_never_doubled_are_reported_whatever_the_parse() {
 }
 
 #[test]
+fn a_listed_misspelling_is_one_even_if_a_rare_list_has_it() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let checker = Checker::new(packs());
+    let opts = Options {
+        threads: 1,
+        ..Options::default()
+    };
+    // |homogenous| is in a rare word list and codespell's list of
+    // misspellings; |quitted| is in codespell's list too, but the grammar
+    // knows it (a period form), and |-ment| names a suffix.
+    let src =
+        "The nodes are homogenous. You quitted the house. Endings such as -ment are common.\n";
+    let a = analyze(&erg, src, Format::Plain, &opts);
+    let d = checker.check(&erg, &a);
+    let at = rules_at(src, &d, "homogenous");
+    assert!(at.contains(&"core.spelling"), "{d:?}");
+    let fix = d.iter().find(|x| x.rule == "core.spelling").unwrap();
+    assert!(fix.message.contains("homogeneous"), "{}", fix.message);
+    assert!(
+        !rules_at(src, &d, "quitted").contains(&"core.spelling"),
+        "{d:?}"
+    );
+    assert!(
+        !rules_at(src, &d, "ment").contains(&"core.spelling"),
+        "{d:?}"
+    );
+}
+
+#[test]
 fn checks_and_fixes() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     let checker = Checker::new(packs());
