@@ -278,8 +278,9 @@ fn versions_estimated_in_one_pass_are_compared_only_at_the_top() {
         .collect();
     assert_eq!(d.len(), 1, "{d:?}");
     assert_eq!(d[0].replacement.as_deref(), Some("jumps"));
-    // More versions than that were estimated; one question compared the
-    // original and the most promising five.
+    // More versions than that were estimated; a question compared the
+    // original and the most promising five, and the winner was put
+    // against the original alone.
     assert!(
         model.estimated > assist::PREFILTER + 1,
         "{}",
@@ -290,6 +291,7 @@ fn versions_estimated_in_one_pass_are_compared_only_at_the_top() {
         "{:?}",
         model.compared
     );
+    assert_eq!(model.compared.last(), Some(&2), "{:?}", model.compared);
 }
 
 #[test]

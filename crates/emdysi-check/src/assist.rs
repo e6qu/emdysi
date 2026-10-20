@@ -983,7 +983,12 @@ pub fn grammar(
             let mut order = all.clone();
             order.sort_by(|&x, &y| est[y + 1].total_cmp(&est[x + 1]));
             order.truncate(PREFILTER);
+            // Then the choice against the original alone, as after rounds:
+            // the threshold is for one correction, not one of five
+            // sharing the rest.
             choose(&order)
+                .filter(|&(_, p, orig)| p > orig)
+                .and_then(|(best, _, _)| choose(&[best]))
         } else if cands.len() <= MAX_OPTIONS {
             choose(&all)
         } else {
