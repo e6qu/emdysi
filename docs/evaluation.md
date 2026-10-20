@@ -2148,6 +2148,33 @@ model flagged in the false-flag sample at temperature 5, checked alone at
 6, none is flagged; that includes the real error (*all same ease*), so
 the false-flag rate at 6 is not yet measured on a whole sample.
 
+## Doubled words and 'allows to', without a model
+
+Looking at what the model gained turned up errors no model is needed
+for (2026-10-20):
+
+- `core.repeated-word` reported a doubled function word only in a
+  sentence the grammar had no full analysis for, but the grammar finds
+  strained analyses for real mistakes (*helps you to to stay secure*):
+  8 of the 20 doubled words of the real-error corpus were missed. Words
+  only ever doubled by mistake (articles, *to*, *of*, *for*, *with*,
+  *from*, *into*, *and*, *or*, *as*, *at*, *by*, possessives) are now
+  reported in any sentence: 18 of the 20 are caught. Not *in* or *on*
+  (*sign in in the corner*), *that*, *had*, *is* or *are*.
+- `core.allow-to`: *allows to map users* needs someone to allow. All four
+  such errors of the corpus went unflagged; the pattern (active *allow*
+  and *enable*, not *allowed*, not *permit*) matches those four before the
+  fix and none after.
+
+In the development sets the listed words occur doubled five times and
+*allows to* once, all mistakes (second set, Rust notes). Real errors
+caught without a model: 202 of 374 (54%; grammar errors 35 of 197),
+against 192; no flag on the corrected text.
+
+A pattern for a missing *the* before *following* (*executes following
+actions:*) would catch two more and match nothing in the development
+sets, but it was shaped on those two errors; it is left out.
+
 ## Where checking time goes
 
 `timing` (`crates/emdysi-check/examples`) checks documents on one thread
