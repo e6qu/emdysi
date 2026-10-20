@@ -390,6 +390,10 @@ impl emdysi_check::decisions::Ask for ModelAsk {
             .estimates(context, versions)
             .ok()
     }
+
+    fn can_estimate(&self) -> bool {
+        self.0.scores_tokens()
+    }
 }
 
 fn model() -> Option<ModelAsk> {

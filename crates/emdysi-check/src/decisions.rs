@@ -51,6 +51,11 @@ pub trait Ask {
     fn estimates(&mut self, _context: &str, _versions: &[&str]) -> Option<Vec<f64>> {
         None
     }
+    /// Whether [`Ask::estimates`] is answered, known without asking: then
+    /// more versions can be put to the model.
+    fn can_estimate(&self) -> bool {
+        false
+    }
 }
 
 /// What a [`Decide`] rule asks about.

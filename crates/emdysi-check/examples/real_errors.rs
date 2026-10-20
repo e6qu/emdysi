@@ -416,6 +416,10 @@ impl emdysi_check::decisions::Ask for ModelAsk {
             .estimates(context, versions)
             .ok()
     }
+
+    fn can_estimate(&self) -> bool {
+        std::env::var_os("LETTERS").is_none() && self.0.scores_tokens()
+    }
 }
 
 fn model() -> Option<ModelAsk> {
@@ -587,6 +591,10 @@ impl emdysi_check::decisions::Ask for Logged<'_> {
 
     fn estimates(&mut self, context: &str, versions: &[&str]) -> Option<Vec<f64>> {
         self.inner.estimates(context, versions)
+    }
+
+    fn can_estimate(&self) -> bool {
+        self.inner.can_estimate()
     }
 }
 

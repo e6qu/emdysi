@@ -44,6 +44,11 @@ pub trait LanguageModel {
     /// Log-probability (natural log) of `text` following `prefix`, and the
     /// number of tokens of `text`. `None` if the backend cannot score text.
     fn logprob(&mut self, prefix: &str, text: &str) -> Option<(f64, usize)>;
+    /// Whether [`LanguageModel::alternatives`] (and so
+    /// [`LanguageModel::token_logprobs`]) is answered, known without asking.
+    fn scores_tokens(&self) -> bool {
+        false
+    }
     /// Log-probability of each token of `text` following `prefix`, with the
     /// byte offset in `text` where the token starts (a token that starts in
     /// `prefix` counts from 0). `None` if the backend cannot score tokens.

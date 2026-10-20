@@ -543,6 +543,10 @@ impl emdysi_check::decisions::Ask for ModelAsk<'_> {
     fn estimates(&mut self, context: &str, versions: &[&str]) -> Option<Vec<f64>> {
         self.d.estimates(context, versions).ok()
     }
+
+    fn can_estimate(&self) -> bool {
+        self.d.lm.scores_tokens()
+    }
 }
 
 /// Check, with the model for `decide` rules when there is one.

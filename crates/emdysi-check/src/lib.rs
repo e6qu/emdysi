@@ -64,6 +64,10 @@ pub mod timing {
         fn estimates(&mut self, context: &str, versions: &[&str]) -> Option<Vec<f64>> {
             timed(&MODEL, || self.0.estimates(context, versions))
         }
+
+        fn can_estimate(&self) -> bool {
+            self.0.can_estimate()
+        }
     }
 
     /// Time per rule id, summed like the stages.

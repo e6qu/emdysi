@@ -250,6 +250,10 @@ impl Ask for Estimates {
         self.ask(context, question, versions)
     }
 
+    fn can_estimate(&self) -> bool {
+        true
+    }
+
     fn estimates(&mut self, _context: &str, versions: &[&str]) -> Option<Vec<f64>> {
         self.estimated = self.estimated.max(versions.len());
         Some(

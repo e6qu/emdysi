@@ -654,11 +654,16 @@ fn with_full_stop(text: &str) -> String {
     }
 }
 
-/// The first `MAX_OPTIONS * MAX_ROUNDS` of the first `MAX_CANDIDATES`
-/// edits of `s` that the strict grammar accepts, with the corrected
-/// sentence. Parsing stops once enough are found (the model is not shown
-/// more) or when `BUDGET` is spent.
-fn grammar_candidates(erg: &Erg, s: &Sentence, focus: &[(usize, usize)]) -> Vec<(Edit, String)> {
+/// The first `limit` of the first `MAX_CANDIDATES` edits of `s` that the
+/// strict grammar accepts, with the corrected sentence. Parsing stops once
+/// enough are found (the model is not shown more) or when `BUDGET` is
+/// spent.
+fn grammar_candidates(
+    erg: &Erg,
+    s: &Sentence,
+    focus: &[(usize, usize)],
+    limit: usize,
+) -> Vec<(Edit, String)> {
     let start = Instant::now();
     focused(edits(erg, s), focus)
         .into_iter()
@@ -669,7 +674,7 @@ fn grammar_candidates(erg: &Erg, s: &Sentence, focus: &[(usize, usize)]) -> Vec<
             let fixed = e.apply(&s.original);
             (e, fixed)
         })
-        .take(MAX_OPTIONS * MAX_ROUNDS)
+        .take(limit)
         .collect()
 }
 
@@ -943,7 +948,14 @@ pub fn grammar(
             }
             None => locate(ask, &ctx, s),
         };
-        let mut cands = grammar_candidates(erg, s, &focus);
+        // A model that estimates versions from one pass can be shown every
+        // version the grammar accepts; otherwise as many as fit in rounds.
+        let limit = if ask.can_estimate() {
+            MAX_CANDIDATES
+        } else {
+            MAX_OPTIONS * MAX_ROUNDS
+        };
+        let mut cands = grammar_candidates(erg, s, &focus, limit);
         // In a sentence the grammar accepts nothing says a word is one too
         // many, and a model prefers a version without one for being
         // shorter (|is not so well worth listening to … to be only just
