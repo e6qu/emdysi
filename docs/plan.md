@@ -59,11 +59,17 @@ unless stated:
    - With the defaults, E2B adds 3 of the 34 errors it could add on a
      quarter of the pairs (roughly 12 of 374 in all), with no flag on the
      corrected text, at about 26 s per sentence instead of 1.6 s.
+   - The model was almost all of that time. Since 2026-10-20 a one-pass
+     estimate picks the five most promising versions to compare in full
+     (the writer's was among them in all 42 saved questions), and every
+     version the grammar accepts is shown: on the 34 pairs, 4 gained
+     instead of 3 (beyond the model-free rules of that day), 2.6 times
+     faster.
 
    So with a 2–4 GB model on a CPU, grammar plus model adds a little
-   beyond the grammar, slowly. Left: the false-flag rate at temperature
-   6 on a whole sample, and the second development set (a quarter is
-   about 3,300 sentences, a day at this speed); then a much larger model,
+   beyond the grammar. Left: the false-flag rate of the current defaults
+   on a whole sample, and the second development set (a quarter is about
+   3,300 sentences); then a much larger model,
    served from a machine with more memory, on the saved questions
    (`LOG.versions.tsv`, `examples/versions`) to see whether the design
    pays off with a stronger one. Until then priority 2 is where recall
