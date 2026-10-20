@@ -1,6 +1,6 @@
 [pack]
 name = "core"
-description = "Spelling and grammaticality, from the English Resource Grammar's lexicon and rules. Every rule here claims an error, so each reports only what the grammar can establish: a complete search that found no analysis, an error every best analysis of the grammar-error variant names, a word one edit from a known word."
+description = "Spelling and grammaticality, from the English Resource Grammar's lexicon and rules. Every rule here claims an error, so each reports only what the grammar can establish: a complete search that found no analysis, an error every best analysis of the grammar-error variant names, a word one edit from a known word, or a few constructions wrong in any context ('allows to map')."
 
 [[rule]]
 id = "core.spelling"
@@ -76,6 +76,23 @@ severity = "warning"
 message = "Repeated word: '{match}'."
 description = "A function word written twice in a row ('the the', 'to to', 'are are'), in a sentence the grammar has no full analysis for: English allows some doublings ('that that is is', 'Will Will will', 'had had'). Words that are only ever doubled by mistake (articles, 'to', 'of', 'for', 'with', 'from', 'into', 'and', 'or', 'as', 'at', 'by', possessives) are reported whatever the analysis. A run of three or more is taken as deliberate ('can can can')."
 examples = ["It can be modified and and removed at any time.\n"]
+
+[[rule]]
+id = "core.allow-to"
+kind = "regex"
+severity = "warning"
+message = "'{match}' needs someone to allow: 'allows you to …', 'allows … to …', or 'allows …ing'."
+pattern = "(?i)\\b(?:allows|allow|allowing|enables|enable|enabling)\\s+to(?=\\s+[a-z])"
+description = "'Allow' and 'enable' take an object before 'to' ('allows you to map users', not 'allows to map users'). The passive ('is allowed to') is fine, and 'permit' is left out (a permit to build). All four such errors of the real-error corpus; once in the development sets, also an error."
+examples = [
+  "User namespaces is a Linux feature that allows to map users in the container.\n",
+  "Defaulting enables to specify default values.\n",
+]
+acceptable = [
+  "User namespaces is a Linux feature that allows you to map users in the container.\n",
+  "Pods are allowed to map users.\n",
+  "A permit to build is required.\n",
+]
 
 [[rule]]
 id = "core.double-article"
