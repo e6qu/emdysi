@@ -973,8 +973,18 @@ pub fn grammar(
         // many, and a model prefers a version without one for being
         // shorter (|is not so well worth listening to … to be only just
         // tolerable| without |to be|): only a doubled word is dropped.
+        // Nor is one determiner for another (|these hearings| for |the
+        // hearings|) a correction there: both read, and which one is the
+        // writer's choice.
         if grammatical {
-            cands.retain(|(e, _)| !e.replacement.trim().is_empty() || doubled(s, e));
+            let determiner = |w: &str| {
+                ["this", "these", "that", "those", "the"]
+                    .contains(&w.trim().to_lowercase().as_str())
+            };
+            cands.retain(|(e, _)| {
+                (!e.replacement.trim().is_empty() || doubled(s, e))
+                    && !(determiner(&e.text) && determiner(&e.replacement))
+            });
         }
         if cands.is_empty() {
             continue;
