@@ -20,6 +20,11 @@ use std::time::Duration;
 use emdysi_check::*;
 use emdysi_parse::{Erg, default_grammar_dir};
 
+/// Per pair: the sentence before the fix, and the margin before the fix
+/// and after, each `None` when the sentence has no strict analysis or no
+/// reading at all.
+type Margins = (String, Option<f64>, Option<f64>);
+
 fn main() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let mut files: Vec<_> = std::fs::read_dir(root.join("corpora/real-errors"))
@@ -50,9 +55,7 @@ fn main() {
         threads: 1,
         ..Options::default()
     };
-    // Per pair: (margin before the fix, margin after), each `None` when the
-    // sentence has no strict analysis or no reading at all.
-    let out: Mutex<Vec<(String, Option<f64>, Option<f64>)>> = Mutex::default();
+    let out: Mutex<Vec<Margins>> = Mutex::default();
     let next = Mutex::new(0usize);
     let threads: usize = std::env::var("THREADS")
         .ok()
@@ -110,7 +113,7 @@ fn main() {
                         continue;
                     };
                     let a = sentence_at(after, p);
-                    let (mb, ma) = (margin(&b), a.as_deref().and_then(|a| margin(a)));
+                    let (mb, ma) = (margin(&b), a.as_deref().and_then(margin));
                     out.lock().unwrap().push((b, mb, ma));
                     if i % 20 == 0 {
                         eprintln!("{i} of {} pairs", rows.len());
