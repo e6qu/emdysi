@@ -2129,6 +2129,25 @@ fewer). The sample took 4 h 50 min with two documents at once, each with
 its own model on two cores: about 26 s per sentence, against 1.6 s
 without a model.
 
+### The defaults, end to end
+
+With the defaults of 2026-10-20 (temperature 6, the screen at 3 nats, no
+word dropped from a sentence the grammar accepts unless doubled), E2B on
+the 34 pairs of the first quarter that a perfect model catches and the
+grammar alone does not:
+
+| | Result |
+|---|---|
+| Caught | 3 of 34 (*serer* to *server*, *give* to *gives*, *help to stay* to *help stay*) |
+| Flags on the corrected text at the changed words | 0 |
+| Questions asked | 419 (113 min, two pairs at once) |
+
+About 3 more real errors in 94 pairs, or roughly 12 in all 374 (51% to
+about 55%), at no flag on the corrected text. On the four sentences the
+model flagged in the false-flag sample at temperature 5, checked alone at
+6, none is flagged; that includes the real error (*all same ease*), so
+the false-flag rate at 6 is not yet measured on a whole sample.
+
 ## Where checking time goes
 
 `timing` (`crates/emdysi-check/examples`) checks documents on one thread

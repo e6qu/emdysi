@@ -52,14 +52,22 @@ unless stated:
      writer's correction it mostly chose it, but with too little margin
      to tell it from changes to correct sentences; E4B is no better there.
 
-   So with a 2–4 GB model on a CPU, grammar plus model adds little beyond
-   the grammar. Still to do: false flags with the model on the
-   development sets, to set the defaults (the likelihood temperature, the
-   screen) so that the model never costs precision; then a much larger
-   model, served from a machine with more memory, on the same saved
-   questions (`LOG.versions.tsv`, `examples/versions`) to see whether
-   the design pays off with a stronger one. Until then priority 2 is
-   where recall can still be gained without one.
+   - False flags with E2B on a quarter of the first development set (673
+     sentences): 4 at temperature 5 (one a real error, one British
+     usage, two false at the threshold); none of them flagged alone at
+     temperature 6, the default now.
+   - With the defaults, E2B adds 3 of the 34 errors it could add on a
+     quarter of the pairs (roughly 12 of 374 in all), with no flag on the
+     corrected text, at about 26 s per sentence instead of 1.6 s.
+
+   So with a 2–4 GB model on a CPU, grammar plus model adds a little
+   beyond the grammar, slowly. Left: the false-flag rate at temperature
+   6 on a whole sample, and the second development set (a quarter is
+   about 3,300 sentences, a day at this speed); then a much larger model,
+   served from a machine with more memory, on the saved questions
+   (`LOG.versions.tsv`, `examples/versions`) to see whether the design
+   pays off with a stronger one. Until then priority 2 is where recall
+   can be gained without one.
 
 2. **Grammar errors without a model.** 25 of 197 is the weakest number in
    the table. The mal-rule variant names errors only when a complete
