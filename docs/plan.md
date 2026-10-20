@@ -146,12 +146,15 @@ unless stated:
    on the model being evaluated; that judging is slow and wants a
    person's spot checks.
 
-Status on 2026-10-19: apart from the model evaluation, every item above
-is either bounded by the model (126 of the 172 missed grammar errors
-parse as correct English) or a multi-day effort with an uncertain gain
-(the unifier rewrite, independent ranking judgements). Both development
-sets have been mined for coverage gaps. Start a new session with the
-model evaluation.
+Status on 2026-10-20: the model path with E2B is measured end to end
+(choices by likelihood, a one-pass prefilter, guards against the false
+flags a sample showed), and the patterns the missed real errors suggest
+without a model are in (54 of 197 grammar errors). What is left of the
+grammar errors mostly parses as correct English, so it waits on a model
+that locates errors better than E2B and E4B; a 12B model on the same
+measurements is next (evaluation.md). The other items are multi-day
+efforts with an uncertain gain (the unifier rewrite, independent ranking
+judgements). Both development sets have been mined for coverage gaps.
 
 Decided against, with measurements in evaluation.md: work limits in
 place of the parser's time limits (no work measure tracks time well
