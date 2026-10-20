@@ -2185,6 +2185,25 @@ candidates parsed, and without a model that locates the error the
 writer's correction is often past them (32 of 197, `NOFOCUS=1
 fix_bound`).
 
+### False flags of the model path with every version shown
+
+The quarter of the first development set again (673 sentences, 0 flags
+without a model), with the one-pass estimate and every version the
+grammar accepts shown (2026-10-20): 6 flags (8.9 per 1,000).
+
+| Flag | | Now |
+|---|---|---|
+| *so odd a mixture* to *so odd of a mixture* (91%) | false: the informal form is likelier | no *of* is offered after *so*, *too*, *as* or *how* and an adjective before the article |
+| *…load balancing Kubernetes can expose* to *in Kubernetes* (85%) | false: a bold label ran into the sentence after it | a line that is only a bold label ends its block |
+| *Horizontal scaling Scale your application* to *is Scale* (84%) | false: the same | the same |
+| *The purpose of these CRTC hearings* to *of the* (90%) | false: both read | no determiner is swapped for another in a sentence the grammar accepts |
+| *The Hong Kong government … have argued* to *has* (85%) | British usage allows it | as before |
+| *with all same ease of use* to *all the same ease* (90%) | a real error in the source | caught |
+
+The bold labels (18 lines in 3 documents of the development sets) leave
+the claims of `core` on those documents and the real errors caught
+(208 of 374) as they were.
+
 ## Doubled words and 'allows to', without a model
 
 Looking at what the model gained turned up errors no model is needed
