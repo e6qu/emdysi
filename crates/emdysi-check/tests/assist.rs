@@ -205,6 +205,30 @@ fn a_surprising_word_screens_a_sentence_the_grammar_accepts() {
 }
 
 #[test]
+fn a_word_is_not_dropped_from_a_sentence_the_grammar_accepts() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let text = "I do not mind his not talking to her.\n";
+    let a = analyze(&erg, text, Format::Markdown, &opts());
+    assert!(a.sentences[0].strict());
+    // A model that prefers the sentence without |his| (shorter, so more
+    // likely) is not given that version. The price: a real error fixed by
+    // dropping words is not corrected either (|the example of the flow| to
+    // |the example flow|, 21 of the 197 grammar errors of the real-error
+    // corpus, 2026-10-20).
+    let mut model = Surprised {
+        word: "his",
+        surprise: 6.0,
+        want: "mind not talking",
+    };
+    let d: Vec<Diagnostic> = core()
+        .check_with(&erg, &a, Some(&mut model))
+        .into_iter()
+        .filter(|d| d.rule == "core.grammar-fix")
+        .collect();
+    assert!(d.is_empty(), "{d:?}");
+}
+
+#[test]
 fn a_real_word_typo_is_corrected_at_the_word_named() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     // |Manger| is a word, so the spelling check passes it and the grammar
@@ -370,12 +394,6 @@ fn corrections_of_two_words_and_related_words() {
             "is",
             "output should be similar",
             "should be",
-        ),
-        (
-            "The following is the example of the flow described in that document.",
-            "of",
-            "the example flow described",
-            "",
         ),
         (
             "This flag is used with all the resources which has a status.",

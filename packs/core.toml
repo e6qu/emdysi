@@ -27,8 +27,9 @@ kind = "assisted-grammar"
 severity = "warning"
 threshold = 0.8
 screen = 0.5
+screen_surprise = 3.0
 message = "'{match}' does not fit here: the grammar accepts '{replacement}' instead, and the model prefers it ({percent}%)."
-description = "With a local decision model (--model, --server, --lm or EMDYSI_LM): a sentence with no full analysis is corrected by changing one word to another form of itself (jump to jumps); the corrections the strict grammar accepts are shown to the model with the original, and one is reported when the model prefers it with probability 0.8 or more. A sentence the grammar accepts is corrected the same way, and also by changing, dropping or inserting a function word, when the model, asked first, doubts it (probability 0.5 or more that it is not correct English). Without a model, nothing. Catches errors the grammar alone cannot claim, such as 'The quick brown fox jump over the wall.', which it can also read as a noun phrase (a jump)."
+description = "With a local decision model (--model, --server, --lm or EMDYSI_LM): a sentence with no full analysis is corrected by changing one word to another form of itself (jump to jumps); the corrections the strict grammar accepts are shown to the model with the original, and one is reported when the model prefers it with probability 0.8 or more. A sentence the grammar accepts is corrected the same way, and also by changing or inserting a function word or dropping a doubled one, when one of its words surprises the model where it stands 3 nats or more beyond the word alone (a model that scores text), or else when the model, asked first, doubts it (probability 0.5 or more that it is not correct English). Without a model, nothing. Catches errors the grammar alone cannot claim, such as 'The quick brown fox jump over the wall.', which it can also read as a noun phrase (a jump)."
 
 [[rule]]
 id = "core.grammar-errors"

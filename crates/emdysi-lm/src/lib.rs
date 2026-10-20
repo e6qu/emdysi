@@ -23,6 +23,22 @@ pub mod http;
 pub mod llama;
 pub mod script;
 
+/// What a model expects at one token of a text ([`LanguageModel::alternatives`]).
+#[derive(Debug, Clone, PartialEq)]
+pub struct Alternatives {
+    /// Byte offset of the token in the text (a token that starts in the
+    /// prefix counts from 0).
+    pub at: usize,
+    /// Log-probability of the token there.
+    pub actual: f64,
+    /// Log-probability of the token after it, there instead (as if this
+    /// one were not there); `None` for the last token.
+    pub next: Option<f64>,
+    /// Log-probability of each of the words asked about, there instead:
+    /// its first token, with or without a leading space.
+    pub words: Vec<f64>,
+}
+
 /// A language model: scores text and generates continuations.
 pub trait LanguageModel {
     /// Log-probability (natural log) of `text` following `prefix`, and the
@@ -31,7 +47,19 @@ pub trait LanguageModel {
     /// Log-probability of each token of `text` following `prefix`, with the
     /// byte offset in `text` where the token starts (a token that starts in
     /// `prefix` counts from 0). `None` if the backend cannot score tokens.
-    fn token_logprobs(&mut self, _prefix: &str, _text: &str) -> Option<Vec<(usize, f64)>> {
+    fn token_logprobs(&mut self, prefix: &str, text: &str) -> Option<Vec<(usize, f64)>> {
+        let a = self.alternatives(prefix, text, &[])?;
+        Some(a.into_iter().map(|x| (x.at, x.actual)).collect())
+    }
+    /// For each token of `text` following `prefix`, what the model expects
+    /// there: the token itself, the token after it, and each of `words`
+    /// (see [`Alternatives`]). `None` if the backend cannot say.
+    fn alternatives(
+        &mut self,
+        _prefix: &str,
+        _text: &str,
+        _words: &[&str],
+    ) -> Option<Vec<Alternatives>> {
         None
     }
     /// Generate a continuation of a chat prompt: `system` instructions and

@@ -98,6 +98,36 @@ pub fn probabilities(raw: &Raw, temperature: f64) -> Vec<f64> {
     out
 }
 
+/// The surprise (negative log-probability) of each of `spans` of `src`,
+/// from scored tokens: a token counts for the span its first non-space
+/// character is in.
+fn tally(tokens: Vec<(usize, f64)>, src: &str, spans: &[(usize, usize)]) -> Vec<f64> {
+    let mut out = vec![0.0; spans.len()];
+    for (at, lp) in tokens {
+        let rest = src.get(at..).unwrap_or("");
+        let at = at + rest.len() - rest.trim_start().len();
+        if let Some(k) = spans.iter().position(|&(f, t)| f <= at && at < t) {
+            out[k] -= lp;
+        }
+    }
+    out
+}
+
+/// The surprise of each of `words` alone: scored as a list, one per line.
+pub fn alone(lm: &mut dyn LanguageModel, words: &[&str]) -> Option<Vec<f64>> {
+    let list = words.join("\n");
+    let mut at = 0;
+    let spans: Vec<(usize, usize)> = words
+        .iter()
+        .map(|w| {
+            let span = (at, at + w.len());
+            at += w.len() + 1;
+            span
+        })
+        .collect();
+    Some(tally(lm.token_logprobs("", &list)?, &list, &spans))
+}
+
 pub struct Decider<'a> {
     pub lm: &'a mut dyn LanguageModel,
     /// Calibration temperature ([`fit_temperature`]); 1 keeps the model's
@@ -110,7 +140,19 @@ pub struct Decider<'a> {
     /// versions of one sentence. Needs a backend that scores text
     /// ([`LanguageModel::logprob`]); the question is not shown.
     pub likelihood: bool,
+    /// With `likelihood`, the options' log-probabilities are divided by
+    /// this before they become probabilities: a version of a sentence is
+    /// often a few nats more likely than the writer's without being what
+    /// they meant (|need to have| against |need to save|), so a choice
+    /// should take a large margin. At 6 (2026-10-20), 0.8 against a single
+    /// alternative takes about 8.3 nats: on 558 questions from real-error
+    /// paragraphs, 5 of 527 correct sentences changed against 9 at 5, for
+    /// one correction of 19 fewer.
+    pub likelihood_temperature: f64,
 }
+
+/// The default [`Decider::likelihood_temperature`].
+pub const LIKELIHOOD_TEMPERATURE: f64 = 6.0;
 
 impl<'a> Decider<'a> {
     pub fn new(lm: &'a mut dyn LanguageModel) -> Decider<'a> {
@@ -119,6 +161,7 @@ impl<'a> Decider<'a> {
             temperature: 1.0,
             debias: true,
             likelihood: false,
+            likelihood_temperature: LIKELIHOOD_TEMPERATURE,
         }
     }
 
@@ -142,9 +185,10 @@ impl<'a> Decider<'a> {
             } else {
                 format!("{} ", context.trim())
             };
+            let t = self.likelihood_temperature;
             let lp = options
                 .iter()
-                .map(|o| self.lm.logprob(&prefix, o.trim()).map(|(lp, _)| lp))
+                .map(|o| self.lm.logprob(&prefix, o.trim()).map(|(lp, _)| lp / t))
                 .collect::<Option<Vec<f64>>>()
                 .ok_or(DecideError::Unsupported)?;
             return Ok(Raw { orders: vec![lp] });
@@ -226,39 +270,13 @@ impl<'a> Decider<'a> {
         } else {
             format!("{} ", context.trim())
         };
-        // A token counts for the word its first non-space character is in.
-        let tally = |tokens: Vec<(usize, f64)>, src: &str, spans: &[(usize, usize)]| {
-            let mut out = vec![0.0; spans.len()];
-            for (at, lp) in tokens {
-                let rest = src.get(at..).unwrap_or("");
-                let at = at + rest.len() - rest.trim_start().len();
-                if let Some(k) = spans.iter().position(|&(f, t)| f <= at && at < t) {
-                    out[k] -= lp;
-                }
-            }
-            out
-        };
         let here = self
             .lm
             .token_logprobs(&prefix, text)
             .ok_or(DecideError::Unsupported)?;
         let here = tally(here, text, spans);
         let words: Vec<&str> = spans.iter().map(|&(f, t)| &text[f..t]).collect();
-        let list = words.join("\n");
-        let mut at = 0;
-        let listed: Vec<(usize, usize)> = words
-            .iter()
-            .map(|w| {
-                let span = (at, at + w.len());
-                at += w.len() + 1;
-                span
-            })
-            .collect();
-        let alone = self
-            .lm
-            .token_logprobs("", &list)
-            .ok_or(DecideError::Unsupported)?;
-        let alone = tally(alone, &list, &listed);
+        let alone = alone(&mut *self.lm, &words).ok_or(DecideError::Unsupported)?;
         Ok(here.iter().zip(alone).map(|(h, a)| h - a).collect())
     }
 
@@ -418,11 +436,23 @@ mod tests {
             Script::parse("first\t\tA=0.9 B=0.1\nlogprob\twere\t-1\nlogprob\twas\t-2\n").unwrap();
         let mut d = Decider::new(&mut lm);
         d.likelihood = true;
+        d.likelihood_temperature = 1.0;
         let p = d
             .choose("", "Which?", &["They was here.", "They were here."])
             .unwrap();
         // Three words each: -6 against -3.
         assert!((p[1] - 1.0 / (1.0 + (-3.0f64).exp())).abs() < 1e-9, "{p:?}");
+        // At the default temperature the margin counts for less.
+        d.likelihood_temperature = LIKELIHOOD_TEMPERATURE;
+        let q = d
+            .choose("", "Which?", &["They was here.", "They were here."])
+            .unwrap();
+        let t = LIKELIHOOD_TEMPERATURE;
+        assert!(
+            (q[1] - 1.0 / (1.0 + (-3.0 / t).exp())).abs() < 1e-9,
+            "{q:?}"
+        );
+        d.likelihood_temperature = 1.0;
         // Versions of a sentence are scored by likelihood without asking.
         d.likelihood = false;
         let v = d

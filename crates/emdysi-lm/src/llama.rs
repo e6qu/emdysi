@@ -17,7 +17,7 @@ use llama_cpp_2::token::LlamaToken;
 use crate::LanguageModel;
 
 pub struct LlamaLm {
-    backend: LlamaBackend,
+    backend: &'static LlamaBackend,
     model: LlamaModel,
     n_ctx: u32,
     threads: i32,
@@ -34,14 +34,29 @@ impl std::fmt::Display for LoadError {
 
 impl std::error::Error for LoadError {}
 
+/// llama.cpp's backend, initialized once for every model of the process:
+/// a second initialization fails, so two models (one per thread) need the
+/// same one.
+fn backend() -> Result<&'static LlamaBackend, LoadError> {
+    static BACKEND: std::sync::OnceLock<Result<LlamaBackend, String>> = std::sync::OnceLock::new();
+    BACKEND
+        .get_or_init(|| LlamaBackend::init().map_err(|e| e.to_string()))
+        .as_ref()
+        .map_err(|e| LoadError(e.clone()))
+}
+
 impl LlamaLm {
     /// Load a GGUF model. `n_ctx` bounds prompt plus output length (at most
     /// the length the model was trained with).
     pub fn load(path: &Path, n_ctx: u32) -> Result<LlamaLm, LoadError> {
-        let backend = LlamaBackend::init().map_err(|e| LoadError(e.to_string()))?;
-        let model = LlamaModel::load_from_file(&backend, path, &LlamaModelParams::default())
+        let backend = backend()?;
+        let model = LlamaModel::load_from_file(backend, path, &LlamaModelParams::default())
             .map_err(|e| LoadError(format!("{}: {e}", path.display())))?;
-        let threads = std::thread::available_parallelism().map_or(4, |n| n.get() as i32);
+        // EMDYSI_LM_THREADS: fewer threads, for several models at once.
+        let threads = std::env::var("EMDYSI_LM_THREADS")
+            .ok()
+            .and_then(|n| n.parse().ok())
+            .unwrap_or_else(|| std::thread::available_parallelism().map_or(4, |n| n.get() as i32));
         let trained = model.n_ctx_train();
         let n_ctx = if trained > 0 {
             n_ctx.min(trained)
@@ -61,7 +76,7 @@ impl LlamaLm {
             .with_n_ctx(NonZeroU32::new(self.n_ctx))
             .with_n_batch(self.n_ctx)
             .with_n_threads(self.threads);
-        self.model.new_context(&self.backend, params).ok()
+        self.model.new_context(self.backend, params).ok()
     }
 
     fn tokenize(&self, text: &str, bos: bool) -> Vec<LlamaToken> {
@@ -85,6 +100,16 @@ impl LlamaLm {
         }
         format!("{system}\n\n{user}\n")
     }
+}
+
+/// `ln(sum(exp(logits)))`.
+fn log_sum_exp(logits: &[f32]) -> f64 {
+    let max = logits.iter().copied().fold(f32::NEG_INFINITY, f32::max) as f64;
+    max + logits
+        .iter()
+        .map(|&l| (l as f64 - max).exp())
+        .sum::<f64>()
+        .ln()
 }
 
 fn log_softmax_at(logits: &[f32], i: usize) -> f64 {
@@ -140,7 +165,27 @@ impl LanguageModel for LlamaLm {
         Some((lp.iter().map(|t| t.1).sum(), lp.len()))
     }
 
-    fn token_logprobs(&mut self, prefix: &str, text: &str) -> Option<Vec<(usize, f64)>> {
+    fn alternatives(
+        &mut self,
+        prefix: &str,
+        text: &str,
+        words: &[&str],
+    ) -> Option<Vec<crate::Alternatives>> {
+        // The tokens a word can start with, with or without a space.
+        let starts: Vec<Vec<LlamaToken>> = words
+            .iter()
+            .map(|w| {
+                let mut ids: Vec<LlamaToken> = Vec::new();
+                for form in [w.to_string(), format!(" {w}")] {
+                    if let Some(&t) = self.tokenize(&form, false).first() {
+                        if !ids.contains(&t) {
+                            ids.push(t);
+                        }
+                    }
+                }
+                ids
+            })
+            .collect();
         let head = self.tokenize(prefix, true);
         let all = self.tokenize(&format!("{prefix}{text}"), true);
         if all.len() <= head.len() || all.len() as u32 >= self.n_ctx {
@@ -164,10 +209,17 @@ impl LanguageModel for LlamaLm {
         let mut out = Vec::new();
         for (i, &t) in all.iter().enumerate().skip(start) {
             let logits = ctx.get_logits_ith(i as i32 - 1);
-            out.push((
-                at.saturating_sub(prefix.len()),
-                log_softmax_at(logits, t.0 as usize),
-            ));
+            let norm = log_sum_exp(logits);
+            let lp = |t: LlamaToken| logits[t.0 as usize] as f64 - norm;
+            out.push(crate::Alternatives {
+                at: at.saturating_sub(prefix.len()),
+                actual: lp(t),
+                next: all.get(i + 1).map(|&n| lp(n)),
+                words: starts
+                    .iter()
+                    .map(|ids| ids.iter().map(|&t| lp(t)).fold(f64::NEG_INFINITY, f64::max))
+                    .collect(),
+            });
             at += self.piece(t).len();
         }
         Some(out)

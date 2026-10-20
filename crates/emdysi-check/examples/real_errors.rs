@@ -10,7 +10,10 @@
 //! it). The paragraph after the fix is checked too: a diagnostic on the
 //! same place there is a false flag. Every pair is written to OUT.tsv
 //! (default `real-errors.tsv`): kind, caught, flagged after the fix,
-//! before, after, the diagnostics' rules and messages.
+//! before, after, the diagnostics' rules and messages. Each finished pair
+//! is also appended to OUT.tsv.journal, and a rerun with the same OUT
+//! (and the same SHARD and ONLY) resumes after the pairs there; progress
+//! goes to standard error every ten pairs.
 //!
 //! With `EMDYSI_LM` set to a model (a spec as for `en --lm`), spelling and
 //! grammar corrections are chosen by the model among those the grammar
@@ -18,13 +21,17 @@
 //! With `ORACLE` set instead, a perfect model answers: the version of a
 //! sentence the writer's correction has (an upper bound for any model).
 //! Either way the number of questions asked is reported. `SHARD=i/n`
-//! checks only every n-th pair, starting with the i-th.
-//! `LOG=FILE` with a model writes each question it is asked to FILE, with
+//! checks only every n-th pair, starting with the i-th; `PAIRS=i,j,...`
+//! only those pairs, by position after SHARD (as the journal numbers them).
+//! `LOG=FILE` with a model appends each question it is asked to FILE, with
 //! its probabilities and the answer a perfect model gives: how well the
 //! model screens, locates and chooses, and the probabilities to tune the
-//! thresholds on. `LETTERS` asks for a letter even where a model that
+//! thresholds on; the questions that choose among versions of a sentence
+//! also go to FILE.versions.tsv, as `en decide --eval` reads them, to
+//! score again without parsing. `LETTERS` asks for a letter even where a model that
 //! scores text would compare the versions of a sentence by likelihood.
-//! `PACKS=packs/a.toml,...` adds packs to `core`. `EXPLAIN=FILE` writes
+//! `PACKS=packs/a.toml,...` adds packs to `core`; `CORE=FILE` replaces
+//! `core` itself (another threshold, say). `EXPLAIN=FILE` writes
 //! the grammar's account of each missed grammar error (see the `why`
 //! example).
 
@@ -133,8 +140,27 @@ fn main() {
         }
         Err(_) => rows,
     };
+    // PAIRS=i,j,...: only these pairs, by their position after SHARD and
+    // ONLY (as the journal numbers them), e.g. those a perfect model
+    // catches and the grammar alone does not.
+    let rows: Vec<Vec<String>> = match std::env::var("PAIRS") {
+        Ok(pairs) => {
+            let keep: Vec<usize> = pairs
+                .split(',')
+                .filter_map(|i| i.trim().parse().ok())
+                .collect();
+            rows.into_iter()
+                .enumerate()
+                .filter(|(k, _)| keep.contains(k))
+                .map(|(_, r)| r)
+                .collect()
+        }
+        Err(_) => rows,
+    };
     let core =
-        Pack::parse(&std::fs::read_to_string(root.join("packs/core.toml")).unwrap()).unwrap();
+        // `CORE=FILE`: another version of the `core` pack, e.g. with other
+        // thresholds.
+        Pack::parse(&std::fs::read_to_string(root.join(std::env::var("CORE").unwrap_or_else(|_| "packs/core.toml".into()))).unwrap()).unwrap();
     // `PACKS=packs/a.toml,packs/b.toml` adds packs to `core`.
     let mut packs = vec![core];
     for p in std::env::var("PACKS")
@@ -156,12 +182,42 @@ fn main() {
     };
     let tallies: Mutex<BTreeMap<String, Tally>> = Mutex::default();
     let lines: Mutex<Vec<String>> = Mutex::default();
+    // Each finished pair is appended to OUT.tsv.journal as its index and
+    // its line; a rerun with the same OUT (and the same SHARD and ONLY)
+    // resumes after the pairs there.
+    let journal = Appender::open(&format!("{out_path}.journal"), "");
+    let done: BTreeMap<usize, String> = std::fs::read_to_string(format!("{out_path}.journal"))
+        .unwrap_or_default()
+        .lines()
+        .filter_map(|l| {
+            let (i, line) = l.split_once('\t')?;
+            Some((i.parse().ok()?, line.to_string()))
+        })
+        .collect();
+    for line in done.values() {
+        let f: Vec<&str> = line.split('\t').collect();
+        let mut t = tallies.lock().unwrap();
+        let t = t.entry(f[0].to_string()).or_default();
+        t.pairs += 1;
+        t.caught += usize::from(f[1] == "true");
+        t.after += usize::from(f[2] == "true");
+        lines.lock().unwrap().push(line.clone());
+    }
     // `EXPLAIN=FILE`: the grammar's account of each missed grammar error.
     let explain_path = std::env::var("EXPLAIN").ok();
     let explain: Option<Mutex<Vec<String>>> = explain_path.as_ref().map(|_| Mutex::default());
     // `LOG=FILE`: each question asked of the model, with the perfect answer.
+    // Appended as the questions are asked.
     let log_path = std::env::var("LOG").ok();
-    let log: Mutex<Vec<String>> = Mutex::default();
+    let log = log_path.as_ref().map(|p| {
+        (
+            Appender::open(
+                p,
+                "# pair\tkind\tside\tquestion\toptions\tright\tchosen\tp(right)\tp(original)\tprobabilities",
+            ),
+            Appender::open(&format!("{p}.versions.tsv"), ""),
+        )
+    });
     let next = Mutex::new(0usize);
     std::thread::scope(|s| {
         let threads = std::env::var("THREADS")
@@ -180,6 +236,9 @@ fn main() {
                         *n - 1
                     };
                     let Some(r) = rows.get(i) else { break };
+                    if done.contains_key(&i) {
+                        continue;
+                    }
                     let (kind, before, after) = (&r[1], &r[4], &r[5]);
                     let (from, to) = changed_span(before, after);
                     let (afrom, ato) = changed_span(after, before);
@@ -200,13 +259,13 @@ fn main() {
                     let mut check =
                         |text: &str, from: usize, to: usize, side: &str| -> Vec<Diagnostic> {
                             let a = analyze(&erg, text, Format::Markdown, &opts);
-                            let mut logged =
-                                lm.as_mut().filter(|_| log_path.is_some()).map(|m| Logged {
-                                    inner: m,
-                                    oracle: &oracle,
-                                    log: &log,
-                                    tag: format!("{i}\t{kind}\t{side}"),
-                                });
+                            let mut logged = lm.as_mut().zip(log.as_ref()).map(|(m, log)| Logged {
+                                inner: m,
+                                oracle: &oracle,
+                                log: &log.0,
+                                versions: &log.1,
+                                tag: format!("{i}\t{kind}\t{side}"),
+                            });
                             let ask: Option<&mut dyn emdysi_check::decisions::Ask> = if oracle_on {
                                 Some(&mut oracle)
                             } else if let Some(l) = logged.as_mut() {
@@ -248,7 +307,7 @@ fn main() {
                             .collect::<Vec<_>>()
                             .join(" | ")
                     };
-                    lines.lock().unwrap().push(format!(
+                    let line = format!(
                         "{kind}\t{}\t{}\t{}\t{}\t{}\t{}",
                         !hits.is_empty(),
                         !false_hits.is_empty(),
@@ -256,12 +315,18 @@ fn main() {
                         &after[afrom..ato],
                         describe(&hits),
                         describe(&false_hits)
-                    ));
+                    );
+                    journal.push(format!("{i}\t{line}"));
+                    lines.lock().unwrap().push(line);
                     let mut t = tallies.lock().unwrap();
                     let t = t.entry(kind.clone()).or_default();
                     t.pairs += 1;
                     t.caught += usize::from(!hits.is_empty());
                     t.after += usize::from(!false_hits.is_empty());
+                    let done = lines.lock().unwrap().len();
+                    if done % 10 == 0 {
+                        eprintln!("{done} of {} pairs", rows.len());
+                    }
                 }
             });
         }
@@ -270,18 +335,6 @@ fn main() {
         let mut out = out.into_inner().unwrap();
         out.sort();
         std::fs::write(path, out.join("\n")).unwrap();
-    }
-    if let Some(path) = &log_path {
-        let mut log = log.into_inner().unwrap();
-        log.sort_by_key(|l| l.split('\t').next().and_then(|n| n.parse::<usize>().ok()));
-        std::fs::write(
-            path,
-            "# pair\tkind\tside\tquestion\toptions\tright\tchosen\tp(right)\tp(original)\tprobabilities\n"
-                .to_string()
-                + &log.join("\n")
-                + "\n",
-        )
-        .unwrap();
     }
     let mut lines = lines.into_inner().unwrap();
     lines.sort();
@@ -422,7 +475,9 @@ impl Oracle {
 struct Logged<'a> {
     inner: &'a mut ModelAsk,
     oracle: &'a Oracle,
-    log: &'a Mutex<Vec<String>>,
+    log: &'a Appender,
+    /// The versions questions, as `en decide --eval` reads them.
+    versions: &'a Appender,
     tag: String,
 }
 
@@ -436,6 +491,23 @@ impl emdysi_check::decisions::Ask for Logged<'_> {
     fn versions(&mut self, context: &str, question: &str, versions: &[&str]) -> Option<Vec<f64>> {
         let p = self.inner.versions(context, question, versions)?;
         self.record(question, versions, &p);
+        let flat = |t: &str| t.replace(['\t', '\n', '|'], " ");
+        let right = self
+            .oracle
+            .answer(question, versions)
+            .iter()
+            .position(|&x| x > 0.5)
+            .unwrap_or(0);
+        self.versions.push(format!(
+            "{}\t{}\t{}\t{right}",
+            flat(question),
+            flat(context),
+            versions
+                .iter()
+                .map(|v| flat(v))
+                .collect::<Vec<_>>()
+                .join("|")
+        ));
         Some(p)
     }
 
@@ -495,7 +567,7 @@ impl emdysi_check::decisions::Ask for Logged<'_> {
         } else {
             "surprise-right"
         };
-        self.log.lock().unwrap().push(format!(
+        self.log.push(format!(
             "{}\t{kind}\t{}\t{right}\t{argmax}\t{:.2}\t{peak:.2}\t{all}",
             self.tag,
             v.len(),
@@ -530,7 +602,7 @@ impl Logged<'_> {
             .map(|x| format!("{x:.4}"))
             .collect::<Vec<_>>()
             .join(",");
-        self.log.lock().unwrap().push(format!(
+        self.log.push(format!(
             "{}\t{kind}\t{}\t{right}\t{}\t{:.4}\t{:.4}\t{all}",
             self.tag,
             options.len(),
@@ -602,4 +674,28 @@ fn locate(sentence: &str, truth: &str, options: &[&str]) -> Vec<f64> {
     (0..options.len())
         .map(|i| if i == right { 1.0 } else { 0.0 })
         .collect()
+}
+
+/// Lines appended to a file as they come (the journal, `LOG`).
+struct Appender(Mutex<std::fs::File>);
+
+impl Appender {
+    /// Opens `path` for appending, writing `header` first to a new file.
+    fn open(path: &str, header: &str) -> Appender {
+        use std::io::Write;
+        let mut f = std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(path)
+            .unwrap();
+        if !header.is_empty() && f.metadata().unwrap().len() == 0 {
+            writeln!(f, "{header}").unwrap();
+        }
+        Appender(Mutex::new(f))
+    }
+
+    fn push(&self, line: String) {
+        use std::io::Write;
+        writeln!(self.0.lock().unwrap(), "{line}").unwrap();
+    }
 }

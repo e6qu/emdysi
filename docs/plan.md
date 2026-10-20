@@ -28,17 +28,47 @@ unless stated:
 
 ## Priorities
 
-1. **A real model (M20, must have).** Everything model-assisted is built
-   and tested with stand-ins; the 337 above assumes a model that always
-   chooses right and always names the wrong word when asked. The open
-   question of the whole design is what a 2 GB model (Gemma 4 E2B, 4-bit
-   GGUF, or similar) actually gets, and whether grammar plus small model
-   beats a much larger model alone. Blocked in the cloud environment so
-   far: its network policy denies huggingface.co (still a 403 from the
-   proxy on 2026-10-19, after access was granted, so the change seems to
-   apply only to sessions started afterwards). This is the next thing to
-   do in a session that can reach it; see "Running the model evaluation"
-   below.
+1. **A real model (M20, must have).** Measured since 2026-10-19 with
+   Gemma 4 E2B and E4B (4-bit GGUF, in-process; evaluation.md, "Grammar
+   and spelling fixes with a real model"). What holds so far:
+   - Asked for a letter, a small model answers by position; compared by
+     likelihood, it picks the writer's correction of a real error 92% of
+     the time (E4B 94%). Choices among versions now use likelihood.
+   - Comparing versions needs a wide margin, or correct sentences are
+     changed: plain log-probabilities at temperature 6 (since 2026-10-20;
+     5 before) change 5 of 527 correct originals of real-error paragraphs
+     and keep 18 of 31 corrections. Subtracting the words alone (SLOR) is
+     far worse. In a sentence the grammar accepts no word is dropped
+     unless doubled: the false changes were mostly dropped words.
+   - Finding errors is the weak part, for both models alike: a word's
+     surprise, or the model's own next-word expectations, locate the
+     corrected word about 30% of the time and barely separate wrong
+     sentences from right ones (AUC 0.60). Without a locator the right
+     edit is mostly past the candidates parsed (120) or the versions
+     shown (27): 92 of 197 grammar errors (`NOFOCUS=1 fix_bound`).
+   - Where a model can gain (the 34 pairs of a quarter that a perfect
+     model catches and the grammar does not), E2B with every sentence
+     screened in caught 3, all wrong inflections. When it saw the
+     writer's correction it mostly chose it, but with too little margin
+     to tell it from changes to correct sentences; E4B is no better there.
+
+   - False flags with E2B on a quarter of the first development set (673
+     sentences): 4 at temperature 5 (one a real error, one British
+     usage, two false at the threshold); none of them flagged alone at
+     temperature 6, the default now.
+   - With the defaults, E2B adds 3 of the 34 errors it could add on a
+     quarter of the pairs (roughly 12 of 374 in all), with no flag on the
+     corrected text, at about 26 s per sentence instead of 1.6 s.
+
+   So with a 2–4 GB model on a CPU, grammar plus model adds a little
+   beyond the grammar, slowly. Left: the false-flag rate at temperature
+   6 on a whole sample, and the second development set (a quarter is
+   about 3,300 sentences, a day at this speed); then a much larger model,
+   served from a machine with more memory, on the saved questions
+   (`LOG.versions.tsv`, `examples/versions`) to see whether the design
+   pays off with a stronger one. Until then priority 2 is where recall
+   can be gained without one.
+
 2. **Grammar errors without a model.** 25 of 197 is the weakest number in
    the table. The mal-rule variant names errors only when a complete
    search finds fragments only. Of the 172 real grammar errors missed
@@ -125,12 +155,12 @@ default in LanguageTool too).
 | M9, M9a–e | Trees and output; MRS (identical to gold); named errors from the mal-rule variant; minimal pairs (BLiMP, Zorro); semantic prose checks; guarded rewriting (`en rewrite`) | done |
 | M10 | Parse ranking (averaged perceptron, 81.7% exact match held out); fragments and partial covers as fallback | done |
 | M11–M14 | Segmentation and Markdown; spelling; rules engine and packs (structure, terminology, imported Vale rules, openings and procedures); CLI | done |
-| M15 | Decision engine: pluggable local models, typed decisions with calibration, `en decide`, `decisions` pack | done with a tiny test model; real model is priority 1 |
+| M15 | Decision engine: pluggable local models, typed decisions with calibration, `en decide`, `decisions` pack | done; versions of a sentence compared by likelihood, words by surprise (2026-10-19) |
 | M16 | Ambiguity settled by the document's own phrases and by the model | done; best reading right for 58 of 97 judged machine-written sentences |
 | M17 | Precise error claims: false-flag corpus in five genres, proved parse failure, verified named errors | done; see the table above |
 | M18 | Grammar extensions in emdysi's own TDL; stress sentences; ambiguity reported | done |
 | M19 | Coverage of edited text | ongoing; priority 4 |
-| M20 | Small local model with the grammar: verified corrections chosen by the model, spelling choices, readings, AI-prose judgements | machinery done; real model is priority 1 |
+| M20 | Small local model with the grammar: verified corrections chosen by the model, spelling choices, readings, AI-prose judgements | measured with Gemma 4 E2B and E4B: choosing works, finding errors does not yet; priority 1 |
 | M21 | Machine-written tropes and vacuous text | done; newer samples are priority 5 |
 
 ## Picking up
@@ -154,21 +184,27 @@ default in LanguageTool too).
 3. **Running the model evaluation.** First check that the session can
    reach the model host: `curl -sS -o /dev/null -w '%{http_code}\n'
    https://huggingface.co` should print 200, not a `CONNECT tunnel
-   failed, response 403`. If it fails, the environment's network access
-   (cloud environment menu, Edit) needs huggingface.co under allowed
-   domains, or a broader level; the downloads themselves may redirect to
-   other hosts (`cas-bridge.xethub.hf.co`, `cdn-lfs.huggingface.co`),
-   which need allowing too. Download Gemma 4 E2B
-   instruction-tuned, 4-bit GGUF (about 2 GB); build with
-   `--features llama` or serve it with `llama-server`; set
-   `EMDYSI_LM=gguf:/path/to/model.gguf` (or `http://HOST:PORT`). Then
-   `scripts/model-eval/run.sh SPEC` calibrates on half of the real-error
-   questions and measures on the other half: recall with the grammar
-   alone, with a perfect model and with the model, and false flags on
-   both development sets. With an in-process model use `THREADS=1` (one
-   model per thread). Then compare with a much larger model on the same
-   questions, and tune `threshold` of `core.grammar-fix` and
-   `model_threshold` of `core.spelling` (0.8) on the results. How often
-   the model names the wrong word when asked where a sentence goes wrong
-   matters most: without that question only 53 of 199 grammar errors are
-   reachable (`NOFOCUS=1 fix_bound`), against 99 with it.
+   failed, response 403`; if not, the environment's network access needs
+   huggingface.co (and the download hosts it redirects to). The models
+   used: `ggml-org/gemma-4-E2B-it-GGUF` and `ggml-org/gemma-4-E4B-it-GGUF`,
+   `*-Q4_0.gguf` (2.8 and 4.6 GB). Build with `cargo build --release
+   --features llama --examples --bins` (`--examples` alone leaves out
+   `en`). A model run takes hours, so measure on a sample and watch it:
+   - `real_errors` with `SHARD=0/4` (94 pairs), `THREADS=2
+     EMDYSI_LM_THREADS=2` (two pairs at once, each model on two cores)
+     and `LOG=FILE`; it journals each pair, so an interrupted run
+     resumes. Run the same shard without a model and with `ORACLE=1`
+     once, as baselines.
+   - `scripts/model-eval/status.sh OUT.tsv ERR LOG` (with `BASE=DIR` of
+     the baselines) prints the pairs done, recall against the baselines,
+     and how the model answers each kind of question.
+   - The versions questions go to `LOG.versions.tsv`; `examples/versions`
+     scores them once (`SCORES.tsv`) and `scripts/model-eval/margins.py`
+     tries ways of choosing and margins on the scores without the model.
+   - `false_flags` with `SHARD=0/4` (55 documents, 673 sentences of the
+     first development set; 0 flags without a model).
+   - `examples/surprisal` measures locating and screening on the minimal
+     pairs of `scripts/model-eval/questions.py`.
+
+   Two processes with models at once on four cores run at a fifth of the
+   speed each: pause one (`kill -STOP`, `kill -CONT`) rather than share.

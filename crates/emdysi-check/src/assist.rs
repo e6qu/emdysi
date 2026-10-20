@@ -841,6 +841,40 @@ fn surprise(ask: &mut dyn Ask, context: &str, s: &Sentence) -> Option<Vec<(usize
     Some(words.iter().zip(v).map(|(w, x)| (w.0, w.1, x)).collect())
 }
 
+/// Whether `e` deletes a word that its neighbour repeats (|the the|).
+fn doubled(s: &Sentence, e: &Edit) -> bool {
+    let chars: Vec<char> = s.original.chars().collect();
+    let word = |from: usize, to: usize| -> String {
+        chars[from.min(chars.len())..to.min(chars.len())]
+            .iter()
+            .collect::<String>()
+            .trim_matches(|c: char| !c.is_alphanumeric())
+            .to_lowercase()
+    };
+    let deleted = word(e.from, e.to);
+    if deleted.is_empty() || deleted.contains(' ') {
+        return false;
+    }
+    // The words just before and just after the deleted one.
+    let mut b = e.from;
+    while b > 0 && chars[b - 1].is_whitespace() {
+        b -= 1;
+    }
+    let mut a = b;
+    while a > 0 && !chars[a - 1].is_whitespace() {
+        a -= 1;
+    }
+    let mut c = e.to.min(chars.len());
+    while c < chars.len() && chars[c].is_whitespace() {
+        c += 1;
+    }
+    let mut d = c;
+    while d < chars.len() && !chars[d].is_whitespace() {
+        d += 1;
+    }
+    word(a, b) == deleted || word(c, d) == deleted
+}
+
 /// Grammar corrections chosen by the model (see the module comment). A
 /// sentence the strict grammar accepts is considered only with `screen`
 /// (see [`Screen`]), since an error can leave a sentence grammatical
@@ -904,7 +938,14 @@ pub fn grammar(
             }
             None => locate(ask, &ctx, s),
         };
-        let cands = grammar_candidates(erg, s, &focus);
+        let mut cands = grammar_candidates(erg, s, &focus);
+        // In a sentence the grammar accepts nothing says a word is one too
+        // many, and a model prefers a version without one for being
+        // shorter (|is not so well worth listening to … to be only just
+        // tolerable| without |to be|): only a doubled word is dropped.
+        if grammatical {
+            cands.retain(|(e, _)| !e.replacement.trim().is_empty() || doubled(s, e));
+        }
         if cands.is_empty() {
             continue;
         }
