@@ -2204,6 +2204,12 @@ The bold labels (18 lines in 3 documents of the development sets) leave
 the claims of `core` on those documents and the real errors caught
 (208 of 374) as they were.
 
+On the 34 real-error pairs where a model can gain (`SHARD=0/4`, the
+`PAIRS` of the model runs above), the three guards cost nothing: the
+model still gains the same 4 (*how* to *on how*, *serer* to *server*,
+*give* to *gives*, *though* to *thought*; 8 of 34 caught with the 4 of
+the grammar alone), with no flag on the corrected text, in 284 questions.
+
 ## Doubled words and 'allows to', without a model
 
 Looking at what the model gained turned up errors no model is needed
