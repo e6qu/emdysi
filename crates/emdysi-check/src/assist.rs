@@ -214,8 +214,21 @@ fn function_word_edits(s: &Sentence) -> (Vec<WordEdit>, Vec<WordEdit>) {
                 dels.push((t.from - 1, t.to, format!(" {surface}"), String::new()));
             }
         }
+        // |so odd a mixture| is English as it stands: no |of| before the
+        // article after |so|, |too|, |as| or |how| and an adjective (the
+        // informal |so odd of a| is likelier to a model).
+        let degree_article = {
+            let lower = surface.to_lowercase();
+            let before: String = chars[..t.from.min(chars.len())].iter().collect();
+            let mut prev = before.split_whitespace().rev();
+            (lower == "a" || lower == "an")
+                && prev.next().is_some()
+                && prev.next().is_some_and(|w| {
+                    ["so", "too", "as", "how"].contains(&w.to_lowercase().as_str())
+                })
+        };
         if surface.chars().next().is_some_and(char::is_alphabetic) {
-            for w in INSERTED {
+            for w in INSERTED.iter().filter(|w| !(degree_article && **w == "of")) {
                 let w = if t.from == 0 {
                     capitalized(w)
                 } else {

@@ -299,6 +299,25 @@ fn versions_estimated_in_one_pass_are_compared_only_at_the_top() {
 }
 
 #[test]
+fn no_of_is_put_into_so_odd_a_mixture() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let text = "Mr. Bennet was so odd a mixture of quick parts and caprice.\n";
+    let a = analyze(&erg, text, Format::Markdown, &opts());
+    // A model that prefers the informal |so odd of a| is not given it.
+    let mut model = Surprised {
+        word: "a",
+        surprise: 6.0,
+        want: "odd of a",
+    };
+    let d: Vec<Diagnostic> = core()
+        .check_with(&erg, &a, Some(&mut model))
+        .into_iter()
+        .filter(|d| d.rule == "core.grammar-fix")
+        .collect();
+    assert!(d.is_empty(), "{d:?}");
+}
+
+#[test]
 fn a_real_word_typo_is_corrected_at_the_word_named() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     // |Manger| is a word, so the spelling check passes it and the grammar
