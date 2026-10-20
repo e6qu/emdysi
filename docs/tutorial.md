@@ -229,13 +229,14 @@ amb.txt: 0 errors, 0 warnings, 1 suggestion
 `en packs` lists the rules of the packs in use. It starts:
 
 ```text
-core: Spelling and grammaticality, from the English Resource Grammar's lexicon and rules. Every rule here claims an error, so each reports only what the grammar can establish: a complete search that found no analysis, an error every best analysis of the grammar-error variant names, a word one edit from a known word.
+core: Spelling and grammaticality, from the English Resource Grammar's lexicon and rules. Every rule here claims an error, so each reports only what the grammar can establish: a complete search that found no analysis, an error every best analysis of the grammar-error variant names, a word one edit from a known word, or a few constructions wrong in any context ('allows to map').
   core.spelling (warning)
   core.grammar-fix (warning)
   core.grammar-errors (warning)
   core.consistency (warning)
   core.articles (warning)
   core.repeated-word (warning)
+  core.allow-to (warning)
   core.double-article (warning)
 ai-tells: Vocabulary and constructions that are over-represented in machine-written prose.
   ai-tells.vocabulary (warning)

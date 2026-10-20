@@ -2148,6 +2148,63 @@ model flagged in the false-flag sample at temperature 5, checked alone at
 6, none is flagged; that includes the real error (*all same ease*), so
 the false-flag rate at 6 is not yet measured on a whole sample.
 
+## Doubled words and 'allows to', without a model
+
+Looking at what the model gained turned up errors no model is needed
+for (2026-10-20):
+
+- `core.repeated-word` reported a doubled function word only in a
+  sentence the grammar had no full analysis for, but the grammar finds
+  strained analyses for real mistakes (*helps you to to stay secure*):
+  8 of the 20 doubled words of the real-error corpus were missed. Words
+  only ever doubled by mistake (articles, *to*, *of*, *for*, *with*,
+  *from*, *into*, *and*, *or*, *as*, *at*, *by*, possessives) are now
+  reported in any sentence: 18 of the 20 are caught. Not *in* or *on*
+  (*sign in in the corner*), *that*, *had*, *is* or *are*.
+- `core.allow-to`: *allows to map users* needs someone to allow. All four
+  such errors of the corpus went unflagged; the pattern (active *allow*
+  and *enable*, not *allowed*, not *permit*) matches those four before the
+  fix and none after.
+
+In the development sets the listed words occur doubled five times and
+*allows to* once, all mistakes (second set, Rust notes). Real errors
+caught without a model: 202 of 374 (54%; grammar errors 35 of 197),
+against 192; no flag on the corrected text.
+
+- `core.spelling` consulted codespell's list of common misspellings only
+  for words no list knows; *homogenous* (for *homogeneous*) is in a rare
+  word list and a technical one, so it passed. A word codespell lists
+  is now a misspelling unless it is a common word, the grammar knows it
+  (*quitted*, a period form) or it follows a hyphen (*endings such as
+  -ment*). Of the 447 such words, none is newly flagged in either
+  development set (`en check --no-parse` on all 347 documents); in the
+  real-error corpus the gain is one word written six times: 208 of 374
+  (56%; grammar errors 41 of 197).
+
+A pattern for a missing *the* before *following* (*executes following
+actions:*) would catch two more and match nothing in the development
+sets, but it was shaped on those two errors; it is left out.
+
+### Measured and rejected: the grammar-error variant on sentences the grammar accepts
+
+126 of the missed grammar errors leave a strict reading, and the
+grammar-error variant is parsed there only for unknown words. Whether
+its readings would tell those errors apart (`examples/mal_strict`, 2026-10-20):
+each such sentence and its correction parsed with the variant (100
+readings, 10 s), the ranker's best reading naming an error (a mal-rule or
+robust item) against its best naming none:
+
+| | Before the fix (125) | After the fix (123) |
+|---|---|---|
+| Every reading names an error | 84 | 73 |
+| No reading names one | 13 | 11 |
+| Both kinds | 28 | 39 |
+| A reading naming an error is the best | 99 | 92 |
+
+The margin separates the two sides hardly better than chance (AUC
+0.534): on correct sentences the variant's best readings use its robust
+and mal-rule items almost as often, so its ranking is no detector.
+
 ## Where checking time goes
 
 `timing` (`crates/emdysi-check/examples`) checks documents on one thread
