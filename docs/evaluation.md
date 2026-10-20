@@ -2172,12 +2172,18 @@ with the original).
 The 34 pairs where a model can gain, against the grammar alone with the
 model-free changes below (4 of the 34):
 
-| | Rounds | Five by estimate, then the winner alone |
-|---|---|---|
-| Errors gained by the model | 2 (*serer*, *give*) | 3 (*serer* to *server*, *give* to *gives*, *though* to *thought*) |
-| Flags on the corrected text | 0 | 0 |
-| Questions | 419 | 281 |
-| Time (two pairs at once, four cores) | 113 min | 44 min |
+| | Rounds (27 versions) | Five by estimate of 27, then the winner alone | The same of all the grammar accepts (up to 120 parsed) |
+|---|---|---|---|
+| Errors gained by the model | 2 (*serer*, *give*) | 3 (*serer* to *server*, *give* to *gives*, *though* to *thought*) | 4 (and *how* to *on how*) |
+| Flags on the corrected text | 0 | 0 | 0 |
+| Questions | 419 | 281 | 282 |
+| Time (two pairs at once, four cores) | 113 min | 44 min | (shared the CPU) |
+
+With a model that estimates, every version the grammar accepts is now
+shown to it: the 27 the rounds could compare had also capped the
+candidates parsed, and without a model that locates the error the
+writer's correction is often past them (32 of 197, `NOFOCUS=1
+fix_bound`).
 
 ## Doubled words and 'allows to', without a model
 
