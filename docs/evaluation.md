@@ -2250,9 +2250,8 @@ sets, but it was shaped on those two errors; it was left out at first
 
 ### Typos that are words, by pattern
 
-Five more patterns from the missed grammar errors, each a typo that
-gives another English word, so the grammar accepts the sentence
-(2026-10-20):
+Nine more patterns from the missed grammar errors, each a typo or an
+edit's leftover that the grammar accepts (2026-10-20):
 
 | Rule | Error | Caught |
 |---|---|---|
@@ -2261,13 +2260,17 @@ gives another English word, so the grammar accepts the sentence
 | `core.fore-for` | *Fore more details* | 1 |
 | `core.adjective-for-adverb-opening` | *Additional, we are starting* | 1 |
 | `core.chose-choose` | *Chose one of your nodes* opening an instruction | 1 |
+| `core.the-both` | *Append the both old and new CA*; not *the both of us* | 1 |
+| `core.be-have` | *will be have one of the following values* | 1 |
+| `core.his-this` | *. his means that* | 1 |
+| `core.is-verb` | *is works like type annotations* (only before *like*, *the*, *a*, *to*...: not *is works of art*) | 1 |
 
-Real errors caught without a model: 217 of 374 (208 before), grammar 50
+Real errors caught without a model: 221 of 374 (208 before), grammar 54
 of 197, with no flag on the corrected text. These were written after
 looking at the errors they catch, so the gain is an upper estimate of
 what they catch elsewhere; what keeps them is that they match nothing in
 the corrected text, nor in any sentence of the development and held-out
-sets (the patterns run over all of their text, and every capitalized
+sets (the patterns run over all of their text, 41,364 sentences, and every capitalized
 word of the rare list there is checked by hand: none is in a title-cased
 run). Codespell's rare list without the title-case gate
 would flag real words in the development sets (*wit*, *revered*,

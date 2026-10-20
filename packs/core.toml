@@ -156,6 +156,54 @@ acceptable = [
 ]
 
 [[rule]]
+id = "core.the-both"
+kind = "regex"
+severity = "warning"
+message = "'{match}': 'both' takes no article ('both old and new')."
+pattern = "\\b(?<m>[Tt]he both)\\b(?!\\s+of\\b)"
+replace = "both"
+description = "'The both' before what it joins ('the both old and new CA') is a leftover of an edit; the informal 'the both of us' is left alone. Once in the real-error corpus, never in the development sets."
+examples = ["Append the both old and new CA to the file.\n"]
+acceptable = [
+  "Append both old and new CA to the file.\n",
+  "It is the both of them.\n",
+]
+
+[[rule]]
+id = "core.be-have"
+kind = "regex"
+severity = "warning"
+message = "'{match}': one of the two verbs is left over from an edit."
+pattern = "\\b(?<m>be have)\\b"
+description = "'Be have' ('will be have one of the following values') is never English: one verb is left over from an edit. Once in the real-error corpus, never in the development sets."
+examples = ["The label will be have one of the following values.\n"]
+acceptable = ["The label will have one of the following values.\n", "Children should behave.\n"]
+
+[[rule]]
+id = "core.his-this"
+kind = "regex"
+severity = "warning"
+message = "A sentence opens with 'his': did you mean 'This'?"
+pattern = "(?:^|[.!?]\\s+)(?<m>his)\\s+(?=(?:means|is|was|will|can|allows|lets|makes)\\b)"
+replace = "This"
+description = "A sentence that opens with lower-case 'his' and a verb ('his means that') has lost the T of 'This'. Once in the real-error corpus, never in the development sets."
+examples = ["The default is an empty list. his means that every address is used.\n"]
+acceptable = ["This means that every address is used.\n", "He said his means were small.\n"]
+
+[[rule]]
+id = "core.is-verb"
+kind = "regex"
+severity = "warning"
+message = "'{match}': 'is' before a verb that already agrees with its subject is left over from an edit."
+pattern = "\\b(?<m>is)\\s+(?=(?:works|supports|provides|allows|requires|uses|returns)\\s+(?:like|the|a|an|for|to|with|it|you|this|that)\\b)"
+description = "'Is' before a verb in the third person ('is works like type annotations') is left over from an edit; a noun reading ('is works of art') is avoided by what must follow. Once in the real-error corpus, never in the development sets."
+examples = ["A type annotation for `self` is works like type annotations for other parameters.\n"]
+acceptable = [
+  "A type annotation for `self` works like type annotations for other parameters.\n",
+  "The collection is works of art.\n",
+]
+
+[[rule]]
 id = "core.double-article"
 kind = "repeated-word"
 articles = true

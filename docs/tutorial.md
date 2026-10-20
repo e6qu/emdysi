@@ -241,6 +241,10 @@ core: Spelling and grammaticality, from the English Resource Grammar's lexicon a
   core.adjective-for-adverb-opening (warning)
   core.following-article (warning)
   core.chose-choose (warning)
+  core.the-both (warning)
+  core.be-have (warning)
+  core.his-this (warning)
+  core.is-verb (warning)
   core.double-article (warning)
 ai-tells: Vocabulary and constructions that are over-represented in machine-written prose.
   ai-tells.vocabulary (warning)
