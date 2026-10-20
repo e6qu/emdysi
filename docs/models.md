@@ -183,7 +183,9 @@ calibrated model.
     (`screen_surprise` of `core.grammar-fix`), or, without scores, when
     the model, asked first (*Is this sentence correct English, as
     written?*), doubts it with probability 0.5 or more (`screen`), since
-    many errors leave a sentence grammatical. Up to 120 edits are parsed,
+    many errors leave a sentence grammatical; in such a sentence no word
+    is dropped unless its neighbour repeats it (a model prefers a version
+    without a word for being shorter). Up to 120 edits are parsed,
     and up to 27 that the strict grammar accepts are shown to the model
     with the original, compared by likelihood or asked (*Which version of
     the sentence is correct English, as the writer meant it?*), nine at a
