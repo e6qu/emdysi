@@ -2,8 +2,10 @@
 //! "to to") or two different articles in a row ("a the"). English allows
 //! some doublings ("that that is is", "Will Will will", "had had"), so a
 //! doubling is reported only in a sentence the grammar has no full analysis
-//! for, and a run of three or more is taken as deliberate ("Buffalo buffalo
-//! buffalo", "can can can").
+//! for, except of words that are never doubled ("the the", "to to": the
+//! grammar finds a strained analysis for "helps you to to stay"), and a run
+//! of three or more is taken as deliberate ("Buffalo buffalo buffalo",
+//! "can can can").
 
 use crate::Analysis;
 use crate::structure::Hit;
@@ -14,6 +16,16 @@ const WORDS: &[&str] = &[
     "been", "can", "will", "would", "should", "could", "we", "they", "this", "is",
 ];
 
+/// Function words doubled only by mistake, reported even in a sentence the
+/// grammar has a full analysis for (8 of the 20 doubled words of the
+/// real-error corpus were in such sentences; none of these words is
+/// doubled in the development sets but by mistake). Not |in| or |on| (|sign
+/// in in the corner|), nor |that|, |had|, |is| or |are|.
+const ALWAYS: &[&str] = &[
+    "the", "a", "an", "to", "of", "for", "with", "from", "into", "and", "or", "your", "our",
+    "their", "its", "my", "as", "at", "by",
+];
+
 const ARTICLES: &[&str] = &["a", "an", "the"];
 
 /// Repeated words (`articles` false) or two different articles in a row
@@ -21,7 +33,8 @@ const ARTICLES: &[&str] = &["a", "an", "the"];
 pub fn run_repeats(a: &Analysis, articles: bool) -> Vec<Hit> {
     let mut out = Vec::new();
     for (si, s) in a.sentences.iter().enumerate() {
-        if s.strict() {
+        let strict = s.strict();
+        if strict && articles {
             continue;
         }
         let t = &s.tokens;
@@ -45,7 +58,12 @@ pub fn run_repeats(a: &Analysis, articles: bool) -> Vec<Hit> {
                     && ARTICLES.contains(&x.form.as_str())
                     && ARTICLES.contains(&y.form.as_str())
             } else {
-                lx == ly && WORDS.contains(&lx.as_str()) && !(i > 0 && same(i - 1)) && !same(i + 2)
+                let listed = if strict {
+                    ALWAYS.contains(&lx.as_str())
+                } else {
+                    WORDS.contains(&lx.as_str()) || ALWAYS.contains(&lx.as_str())
+                };
+                lx == ly && listed && !(i > 0 && same(i - 1)) && !same(i + 2)
             };
             if hit {
                 let mut h = Hit::at(a, si, x.from, y.to);

@@ -31,6 +31,38 @@ fn rules_at<'a>(src: &str, diags: &'a [Diagnostic], text: &str) -> Vec<&'a str> 
 }
 
 #[test]
+fn words_never_doubled_are_reported_whatever_the_parse() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let checker = Checker::new(packs());
+    let opts = Options {
+        threads: 1,
+        ..Options::default()
+    };
+    // The grammar has a full analysis for it (|helps you to| plus a
+    // phrase |to stay secure|), but |to to| is a mistake.
+    let src = "Following this recommendation helps you to to stay secure.\n";
+    let a = analyze(&erg, src, Format::Plain, &opts);
+    assert!(a.sentences[0].strict());
+    let d = checker.check(&erg, &a);
+    assert!(
+        rules_at(src, &d, "to to").contains(&"core.repeated-word"),
+        "{d:?}"
+    );
+    // Doublings English allows, and a particle before a preposition.
+    for src in [
+        "He said that that is true.\n",
+        "Sign in in the top right corner.\n",
+    ] {
+        let a = analyze(&erg, src, Format::Plain, &opts);
+        let d = checker.check(&erg, &a);
+        assert!(
+            !d.iter().any(|x| x.rule == "core.repeated-word"),
+            "{src}: {d:?}"
+        );
+    }
+}
+
+#[test]
 fn checks_and_fixes() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     let checker = Checker::new(packs());

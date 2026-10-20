@@ -74,7 +74,7 @@ id = "core.repeated-word"
 kind = "repeated-word"
 severity = "warning"
 message = "Repeated word: '{match}'."
-description = "A function word written twice in a row ('the the', 'to to', 'are are'), in a sentence the grammar has no full analysis for: English allows some doublings ('that that is is', 'Will Will will', 'had had'). A run of three or more is taken as deliberate ('can can can')."
+description = "A function word written twice in a row ('the the', 'to to', 'are are'), in a sentence the grammar has no full analysis for: English allows some doublings ('that that is is', 'Will Will will', 'had had'). Words that are only ever doubled by mistake (articles, 'to', 'of', 'for', 'with', 'from', 'into', 'and', 'or', 'as', 'at', 'by', possessives) are reported whatever the analysis. A run of three or more is taken as deliberate ('can can can')."
 examples = ["It can be modified and and removed at any time.\n"]
 
 [[rule]]
