@@ -35,9 +35,11 @@ unless stated:
      likelihood, it picks the writer's correction of a real error 92% of
      the time (E4B 94%). Choices among versions now use likelihood.
    - Comparing versions needs a wide margin, or correct sentences are
-     changed: plain log-probabilities at temperature 5 change 2 of 140
-     correct originals and keep 8 of 11 corrections (E4B: 0 and 7).
-     Subtracting the words alone (SLOR) is far worse.
+     changed: plain log-probabilities at temperature 6 (since 2026-10-20;
+     5 before) change 5 of 527 correct originals of real-error paragraphs
+     and keep 18 of 31 corrections. Subtracting the words alone (SLOR) is
+     far worse. In a sentence the grammar accepts no word is dropped
+     unless doubled: the false changes were mostly dropped words.
    - Finding errors is the weak part, for both models alike: a word's
      surprise, or the model's own next-word expectations, locate the
      corrected word about 30% of the time and barely separate wrong

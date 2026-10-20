@@ -144,13 +144,15 @@ pub struct Decider<'a> {
     /// this before they become probabilities: a version of a sentence is
     /// often a few nats more likely than the writer's without being what
     /// they meant (|need to have| against |need to save|), so a choice
-    /// should take a large margin. At 5 (2026-10-19), 0.8 against a single
-    /// alternative takes about 7 nats.
+    /// should take a large margin. At 6 (2026-10-20), 0.8 against a single
+    /// alternative takes about 8.3 nats: on 558 questions from real-error
+    /// paragraphs, 5 of 527 correct sentences changed against 9 at 5, for
+    /// one correction of 19 fewer.
     pub likelihood_temperature: f64,
 }
 
 /// The default [`Decider::likelihood_temperature`].
-pub const LIKELIHOOD_TEMPERATURE: f64 = 5.0;
+pub const LIKELIHOOD_TEMPERATURE: f64 = 6.0;
 
 impl<'a> Decider<'a> {
     pub fn new(lm: &'a mut dyn LanguageModel) -> Decider<'a> {
