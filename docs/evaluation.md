@@ -2098,6 +2098,37 @@ grammar already catches the error; on the errors only a model could add,
 neither separates the writer's correction from changes to correct
 sentences.
 
+### False flags with the model
+
+The quarter of the first development set (`false_flags`, `SHARD=0/4`: 55
+documents, 673 sentences; 0 flags without a model), E2B with the screen
+at 3 nats:
+
+| Setting | Flags | Per 1,000 sentences |
+|---|---|---|
+| No model | 0 | 0 |
+| Temperature 5, words dropped anywhere (first 141 sentences) | 2 | 14 |
+| Temperature 5, no word dropped from a sentence the grammar accepts unless doubled | 4 | 5.9 |
+
+The first two were dropped words in correct sentences of fiction (*to be
+only just tolerable* without *to be*, *I do not mind his not talking*
+without *his*), which is why only a doubled word is dropped now from a
+sentence the grammar accepts. Of the four that remain:
+
+| Flag | Probability | |
+|---|---|---|
+| *with all same ease of use* to *all the same ease* | 93% | a real error in the source |
+| *The Hong Kong government, which is led by …, have argued* to *has* | 89% | British usage allows it; an error in American |
+| *Resource isolation: predictable …* to *isolate* | 80% | false |
+| *Tokens and Span* (a heading) without *and* | 80% | false |
+
+Both false ones sit at the threshold and fall under it at temperature 6,
+now the default (on the 558 questions of the real-error runs, 5 of 527
+correct sentences changed against 9 at 5, for one correction of 19
+fewer). The sample took 4 h 50 min with two documents at once, each with
+its own model on two cores: about 26 s per sentence, against 1.6 s
+without a model.
+
 ## Where checking time goes
 
 `timing` (`crates/emdysi-check/examples`) checks documents on one thread
