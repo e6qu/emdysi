@@ -109,3 +109,25 @@ fn front_matter_is_not_prose() {
         vec!["Intro.".to_string(), "After the break.".to_string()]
     );
 }
+
+#[test]
+fn a_bold_label_line_ends_its_block() {
+    let src = "* **Service discovery and load balancing**\n  Kubernetes can expose a container.\n\n**Note:**\nRead this first.\n\nSome **bold** words\nand more.\n";
+    let blocks = markdown_blocks(src);
+    let texts: Vec<&str> = blocks.iter().map(|b| b.text.as_str()).collect();
+    assert_eq!(
+        texts,
+        vec![
+            "Service discovery and load balancing",
+            "Kubernetes can expose a container.",
+            "Note:",
+            "Read this first.",
+            // Bold inside a line is no label.
+            "Some bold words and more.",
+        ]
+    );
+    // The text after the label is still in the list item.
+    assert_eq!(blocks[1].kind, BlockKind::ListItem);
+    let r = blocks[1].source_range(0..10);
+    assert_eq!(&src[r], "Kubernetes");
+}

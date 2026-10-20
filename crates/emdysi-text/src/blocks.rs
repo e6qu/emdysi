@@ -408,7 +408,12 @@ pub fn markdown_blocks(src: &str) -> Vec<Block> {
                 b.opaque.push(start..b.text.len());
             }
             Event::SoftBreak | Event::HardBreak if skip == 0 => {
-                if let Some(b) = cur.as_mut() {
+                // A line that is only a bold label (|**Service discovery**|
+                // over the text it introduces) ends a block of its own,
+                // rather than running into the next line's sentence.
+                if bold_label_line(src, range.start) {
+                    flush(&mut cur, &mut out);
+                } else if let Some(b) = cur.as_mut() {
                     b.push(" ", None, range.start);
                 }
             }
@@ -417,4 +422,30 @@ pub fn markdown_blocks(src: &str) -> Vec<Block> {
     }
     flush(&mut cur, &mut out);
     out
+}
+
+/// Whether the source line that ends at `at` is only a bold label: strong
+/// emphasis (`**…**` or `__…__`), perhaps with a colon, after any list
+/// marker.
+fn bold_label_line(src: &str, at: usize) -> bool {
+    let start = src[..at.min(src.len())].rfind('\n').map_or(0, |i| i + 1);
+    let line = src[start..at.min(src.len())].trim();
+    let line = line
+        .strip_prefix(['*', '-', '+'])
+        .map(str::trim_start)
+        .filter(|rest| rest.starts_with("**") || rest.starts_with("__"))
+        .unwrap_or_else(|| {
+            let digits = line.trim_start_matches(|c: char| c.is_ascii_digit());
+            match digits.strip_prefix(['.', ')']) {
+                Some(rest) if digits.len() < line.len() => rest.trim_start(),
+                _ => line,
+            }
+        });
+    let line = line.strip_suffix(':').unwrap_or(line).trim_end();
+    ["**", "__"].iter().any(|m| {
+        line.len() > 2 * m.len()
+            && line.starts_with(m)
+            && line.ends_with(m)
+            && !line[m.len()..line.len() - m.len()].contains(m)
+    })
 }
