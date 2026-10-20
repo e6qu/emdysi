@@ -2138,7 +2138,7 @@ grammar alone does not:
 
 | | Result |
 |---|---|
-| Caught | 3 of 34 (*serer* to *server*, *give* to *gives*, *help to stay* to *help stay*) |
+| Caught | 3 of 34 (*serer* to *server*, *give* to *gives*, *to stay* to *stay*) |
 | Flags on the corrected text at the changed words | 0 |
 | Questions asked | 419 (113 min, two pairs at once) |
 
