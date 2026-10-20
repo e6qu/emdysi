@@ -2185,6 +2185,26 @@ A pattern for a missing *the* before *following* (*executes following
 actions:*) would catch two more and match nothing in the development
 sets, but it was shaped on those two errors; it is left out.
 
+### Measured and rejected: the grammar-error variant on sentences the grammar accepts
+
+126 of the missed grammar errors leave a strict reading, and the
+grammar-error variant is parsed there only for unknown words. Whether
+its readings would tell those errors apart (`examples/mal_strict`, 2026-10-20):
+each such sentence and its correction parsed with the variant (100
+readings, 10 s), the ranker's best reading naming an error (a mal-rule or
+robust item) against its best naming none:
+
+| | Before the fix (125) | After the fix (123) |
+|---|---|---|
+| Every reading names an error | 84 | 73 |
+| No reading names one | 13 | 11 |
+| Both kinds | 28 | 39 |
+| A reading naming an error is the best | 99 | 92 |
+
+The margin separates the two sides hardly better than chance (AUC
+0.534): on correct sentences the variant's best readings use its robust
+and mal-rule items almost as often, so its ranking is no detector.
+
 ## Where checking time goes
 
 `timing` (`crates/emdysi-check/examples`) checks documents on one thread
