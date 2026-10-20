@@ -10,6 +10,8 @@
 //! `TIMEOUT=SECONDS` sets the parser's time limit; the findings of
 //! each rule are listed too, to compare runs with different limits.
 //! `SLOW=SECONDS` prints the sentences parsed that slowly, with their time.
+//! With `EMDYSI_LM` set to a model (a spec as for `en --lm`), the rules
+//! that use one ask it, and the time spent in it is a stage of its own.
 
 use emdysi_check::{Checker, Format, Options, Pack, analyze, timing};
 use emdysi_parse::{Erg, default_grammar_dir};
@@ -48,6 +50,10 @@ fn main() {
         timeout: timeout.unwrap_or(Options::default().timeout),
         ..Options::default()
     };
+    let mut model = std::env::var("EMDYSI_LM")
+        .ok()
+        .filter(|s| !s.trim().is_empty())
+        .map(|spec| ModelAsk(emdysi_lm::open(spec.trim()).expect("EMDYSI_LM")));
     let mut findings: std::collections::BTreeMap<String, usize> = Default::default();
     // `SLOW=SECONDS` prints each sentence whose parse took that long or
     // longer, with its time, on standard error.
@@ -68,7 +74,10 @@ fn main() {
         let a = analyze(&erg, &src, format, &opts);
         analyze_time += t.elapsed();
         let t = Instant::now();
-        for d in checker.check(&erg, &a) {
+        let ask = model
+            .as_mut()
+            .map(|m| m as &mut dyn emdysi_check::decisions::Ask);
+        for d in checker.check_with(&erg, &a, ask) {
             *findings.entry(d.rule).or_default() += 1;
         }
         check_time += t.elapsed();
@@ -153,5 +162,43 @@ fn main() {
     println!("\n| Findings | Count |\n|---|---|");
     for (id, n) in &findings {
         println!("| `{id}` | {n} |");
+    }
+}
+
+/// The model named by `EMDYSI_LM`, as the checker's decision model.
+struct ModelAsk(Box<dyn emdysi_lm::LanguageModel>);
+
+impl emdysi_check::decisions::Ask for ModelAsk {
+    fn ask(&mut self, context: &str, question: &str, options: &[&str]) -> Option<Vec<f64>> {
+        emdysi_lm::decide::Decider::new(&mut *self.0)
+            .choose(context, question, options)
+            .ok()
+    }
+
+    fn versions(&mut self, context: &str, question: &str, versions: &[&str]) -> Option<Vec<f64>> {
+        emdysi_lm::decide::Decider::new(&mut *self.0)
+            .versions(context, question, versions)
+            .ok()
+    }
+
+    fn surprise(
+        &mut self,
+        context: &str,
+        text: &str,
+        spans: &[(usize, usize)],
+    ) -> Option<Vec<f64>> {
+        emdysi_lm::decide::Decider::new(&mut *self.0)
+            .surprise(context, text, spans)
+            .ok()
+    }
+
+    fn estimates(&mut self, context: &str, versions: &[&str]) -> Option<Vec<f64>> {
+        emdysi_lm::decide::Decider::new(&mut *self.0)
+            .estimates(context, versions)
+            .ok()
+    }
+
+    fn can_estimate(&self) -> bool {
+        self.0.scores_tokens()
     }
 }

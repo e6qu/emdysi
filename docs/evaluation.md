@@ -2148,6 +2148,43 @@ model flagged in the false-flag sample at temperature 5, checked alone at
 6, none is flagged; that includes the real error (*all same ease*), so
 the false-flag rate at 6 is not yet measured on a whole sample.
 
+### Where the time goes, and one pass to pick the versions
+
+The model takes almost all of a model-assisted check: on six news
+documents (16 sentences), 1,117 of the rules' 1,274 seconds were spent
+in the model (`examples/timing` with `EMDYSI_LM`, a stage of its own
+now; the CPU shared with another run). Each version of a sentence is a
+full pass, and a sentence can have 27 versions and more.
+
+`Decider::estimates` estimates, from one pass over the original, how
+much likelier each version is: the log-probability of its first new word
+where the original's first changed word stands, less the original
+word's (the next word's for a dropped one). On the 42 distinct saved
+questions of the real-error runs with the writer's version among others
+(5.3 versions on average), it put the writer's version first in 34,
+among the first three in 40 and among the first five in all 42
+(`examples/prefilter`). So now, with a model that gives estimates, only
+the five most promising versions are compared in full, and the winner
+then against the original alone (as after rounds: in one question of
+six, *give* to *gives* had 0.55, under the threshold, against 0.82 alone
+with the original).
+
+The 34 pairs where a model can gain, against the grammar alone with the
+model-free changes below (4 of the 34):
+
+| | Rounds (27 versions) | Five by estimate of 27, then the winner alone | The same of all the grammar accepts (up to 120 parsed) |
+|---|---|---|---|
+| Errors gained by the model | 2 (*serer*, *give*) | 3 (*serer* to *server*, *give* to *gives*, *though* to *thought*) | 4 (and *how* to *on how*) |
+| Flags on the corrected text | 0 | 0 | 0 |
+| Questions | 419 | 281 | 282 |
+| Time (two pairs at once, four cores) | 113 min | 44 min | (shared the CPU) |
+
+With a model that estimates, every version the grammar accepts is now
+shown to it: the 27 the rounds could compare had also capped the
+candidates parsed, and without a model that locates the error the
+writer's correction is often past them (32 of 197, `NOFOCUS=1
+fix_bound`).
+
 ## Doubled words and 'allows to', without a model
 
 Looking at what the model gained turned up errors no model is needed

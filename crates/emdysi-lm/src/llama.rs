@@ -165,6 +165,10 @@ impl LanguageModel for LlamaLm {
         Some((lp.iter().map(|t| t.1).sum(), lp.len()))
     }
 
+    fn scores_tokens(&self) -> bool {
+        true
+    }
+
     fn alternatives(
         &mut self,
         prefix: &str,

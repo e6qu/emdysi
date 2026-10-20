@@ -280,6 +280,86 @@ impl<'a> Decider<'a> {
         Ok(here.iter().zip(alone).map(|(h, a)| h - a).collect())
     }
 
+    /// An estimate, from one pass over the original (`versions[0]`), of
+    /// how much likelier each version is than the original: the
+    /// log-probability of its first new word where the original's first
+    /// changed word stands, less that of the original's word there (for a
+    /// dropped word, the next word's instead); 0 for the original, and the
+    /// lowest for a change the pass cannot place. Cheap enough to choose,
+    /// among many versions, the few worth comparing in full
+    /// ([`Decider::versions`]): on real errors the writer's version was
+    /// among the first five by it every time (42 questions, 2026-10-20).
+    /// Needs a backend that scores tokens ([`LanguageModel::alternatives`]).
+    pub fn estimates(&mut self, context: &str, versions: &[&str]) -> Result<Vec<f64>, DecideError> {
+        let prefix = if context.trim().is_empty() {
+            String::new()
+        } else {
+            format!("{} ", context.trim())
+        };
+        let original = versions.first().ok_or(DecideError::TooFewOptions)?.trim();
+        let words: Vec<&str> = original.split_whitespace().collect();
+        // Each version's change: the index of the first word that differs
+        // and whether the version drops a word there, or the word it puts.
+        let changes: Vec<Option<(usize, Option<&str>)>> = versions
+            .iter()
+            .map(|v| {
+                let vw: Vec<&str> = v.split_whitespace().collect();
+                let k = words.iter().zip(&vw).take_while(|(a, b)| a == b).count();
+                if k == words.len() && k == vw.len() {
+                    None
+                } else if vw.len() < words.len()
+                    && words[k + 1..].iter().zip(&vw[k..]).all(|(a, b)| a == b)
+                {
+                    Some((k, None))
+                } else {
+                    vw.get(k).map(|w| (k, Some(*w)))
+                }
+            })
+            .collect();
+        let asked: Vec<&str> = changes.iter().flatten().filter_map(|c| c.1).collect();
+        let alts = self
+            .lm
+            .alternatives(&prefix, original, &asked)
+            .ok_or(DecideError::Unsupported)?;
+        // The first token at or after word k of the original.
+        let mut starts = Vec::new();
+        let mut at = 0;
+        for w in &words {
+            let from = at + original[at..].find(w).unwrap_or(0);
+            at = from + w.len();
+            starts.push(from);
+        }
+        let token_at = |k: usize| {
+            alts.iter().position(|a| {
+                let rest = original.get(a.at..).unwrap_or("");
+                a.at + rest.len() - rest.trim_start().len() >= starts[k]
+            })
+        };
+        let mut index = 0;
+        Ok(changes
+            .iter()
+            .map(|c| {
+                let Some((k, word)) = c else { return 0.0 };
+                // This change's place among the words asked about.
+                let slot = word.map(|_| {
+                    index += 1;
+                    index - 1
+                });
+                let Some(a) = (*k < words.len())
+                    .then(|| token_at(*k))
+                    .flatten()
+                    .map(|t| &alts[t])
+                else {
+                    return f64::NEG_INFINITY;
+                };
+                match slot {
+                    Some(i) => a.words[i] - a.actual,
+                    None => a.next.map_or(f64::NEG_INFINITY, |n| n - a.actual),
+                }
+            })
+            .collect())
+    }
+
     /// The probability that `statement` is true.
     pub fn holds(&mut self, context: &str, statement: &str) -> Result<f64, DecideError> {
         let q = format!("Is this true? {statement}");

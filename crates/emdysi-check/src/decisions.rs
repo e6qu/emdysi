@@ -44,6 +44,18 @@ pub trait Ask {
     ) -> Option<Vec<f64>> {
         None
     }
+    /// An estimate of how much likelier each of `versions` of one sentence
+    /// (the original first) is than the original, from one pass over the
+    /// original (see `emdysi_lm::decide::Decider::estimates`); `None` when
+    /// the model cannot give one, and then all the versions are compared.
+    fn estimates(&mut self, _context: &str, _versions: &[&str]) -> Option<Vec<f64>> {
+        None
+    }
+    /// Whether [`Ask::estimates`] is answered, known without asking: then
+    /// more versions can be put to the model.
+    fn can_estimate(&self) -> bool {
+        false
+    }
 }
 
 /// What a [`Decide`] rule asks about.

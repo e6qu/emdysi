@@ -189,8 +189,12 @@ calibrated model.
     and up to 27 that the strict grammar accepts are shown to the model
     with the original, compared by likelihood or asked (*Which version of
     the sentence is correct English, as the writer meant it?*), nine at a
-    time and then the choices together, and `core.grammar-fix` reports one, with the fix, when the
-    model prefers it with probability 0.8 or more. *The quick brown fox jump over the
+    time and then the choices together; a model that scores tokens first
+    estimates from one pass over the original which five are most
+    promising (the likelihood of each version's new word where the old
+    one stands), and only those are compared in full. `core.grammar-fix`
+    reports one, with the fix, when the model prefers it with probability
+    0.8 or more. *The quick brown fox jump over the
     crazy wall.* is the case it is for: the grammar reads it as a noun
     phrase (a jump), so it cannot claim an error alone; the model alone
     could prefer a sentence the grammar rejects.
