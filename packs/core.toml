@@ -95,6 +95,67 @@ acceptable = [
 ]
 
 [[rule]]
+id = "core.fore-for"
+kind = "regex"
+severity = "warning"
+message = "'{match}' should be 'for' here."
+pattern = "\\b(?<m>(?<f>[Ff])ore)(?=\\s+(?:more|example|instance|details|further|information)\\b)"
+replace = "${f}or"
+description = "'Fore' typed for 'for' before 'more', 'example', 'instance', 'details', 'further' or 'information': the grammar accepts 'fore' as a word ('to the fore'). Once in the real-error corpus, never in the development sets."
+examples = ["Fore more details on etcd maintenance, see the guide.\n"]
+acceptable = [
+  "For more details on etcd maintenance, see the guide.\n",
+  "The issue came to the fore.\n",
+]
+
+[[rule]]
+id = "core.adjective-for-adverb-opening"
+kind = "regex"
+severity = "warning"
+message = "'{match},' opens the sentence as an adverb: '{match}ly,'."
+pattern = "^(?<m>Additional|Consequent|Subsequent),"
+replace = "${m}ly"
+description = "A sentence that opens with 'Additional,' (or 'Consequent,', 'Subsequent,') means the adverb. Once in the real-error corpus, never in the development sets."
+examples = ["Additional, we are starting a new initiative.\n"]
+acceptable = [
+  "Additionally, we are starting a new initiative.\n",
+  "Additional nodes join later.\n",
+]
+
+[[rule]]
+id = "core.following-article"
+kind = "regex"
+severity = "warning"
+message = "'{match}' needs 'the' before it when it introduces what follows: 'the following'."
+pattern = "(?<!\\b[Tt]he\\s)(?<!\\b[Tt]hese\\s)(?<!\\b[Aa]\\s)(?<!\\b[Aa]ll\\s)(?<!\\b[Oo]f\\s)(?<=\\w\\s)\\b(?<m>following)\\s+(?!(?:the|these|this|those|that|a|an|your|our|its|their|my|his|her|them|it|him|us|me|you|some|any|each|every|all|steps|instructions)\\b)[a-z][a-z -]{0,40}:\\s*$"
+replace = "the following"
+description = "'Following' that introduces a list ('contain following names:', 'executes following actions:') needs 'the'. A gerund with its object ('by following these steps:') is left alone. Three times in the real-error corpus, never in the development sets."
+examples = [
+  "This certificate should contain following alternative names:\n",
+  "As soon as the control plane is available, kubeadm executes following actions:\n",
+]
+acceptable = [
+  "This certificate should contain the following alternative names:\n",
+  "Install it by following these steps:\n",
+  "Run the following commands:\n",
+  "Following the release, we fixed it.\n",
+]
+
+[[rule]]
+id = "core.chose-choose"
+kind = "regex"
+severity = "warning"
+message = "'Chose' is past tense: an instruction is 'Choose'."
+pattern = "^(?<m>Chose)\\s+(?=(?:one|a|an|the|which|between|from|your|any)\\b)"
+replace = "Choose"
+description = "A sentence or list item that opens with 'Chose' and its object is an instruction: 'Choose'. Once in the real-error corpus, never in the development sets."
+examples = ["Chose one of your nodes, and add a label to it.\n"]
+acceptable = [
+  "Choose one of your nodes, and add a label to it.\n",
+  "She chose one of the nodes.\n",
+]
+
+[[rule]]
 id = "core.double-article"
 kind = "repeated-word"
 articles = true

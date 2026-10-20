@@ -249,6 +249,26 @@ pub fn erg_errors() -> &'static HashMap<String, ErgError> {
 }
 
 const CODESPELL: &str = include_str!("../../../data/codespell/dictionary.txt");
+const CODESPELL_RARE: &str = include_str!("../../../data/codespell/dictionary_rare.txt");
+
+/// Codespell's `wrong->right, right` lines: each misspelling's
+/// corrections, and whether the first may be applied without asking (a
+/// single correction, not marked with a trailing comma).
+fn codespell_map(text: &str) -> HashMap<String, (Vec<String>, bool)> {
+    text.lines()
+        .filter_map(|l| {
+            let (wrong, right) = l.split_once("->")?;
+            let fixes: Vec<String> = right
+                .split(',')
+                .map(str::trim)
+                .filter(|x| !x.is_empty())
+                .map(str::to_string)
+                .collect();
+            let sure = fixes.len() == 1 && !right.trim_end().ends_with(',');
+            Some((wrong.trim().to_string(), (fixes, sure)))
+        })
+        .collect()
+}
 
 /// A misspelling from codespell's dictionary of common misspellings
 /// (`data/codespell`, from English Wikipedia's lists): its corrections, and
@@ -256,24 +276,18 @@ const CODESPELL: &str = include_str!("../../../data/codespell/dictionary.txt");
 /// not marked with a trailing comma).
 pub fn codespell(word: &str) -> Option<(&'static [String], bool)> {
     static MAP: OnceLock<HashMap<String, (Vec<String>, bool)>> = OnceLock::new();
-    MAP.get_or_init(|| {
-        CODESPELL
-            .lines()
-            .filter_map(|l| {
-                let (wrong, right) = l.split_once("->")?;
-                let fixes: Vec<String> = right
-                    .split(',')
-                    .map(str::trim)
-                    .filter(|x| !x.is_empty())
-                    .map(str::to_string)
-                    .collect();
-                let sure = fixes.len() == 1 && !right.trim_end().ends_with(',');
-                Some((wrong.trim().to_string(), (fixes, sure)))
-            })
-            .collect()
-    })
-    .get(&word.to_lowercase())
-    .map(|(f, sure)| (f.as_slice(), *sure))
+    MAP.get_or_init(|| codespell_map(CODESPELL))
+        .get(&word.to_lowercase())
+        .map(|(f, sure)| (f.as_slice(), *sure))
+}
+
+/// A real but rare word that codespell lists as usually a misspelling
+/// (|manger| for |manager|, |wit| for |with|): its corrections.
+pub fn codespell_rare(word: &str) -> Option<&'static [String]> {
+    static MAP: OnceLock<HashMap<String, (Vec<String>, bool)>> = OnceLock::new();
+    MAP.get_or_init(|| codespell_map(CODESPELL_RARE))
+        .get(&word.to_lowercase())
+        .map(|(f, _)| f.as_slice())
 }
 
 const UNIMORPH: &str = include_str!("../../../data/unimorph/eng");

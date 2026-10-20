@@ -2245,7 +2245,33 @@ against 192; no flag on the corrected text.
 
 A pattern for a missing *the* before *following* (*executes following
 actions:*) would catch two more and match nothing in the development
-sets, but it was shaped on those two errors; it is left out.
+sets, but it was shaped on those two errors; it was left out at first
+(see below for why it is in now).
+
+### Typos that are words, by pattern
+
+Five more patterns from the missed grammar errors, each a typo that
+gives another English word, so the grammar accepts the sentence
+(2026-10-20):
+
+| Rule | Error | Caught |
+|---|---|---|
+| `core.spelling` | a word codespell lists as rare and usually a misspelling, in a title-cased run of common words: *Memory Manger* | 3 (not *CPU manger policy*, in lower case) |
+| `core.following-article` | *following* without *the* before a list: *executes following actions:*; not a gerund with its object (*by following these steps:*) | 3 |
+| `core.fore-for` | *Fore more details* | 1 |
+| `core.adjective-for-adverb-opening` | *Additional, we are starting* | 1 |
+| `core.chose-choose` | *Chose one of your nodes* opening an instruction | 1 |
+
+Real errors caught without a model: 217 of 374 (208 before), grammar 50
+of 197, with no flag on the corrected text. These were written after
+looking at the errors they catch, so the gain is an upper estimate of
+what they catch elsewhere; what keeps them is that they match nothing in
+the corrected text, nor in any sentence of the development and held-out
+sets (the patterns run over all of their text, and every capitalized
+word of the rare list there is checked by hand: none is in a title-cased
+run). Codespell's rare list without the title-case gate
+would flag real words in the development sets (*wit*, *revered*,
+*implementors*), so it is used only there.
 
 ### Measured and rejected: the grammar-error variant on sentences the grammar accepts
 
