@@ -228,6 +228,70 @@ fn a_word_is_not_dropped_from_a_sentence_the_grammar_accepts() {
     assert!(d.is_empty(), "{d:?}");
 }
 
+/// A model that estimates versions from one pass: the versions containing
+/// `want` first; it records how many versions each question compares.
+struct Estimates {
+    want: &'static str,
+    compared: Vec<usize>,
+    estimated: usize,
+}
+
+impl Ask for Estimates {
+    fn ask(&mut self, context: &str, question: &str, options: &[&str]) -> Option<Vec<f64>> {
+        Prefers {
+            want: self.want,
+            asked: Vec::new(),
+        }
+        .ask(context, question, options)
+    }
+
+    fn versions(&mut self, context: &str, question: &str, versions: &[&str]) -> Option<Vec<f64>> {
+        self.compared.push(versions.len());
+        self.ask(context, question, versions)
+    }
+
+    fn estimates(&mut self, _context: &str, versions: &[&str]) -> Option<Vec<f64>> {
+        self.estimated = self.estimated.max(versions.len());
+        Some(
+            versions
+                .iter()
+                .map(|v| if v.contains(self.want) { 5.0 } else { -1.0 })
+                .collect(),
+        )
+    }
+}
+
+#[test]
+fn versions_estimated_in_one_pass_are_compared_only_at_the_top() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let text = "The quick brown fox jump over the crazy wall.\n";
+    let a = analyze(&erg, text, Format::Markdown, &opts());
+    let mut model = Estimates {
+        want: "fox jumps",
+        compared: Vec::new(),
+        estimated: 0,
+    };
+    let d: Vec<Diagnostic> = core()
+        .check_with(&erg, &a, Some(&mut model))
+        .into_iter()
+        .filter(|d| d.rule == "core.grammar-fix")
+        .collect();
+    assert_eq!(d.len(), 1, "{d:?}");
+    assert_eq!(d[0].replacement.as_deref(), Some("jumps"));
+    // More versions than that were estimated; one question compared the
+    // original and the most promising five.
+    assert!(
+        model.estimated > assist::PREFILTER + 1,
+        "{}",
+        model.estimated
+    );
+    assert!(
+        model.compared.iter().all(|&n| n <= assist::PREFILTER + 1),
+        "{:?}",
+        model.compared
+    );
+}
+
 #[test]
 fn a_real_word_typo_is_corrected_at_the_word_named() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();

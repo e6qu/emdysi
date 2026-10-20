@@ -25,6 +25,7 @@ pub mod timing {
     pub static MAL: AtomicU64 = AtomicU64::new(0);
     pub static RULES: AtomicU64 = AtomicU64::new(0);
     pub static VERIFY: AtomicU64 = AtomicU64::new(0);
+    pub static MODEL: AtomicU64 = AtomicU64::new(0);
 
     /// Runs `f`, adding its time to `counter`.
     pub fn timed<T>(counter: &AtomicU64, f: impl FnOnce() -> T) -> T {
@@ -32,6 +33,37 @@ pub mod timing {
         let out = f();
         counter.fetch_add(t.elapsed().as_nanos() as u64, Ordering::Relaxed);
         out
+    }
+
+    /// A decision model whose answers are timed into [`MODEL`].
+    pub struct TimedAsk<'a, 'b>(pub &'a mut (dyn crate::decisions::Ask + 'b));
+
+    impl crate::decisions::Ask for TimedAsk<'_, '_> {
+        fn ask(&mut self, context: &str, question: &str, options: &[&str]) -> Option<Vec<f64>> {
+            timed(&MODEL, || self.0.ask(context, question, options))
+        }
+
+        fn versions(
+            &mut self,
+            context: &str,
+            question: &str,
+            versions: &[&str],
+        ) -> Option<Vec<f64>> {
+            timed(&MODEL, || self.0.versions(context, question, versions))
+        }
+
+        fn surprise(
+            &mut self,
+            context: &str,
+            text: &str,
+            spans: &[(usize, usize)],
+        ) -> Option<Vec<f64>> {
+            timed(&MODEL, || self.0.surprise(context, text, spans))
+        }
+
+        fn estimates(&mut self, context: &str, versions: &[&str]) -> Option<Vec<f64>> {
+            timed(&MODEL, || self.0.estimates(context, versions))
+        }
     }
 
     /// Time per rule id, summed like the stages.
@@ -46,6 +78,7 @@ pub mod timing {
             ("grammar-error variant", &MAL),
             ("rules", &RULES),
             ("rules' correction parses", &VERIFY),
+            ("decision model (within the rules)", &MODEL),
         ]
         .into_iter()
         .map(|(n, c)| (n, Duration::from_nanos(c.load(Ordering::Relaxed))))
@@ -764,9 +797,11 @@ impl Checker {
         &self,
         erg: &Erg,
         a: &Analysis,
-        mut ask: Option<&mut (dyn decisions::Ask + '_)>,
+        ask: Option<&mut (dyn decisions::Ask + '_)>,
     ) -> Vec<Diagnostic> {
         let mut out = Vec::new();
+        let mut timed = ask.map(timing::TimedAsk);
+        let mut ask = timed.as_mut();
         let glossary = self.glossary();
         for pack in &self.packs {
             for rule in &pack.rules {

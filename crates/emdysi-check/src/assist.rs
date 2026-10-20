@@ -54,6 +54,11 @@ pub const MAX_OPTIONS: usize = 9;
 /// Most questions of `MAX_OPTIONS` versions each; their choices are then
 /// put to the model together.
 pub const MAX_ROUNDS: usize = 3;
+/// With a model that can estimate them from one pass (`Ask::estimates`),
+/// the versions compared in full: the most promising this many. On real
+/// errors the writer's version was among the first five every time (42
+/// questions, 2026-10-20), where the rounds would compare up to 27.
+pub const PREFILTER: usize = 5;
 
 /// Function words that writers drop, add or confuse with another of their
 /// class (from the real-error corpus: |are| for |is|, a missing |the|,
@@ -949,6 +954,16 @@ pub fn grammar(
         if cands.is_empty() {
             continue;
         }
+        // The most promising versions by the model's one-pass estimate,
+        // when it can give one; otherwise all, in rounds.
+        let estimates = if cands.len() > PREFILTER {
+            let options: Vec<&str> = std::iter::once(s.original.trim())
+                .chain(cands.iter().map(|c| c.1.trim()))
+                .collect();
+            ask.estimates(&ctx, &options)
+        } else {
+            None
+        };
         // The model's choice among the original and `group`, as (index in
         // `group`, probability), when it prefers a correction.
         let mut choose = |group: &[usize]| -> Option<(usize, f64, f64)> {
@@ -964,7 +979,12 @@ pub fn grammar(
             Some((group[best - 1], p, probs[0]))
         };
         let all: Vec<usize> = (0..cands.len()).collect();
-        let chosen = if cands.len() <= MAX_OPTIONS {
+        let chosen = if let Some(est) = estimates {
+            let mut order = all.clone();
+            order.sort_by(|&x, &y| est[y + 1].total_cmp(&est[x + 1]));
+            order.truncate(PREFILTER);
+            choose(&order)
+        } else if cands.len() <= MAX_OPTIONS {
             choose(&all)
         } else {
             // Rounds, then the rounds' choices together.

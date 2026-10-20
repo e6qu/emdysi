@@ -407,6 +407,15 @@ impl emdysi_check::decisions::Ask for ModelAsk {
             .surprise(context, text, spans)
             .ok()
     }
+
+    fn estimates(&mut self, context: &str, versions: &[&str]) -> Option<Vec<f64>> {
+        if std::env::var_os("LETTERS").is_some() {
+            return None;
+        }
+        emdysi_lm::decide::Decider::new(&mut *self.0)
+            .estimates(context, versions)
+            .ok()
+    }
 }
 
 fn model() -> Option<ModelAsk> {
@@ -574,6 +583,10 @@ impl emdysi_check::decisions::Ask for Logged<'_> {
             v.get(right).copied().unwrap_or(0.0),
         ));
         Some(v)
+    }
+
+    fn estimates(&mut self, context: &str, versions: &[&str]) -> Option<Vec<f64>> {
+        self.inner.estimates(context, versions)
     }
 }
 
