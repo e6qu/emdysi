@@ -368,10 +368,10 @@ pub fn edits(erg: &Erg, s: &Sentence) -> Vec<Edit> {
         forms.dedup();
         for f in forms {
             // A listed word, not a regular form the morphology allows
-            // (|foxs|).
+            // (|foxs|), nor an acronym's (|lans| for |LANs|, of |landed|).
             if f.eq_ignore_ascii_case(&surface)
                 || f.contains(' ')
-                || crate::dict::tier(&f.to_lowercase()).is_none()
+                || !crate::dict::listed_as_written(&f.to_lowercase())
             {
                 continue;
             }
@@ -406,7 +406,7 @@ pub fn edits(erg: &Erg, s: &Sentence) -> Vec<Edit> {
             let rep = same_case(&surface, &f);
             if f.eq_ignore_ascii_case(&surface)
                 || f.contains(' ')
-                || crate::dict::tier(&f.to_lowercase()).is_none()
+                || !crate::dict::listed_as_written(&f.to_lowercase())
                 || out
                     .iter()
                     .any(|e: &Edit| e.from == t.from && e.replacement == rep)
@@ -697,8 +697,31 @@ fn grammar_candidates(
     limit: usize,
 ) -> Vec<(Edit, String)> {
     let start = Instant::now();
+    // No edit touches a code-like token (|rust-lang/rust#137944 is ready|
+    // to |A rust-lang…|): it is a name, not words. Nor makes a plural
+    // singular after a number other than one (|2 detailed updates| to
+    // |update|).
+    let code = crate::code_like_spans(&s.original);
+    let chars: Vec<char> = s.original.chars().collect();
+    let singular_after_number = |e: &Edit| {
+        let (w, r) = (
+            e.text.trim().to_lowercase(),
+            e.replacement.trim().to_lowercase(),
+        );
+        w.ends_with('s')
+            && !r.ends_with('s')
+            && !r.contains(' ')
+            && w.starts_with(r.trim_end_matches('e'))
+            && after_plural_number(&chars, e.from)
+    };
     focused(edits(erg, s), focus)
         .into_iter()
+        .filter(|e| {
+            !code
+                .iter()
+                .any(|&(f, t)| e.from < t && f < e.to.max(e.from + 1))
+        })
+        .filter(|e| !singular_after_number(e))
         .take(MAX_CANDIDATES)
         .take_while(|_| start.elapsed() + Duration::from_millis(200) < BUDGET)
         .filter(|e| verify_within(erg, s, e, BUDGET.saturating_sub(start.elapsed())))
@@ -796,7 +819,9 @@ const REAL_WORD_MIN: usize = 4;
 /// |thought|): a letter dropped, added, changed, or two swapped.
 fn real_word_edits(s: &Sentence) -> Vec<Edit> {
     let chars: Vec<char> = s.original.chars().collect();
-    let common = |w: &str| crate::dict::words().get(w).is_some_and(|&t| t <= 35);
+    let common = |w: &str| {
+        crate::dict::listed_as_written(w) && crate::dict::words().get(w).is_some_and(|&t| t <= 35)
+    };
     let mut out = Vec::new();
     for t in &s.tokens {
         if t.to > chars.len() {
@@ -922,6 +947,25 @@ fn fixed_expressions(s: &Sentence) -> Vec<(usize, usize)> {
         }
     }
     out
+}
+
+/// Whether the word before character `at` is a number other than one
+/// (|2 detailed updates|, |three nodes|): the noun after it is plural.
+fn after_plural_number(chars: &[char], at: usize) -> bool {
+    let before: String = chars[..at.min(chars.len())].iter().collect();
+    let mut words = before.split_whitespace().rev();
+    // The number, or the number before an adjective (|2 detailed|).
+    let number = |w: &str| {
+        let w = w.to_lowercase();
+        w.parse::<u64>().is_ok_and(|n| n != 1)
+            || [
+                "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven",
+                "twelve", "twenty", "hundred", "thousand", "million", "several", "many", "few",
+                "both",
+            ]
+            .contains(&w.as_str())
+    };
+    words.next().is_some_and(&number) || words.next().is_some_and(&number)
 }
 
 /// Whether `e` deletes a word that its neighbour repeats (|the the|).

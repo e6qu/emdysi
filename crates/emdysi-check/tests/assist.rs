@@ -378,6 +378,40 @@ fn a_technical_term_is_not_taken_for_a_real_word_typo() {
 }
 
 #[test]
+fn no_acronym_form_number_disagreement_or_edit_in_code() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    for (text, word, want) in [
+        // |lans| is |LANs| in the word list, not a form of |landed|.
+        (
+            "Landed an extension of the alignment check in rust#137940.\n",
+            "Landed",
+            "Lans an",
+        ),
+        // A plural after a number other than one.
+        (
+            "2 detailed updates available.\n",
+            "updates",
+            "detailed update available",
+        ),
+        // An issue reference is a name.
+        ("rust-lang/rust#137944 is ready!\n", "rust", "A rust"),
+    ] {
+        let a = analyze(&erg, text, Format::Markdown, &opts());
+        let mut model = Surprised {
+            word,
+            surprise: 6.0,
+            want,
+        };
+        let d: Vec<Diagnostic> = core()
+            .check_with(&erg, &a, Some(&mut model))
+            .into_iter()
+            .filter(|d| d.rule == "core.grammar-fix")
+            .collect();
+        assert!(d.is_empty(), "{text}: {d:?}");
+    }
+}
+
+#[test]
 fn a_determiner_is_not_swapped_in_a_sentence_the_grammar_accepts() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     let text = "The purpose of these hearings is to field responses from the public.\n";

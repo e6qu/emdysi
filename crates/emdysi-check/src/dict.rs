@@ -24,6 +24,20 @@ pub fn words() -> &'static HashMap<String, u8> {
     })
 }
 
+/// Whether `word` is in the main list exactly as written (|lans| is not:
+/// the list has |LANs|, which [`tier`] finds in any case).
+pub fn listed_as_written(word: &str) -> bool {
+    static SET: OnceLock<std::collections::HashSet<&'static str>> = OnceLock::new();
+    SET.get_or_init(|| {
+        WORDS
+            .lines()
+            .filter(|l| !l.starts_with('#'))
+            .filter_map(|l| l.split_once('\t').map(|(w, _)| w))
+            .collect()
+    })
+    .contains(word)
+}
+
 /// Common words (up to tier [`RELATED_TIER`]), lower case and alphabetic, by
 /// their first four letters.
 pub fn by_prefix(prefix: &str) -> &'static [String] {
