@@ -816,3 +816,38 @@ fn chunks_from_the_parse() {
         }
     }
 }
+
+#[test]
+fn an_antipattern_with_a_tag_condition() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let opts = Options {
+        threads: 1,
+        ..Options::default()
+    };
+    // Flags |run| except where the parse makes it a noun.
+    let pack = Pack::parse(
+        r#"
+[pack]
+name = "t"
+
+[[rule]]
+id = "t.run"
+kind = "regex"
+severity = "warning"
+message = "run"
+pattern = '(?i)\brun\b'
+antipatterns = [{ pattern = '(?i)\b(?P<t1>run)\b', tags = ["t1=NN.*"] }]
+"#,
+    )
+    .unwrap();
+    let checker = Checker::new(vec![pack]);
+    for (text, flagged) in [("I run every day.\n", true), ("The run was long.\n", false)] {
+        let a = analyze(&erg, text, Format::Plain, &opts);
+        let d = checker.check(&erg, &a);
+        assert_eq!(
+            d.iter().any(|x| x.rule == "t.run"),
+            flagged,
+            "{text}: {d:?}"
+        );
+    }
+}

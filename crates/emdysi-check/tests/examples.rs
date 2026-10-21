@@ -30,11 +30,13 @@ fn rule_examples() {
         .collect();
     for pack in &packs {
         for rule in &pack.rules {
-            // Rules with part-of-speech conditions need the parse for
-            // every example; there are a thousand and more of them, so
-            // they are checked once, when generated (see
-            // crates/emdysi-check/examples/lt_validate.rs).
-            if matches!(&rule.kind, emdysi_check::rules::Kind::Regex { tags, .. } if !tags.is_empty())
+            // Rules with part-of-speech or chunk conditions, in the rule or
+            // an antipattern, need the parse for every example; there are a
+            // thousand and more of them, so they are checked once, when
+            // generated (see crates/emdysi-check/examples/lt_validate.rs).
+            if matches!(&rule.kind,
+                emdysi_check::rules::Kind::Regex { tags, antipatterns, .. }
+                    if !tags.is_empty() || !antipatterns.is_empty())
             {
                 continue;
             }

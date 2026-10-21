@@ -546,10 +546,31 @@ def convert(rule, group, category, file):
         raise Skip("no pattern")
     pat = ("" if case else "(?i)") + body
     unless = []
+    # Antipatterns that need parts of speech or chunks: patterns of their
+    # own with conditions, checked with the parse.
+    tagged_unless = []
     for anti in rule.findall("antipattern") + (group.findall("antipattern") if group is not None else []):
         if set(anti.attrib) - {"case_sensitive"}:
             raise Skip("antipattern attributes")
-        u = sequence([(t, True) for t, _ in flatten(anti)], groups=False)
+        toks = [(t, True) for t, _ in flatten(anti)]
+        try:
+            u = sequence(toks, groups=False)
+        except Skip as e:
+            if not str(e).startswith(("open-class tag", "chunk")):
+                raise
+            c = []
+            u = sequence(toks, conds=c)
+            u = f"(?-i:{u})" if anti.get("case_sensitive") == "yes" else u
+            tagged_unless.append(
+                {
+                    "pattern": ("" if case else "(?i)") + u,
+                    "tags": [x for k, x, neg in c if k == "tag" and not neg],
+                    "not_tags": [x for k, x, neg in c if k == "tag" and neg],
+                    "chunks": [x for k, x, neg in c if k == "chunk" and not neg],
+                    "not_chunks": [x for k, x, neg in c if k == "chunk" and neg],
+                }
+            )
+            continue
         unless.append(f"(?-i:{u})" if anti.get("case_sensitive") == "yes" else u)
     msg_el = rule.find("message")
     if msg_el is None and group is not None:
@@ -586,6 +607,7 @@ def convert(rule, group, category, file):
         "chunks": [c for k, c, neg in conds if k == "chunk" and not neg],
         "not_chunks": [c for k, c, neg in conds if k == "chunk" and neg],
         "unless": ("" if case else "(?i)") + "|".join(f"(?:{u})" for u in unless) if unless else None,
+        "antipatterns": tagged_unless,
         "suggest": suggestions,
         "examples": examples,
         "acceptable": acceptable,
@@ -599,7 +621,7 @@ def expand(template, m):
 
 def conditioned(r):
     """Whether the rule has conditions only the parse can check."""
-    return bool(r["tags"] or r["not_tags"] or r["chunks"] or r["not_chunks"])
+    return bool(r["tags"] or r["not_tags"] or r["chunks"] or r["not_chunks"] or r["antipatterns"])
 
 
 def validate(r):
@@ -749,6 +771,15 @@ def build(candidates=False):
             out.append("not_chunks = [" + ", ".join(toml_str(c) for c in r["not_chunks"]) + "]")
         if r["unless"]:
             out.append(f"unless = {toml_str(r['unless'])}")
+        if r["antipatterns"]:
+            items = []
+            for a in r["antipatterns"]:
+                fields = [f"pattern = {toml_str(a['pattern'])}"]
+                for key in ("tags", "not_tags", "chunks", "not_chunks"):
+                    if a[key]:
+                        fields.append(f"{key} = [" + ", ".join(toml_str(c) for c in a[key]) + "]")
+                items.append("{ " + ", ".join(fields) + " }")
+            out.append("antipatterns = [" + ", ".join(items) + "]")
         if "${" in r["message"] or "{{" in r["message"]:
             out.append("expand = true")
         if r["transforms"]:
