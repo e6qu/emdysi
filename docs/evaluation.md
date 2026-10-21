@@ -2295,7 +2295,9 @@ last three came after): 12 of 34 caught, 0 flags on the corrected text,
 285 questions. The model adds 5 to the grammar alone: the 4 above and
 *creating* to *of creating*. No gain was lost. The grammar alone,
 without a model, catches 221 of 374, unchanged by the code-like issue
-references.
+references; without a model, the blog posts of the three sets (where
+the references are) give 0 flags in 244 sentences, 43 in 4,147 and 4 in
+1,241, none of them about a reference.
 
 ## Doubled words and 'allows to', without a model
 
