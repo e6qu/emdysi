@@ -2295,8 +2295,8 @@ flags (10.0 per 1,000) instead of 18. The four real errors stay; the
 false ones the guards answer are gone, and three new false ones came up
 where other versions now reached the five compared in full: *what they
 were talking of* to *talking about* (86%; answered since: a preposition
-the best reading takes as selected by its head, |talk_of_v1| with
-|of_prtcl|, is not swapped, while a modifying one, *interested on
+the best reading takes as selected by its head, `talk_of_v1` with
+`of_prtcl`, is not swapped, while a modifying one, *interested on
 chess*, still is), *continues our work from 2024H2* to *on* (82%), and
 *Landed an extension* to *Larded* (88%; both in the commonest tier of
 the word list, which is too coarse to tell them apart). One more,
