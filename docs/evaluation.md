@@ -2595,6 +2595,27 @@ caught stay at 24 of 199, and one corrected sentence is flagged. The
 converted rules target other errors than the ones in this corpus
 (missing function words, wrong forms), which need the grammar.
 
+### LanguageTool rules on chunks
+
+LanguageTool's English chunker marks base noun phrases (`B-NP-singular`,
+`I-NP-…`, `E-NP-plural` for the last word, singular or plural after the
+head), verb groups (`B-VP`, `I-VP`), prepositions (`B-PP`) and a few
+more, and about 830 of its rules ask for them. emdysi derives the same
+tags from the parse's parts of speech (`tags::chunks`, 2026-10-21), and
+the regex kind takes `chunks` and `not_chunks` conditions as it takes
+`tags`. With chunk tokens converted, 977 rules have conditions only the
+parse can check; `lt_validate` keeps the 743 whose examples hold (579
+before), and the pack has 2,744 rules (2,580). No rule kept before was
+lost; 24 ids within rule groups moved up a number.
+
+With parsing, on the first development set (`PACK=`, the whole pack):
+26 findings in 2,508 sentences, 2 of them from rules with chunk
+conditions, both false (*you need to set the node's capacity*, where the
+rule wants *set* to be a past form, and one in Austen). On the real-error
+corpus with the pack added: 221 of 374 caught, as without it; one
+corrected text is flagged, by a rule that needs only words
+(*parenthesis?*).
+
 ### A lower time limit: 5 seconds instead of 10
 
 `timing` with `TIMEOUT=5` against the default 10 seconds, on the same

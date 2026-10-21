@@ -475,17 +475,21 @@ patterns, inflections of a word (expanded from UniMorph) or closed-class
 tags (determiners, pronouns, modals, prepositions: word lists) are
 converted, 1,645 of them, each to a `regex` rule whose tokens are named
 groups. Rules that also need open-class parts of speech (nouns, verbs,
-adjectives, adverbs) become rules with tag conditions, checked against
-the parse: 755 such rules convert, and the 579 whose examples hold with
-emdysi's parse are kept (`scripts/languagetool-tagged.txt`, written by
+adjectives, adverbs) become rules with tag conditions, and those that
+need LanguageTool's chunks (base noun phrases, verb groups: `B-NP-plural`,
+`E-NP-singular`, `B-VP`) rules with chunk conditions, the chunks derived
+from the parse's parts of speech (`emdysi_check::tags::chunks`), both
+checked against the parse: 977 such rules convert, and the 743 whose
+examples hold with emdysi's parse are kept (`scripts/languagetool-tagged.txt`, written by
 `crates/emdysi-check/examples/lt_validate.rs`; the test suite cannot
 parse every example of every rule, so this check runs when the pack is
-generated), 2,580 rules in all. Suggestions may change a matched word's
+generated), 2,744 rules in all. Suggestions may change a matched word's
 case, apply a regex replacement to it, or inflect it for a tag (from
 UniMorph): the regex kind's `transforms`. A rule is kept only if it finds the marked span of each of its
 incorrect examples and nothing in its correct ones; the examples come along
 as the rule's `examples` and `acceptable`, so the test suite checks them
-again. Rules that need parts of speech of open classes, chunks or filters,
+again. Rules that need filters, or open-class parts of speech or chunks
+whose examples fail with the parse,
 rules off by default or marked picky, typography rules and the ellipsis
 rule are left out, and so are LanguageTool's wordiness and redundancy
 lists, which LanguageTool also turns off by default (on edited text they
