@@ -2326,9 +2326,17 @@ model, and the writer's version was shown for only one pair.
 With every list of versions the one-pass estimate ranks logged
 (`LOG.estimates.tsv`, 2026-10-21; `examples/prefilter` reads it): of 73
 lists on these 34 pairs, 8 hold the writer's version at all, and 6 of
-those 8 rank among the first five. The prefilter costs at most 2 pairs;
-the rest of the loss is that the writer's edit is not among the
-candidates verified in time, the locating problem again.
+those 8 rank among the first five. The prefilter costs at most 2 pairs.
+
+Nor is it the candidate budget: with 400 candidates and 120 s per
+sentence instead of 120 and 30 s (measured and left, 2026-10-21) the run
+asked the same 285 questions and caught the same 12. With the current
+code a perfect chooser (`ORACLE=1`) catches 29 of the 34 (the guards
+since the 34 were chosen cost the rest). Of E2B's 22 misses: 11 wrong
+sentences were never screened in (their most surprising word stays
+under `screen_surprise`, 3 nats), 7 were screened in without the
+writer's edit among the versions shown, and 4 a perfect chooser misses
+too. Screening is the largest loss.
 
 ## Doubled words and 'allows to', without a model
 
