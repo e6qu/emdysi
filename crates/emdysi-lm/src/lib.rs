@@ -129,7 +129,12 @@ fn open_http(_: &str) -> Result<Box<dyn LanguageModel>, String> {
 
 #[cfg(feature = "llama")]
 fn open_gguf(path: &std::path::Path) -> Result<Box<dyn LanguageModel>, String> {
-    llama::LlamaLm::load(path, 4096)
+    // EMDYSI_LM_CTX: another context size (tokens of prompt and output).
+    let n_ctx = std::env::var("EMDYSI_LM_CTX")
+        .ok()
+        .and_then(|n| n.parse().ok())
+        .unwrap_or(4096);
+    llama::LlamaLm::load(path, n_ctx)
         .map(|m| Box::new(m) as Box<dyn LanguageModel>)
         .map_err(|e| format!("loading model: {e}"))
 }

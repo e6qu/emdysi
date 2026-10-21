@@ -29,7 +29,11 @@ one, the `EMDYSI_LM` environment variable names the model the same way as
 
 An in-process model uses every core; `EMDYSI_LM_THREADS=N` caps its
 threads, for several models at once (the measurement examples open one
-per `THREADS`).
+per `THREADS`). Its context holds 4,096 tokens; `EMDYSI_LM_CTX=N` sets
+another size (1,024 is enough for a sentence and its paragraph). A
+model takes about twice its file in memory: Gemma 3 12B at 4 bits (a
+6.9 GB file) held 13 GB at either size, so on a 16 GB machine it is the
+only process with a model.
 
 `--server-model NAME` sets the model name sent to the server when it serves
 several.
