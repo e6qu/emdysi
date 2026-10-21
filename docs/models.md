@@ -30,10 +30,13 @@ one, the `EMDYSI_LM` environment variable names the model the same way as
 An in-process model uses every core; `EMDYSI_LM_THREADS=N` caps its
 threads, for several models at once (the measurement examples open one
 per `THREADS`). Its context holds 4,096 tokens; `EMDYSI_LM_CTX=N` sets
-another size (1,024 is enough for a sentence and its paragraph). A
-model takes about twice its file in memory: Gemma 3 12B at 4 bits (a
-6.9 GB file) held 13 GB at either size, so on a 16 GB machine it is the
-only process with a model.
+another size (1,024 is enough for a sentence and its paragraph). On a
+CPU, llama.cpp keeps its own rearranged copy of 4-bit weights, so a
+mapped file is held twice while it stays in the page cache:
+`EMDYSI_LM_MMAP=0` reads the file instead. Gemma 3 12B at 4 bits (a 6.9
+GB file) peaked at 13 GB mapped and 7.1 GB read (E2B: 4.1 and 3.5 GB),
+with the same results; reading is slower to start (minutes for a large
+file on a slow disk).
 
 `--server-model NAME` sets the model name sent to the server when it serves
 several.

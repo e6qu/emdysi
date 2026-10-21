@@ -50,7 +50,12 @@ impl LlamaLm {
     /// the length the model was trained with).
     pub fn load(path: &Path, n_ctx: u32) -> Result<LlamaLm, LoadError> {
         let backend = backend()?;
-        let model = LlamaModel::load_from_file(backend, path, &LlamaModelParams::default())
+        // EMDYSI_LM_MMAP=0: read the weights instead of mapping the file. On
+        // a CPU, llama.cpp rearranges 4-bit weights into a copy of its own,
+        // so a mapped file is held twice while it is in the page cache.
+        let mmap = std::env::var("EMDYSI_LM_MMAP").map_or(true, |v| v != "0");
+        let params = LlamaModelParams::default().with_use_mmap(mmap);
+        let model = LlamaModel::load_from_file(backend, path, &params)
             .map_err(|e| LoadError(format!("{}: {e}", path.display())))?;
         // EMDYSI_LM_THREADS: fewer threads, for several models at once.
         let threads = std::env::var("EMDYSI_LM_THREADS")
