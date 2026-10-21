@@ -24,6 +24,20 @@ pub fn words() -> &'static HashMap<String, u8> {
     })
 }
 
+/// Whether `word` is in the main list exactly as written (|lans| is not:
+/// the list has |LANs|, which [`tier`] finds in any case).
+pub fn listed_as_written(word: &str) -> bool {
+    static SET: OnceLock<std::collections::HashSet<&'static str>> = OnceLock::new();
+    SET.get_or_init(|| {
+        WORDS
+            .lines()
+            .filter(|l| !l.starts_with('#'))
+            .filter_map(|l| l.split_once('\t').map(|(w, _)| w))
+            .collect()
+    })
+    .contains(word)
+}
+
 /// Common words (up to tier [`RELATED_TIER`]), lower case and alphabetic, by
 /// their first four letters.
 pub fn by_prefix(prefix: &str) -> &'static [String] {
@@ -113,6 +127,13 @@ fn tech_words() -> &'static std::collections::HashSet<String> {
             .filter(|w| !w.is_empty())
             .collect()
     })
+}
+
+/// Whether a word is a technical term (the cspell lists: |vSphere|,
+/// |kubelet|) and not in the main list.
+pub fn technical(word: &str) -> bool {
+    let w = word.to_lowercase();
+    tier(&w).is_none() && tech_words().contains(&w)
 }
 
 /// Whether a word is correct though not in the main list (see

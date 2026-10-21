@@ -329,7 +329,7 @@ static CITATION: std::sync::LazyLock<fancy_regex::Regex> = std::sync::LazyLock::
 /// (`-funsigned-char`, `--dry-run`).
 static CODE_LIKE: std::sync::LazyLock<fancy_regex::Regex> = std::sync::LazyLock::new(|| {
     fancy_regex::Regex::new(
-        r"\{\{[<%]?[^{}]*?[>%]?\}\}|\bhttps?://[^\s<>()]+[^\s<>().,;:!?]|\b[\w.+-]+@[\w-]+(?:\.[\w-]+)+|(?<![\w/])(?:[\w.-]+/)+[\w-]*\.[A-Za-z0-9]+\b|(?<![\w/])/[\w.-]+(?:/[\w.-]+)+|\b[A-Za-z][\w-]*\.(?:io|com|org|net|dev|gov|edu|rs|exe|py|js|ts|md|toml|json|ya?ml|txt|html?|sh|go|c|h)\b|(?<![\w-])--?[a-z][a-z0-9]*(?:-[a-z0-9]+)+\b|(?<![\w-])--[a-z][a-z0-9]+\b",
+        r"\{\{[<%]?[^{}]*?[>%]?\}\}|\bhttps?://[^\s<>()]+[^\s<>().,;:!?]|\b[\w.+-]+@[\w-]+(?:\.[\w-]+)+|(?<![\w/])(?:[\w.-]+/)+[\w-]*\.[A-Za-z0-9]+\b|(?<![\w/])/[\w.-]+(?:/[\w.-]+)+|\b[A-Za-z][\w-]*\.(?:io|com|org|net|dev|gov|edu|rs|exe|py|js|ts|md|toml|json|ya?ml|txt|html?|sh|go|c|h)\b|(?<![\w-])--?[a-z][a-z0-9]*(?:-[a-z0-9]+)+\b|(?<![\w-])--[a-z][a-z0-9]+\b|(?<![\w/#])[A-Za-z][\w.-]*(?:/[\w.-]+)*#\d+\b",
     )
     .expect("code-like pattern")
 });
@@ -390,6 +390,19 @@ fn lead_in(text: &str) -> bool {
             | "though"
             | "until"
     )
+}
+
+/// The character spans of the code-like tokens of a sentence
+/// ([`CODE_LIKE`]).
+pub(crate) fn code_like_spans(text: &str) -> Vec<(usize, usize)> {
+    CODE_LIKE
+        .find_iter(text)
+        .flatten()
+        .map(|m| {
+            let start = text[..m.start()].chars().count();
+            (start, start + m.as_str().chars().count())
+        })
+        .collect()
 }
 
 /// Whether characters `from..to` of a sentence lie inside a code-like token

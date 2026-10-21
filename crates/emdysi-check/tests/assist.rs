@@ -318,6 +318,121 @@ fn no_of_is_put_into_so_odd_a_mixture() {
 }
 
 #[test]
+fn the_is_not_dropped_before_a_comparative() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    // The grammar has only fragments for the idiom, and |So much better|
+    // parses; a model that prefers it is not given it.
+    let text = "So much the better.\n";
+    let a = analyze(&erg, text, Format::Markdown, &opts());
+    let mut model = Surprised {
+        word: "the",
+        surprise: 6.0,
+        want: "So much better",
+    };
+    let d: Vec<Diagnostic> = core()
+        .check_with(&erg, &a, Some(&mut model))
+        .into_iter()
+        .filter(|d| d.rule == "core.grammar-fix")
+        .collect();
+    assert!(d.is_empty(), "{d:?}");
+}
+
+#[test]
+fn no_word_is_changed_inside_a_fixed_expression() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    // |to date| is one item of the grammar's lexicon; |to data| also
+    // parses, and a model that prefers it is not given it.
+    let text = "Most coatings to date exhibit a lack of reliability.\n";
+    let a = analyze(&erg, text, Format::Markdown, &opts());
+    assert!(a.sentences[0].strict());
+    let mut model = Surprised {
+        word: "date",
+        surprise: 6.0,
+        want: "to data",
+    };
+    let d: Vec<Diagnostic> = core()
+        .check_with(&erg, &a, Some(&mut model))
+        .into_iter()
+        .filter(|d| d.rule == "core.grammar-fix")
+        .collect();
+    assert!(d.is_empty(), "{d:?}");
+}
+
+#[test]
+fn a_technical_term_is_not_taken_for_a_real_word_typo() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    // |vSphere| is in the software terms; one letter less is |Sphere|.
+    let text = "Metrics are available for GCE, AWS, Vsphere and OpenStack.\n";
+    let a = analyze(&erg, text, Format::Markdown, &opts());
+    let mut model = Surprised {
+        word: "Vsphere",
+        surprise: 6.0,
+        want: "AWS, Sphere and",
+    };
+    let d: Vec<Diagnostic> = core()
+        .check_with(&erg, &a, Some(&mut model))
+        .into_iter()
+        .filter(|d| d.rule == "core.grammar-fix")
+        .collect();
+    assert!(d.is_empty(), "{d:?}");
+}
+
+#[test]
+fn no_acronym_form_number_disagreement_or_edit_in_code() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    for (text, word, want) in [
+        // |lans| is |LANs| in the word list, not a form of |landed|.
+        (
+            "Landed an extension of the alignment check in rust#137940.\n",
+            "Landed",
+            "Lans an",
+        ),
+        // A plural after a number other than one.
+        (
+            "2 detailed updates available.\n",
+            "updates",
+            "detailed update available",
+        ),
+        // An issue reference is a name.
+        ("rust-lang/rust#137944 is ready!\n", "rust", "A rust"),
+    ] {
+        let a = analyze(&erg, text, Format::Markdown, &opts());
+        let mut model = Surprised {
+            word,
+            surprise: 6.0,
+            want,
+        };
+        let d: Vec<Diagnostic> = core()
+            .check_with(&erg, &a, Some(&mut model))
+            .into_iter()
+            .filter(|d| d.rule == "core.grammar-fix")
+            .collect();
+        assert!(d.is_empty(), "{text}: {d:?}");
+    }
+}
+
+#[test]
+fn a_preposition_its_head_selects_is_not_swapped() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    // |talk of|: the grammar's |of| is one |talk| selects, so a model that
+    // prefers the modern |talking about| is not given it.
+    let text = "Lady Catherine called out to know what they were talking of.\n";
+    let a = analyze(&erg, text, Format::Markdown, &opts());
+    assert!(a.sentences[0].strict());
+    let mut model = Surprised {
+        word: "of",
+        surprise: 6.0,
+        want: "talking about",
+    };
+    let d: Vec<Diagnostic> = core()
+        .check_with(&erg, &a, Some(&mut model))
+        .into_iter()
+        .filter(|d| d.rule == "core.grammar-fix")
+        .collect();
+    assert!(d.is_empty(), "{d:?}");
+}
+
+#[test]
 fn a_determiner_is_not_swapped_in_a_sentence_the_grammar_accepts() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     let text = "The purpose of these hearings is to field responses from the public.\n";
@@ -327,6 +442,25 @@ fn a_determiner_is_not_swapped_in_a_sentence_the_grammar_accepts() {
         word: "these",
         surprise: 6.0,
         want: "of the hearings",
+    };
+    let d: Vec<Diagnostic> = core()
+        .check_with(&erg, &a, Some(&mut model))
+        .into_iter()
+        .filter(|d| d.rule == "core.grammar-fix")
+        .collect();
+    assert!(d.is_empty(), "{d:?}");
+}
+
+#[test]
+fn a_compound_preposition_is_not_replaced_in_a_sentence_the_grammar_accepts() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let text = "This will let us consolidate the logic around handling errors into main.\n";
+    let a = analyze(&erg, text, Format::Markdown, &opts());
+    assert!(a.sentences[0].strict());
+    let mut model = Surprised {
+        word: "into",
+        surprise: 6.0,
+        want: "errors from main",
     };
     let d: Vec<Diagnostic> = core()
         .check_with(&erg, &a, Some(&mut model))

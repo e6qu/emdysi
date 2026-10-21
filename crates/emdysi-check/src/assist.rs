@@ -203,15 +203,34 @@ fn function_word_edits(s: &Sentence) -> (Vec<WordEdit>, Vec<WordEdit>) {
                     subs.push((t.from, t.to, surface.clone(), rep));
                 }
             }
+            // |the| before a comparative is idiomatic (|so much the
+            // better|, |all the more|, |none the worse|), where the grammar
+            // finds only fragments and a model prefers it gone.
+            let after: String = chars[t.to.min(chars.len())..].iter().collect();
+            let comparative_the = lower == "the"
+                && after.split_whitespace().next().is_some_and(|w| {
+                    let w = w.trim_matches(|c: char| !c.is_alphabetic()).to_lowercase();
+                    [
+                        "better", "worse", "more", "less", "fewer", "sooner", "greater",
+                    ]
+                    .contains(&w.as_str())
+                });
             // The word and the space after it (or before it, at the end);
             // with its comma, a word set off by one (|as of this writing,
             // this, it compiles|).
-            if chars.get(t.to) == Some(&',') && chars.get(t.to + 1) == Some(&' ') {
-                dels.push((t.from, t.to + 2, format!("{surface}, "), String::new()));
+            let deletion = if comparative_the {
+                None
+            } else if chars.get(t.to) == Some(&',') && chars.get(t.to + 1) == Some(&' ') {
+                Some((t.from, t.to + 2, format!("{surface}, ")))
             } else if chars.get(t.to) == Some(&' ') {
-                dels.push((t.from, t.to + 1, format!("{surface} "), String::new()));
+                Some((t.from, t.to + 1, format!("{surface} ")))
             } else if t.from > 0 && chars[t.from - 1] == ' ' {
-                dels.push((t.from - 1, t.to, format!(" {surface}"), String::new()));
+                Some((t.from - 1, t.to, format!(" {surface}")))
+            } else {
+                None
+            };
+            if let Some((from, to, text)) = deletion {
+                dels.push((from, to, text, String::new()));
             }
         }
         // |so odd a mixture| is English as it stands: no |of| before the
@@ -349,10 +368,10 @@ pub fn edits(erg: &Erg, s: &Sentence) -> Vec<Edit> {
         forms.dedup();
         for f in forms {
             // A listed word, not a regular form the morphology allows
-            // (|foxs|).
+            // (|foxs|), nor an acronym's (|lans| for |LANs|, of |landed|).
             if f.eq_ignore_ascii_case(&surface)
                 || f.contains(' ')
-                || crate::dict::tier(&f.to_lowercase()).is_none()
+                || !crate::dict::listed_as_written(&f.to_lowercase())
             {
                 continue;
             }
@@ -387,7 +406,7 @@ pub fn edits(erg: &Erg, s: &Sentence) -> Vec<Edit> {
             let rep = same_case(&surface, &f);
             if f.eq_ignore_ascii_case(&surface)
                 || f.contains(' ')
-                || crate::dict::tier(&f.to_lowercase()).is_none()
+                || !crate::dict::listed_as_written(&f.to_lowercase())
                 || out
                     .iter()
                     .any(|e: &Edit| e.from == t.from && e.replacement == rep)
@@ -678,8 +697,31 @@ fn grammar_candidates(
     limit: usize,
 ) -> Vec<(Edit, String)> {
     let start = Instant::now();
+    // No edit touches a code-like token (|rust-lang/rust#137944 is ready|
+    // to |A rust-lang…|): it is a name, not words. Nor makes a plural
+    // singular after a number other than one (|2 detailed updates| to
+    // |update|).
+    let code = crate::code_like_spans(&s.original);
+    let chars: Vec<char> = s.original.chars().collect();
+    let singular_after_number = |e: &Edit| {
+        let (w, r) = (
+            e.text.trim().to_lowercase(),
+            e.replacement.trim().to_lowercase(),
+        );
+        w.ends_with('s')
+            && !r.ends_with('s')
+            && !r.contains(' ')
+            && w.starts_with(r.trim_end_matches('e'))
+            && after_plural_number(&chars, e.from)
+    };
     focused(edits(erg, s), focus)
         .into_iter()
+        .filter(|e| {
+            !code
+                .iter()
+                .any(|&(f, t)| e.from < t && f < e.to.max(e.from + 1))
+        })
+        .filter(|e| !singular_after_number(e))
         .take(MAX_CANDIDATES)
         .take_while(|_| start.elapsed() + Duration::from_millis(200) < BUDGET)
         .filter(|e| verify_within(erg, s, e, BUDGET.saturating_sub(start.elapsed())))
@@ -777,17 +819,21 @@ const REAL_WORD_MIN: usize = 4;
 /// |thought|): a letter dropped, added, changed, or two swapped.
 fn real_word_edits(s: &Sentence) -> Vec<Edit> {
     let chars: Vec<char> = s.original.chars().collect();
-    let common = |w: &str| crate::dict::words().get(w).is_some_and(|&t| t <= 35);
+    let common = |w: &str| {
+        crate::dict::listed_as_written(w) && crate::dict::words().get(w).is_some_and(|&t| t <= 35)
+    };
     let mut out = Vec::new();
     for t in &s.tokens {
         if t.to > chars.len() {
             continue;
         }
         let surface: String = chars[t.from..t.to].iter().collect();
-        // Plain words only, not acronyms or code.
+        // Plain words only, not acronyms or code, nor technical terms
+        // (|AWS, Vsphere and| to |Sphere|).
         if surface.chars().count() < REAL_WORD_MIN
             || !surface.chars().all(|c| c.is_ascii_alphabetic())
             || surface.chars().skip(1).any(|c| c.is_ascii_uppercase())
+            || crate::dict::technical(&surface)
         {
             continue;
         }
@@ -862,6 +908,64 @@ fn surprise(ask: &mut dyn Ask, context: &str, s: &Sentence) -> Option<Vec<(usize
     let spans: Vec<(usize, usize)> = words.iter().map(|w| (bytes[w.0], bytes[w.1])).collect();
     let v = ask.surprise(context, &s.original, &spans)?;
     Some(words.iter().zip(v).map(|(w, x)| (w.0, w.1, x)).collect())
+}
+
+/// The character spans of `s.original` that some reading takes as one
+/// lexical item of several words (|to date|, |in order to|). Any reading,
+/// not only the best: the ranker can prefer |date| as a verb in
+/// |coatings to date exhibit|.
+fn fixed_expressions(s: &Sentence) -> Vec<(usize, usize)> {
+    let Some(parse) = &s.parse else {
+        return Vec::new();
+    };
+    let lower: Vec<char> = s.original.to_lowercase().chars().collect();
+    let mut out = Vec::new();
+    for w in parse.readings.iter().flat_map(|r| &r.words) {
+        let words: Vec<String> = w
+            .surface
+            .split_whitespace()
+            .map(str::to_lowercase)
+            .collect();
+        if words.len() < 2 {
+            continue;
+        }
+        // Every place the words stand together in the sentence as written.
+        let phrase: Vec<char> = words.join(" ").chars().collect();
+        let mut i = 0;
+        while i + phrase.len() <= lower.len() {
+            let bounded = (i == 0 || !lower[i - 1].is_alphanumeric())
+                && lower
+                    .get(i + phrase.len())
+                    .is_none_or(|c| !c.is_alphanumeric());
+            if bounded
+                && lower[i..i + phrase.len()] == phrase[..]
+                && !out.contains(&(i, i + phrase.len()))
+            {
+                out.push((i, i + phrase.len()));
+            }
+            i += 1;
+        }
+    }
+    out
+}
+
+/// Whether the word before character `at` is a number other than one
+/// (|2 detailed updates|, |three nodes|): the noun after it is plural.
+fn after_plural_number(chars: &[char], at: usize) -> bool {
+    let before: String = chars[..at.min(chars.len())].iter().collect();
+    let mut words = before.split_whitespace().rev();
+    // The number, or the number before an adjective (|2 detailed|).
+    let number = |w: &str| {
+        let w = w.to_lowercase();
+        w.parse::<u64>().is_ok_and(|n| n != 1)
+            || [
+                "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven",
+                "twelve", "twenty", "hundred", "thousand", "million", "several", "many", "few",
+                "both",
+            ]
+            .contains(&w.as_str())
+    };
+    words.next().is_some_and(number) || words.next().is_some_and(number)
 }
 
 /// Whether `e` deletes a word that its neighbour repeats (|the the|).
@@ -975,15 +1079,16 @@ pub fn grammar(
         // tolerable| without |to be|): only a doubled word is dropped.
         // Nor is one determiner for another (|these hearings| for |the
         // hearings|) a correction there: both read, and which one is the
-        // writer's choice. Nor is a preposition cut to a part of itself
-        // (|within an area| to |in an area|), likelier only for being
-        // the commoner word.
+        // writer's choice. Nor is a compound preposition replaced (|within
+        // an area| to |in an area|, |the logic … into main| to |from
+        // main|): the shorter word is likelier only for being commoner,
+        // and no real error of the corpus replaced one.
         if grammatical {
             let determiner = |w: &str| {
                 ["this", "these", "that", "those", "the"]
                     .contains(&w.trim().to_lowercase().as_str())
             };
-            let part_of_preposition = |w: &str, r: &str| {
+            let compound_preposition = |w: &str, r: &str| {
                 let (w, r) = (w.trim().to_lowercase(), r.trim().to_lowercase());
                 [
                     "within",
@@ -997,12 +1102,30 @@ pub fn grammar(
                 .contains(&w.as_str())
                     && !r.is_empty()
                     && r != w
-                    && w.contains(&r)
             };
+            // Nor is a word changed inside a fixed expression any reading
+            // takes as one item (|coatings to date| to |to data|).
+            let fixed = fixed_expressions(s);
+            // Nor a preposition the best reading takes as one its head
+            // selects (|talking of| with |talk_of_v1| and |of_prtcl|): the
+            // head chose it. One that only modifies (|interested on chess|)
+            // still may be wrong.
+            let selected: Vec<(usize, usize)> = s
+                .best()
+                .map(|b| {
+                    b.words
+                        .iter()
+                        .filter(|w| w.entry.ends_with("_prtcl"))
+                        .map(|w| (w.from, w.to))
+                        .collect()
+                })
+                .unwrap_or_default();
             cands.retain(|(e, _)| {
                 (!e.replacement.trim().is_empty() || doubled(s, e))
                     && !(determiner(&e.text) && determiner(&e.replacement))
-                    && !part_of_preposition(&e.text, &e.replacement)
+                    && !compound_preposition(&e.text, &e.replacement)
+                    && !fixed.iter().any(|&(f, t)| f <= e.from && e.to <= t)
+                    && !(selected.contains(&(e.from, e.to)) && !e.replacement.trim().is_empty())
             });
         }
         if cands.is_empty() {
