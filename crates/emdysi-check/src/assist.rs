@@ -965,7 +965,7 @@ fn after_plural_number(chars: &[char], at: usize) -> bool {
             ]
             .contains(&w.as_str())
     };
-    words.next().is_some_and(&number) || words.next().is_some_and(&number)
+    words.next().is_some_and(number) || words.next().is_some_and(number)
 }
 
 /// Whether `e` deletes a word that its neighbour repeats (|the the|).
