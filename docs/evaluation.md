@@ -1946,7 +1946,18 @@ the minimal pairs (E2B, `examples/surprisal`):
 | 6 | 15% | 6% |
 
 The larger model locates and screens no better: the limit is the
-measure, not the model's size.
+measure, not the model's size. A model three times larger again, Gemma
+3 12B (4-bit, 6.9 GB; `EMDYSI_LM_MMAP=0 EMDYSI_LM_CTX=1024` to fit in
+16 GB, 2026-10-21), does worse still:
+
+| Measure | E2B | E4B | Gemma 3 12B |
+|---|---|---|---|
+| The corrected word is the most surprising (373) | 31.1% | 30.0% | 22.5% |
+| ... among the three most surprising | 48.0% | 46.6% | 38.1% |
+| Highest word surprise, as written against corrected (AUC) | 0.603 | 0.594 | 0.568 |
+
+(another family, so not a clean comparison of size; but nothing here
+points to surprise improving with size).
 
 Screening by surprise is weak, but it decides only which sentences get
 candidate corrections; what is reported is decided by the likelihood
