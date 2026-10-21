@@ -2323,6 +2323,13 @@ choice. Showing fifteen instead of five (`PREFILTER`, measured and
 rejected, 2026-10-21) did not help: 7 of 34, none of them from the
 model, and the writer's version was shown for only one pair.
 
+With every list of versions the one-pass estimate ranks logged
+(`LOG.estimates.tsv`, 2026-10-21; `examples/prefilter` reads it): of 73
+lists on these 34 pairs, 8 hold the writer's version at all, and 6 of
+those 8 rank among the first five. The prefilter costs at most 2 pairs;
+the rest of the loss is that the writer's edit is not among the
+candidates verified in time, the locating problem again.
+
 ## Doubled words and 'allows to', without a model
 
 Looking at what the model gained turned up errors no model is needed
