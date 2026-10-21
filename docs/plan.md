@@ -73,10 +73,11 @@ unless stated:
      sentences (British usage, a real error, and *within* to *in*, now
      answered).
    - On a sixteenth of the second development set (1,095 sentences):
-     18 flags, 4 of them real errors; seven guards since answer 10 of
-     the 14 false ones (evaluation.md). Left: three in Austen (a
-     preposition, *contrive* to *control*, an exclamation) and one
-     unknown term. With the first four guards the model adds 5 to the
+     18 flags, 4 of them real errors; with the guards that followed, 11
+     (10.0 per 1,000), of which 5 false (two in Austen, a preposition, a
+     real-word swap the word list cannot rank, an unknown term), one
+     a wrong fix of a real problem, and one answered since
+     (evaluation.md). With the first four guards the model adds 5 to the
      grammar alone on the 34 pairs (12 of 34 caught), no flag on the
      corrected text.
 

@@ -2290,6 +2290,21 @@ model path is for (*interested on chess* to *in*, *Additional* to
 *Additionally*). No threshold separates the rest either: the model's
 real gains scored 82–99%, these false flags 81–97%.
 
+The same sample again with the seven guards (2026-10-21, 16,340 s): 11
+flags (10.0 per 1,000) instead of 18. The four real errors stay; the
+false ones the guards answer are gone, and three new false ones came up
+where other versions now reached the five compared in full: *what they
+were talking of* to *talking about* (86%; answered since: a preposition
+the best reading takes as selected by its head, `talk_of_v1` with
+`of_prtcl`, is not swapped, while a modifying one, *interested on
+chess*, still is), *continues our work from 2024H2* to *on* (82%), and
+*Landed an extension* to *Larded* (88%; both in the commonest tier of
+the word list, which is too coarse to tell them apart). One more,
+*…, that allow latency spike detection* to *who* (81%), points at a
+real problem (the verb disagrees) with a wrong fix. Left false: the two
+in Austen (*contrive*, *the thoughtless*), *from 2024H2*, *Larded* and
+the unknown *sret*, 5 in 1,095 sentences, against 14 before.
+
 On the 34 pairs, with the first four of these guards (2026-10-21; the
 last three came after): 12 of 34 caught, 0 flags on the corrected text,
 285 questions. The model adds 5 to the grammar alone: the 4 above and
@@ -2298,6 +2313,22 @@ without a model, catches 221 of 374, unchanged by the code-like issue
 references; without a model, the blog posts of the three sets (where
 the references are) give 0 flags in 244 sentences, 43 in 4,147 and 4 in
 1,241, none of them about a reference.
+
+Where the model loses the rest of the 34 (that run's question log): no
+pair had the writer's version among the versions shown without E2B
+choosing it. Of the 22 missed, 17 were screened in and asked about
+without the writer's version among the five shown, and 5 got no version
+that parses. The loss is in which versions reach the model, not in its
+choice. Showing fifteen instead of five (`PREFILTER`, measured and
+rejected, 2026-10-21) did not help: 7 of 34, none of them from the
+model, and the writer's version was shown for only one pair.
+
+With every list of versions the one-pass estimate ranks logged
+(`LOG.estimates.tsv`, 2026-10-21; `examples/prefilter` reads it): of 73
+lists on these 34 pairs, 8 hold the writer's version at all, and 6 of
+those 8 rank among the first five. The prefilter costs at most 2 pairs;
+the rest of the loss is that the writer's edit is not among the
+candidates verified in time, the locating problem again.
 
 ## Doubled words and 'allows to', without a model
 

@@ -28,7 +28,10 @@
 //! model screens, locates and chooses, and the probabilities to tune the
 //! thresholds on; the questions that choose among versions of a sentence
 //! also go to FILE.versions.tsv, as `en decide --eval` reads them, to
-//! score again without parsing. `LETTERS` asks for a letter even where a model that
+//! score again without parsing, and every list of versions the model
+//! estimates in one pass to FILE.estimates.tsv in the same form (all the
+//! versions, before the few compared in full are picked: see
+//! `examples/prefilter`). `LETTERS` asks for a letter even where a model that
 //! scores text would compare the versions of a sentence by likelihood.
 //! `PACKS=packs/a.toml,...` adds packs to `core`; `CORE=FILE` replaces
 //! `core` itself (another threshold, say). `EXPLAIN=FILE` writes
@@ -216,6 +219,7 @@ fn main() {
                 "# pair\tkind\tside\tquestion\toptions\tright\tchosen\tp(right)\tp(original)\tprobabilities",
             ),
             Appender::open(&format!("{p}.versions.tsv"), ""),
+            Appender::open(&format!("{p}.estimates.tsv"), ""),
         )
     });
     let next = Mutex::new(0usize);
@@ -264,6 +268,7 @@ fn main() {
                                 oracle: &oracle,
                                 log: &log.0,
                                 versions: &log.1,
+                                estimated: &log.2,
                                 tag: format!("{i}\t{kind}\t{side}"),
                             });
                             let ask: Option<&mut dyn emdysi_check::decisions::Ask> = if oracle_on {
@@ -491,6 +496,8 @@ struct Logged<'a> {
     log: &'a Appender,
     /// The versions questions, as `en decide --eval` reads them.
     versions: &'a Appender,
+    /// The versions estimated in one pass, in the same form.
+    estimated: &'a Appender,
     tag: String,
 }
 
@@ -504,23 +511,8 @@ impl emdysi_check::decisions::Ask for Logged<'_> {
     fn versions(&mut self, context: &str, question: &str, versions: &[&str]) -> Option<Vec<f64>> {
         let p = self.inner.versions(context, question, versions)?;
         self.record(question, versions, &p);
-        let flat = |t: &str| t.replace(['\t', '\n', '|'], " ");
-        let right = self
-            .oracle
-            .answer(question, versions)
-            .iter()
-            .position(|&x| x > 0.5)
-            .unwrap_or(0);
-        self.versions.push(format!(
-            "{}\t{}\t{}\t{right}",
-            flat(question),
-            flat(context),
-            versions
-                .iter()
-                .map(|v| flat(v))
-                .collect::<Vec<_>>()
-                .join("|")
-        ));
+        self.versions
+            .push(self.versions_row(context, question, versions));
         Some(p)
     }
 
@@ -590,7 +582,11 @@ impl emdysi_check::decisions::Ask for Logged<'_> {
     }
 
     fn estimates(&mut self, context: &str, versions: &[&str]) -> Option<Vec<f64>> {
-        self.inner.estimates(context, versions)
+        let e = self.inner.estimates(context, versions)?;
+        let question = emdysi_check::assist::GRAMMAR_QUESTION;
+        self.estimated
+            .push(self.versions_row(context, question, versions));
+        Some(e)
     }
 
     fn can_estimate(&self) -> bool {
@@ -599,6 +595,29 @@ impl emdysi_check::decisions::Ask for Logged<'_> {
 }
 
 impl Logged<'_> {
+    /// A versions question as `en decide --eval` reads it: question,
+    /// context, versions separated by '|' (the original first), and the
+    /// index of the writer's version (0 when the original is right).
+    fn versions_row(&self, context: &str, question: &str, versions: &[&str]) -> String {
+        let flat = |t: &str| t.replace(['\t', '\n', '|'], " ");
+        let right = self
+            .oracle
+            .answer(question, versions)
+            .iter()
+            .position(|&x| x > 0.5)
+            .unwrap_or(0);
+        format!(
+            "{}\t{}\t{}\t{right}",
+            flat(question),
+            flat(context),
+            versions
+                .iter()
+                .map(|v| flat(v))
+                .collect::<Vec<_>>()
+                .join("|")
+        )
+    }
+
     fn record(&self, question: &str, options: &[&str], p: &[f64]) {
         use emdysi_check::assist::*;
         let argmax = |v: &[f64]| {
