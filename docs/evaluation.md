@@ -2260,6 +2260,43 @@ model still gains the same 4 (*how* to *on how*, *serer* to *server*,
 *give* to *gives*, *though* to *thought*; 8 of 34 caught with the 4 of
 the grammar alone), with no flag on the corrected text, in 284 questions.
 
+### False flags of the model path on the second development set
+
+A sixteenth of the second development set (8 documents, 1,095
+sentences; E2B, every version shown, 2026-10-21, 17,070 s): 18 flags
+(16.4 per 1,000), 10 of them in one blog post. Four point at real
+errors (*realitime*, *anyeone*, *a overflow*, *allowing to disable*);
+of the 14 false ones, the guards that followed answer 10:
+
+| Flag | Now |
+|---|---|
+| *“So much the better.* to *So much better* (82%) | no *the* is dropped before a comparative (*better*, *worse*, *more*, *less*...); the grammar has only fragments for the idiom |
+| *coatings to date* to *to data* (81%) | no word is changed inside a fixed expression any reading takes as one item (*to date* is one in the lexicon, though the ranker preferred *date* as a verb) |
+| *AWS, Vsphere and OpenStack* to *Sphere* (97%) | no real-word typo is taken in a technical term (the cspell lists) |
+| *consolidate the logic … into main* to *from main* (87%) | no compound preposition (*into*, *within*, *onto*, *upon*, *without*, *throughout*, *inside*) is replaced in a sentence the grammar accepts; no real error of the corpus replaces one |
+| *Landed an extension* to *Lans* (95%) | inflections and real-word neighbours are taken only as listed in lower case (the list has *LANs*) |
+| *2 detailed updates available.* to *update* (92%, four times) | no plural is made singular after a number other than one |
+| *rust-lang/rust#137944 is ready!* to *A rust* (83%) | issue references are code-like (a name to the parser), and no edit touches one |
+| *sret (struct return)*: unknown word (no model) | as before |
+| *from the chaise into a hackney coach* to *with* (82%) | as before (Austen) |
+| *I know you will contrive it all* to *control* (88%) | as before |
+| *Oh! thoughtless, thoughtless Lydia!* to *the thoughtless* (90%) | as before |
+
+Each answer has a test that fails without it. Two broader guards were
+tried and dropped: no preposition swapped for another, and no word
+replaced by another on a similar stem, in a sentence the grammar
+accepts. They answer the Austen flags but break the corrections the
+model path is for (*interested on chess* to *in*, *Additional* to
+*Additionally*). No threshold separates the rest either: the model's
+real gains scored 82–99%, these false flags 81–97%.
+
+On the 34 pairs, with the first four of these guards (2026-10-21; the
+last three came after): 12 of 34 caught, 0 flags on the corrected text,
+285 questions. The model adds 5 to the grammar alone: the 4 above and
+*creating* to *of creating*. No gain was lost. The grammar alone,
+without a model, catches 221 of 374, unchanged by the code-like issue
+references.
+
 ## Doubled words and 'allows to', without a model
 
 Looking at what the model gained turned up errors no model is needed

@@ -72,6 +72,13 @@ unless stated:
      showed (no preposition cut to a part of itself): 3 flags in 683
      sentences (British usage, a real error, and *within* to *in*, now
      answered).
+   - On a sixteenth of the second development set (1,095 sentences):
+     18 flags, 4 of them real errors; seven guards since answer 10 of
+     the 14 false ones (evaluation.md). Left: three in Austen (a
+     preposition, *contrive* to *control*, an exclamation) and one
+     unknown term. With the first four guards the model adds 5 to the
+     grammar alone on the 34 pairs (12 of 34 caught), no flag on the
+     corrected text.
 
    - Gemma 3 12B (2026-10-21, fits in 16 GB with `EMDYSI_LM_MMAP=0`)
      locates errors worse by surprise (AUC 0.568, against 0.603) and,
