@@ -214,8 +214,21 @@ fn function_word_edits(s: &Sentence) -> (Vec<WordEdit>, Vec<WordEdit>) {
                 dels.push((t.from - 1, t.to, format!(" {surface}"), String::new()));
             }
         }
+        // |so odd a mixture| is English as it stands: no |of| before the
+        // article after |so|, |too|, |as| or |how| and an adjective (the
+        // informal |so odd of a| is likelier to a model).
+        let degree_article = {
+            let lower = surface.to_lowercase();
+            let before: String = chars[..t.from.min(chars.len())].iter().collect();
+            let mut prev = before.split_whitespace().rev();
+            (lower == "a" || lower == "an")
+                && prev.next().is_some()
+                && prev.next().is_some_and(|w| {
+                    ["so", "too", "as", "how"].contains(&w.to_lowercase().as_str())
+                })
+        };
         if surface.chars().next().is_some_and(char::is_alphabetic) {
-            for w in INSERTED {
+            for w in INSERTED.iter().filter(|w| !(degree_article && **w == "of")) {
                 let w = if t.from == 0 {
                     capitalized(w)
                 } else {
@@ -960,8 +973,37 @@ pub fn grammar(
         // many, and a model prefers a version without one for being
         // shorter (|is not so well worth listening to … to be only just
         // tolerable| without |to be|): only a doubled word is dropped.
+        // Nor is one determiner for another (|these hearings| for |the
+        // hearings|) a correction there: both read, and which one is the
+        // writer's choice. Nor is a preposition cut to a part of itself
+        // (|within an area| to |in an area|), likelier only for being
+        // the commoner word.
         if grammatical {
-            cands.retain(|(e, _)| !e.replacement.trim().is_empty() || doubled(s, e));
+            let determiner = |w: &str| {
+                ["this", "these", "that", "those", "the"]
+                    .contains(&w.trim().to_lowercase().as_str())
+            };
+            let part_of_preposition = |w: &str, r: &str| {
+                let (w, r) = (w.trim().to_lowercase(), r.trim().to_lowercase());
+                [
+                    "within",
+                    "into",
+                    "onto",
+                    "upon",
+                    "without",
+                    "throughout",
+                    "inside",
+                ]
+                .contains(&w.as_str())
+                    && !r.is_empty()
+                    && r != w
+                    && w.contains(&r)
+            };
+            cands.retain(|(e, _)| {
+                (!e.replacement.trim().is_empty() || doubled(s, e))
+                    && !(determiner(&e.text) && determiner(&e.replacement))
+                    && !part_of_preposition(&e.text, &e.replacement)
+            });
         }
         if cands.is_empty() {
             continue;

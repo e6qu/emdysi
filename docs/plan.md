@@ -19,7 +19,7 @@ unless stated:
 
 | Measure | Now | Notes |
 |---|---|---|
-| Real errors caught (374, from documentation histories) | 208 (56%): spelling 167 of 177, grammar 41 of 197 | 202 before rare words codespell lists as misspellings (*homogenous*, six times), 192 before doubled words were reported whatever the analysis and `core.allow-to` (2026-10-20); 167 before the spelling work of 2026-10-17, 183 before codespell's list; 377 pairs until three that were all front matter left (2026-10-17) |
+| Real errors caught (374, from documentation histories) | 221 (59%): spelling 167 of 177, grammar 54 of 197 | 208 before nine patterns for typos and edits' leftovers the grammar accepts (*Memory Manger*, *executes following actions:*, *will be have*; 2026-10-20, shaped on these errors), 202 before rare words codespell lists as misspellings (*homogenous*, six times), 192 before doubled words were reported whatever the analysis and `core.allow-to` (2026-10-20); 167 before the spelling work of 2026-10-17, 183 before codespell's list; 377 pairs until three that were all front matter left (2026-10-17) |
 | ... with a perfect model choosing among verified corrections | 337 of 377 (89%): grammar 165 of 199 | the upper bound for any model, measured before the corpus repair; no real model measured yet |
 | False flags on edited text, per 1,000 sentences | 1.6 (first development set, 4 flags), 4.8 (second, 64), 3.7 (held out, 31 in 8,371 sentences) | most of the second set's flags point at real errors or real spelling mixes in the source (`docs/evaluation.md`) |
 | Gold analyses (ERG test suites) | MRS identical for all 2,966 reproduced; ranker 81.7% exact match held out | |
@@ -66,18 +66,25 @@ unless stated:
      instead of 3 (beyond the model-free rules of that day), 2.6 times
      faster.
 
+   - False flags with every version shown, after three guards (no *of*
+     in *so odd a*, bold labels end their blocks, no determiner swap in
+     a sentence the grammar accepts) and a fourth for what that run
+     showed (no preposition cut to a part of itself): 3 flags in 683
+     sentences (British usage, a real error, and *within* to *in*, now
+     answered).
+
    So with a 2–4 GB model on a CPU, grammar plus model adds a little
-   beyond the grammar. Left: the false-flag rate of the current defaults
-   on a whole sample, and the second development set (a quarter is about
+   beyond the grammar. Left: the second development set (a quarter is about
    3,300 sentences); then a much larger model,
    served from a machine with more memory, on the saved questions
    (`LOG.versions.tsv`, `examples/versions`) to see whether the design
    pays off with a stronger one. Until then priority 2 is where recall
    can be gained without one.
 
-2. **Grammar errors without a model.** 41 of 197 is the weakest number in
+2. **Grammar errors without a model.** 54 of 197 is the weakest number in
    the table (25 before 2026-10-20: doubled words in sentences the grammar
-   accepts, `core.allow-to`, rare words codespell lists). The mal-rule variant names errors only when a complete
+   accepts, `core.allow-to`, rare words codespell lists, nine patterns for
+   typos and edits' leftovers). The mal-rule variant names errors only when a complete
    search finds fragments only. Of the 172 real grammar errors missed
    (2026-10-18), 126 leave a strict reading (a wrong word that is still
    English, or a legal but unlikely analysis: *you wants* as *you* plus a
@@ -139,12 +146,15 @@ unless stated:
    on the model being evaluated; that judging is slow and wants a
    person's spot checks.
 
-Status on 2026-10-19: apart from the model evaluation, every item above
-is either bounded by the model (126 of the 172 missed grammar errors
-parse as correct English) or a multi-day effort with an uncertain gain
-(the unifier rewrite, independent ranking judgements). Both development
-sets have been mined for coverage gaps. Start a new session with the
-model evaluation.
+Status on 2026-10-20: the model path with E2B is measured end to end
+(choices by likelihood, a one-pass prefilter, guards against the false
+flags a sample showed), and the patterns the missed real errors suggest
+without a model are in (54 of 197 grammar errors). What is left of the
+grammar errors mostly parses as correct English, so it waits on a model
+that locates errors better than E2B and E4B; a 12B model on the same
+measurements is next (evaluation.md). The other items are multi-day
+efforts with an uncertain gain (the unifier rewrite, independent ranking
+judgements). Both development sets have been mined for coverage gaps.
 
 Decided against, with measurements in evaluation.md: work limits in
 place of the parser's time limits (no work measure tracks time well

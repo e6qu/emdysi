@@ -95,6 +95,115 @@ acceptable = [
 ]
 
 [[rule]]
+id = "core.fore-for"
+kind = "regex"
+severity = "warning"
+message = "'{match}' should be 'for' here."
+pattern = "\\b(?<m>(?<f>[Ff])ore)(?=\\s+(?:more|example|instance|details|further|information)\\b)"
+replace = "${f}or"
+description = "'Fore' typed for 'for' before 'more', 'example', 'instance', 'details', 'further' or 'information': the grammar accepts 'fore' as a word ('to the fore'). Once in the real-error corpus, never in the development sets."
+examples = ["Fore more details on etcd maintenance, see the guide.\n"]
+acceptable = [
+  "For more details on etcd maintenance, see the guide.\n",
+  "The issue came to the fore.\n",
+]
+
+[[rule]]
+id = "core.adjective-for-adverb-opening"
+kind = "regex"
+severity = "warning"
+message = "'{match},' opens the sentence as an adverb: '{match}ly,'."
+pattern = "^(?<m>Additional|Consequent|Subsequent),"
+replace = "${m}ly"
+description = "A sentence that opens with 'Additional,' (or 'Consequent,', 'Subsequent,') means the adverb. Once in the real-error corpus, never in the development sets."
+examples = ["Additional, we are starting a new initiative.\n"]
+acceptable = [
+  "Additionally, we are starting a new initiative.\n",
+  "Additional nodes join later.\n",
+]
+
+[[rule]]
+id = "core.following-article"
+kind = "regex"
+severity = "warning"
+message = "'{match}' needs 'the' before it when it introduces what follows: 'the following'."
+pattern = "(?<!\\b[Tt]he\\s)(?<!\\b[Tt]hese\\s)(?<!\\b[Aa]\\s)(?<!\\b[Aa]ll\\s)(?<!\\b[Oo]f\\s)(?<=\\w\\s)\\b(?<m>following)\\s+(?!(?:the|these|this|those|that|a|an|your|our|its|their|my|his|her|them|it|him|us|me|you|some|any|each|every|all|steps|instructions)\\b)[a-z][a-z -]{0,40}:\\s*$"
+replace = "the following"
+description = "'Following' that introduces a list ('contain following names:', 'executes following actions:') needs 'the'. A gerund with its object ('by following these steps:') is left alone. Three times in the real-error corpus, never in the development sets."
+examples = [
+  "This certificate should contain following alternative names:\n",
+  "As soon as the control plane is available, kubeadm executes following actions:\n",
+]
+acceptable = [
+  "This certificate should contain the following alternative names:\n",
+  "Install it by following these steps:\n",
+  "Run the following commands:\n",
+  "Following the release, we fixed it.\n",
+]
+
+[[rule]]
+id = "core.chose-choose"
+kind = "regex"
+severity = "warning"
+message = "'Chose' is past tense: an instruction is 'Choose'."
+pattern = "^(?<m>Chose)\\s+(?=(?:one|a|an|the|which|between|from|your|any)\\b)"
+replace = "Choose"
+description = "A sentence or list item that opens with 'Chose' and its object is an instruction: 'Choose'. Once in the real-error corpus, never in the development sets."
+examples = ["Chose one of your nodes, and add a label to it.\n"]
+acceptable = [
+  "Choose one of your nodes, and add a label to it.\n",
+  "She chose one of the nodes.\n",
+]
+
+[[rule]]
+id = "core.the-both"
+kind = "regex"
+severity = "warning"
+message = "'{match}': 'both' takes no article ('both old and new')."
+pattern = "\\b(?<m>[Tt]he both)\\b(?!\\s+of\\b)"
+replace = "both"
+description = "'The both' before what it joins ('the both old and new CA') is a leftover of an edit; the informal 'the both of us' is left alone. Once in the real-error corpus, never in the development sets."
+examples = ["Append the both old and new CA to the file.\n"]
+acceptable = [
+  "Append both old and new CA to the file.\n",
+  "It is the both of them.\n",
+]
+
+[[rule]]
+id = "core.be-have"
+kind = "regex"
+severity = "warning"
+message = "'{match}': one of the two verbs is left over from an edit."
+pattern = "\\b(?<m>be have)\\b"
+description = "'Be have' ('will be have one of the following values') is never English: one verb is left over from an edit. Once in the real-error corpus, never in the development sets."
+examples = ["The label will be have one of the following values.\n"]
+acceptable = ["The label will have one of the following values.\n", "Children should behave.\n"]
+
+[[rule]]
+id = "core.his-this"
+kind = "regex"
+severity = "warning"
+message = "A sentence opens with 'his': did you mean 'This'?"
+pattern = "(?:^|[.!?]\\s+)(?<m>his)\\s+(?=(?:means|is|was|will|can|allows|lets|makes)\\b)"
+replace = "This"
+description = "A sentence that opens with lower-case 'his' and a verb ('his means that') has lost the T of 'This'. Once in the real-error corpus, never in the development sets."
+examples = ["The default is an empty list. his means that every address is used.\n"]
+acceptable = ["This means that every address is used.\n", "He said his means were small.\n"]
+
+[[rule]]
+id = "core.is-verb"
+kind = "regex"
+severity = "warning"
+message = "'{match}': 'is' before a verb that already agrees with its subject is left over from an edit."
+pattern = "\\b(?<m>is)\\s+(?=(?:works|supports|provides|allows|requires|uses|returns)\\s+(?:like|the|a|an|for|to|with|it|you|this|that)\\b)"
+description = "'Is' before a verb in the third person ('is works like type annotations') is left over from an edit; a noun reading ('is works of art') is avoided by what must follow. Once in the real-error corpus, never in the development sets."
+examples = ["A type annotation for `self` is works like type annotations for other parameters.\n"]
+acceptable = [
+  "A type annotation for `self` works like type annotations for other parameters.\n",
+  "The collection is works of art.\n",
+]
+
+[[rule]]
 id = "core.double-article"
 kind = "repeated-word"
 articles = true

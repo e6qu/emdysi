@@ -92,6 +92,29 @@ fn a_listed_misspelling_is_one_even_if_a_rare_list_has_it() {
 }
 
 #[test]
+fn a_rare_word_codespell_lists_is_one_in_a_title_cased_name() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let checker = Checker::new(packs());
+    let opts = Options {
+        threads: 1,
+        ..Options::default()
+    };
+    // |manger| is a word, but in a name of common words it is a typo for
+    // |manager|; on its own it stays a word.
+    let src = "Next, the Memory Manger feature should be enabled. The ox ate from the manger.\n";
+    let a = analyze(&erg, src, Format::Plain, &opts);
+    let d = checker.check(&erg, &a);
+    let flagged: Vec<_> = d.iter().filter(|x| x.rule == "core.spelling").collect();
+    assert_eq!(flagged.len(), 1, "{d:?}");
+    assert_eq!(&src[flagged[0].range.clone()], "Manger", "{d:?}");
+    assert!(
+        flagged[0].message.contains("manager"),
+        "{}",
+        flagged[0].message
+    );
+}
+
+#[test]
 fn checks_and_fixes() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     let checker = Checker::new(packs());

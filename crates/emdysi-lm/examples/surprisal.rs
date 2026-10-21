@@ -31,7 +31,12 @@ fn main() {
     // sentence as written and as corrected.
     let mut wrong: Vec<(f64, f64)> = Vec::new();
     let mut right: Vec<(f64, f64)> = Vec::new();
-    for line in src.lines() {
+    let total = src.lines().count();
+    for (i, line) in src.lines().enumerate() {
+        // Progress, for a long run with a large model.
+        if i % 10 == 0 {
+            eprintln!("{i} of {total} pairs");
+        }
         let f: Vec<&str> = line.split('\t').collect();
         let [_, _, options, answer] = f[..] else {
             continue;

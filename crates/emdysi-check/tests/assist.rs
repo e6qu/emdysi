@@ -299,6 +299,63 @@ fn versions_estimated_in_one_pass_are_compared_only_at_the_top() {
 }
 
 #[test]
+fn no_of_is_put_into_so_odd_a_mixture() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let text = "Mr. Bennet was so odd a mixture of quick parts and caprice.\n";
+    let a = analyze(&erg, text, Format::Markdown, &opts());
+    // A model that prefers the informal |so odd of a| is not given it.
+    let mut model = Surprised {
+        word: "a",
+        surprise: 6.0,
+        want: "odd of a",
+    };
+    let d: Vec<Diagnostic> = core()
+        .check_with(&erg, &a, Some(&mut model))
+        .into_iter()
+        .filter(|d| d.rule == "core.grammar-fix")
+        .collect();
+    assert!(d.is_empty(), "{d:?}");
+}
+
+#[test]
+fn a_determiner_is_not_swapped_in_a_sentence_the_grammar_accepts() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let text = "The purpose of these hearings is to field responses from the public.\n";
+    let a = analyze(&erg, text, Format::Markdown, &opts());
+    assert!(a.sentences[0].strict());
+    let mut model = Surprised {
+        word: "these",
+        surprise: 6.0,
+        want: "of the hearings",
+    };
+    let d: Vec<Diagnostic> = core()
+        .check_with(&erg, &a, Some(&mut model))
+        .into_iter()
+        .filter(|d| d.rule == "core.grammar-fix")
+        .collect();
+    assert!(d.is_empty(), "{d:?}");
+}
+
+#[test]
+fn a_preposition_is_not_cut_to_a_part_of_itself_in_a_sentence_the_grammar_accepts() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let text = "Open space was provided for residents within an area that was being built up.\n";
+    let a = analyze(&erg, text, Format::Markdown, &opts());
+    assert!(a.sentences[0].strict());
+    let mut model = Surprised {
+        word: "within",
+        surprise: 6.0,
+        want: "residents in an area",
+    };
+    let d: Vec<Diagnostic> = core()
+        .check_with(&erg, &a, Some(&mut model))
+        .into_iter()
+        .filter(|d| d.rule == "core.grammar-fix")
+        .collect();
+    assert!(d.is_empty(), "{d:?}");
+}
+
+#[test]
 fn a_real_word_typo_is_corrected_at_the_word_named() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     // |Manger| is a word, so the spelling check passes it and the grammar

@@ -1615,12 +1615,18 @@ impl Rule {
                         // (Not a suffix named: |endings such as -ment|.)
                         let after_hyphen =
                             t.from > 0 && s.text.chars().nth(t.from - 1).is_some_and(|c| c == '-');
-                        let listed = accepted
-                            && !after_hyphen
-                            && crate::dict::tier(w).is_none()
-                            && !erg.known_word(w)
-                            && !crate::dict::inflection_of_known(w)
-                            && crate::dict::codespell(w).is_some();
+                        // A word codespell lists as rare and usually a
+                        // misspelling, in a title-cased run of common words
+                        // (|Memory Manger|), is one: a name made of common
+                        // words names a common thing.
+                        let rare_in_title = in_title && crate::dict::codespell_rare(w).is_some();
+                        let listed = !after_hyphen
+                            && (accepted
+                                && crate::dict::tier(w).is_none()
+                                && !erg.known_word(w)
+                                && !crate::dict::inflection_of_known(w)
+                                && crate::dict::codespell(w).is_some()
+                                || rare_in_title);
                         if accepted && !listed {
                             continue;
                         }
@@ -1629,7 +1635,13 @@ impl Rule {
                         // however far from its correction and however often
                         // the document repeats it; its fix is applied when
                         // codespell gives only one.
-                        if let Some((fixes, sure)) = crate::dict::codespell(w) {
+                        let codespell = crate::dict::codespell(w).or_else(|| {
+                            rare_in_title
+                                .then(|| crate::dict::codespell_rare(w))
+                                .flatten()
+                                .map(|f| (f, false))
+                        });
+                        if let Some((fixes, sure)) = codespell {
                             let mut d = self.diag(a, si, t.from, t.to, w);
                             d.message = if listed {
                                 format!(
@@ -1642,9 +1654,10 @@ impl Rule {
                                     &format!(" Did you mean '{}'?", fixes[0]),
                                 )
                             };
-                            d.suggestions = fixes.to_vec();
+                            // (In the case written: |Manger| to |Manager|.)
+                            d.suggestions = fixes.iter().map(|f| match_case(&t.form, f)).collect();
                             if sure {
-                                d.replacement = Some(fixes[0].clone());
+                                d.replacement = Some(d.suggestions[0].clone());
                             }
                             out.push(d);
                             continue;

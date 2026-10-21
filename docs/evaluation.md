@@ -2185,6 +2185,44 @@ candidates parsed, and without a model that locates the error the
 writer's correction is often past them (32 of 197, `NOFOCUS=1
 fix_bound`).
 
+### False flags of the model path with every version shown
+
+The quarter of the first development set again (673 sentences, 0 flags
+without a model), with the one-pass estimate and every version the
+grammar accepts shown (2026-10-20): 6 flags (8.9 per 1,000).
+
+| Flag | | Now |
+|---|---|---|
+| *so odd a mixture* to *so odd of a mixture* (91%) | false: the informal form is likelier | no *of* is offered after *so*, *too*, *as* or *how* and an adjective before the article |
+| *…load balancing Kubernetes can expose* to *in Kubernetes* (85%) | false: a bold label ran into the sentence after it | a line that is only a bold label ends its block |
+| *Horizontal scaling Scale your application* to *is Scale* (84%) | false: the same | the same |
+| *The purpose of these CRTC hearings* to *of the* (90%) | false: both read | no determiner is swapped for another in a sentence the grammar accepts |
+| *The Hong Kong government … have argued* to *has* (85%) | British usage allows it | as before |
+| *with all same ease of use* to *all the same ease* (90%) | a real error in the source | caught |
+
+The bold labels (18 lines in 3 documents of the development sets) leave
+the claims of `core` on those documents and the real errors caught
+(208 of 374) as they were.
+
+With the three answers in place, the same sample again (683 sentences:
+the bold labels now end their blocks; 10,400 s): 3 flags (4.4 per
+1,000), the British *government … have argued*, the real error *all same
+ease*, and one new: *residents within an area* to *in an area* (87%),
+a version that had not been among the five compared in full before.
+Both read; the model prefers the commoner word. A preposition is no
+longer cut to a part of itself (*within*, *into*, *onto*, *upon*,
+*without*, *throughout*, *inside*) in a sentence the grammar accepts;
+none of the model's gains below is such a cut, and the corpus's *with*
+to *within* goes the other way. So on this sample, of the 6 flags
+before: 0 false ones are left of the 4, and the new one is answered
+(not yet re-measured).
+
+On the 34 real-error pairs where a model can gain (`SHARD=0/4`, the
+`PAIRS` of the model runs above), the three guards cost nothing: the
+model still gains the same 4 (*how* to *on how*, *serer* to *server*,
+*give* to *gives*, *though* to *thought*; 8 of 34 caught with the 4 of
+the grammar alone), with no flag on the corrected text, in 284 questions.
+
 ## Doubled words and 'allows to', without a model
 
 Looking at what the model gained turned up errors no model is needed
@@ -2220,7 +2258,47 @@ against 192; no flag on the corrected text.
 
 A pattern for a missing *the* before *following* (*executes following
 actions:*) would catch two more and match nothing in the development
-sets, but it was shaped on those two errors; it is left out.
+sets, but it was shaped on those two errors; it was left out at first
+(see below for why it is in now).
+
+### Typos that are words, by pattern
+
+Nine more patterns from the missed grammar errors, each a typo or an
+edit's leftover that the grammar accepts (2026-10-20):
+
+| Rule | Error | Caught |
+|---|---|---|
+| `core.spelling` | a word codespell lists as rare and usually a misspelling, in a title-cased run of common words: *Memory Manger* | 3 (not *CPU manger policy*, in lower case) |
+| `core.following-article` | *following* without *the* before a list: *executes following actions:*; not a gerund with its object (*by following these steps:*) | 3 |
+| `core.fore-for` | *Fore more details* | 1 |
+| `core.adjective-for-adverb-opening` | *Additional, we are starting* | 1 |
+| `core.chose-choose` | *Chose one of your nodes* opening an instruction | 1 |
+| `core.the-both` | *Append the both old and new CA*; not *the both of us* | 1 |
+| `core.be-have` | *will be have one of the following values* | 1 |
+| `core.his-this` | *. his means that* | 1 |
+| `core.is-verb` | *is works like type annotations* (only before *like*, *the*, *a*, *to*...: not *is works of art*) | 1 |
+
+Real errors caught without a model: 221 of 374 (208 before), grammar 54
+of 197, with no flag on the corrected text. These were written after
+looking at the errors they catch, so the gain is an upper estimate of
+what they catch elsewhere; what keeps them is that they match nothing in
+the corrected text, nor in any sentence of the development and held-out
+sets (the patterns run over all of their text, 41,364 sentences, and every capitalized
+word of the rare list there is checked by hand: none is in a title-cased
+run). Codespell's rare list without the title-case gate
+would flag real words in the development sets (*wit*, *revered*,
+*implementors*), so it is used only there.
+
+Measured and left as is: reporting two-edit typos without a model. Of
+the spelling findings left to a model (tokenization only, every edited
+sample and both sides of the real-error pairs), the two-edit ones in
+lower case are one real error (*partilar*) against nine correct terms of
+the edited text (*grafana*, *mebibytes*, *syscalls*, *borrowck*,
+*hijinks*, *naturedly*...). The other missed misspellings are not
+findings at all: *authoratitively* and *ephermal* are two edits from
+words too rare for the two-edit rule, *Servies* is capitalized in the
+middle of a sentence (a name), and *informations* is an inflection the
+word lists know.
 
 ### Measured and rejected: the grammar-error variant on sentences the grammar accepts
 
