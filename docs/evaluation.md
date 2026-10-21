@@ -2314,9 +2314,9 @@ references; without a model, the blog posts of the three sets (where
 the references are) give 0 flags in 244 sentences, 43 in 4,147 and 4 in
 1,241, none of them about a reference.
 
-Where the model loses the rest of the 34 (that run's question log):
-whenever the writer's version was among the versions shown, E2B chose
-it (12 of 12). Of the 22 missed, 17 were screened in and asked about
+Where the model loses the rest of the 34 (that run's question log): no
+pair had the writer's version among the versions shown without E2B
+choosing it. Of the 22 missed, 17 were screened in and asked about
 without the writer's version among the five shown, and 5 got no version
 that parses. The loss is in which versions reach the model, not in its
 choice. Showing fifteen instead of five (`PREFILTER`, measured and
