@@ -2290,6 +2290,21 @@ model path is for (*interested on chess* to *in*, *Additional* to
 *Additionally*). No threshold separates the rest either: the model's
 real gains scored 82–99%, these false flags 81–97%.
 
+The same sample again with the seven guards (2026-10-21, 16,340 s): 11
+flags (10.0 per 1,000) instead of 18. The four real errors stay; the
+false ones the guards answer are gone, and three new false ones came up
+where other versions now reached the five compared in full: *what they
+were talking of* to *talking about* (86%; answered since: a preposition
+the best reading takes as selected by its head, |talk_of_v1| with
+|of_prtcl|, is not swapped, while a modifying one, *interested on
+chess*, still is), *continues our work from 2024H2* to *on* (82%), and
+*Landed an extension* to *Larded* (88%; both in the commonest tier of
+the word list, which is too coarse to tell them apart). One more,
+*…, that allow latency spike detection* to *who* (81%), points at a
+real problem (the verb disagrees) with a wrong fix. Left false: the two
+in Austen (*contrive*, *the thoughtless*), *from 2024H2*, *Larded* and
+the unknown *sret*, 5 in 1,095 sentences, against 14 before.
+
 On the 34 pairs, with the first four of these guards (2026-10-21; the
 last three came after): 12 of 34 caught, 0 flags on the corrected text,
 285 questions. The model adds 5 to the grammar alone: the 4 above and
