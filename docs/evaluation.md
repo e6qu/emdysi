@@ -2804,6 +2804,18 @@ prefers to an entry for *short for*, so none was added), and documentation
 shorthand without a subject or determiner (*Specifies the duration that
 ...*, *at node, pod and container level*).
 
+Looked at again (2026-10-21): *X, Y, or both* parses where the
+conjuncts are noun phrases (*images, containers, or both*) and not where
+they are verbs or participles (*can be requested, limited, or both*):
+*both* would have to stand for a verb phrase in every form the
+conjuncts take (a passive participle there), which no ERG type does;
+the development sets have four such sentences. The *than* clauses are
+lexical rather than structural: *more CPU than they need* and *than
+they requested* parse, *than they want* and *than they request* do not,
+and *took longer than* fails with any complement (*It took longer.*
+parses); the corpora have one such sentence (*take longer than
+running*). Both are left for now.
+
 Measured with the parse cache cold: false flags 4 on the first
 development set and 31 on the held-out set, the same flags as before;
 real errors 192 of 374, the same pairs. The gaps above are from the
