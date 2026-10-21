@@ -115,6 +115,13 @@ fn tech_words() -> &'static std::collections::HashSet<String> {
     })
 }
 
+/// Whether a word is a technical term (the cspell lists: |vSphere|,
+/// |kubelet|) and not in the main list.
+pub fn technical(word: &str) -> bool {
+    let w = word.to_lowercase();
+    tier(&w).is_none() && tech_words().contains(&w)
+}
+
 /// Whether a word is correct though not in the main list (see
 /// [`accepted_words`]).
 pub fn accepted(word: &str) -> bool {

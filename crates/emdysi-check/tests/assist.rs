@@ -359,6 +359,25 @@ fn no_word_is_changed_inside_a_fixed_expression() {
 }
 
 #[test]
+fn a_technical_term_is_not_taken_for_a_real_word_typo() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    // |vSphere| is in the software terms; one letter less is |Sphere|.
+    let text = "Metrics are available for GCE, AWS, Vsphere and OpenStack.\n";
+    let a = analyze(&erg, text, Format::Markdown, &opts());
+    let mut model = Surprised {
+        word: "Vsphere",
+        surprise: 6.0,
+        want: "AWS, Sphere and",
+    };
+    let d: Vec<Diagnostic> = core()
+        .check_with(&erg, &a, Some(&mut model))
+        .into_iter()
+        .filter(|d| d.rule == "core.grammar-fix")
+        .collect();
+    assert!(d.is_empty(), "{d:?}");
+}
+
+#[test]
 fn a_determiner_is_not_swapped_in_a_sentence_the_grammar_accepts() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     let text = "The purpose of these hearings is to field responses from the public.\n";

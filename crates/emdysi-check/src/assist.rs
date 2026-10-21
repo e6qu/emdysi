@@ -803,10 +803,12 @@ fn real_word_edits(s: &Sentence) -> Vec<Edit> {
             continue;
         }
         let surface: String = chars[t.from..t.to].iter().collect();
-        // Plain words only, not acronyms or code.
+        // Plain words only, not acronyms or code, nor technical terms
+        // (|AWS, Vsphere and| to |Sphere|).
         if surface.chars().count() < REAL_WORD_MIN
             || !surface.chars().all(|c| c.is_ascii_alphabetic())
             || surface.chars().skip(1).any(|c| c.is_ascii_uppercase())
+            || crate::dict::technical(&surface)
         {
             continue;
         }
