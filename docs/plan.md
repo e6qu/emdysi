@@ -24,7 +24,7 @@ unless stated:
 | False flags on edited text, per 1,000 sentences | 1.6 (first development set, 4 flags), 4.8 (second, 64), 3.7 (held out, 31 in 8,371 sentences) | most of the second set's flags point at real errors or real spelling mixes in the source (`docs/evaluation.md`) |
 | Gold analyses (ERG test suites) | MRS identical for all 2,966 reproduced; ranker 81.7% exact match held out | |
 | Speed | about 1.3 s of parsing per sentence of edited text (held-out set, cold parse cache, 2026-10-18), plus 0.25 s for the grammar-error variant | 1.7 s of CPU per sentence before giving up after an exhausted search, 2.1 s before the grammar-error variant was gated (2026-10-17); parsing is most of the time |
-| Rule data | 2,744 LanguageTool rules (743 of them checked against the parse's parts of speech or chunks), 98 slop rules, 26 GitLab rules (opt-in packs); codespell, CMUdict, UniMorph, Open English WordNet, UD English EWT vendored | emdysi is AGPL-3.0-or-later since 2026-10-17 (decision D15), so share-alike and GPL data can be used |
+| Rule data | 3,315 LanguageTool rules (1,312 of them checked against the parse's parts of speech or chunks), 98 slop rules, 26 GitLab rules (opt-in packs); codespell, CMUdict, UniMorph, Open English WordNet, UD English EWT vendored | emdysi is AGPL-3.0-or-later since 2026-10-17 (decision D15), so share-alike and GPL data can be used |
 
 ## Priorities
 
@@ -142,13 +142,14 @@ unless stated:
    headings, reader hooks), and the `slop` pack adds bheijden/slop's
    tested patterns. The judgements no pattern can make (explaining the
    obvious, fake specificity) wait on the model.
-6. **More LanguageTool rules.** 743 rules now check parts of speech or
-   chunks against the parse (chunks since 2026-10-21, derived from the
-   parse's tags), and suggestions inflect, change case and rewrite
-   matched words. The rest need antipatterns, exceptions or filters the
-   converter does not take, or fail their examples. None of
-   the converted rules catches the real grammar errors (24 of 199 with
-   the pack or without, when measured): those need the grammar.
+6. **More LanguageTool rules.** 1,312 rules now check parts of speech
+   or chunks against the parse, in their patterns or their antipatterns
+   (chunks and tagged antipatterns since 2026-10-21), and suggestions
+   inflect, change case and rewrite matched words. The rest need
+   exceptions or filters the converter does not take, or fail their
+   examples with the parse. With the pack two more real grammar errors
+   are caught (223 of 374), and it adds about 3 findings per 1,000
+   sentences of the first development set, mostly style.
 
 7. **Parse ranking.** The shipped averaged perceptron is 81.7% exact
    match held out and right for 57 of 97 judged machine-written

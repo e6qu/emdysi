@@ -2616,6 +2616,21 @@ corpus with the pack added: 221 of 374 caught, as without it; one
 corrected text is flagged, by a rule that needs only words
 (*parenthesis?*).
 
+Most of the rules still left out (1,082) were left out only because an
+antipattern asks for an open-class part of speech. The regex kind now
+takes `antipatterns`, each a pattern with its own tag and chunk
+conditions; a sentence where one matches with its conditions met draws
+no finding, as with `unless`. With them, 1,764 rules have conditions
+only the parse can check, `lt_validate` keeps 1,312, and the pack has
+3,315 rules. On the first development set: 33 findings (26), the 7 from
+the new rules 2 defensible (*brand new syntax*) and 5 false (*both his
+and your*, *need to run*, *Let's see now*, *In Linux and macOS*, *He
+also pointed out*), mostly from a part of speech the best reading gets
+wrong. On the real-error corpus: 223 of 374 caught (221), the first real
+grammar errors a LanguageTool rule catches here (*the worse case
+startup time*, *able analyze*); 2 corrected texts flagged (1), the new
+one a style suggestion (*in a similar manner*).
+
 ### A lower time limit: 5 seconds instead of 10
 
 `timing` with `TIMEOUT=5` against the default 10 seconds, on the same
