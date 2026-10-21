@@ -318,6 +318,26 @@ fn no_of_is_put_into_so_odd_a_mixture() {
 }
 
 #[test]
+fn the_is_not_dropped_before_a_comparative() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    // The grammar has only fragments for the idiom, and |So much better|
+    // parses; a model that prefers it is not given it.
+    let text = "So much the better.\n";
+    let a = analyze(&erg, text, Format::Markdown, &opts());
+    let mut model = Surprised {
+        word: "the",
+        surprise: 6.0,
+        want: "So much better",
+    };
+    let d: Vec<Diagnostic> = core()
+        .check_with(&erg, &a, Some(&mut model))
+        .into_iter()
+        .filter(|d| d.rule == "core.grammar-fix")
+        .collect();
+    assert!(d.is_empty(), "{d:?}");
+}
+
+#[test]
 fn a_determiner_is_not_swapped_in_a_sentence_the_grammar_accepts() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     let text = "The purpose of these hearings is to field responses from the public.\n";

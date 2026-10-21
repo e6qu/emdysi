@@ -203,15 +203,34 @@ fn function_word_edits(s: &Sentence) -> (Vec<WordEdit>, Vec<WordEdit>) {
                     subs.push((t.from, t.to, surface.clone(), rep));
                 }
             }
+            // |the| before a comparative is idiomatic (|so much the
+            // better|, |all the more|, |none the worse|), where the grammar
+            // finds only fragments and a model prefers it gone.
+            let after: String = chars[t.to.min(chars.len())..].iter().collect();
+            let comparative_the = lower == "the"
+                && after.split_whitespace().next().is_some_and(|w| {
+                    let w = w.trim_matches(|c: char| !c.is_alphabetic()).to_lowercase();
+                    [
+                        "better", "worse", "more", "less", "fewer", "sooner", "greater",
+                    ]
+                    .contains(&w.as_str())
+                });
             // The word and the space after it (or before it, at the end);
             // with its comma, a word set off by one (|as of this writing,
             // this, it compiles|).
-            if chars.get(t.to) == Some(&',') && chars.get(t.to + 1) == Some(&' ') {
-                dels.push((t.from, t.to + 2, format!("{surface}, "), String::new()));
+            let deletion = if comparative_the {
+                None
+            } else if chars.get(t.to) == Some(&',') && chars.get(t.to + 1) == Some(&' ') {
+                Some((t.from, t.to + 2, format!("{surface}, ")))
             } else if chars.get(t.to) == Some(&' ') {
-                dels.push((t.from, t.to + 1, format!("{surface} "), String::new()));
+                Some((t.from, t.to + 1, format!("{surface} ")))
             } else if t.from > 0 && chars[t.from - 1] == ' ' {
-                dels.push((t.from - 1, t.to, format!(" {surface}"), String::new()));
+                Some((t.from - 1, t.to, format!(" {surface}")))
+            } else {
+                None
+            };
+            if let Some((from, to, text)) = deletion {
+                dels.push((from, to, text, String::new()));
             }
         }
         // |so odd a mixture| is English as it stands: no |of| before the
