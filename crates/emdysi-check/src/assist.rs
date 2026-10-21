@@ -883,6 +883,45 @@ fn surprise(ask: &mut dyn Ask, context: &str, s: &Sentence) -> Option<Vec<(usize
     Some(words.iter().zip(v).map(|(w, x)| (w.0, w.1, x)).collect())
 }
 
+/// The character spans of `s.original` that some reading takes as one
+/// lexical item of several words (|to date|, |in order to|). Any reading,
+/// not only the best: the ranker can prefer |date| as a verb in
+/// |coatings to date exhibit|.
+fn fixed_expressions(s: &Sentence) -> Vec<(usize, usize)> {
+    let Some(parse) = &s.parse else {
+        return Vec::new();
+    };
+    let lower: Vec<char> = s.original.to_lowercase().chars().collect();
+    let mut out = Vec::new();
+    for w in parse.readings.iter().flat_map(|r| &r.words) {
+        let words: Vec<String> = w
+            .surface
+            .split_whitespace()
+            .map(str::to_lowercase)
+            .collect();
+        if words.len() < 2 {
+            continue;
+        }
+        // Every place the words stand together in the sentence as written.
+        let phrase: Vec<char> = words.join(" ").chars().collect();
+        let mut i = 0;
+        while i + phrase.len() <= lower.len() {
+            let bounded = (i == 0 || !lower[i - 1].is_alphanumeric())
+                && lower
+                    .get(i + phrase.len())
+                    .is_none_or(|c| !c.is_alphanumeric());
+            if bounded
+                && lower[i..i + phrase.len()] == phrase[..]
+                && !out.contains(&(i, i + phrase.len()))
+            {
+                out.push((i, i + phrase.len()));
+            }
+            i += 1;
+        }
+    }
+    out
+}
+
 /// Whether `e` deletes a word that its neighbour repeats (|the the|).
 fn doubled(s: &Sentence, e: &Edit) -> bool {
     let chars: Vec<char> = s.original.chars().collect();
@@ -1018,10 +1057,14 @@ pub fn grammar(
                     && r != w
                     && w.contains(&r)
             };
+            // Nor is a word changed inside a fixed expression the best
+            // reading takes as one item (|coatings to date| to |to data|).
+            let fixed = fixed_expressions(s);
             cands.retain(|(e, _)| {
                 (!e.replacement.trim().is_empty() || doubled(s, e))
                     && !(determiner(&e.text) && determiner(&e.replacement))
                     && !part_of_preposition(&e.text, &e.replacement)
+                    && !fixed.iter().any(|&(f, t)| f <= e.from && e.to <= t)
             });
         }
         if cands.is_empty() {

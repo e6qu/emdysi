@@ -338,6 +338,27 @@ fn the_is_not_dropped_before_a_comparative() {
 }
 
 #[test]
+fn no_word_is_changed_inside_a_fixed_expression() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    // |to date| is one item of the grammar's lexicon; |to data| also
+    // parses, and a model that prefers it is not given it.
+    let text = "Most coatings to date exhibit a lack of reliability.\n";
+    let a = analyze(&erg, text, Format::Markdown, &opts());
+    assert!(a.sentences[0].strict());
+    let mut model = Surprised {
+        word: "date",
+        surprise: 6.0,
+        want: "to data",
+    };
+    let d: Vec<Diagnostic> = core()
+        .check_with(&erg, &a, Some(&mut model))
+        .into_iter()
+        .filter(|d| d.rule == "core.grammar-fix")
+        .collect();
+    assert!(d.is_empty(), "{d:?}");
+}
+
+#[test]
 fn a_determiner_is_not_swapped_in_a_sentence_the_grammar_accepts() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     let text = "The purpose of these hearings is to field responses from the public.\n";
