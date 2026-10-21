@@ -1959,6 +1959,32 @@ measure, not the model's size. A model three times larger again, Gemma
 (another family, so not a clean comparison of size; but nothing here
 points to surprise improving with size).
 
+Choosing among versions, the part E2B does well, does not improve
+either. The versions questions saved by the E2B runs (908 distinct; all
+56 whose writer's version is among them, and a fixed random 400 of the
+852 whose original is right) were scored by both models
+(`examples/versions`); the 12B model scored the 56 and the first 150 of
+the 400, and E2B is compared on the same 206. By the plain
+log-probability margin a correction must win by, the number of
+corrections kept against the number of correct originals changed:
+
+| Correct originals changed (of 150), at most | E2B keeps (of 56) | Gemma 3 12B keeps |
+|---|---|---|
+| 1 | 32 (margin 10) | 26 (margin 6) |
+| 6 | 44 (margin 6) | 34 (margin 4) |
+| 10 | 46 (margin 5) | 34 (margin 3) |
+| 26 | 48 (margin 3) | 51 (margin 0) |
+
+With no margin the larger model changes half as many correct
+originals (26 against 49) and keeps as many corrections, but its margins
+are narrower, so where few correct sentences may change, where emdysi
+works, E2B keeps more. Per token or normalized (SLOR), the 12B model
+does no better. Two caveats: the questions were chosen by E2B (its
+surprise screened the sentences, its estimate picked the versions), and
+the 12B model is of another family. Still, on this machine (16 GB, four
+cores; 12B is about four times slower than E2B) nothing argues for the
+larger model: E2B stays the default.
+
 Screening by surprise is weak, but it decides only which sentences get
 candidate corrections; what is reported is decided by the likelihood
 comparison. A sentence the grammar accepts is now corrected when a word

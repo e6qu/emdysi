@@ -73,13 +73,18 @@ unless stated:
      sentences (British usage, a real error, and *within* to *in*, now
      answered).
 
+   - Gemma 3 12B (2026-10-21, fits in 16 GB with `EMDYSI_LM_MMAP=0`)
+     locates errors worse by surprise (AUC 0.568, against 0.603) and,
+     choosing among versions, keeps fewer corrections than E2B at the
+     same small number of correct sentences changed. A larger model is
+     no shortcut here; E2B stays the default.
+
    So with a 2–4 GB model on a CPU, grammar plus model adds a little
    beyond the grammar. Left: the second development set (a quarter is about
-   3,300 sentences); then a much larger model,
-   served from a machine with more memory, on the saved questions
-   (`LOG.versions.tsv`, `examples/versions`) to see whether the design
-   pays off with a stronger one. Until then priority 2 is where recall
-   can be gained without one.
+   3,300 sentences). Models far larger than 12B, served from a machine
+   with more memory, can be tried on the saved questions
+   (`LOG.versions.tsv`, `examples/versions`), but 12B gave no sign that
+   size alone pays. Priority 2 is where recall can be gained.
 
 2. **Grammar errors without a model.** 54 of 197 is the weakest number in
    the table (25 before 2026-10-20: doubled words in sentences the grammar
@@ -150,9 +155,9 @@ Status on 2026-10-20: the model path with E2B is measured end to end
 (choices by likelihood, a one-pass prefilter, guards against the false
 flags a sample showed), and the patterns the missed real errors suggest
 without a model are in (54 of 197 grammar errors). What is left of the
-grammar errors mostly parses as correct English, so it waits on a model
-that locates errors better than E2B and E4B; a 12B model on the same
-measurements is next (evaluation.md). The other items are multi-day
+grammar errors mostly parses as correct English, so it waits on a way
+to locate errors that E2B, E4B and Gemma 3 12B all lack (surprise AUC
+0.57–0.60; evaluation.md). The other items are multi-day
 efforts with an uncertain gain (the unifier rewrite, independent ranking
 judgements). Both development sets have been mined for coverage gaps.
 
