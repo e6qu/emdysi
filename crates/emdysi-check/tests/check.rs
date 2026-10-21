@@ -766,3 +766,53 @@ fn grammar_error_corrections_are_words() {
         );
     }
 }
+
+#[test]
+fn chunks_from_the_parse() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let opts = Options {
+        threads: 1,
+        ..Options::default()
+    };
+    for (text, want) in [
+        (
+            "The quick brown fox jumps over the lazy dogs.\n",
+            vec![
+                ("The", "B-NP-singular"),
+                ("brown", "I-NP-singular"),
+                ("fox", "E-NP-singular"),
+                ("jumps", "B-VP"),
+                ("over", "B-PP"),
+                ("the", "B-NP-plural"),
+                ("dogs", "E-NP-plural"),
+            ],
+        ),
+        (
+            "They have not been seen since.\n",
+            vec![
+                ("They", "B-NP-plural"),
+                ("They", "E-NP-plural"),
+                ("have", "B-VP"),
+                ("not", "I-VP"),
+                ("been", "I-VP"),
+                ("seen", "I-VP"),
+            ],
+        ),
+    ] {
+        let a = analyze(&erg, text, Format::Plain, &opts);
+        let best = a.sentences[0].best().unwrap();
+        let chunks = emdysi_check::tags::chunks(&best.words);
+        for (word, tag) in want {
+            let i = best
+                .words
+                .iter()
+                .position(|w| w.surface.trim_end_matches('.') == word)
+                .unwrap_or_else(|| panic!("{word} in {text}"));
+            assert!(
+                chunks[i].iter().any(|c| c == tag),
+                "{word}: {:?} in {text}",
+                chunks[i]
+            );
+        }
+    }
+}

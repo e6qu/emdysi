@@ -218,6 +218,9 @@ pub struct TagCheck {
     group: String,
     tag: Regex,
     negate: bool,
+    /// A chunk tag (`chunks`, `not_chunks`: see [`crate::tags::chunks`])
+    /// rather than a part of speech.
+    chunk: bool,
 }
 
 /// A pattern compiled when first used.
@@ -562,23 +565,31 @@ impl Rule {
                     unless,
                     suggest: get_list(t, "suggest"),
                     expand: t.get("expand").and_then(Value::as_bool).unwrap_or(false),
-                    tags: [("tags", false), ("not_tags", true)]
-                        .iter()
-                        .flat_map(|&(key, negate)| {
-                            get_list(t, key).into_iter().map(move |c| (c, negate))
+                    tags: [
+                        ("tags", false, false),
+                        ("not_tags", true, false),
+                        ("chunks", false, true),
+                        ("not_chunks", true, true),
+                    ]
+                    .iter()
+                    .flat_map(|&(key, negate, chunk)| {
+                        get_list(t, key)
+                            .into_iter()
+                            .map(move |c| (c, negate, chunk))
+                    })
+                    .map(|(c, negate, chunk)| {
+                        let (group, tag) = c
+                            .split_once('=')
+                            .ok_or_else(|| err(&format!("bad tag condition {c:?}")))?;
+                        Ok(TagCheck {
+                            group: group.to_string(),
+                            tag: Regex::new(&format!("^(?:{tag})$"))
+                                .map_err(|e| err(&format!("bad tag pattern: {e}")))?,
+                            negate,
+                            chunk,
                         })
-                        .map(|(c, negate)| {
-                            let (group, tag) = c
-                                .split_once('=')
-                                .ok_or_else(|| err(&format!("bad tag condition {c:?}")))?;
-                            Ok(TagCheck {
-                                group: group.to_string(),
-                                tag: Regex::new(&format!("^(?:{tag})$"))
-                                    .map_err(|e| err(&format!("bad tag pattern: {e}")))?,
-                                negate,
-                            })
-                        })
-                        .collect::<Result<_, PackError>>()?,
+                    })
+                    .collect::<Result<_, PackError>>()?,
                     transforms: get_list(t, "transforms")
                         .iter()
                         .map(|x| Transform::parse(x).map_err(|e| err(&e)))
@@ -3318,11 +3329,21 @@ fn tag_holds(s: &crate::Sentence, m: &fancy_regex::Captures<'_, str>, c: &TagChe
     let from = s.original[..g.start()].chars().count();
     let to = from + g.as_str().chars().count();
     let found = s.best().is_some_and(|r| {
-        r.words
-            .iter()
-            .filter(|w| w.from < to && from < w.to)
-            .flat_map(crate::tags::penn_all)
-            .any(|t| c.tag.is_match(t).unwrap_or(false))
+        let covered = |w: &&emdysi_parse::Word| w.from < to && from < w.to;
+        if c.chunk {
+            r.words
+                .iter()
+                .zip(crate::tags::chunks(&r.words))
+                .filter(|(w, _)| covered(w))
+                .flat_map(|(_, cs)| cs)
+                .any(|t| c.tag.is_match(&t).unwrap_or(false))
+        } else {
+            r.words
+                .iter()
+                .filter(covered)
+                .flat_map(crate::tags::penn_all)
+                .any(|t| c.tag.is_match(t).unwrap_or(false))
+        }
     });
     found != c.negate
 }

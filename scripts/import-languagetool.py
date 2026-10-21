@@ -77,6 +77,8 @@ TOKEN_ATTRS = {
     "inflected",
     "postag",
     "postag_regexp",
+    "chunk",
+    "chunk_re",
 }
 
 # The closed-class part-of-speech tags of LanguageTool's tagger (the Penn
@@ -230,8 +232,10 @@ def tag_pattern(el):
 def token_regex(tok, conds=None):
     """A token's pattern, with its exceptions as negative lookaheads: the
     token's own, then (`scope="next"`) the next token's. With `conds`, an
-    open-class part of speech becomes a condition on the token's group
-    (pattern, negated), checked against the parse; without, Skip."""
+    open-class part of speech or a chunk (LanguageTool's chunker's tag:
+    |B-NP-singular|, |E-NP-plural|, |B-VP|) becomes a condition on the
+    token's group (kind, pattern, negated), checked against the parse;
+    without, Skip."""
     extra = set(tok.attrib) - TOKEN_ATTRS
     if extra:
         raise Skip(f"token attributes {extra}")
@@ -254,7 +258,12 @@ def token_regex(tok, conds=None):
         except Skip:
             if conds is None or tok.get("negate") == "yes":
                 raise
-            conds.append((tag_pattern(tok), False))
+            conds.append(("tag", tag_pattern(tok), False))
+    chunk, chunk_re = tok.get("chunk"), tok.get("chunk_re")
+    if chunk is not None or chunk_re is not None:
+        if conds is None or tok.get("negate") == "yes":
+            raise Skip("chunk")
+        conds.append(("chunk", chunk_re if chunk_re is not None else regex.escape(chunk), False))
     own, after = [], []
     for ch in tok:
         if ch.tag != "exception":
@@ -269,7 +278,7 @@ def token_regex(tok, conds=None):
             except Skip:
                 if conds is None or scope != "current" or ch.get("negate_pos"):
                     raise
-                conds.append((tag_pattern(ch), True))
+                conds.append(("tag", tag_pattern(ch), True))
                 continue
         elif ch.get("inflected") == "yes":
             e = inflections(e, ch.get("regexp") == "yes")
@@ -371,8 +380,8 @@ def sequence(tokens, groups=True, conds=None):
     for i, (tok, marked) in enumerate(tokens, 1):
         local = [] if groups and conds is not None else None
         body, _ = token_regex(tok, local)
-        for pat, negate in local or []:
-            conds.append((f"t{i}={pat}", negate))
+        for kind, pat, negate in local or []:
+            conds.append((kind, f"t{i}={pat}", negate))
         sep = "" if i == 1 or tok.get("spacebefore") == "no" else r"\s*"
         if tok.get("spacebefore") == "yes" and i > 1:
             sep = r"\s+"
@@ -572,8 +581,10 @@ def convert(rule, group, category, file):
         "pattern": pat,
         "needs": needs,
         "transforms": list(TRANSFORMS),
-        "tags": [c for c, neg in conds if not neg],
-        "not_tags": [c for c, neg in conds if neg],
+        "tags": [c for k, c, neg in conds if k == "tag" and not neg],
+        "not_tags": [c for k, c, neg in conds if k == "tag" and neg],
+        "chunks": [c for k, c, neg in conds if k == "chunk" and not neg],
+        "not_chunks": [c for k, c, neg in conds if k == "chunk" and neg],
         "unless": ("" if case else "(?i)") + "|".join(f"(?:{u})" for u in unless) if unless else None,
         "suggest": suggestions,
         "examples": examples,
@@ -584,6 +595,11 @@ def convert(rule, group, category, file):
 
 def expand(template, m):
     return m.expand(re.sub(r"\$\{(\w+)\}", r"\\g<\1>", template).replace("$$", "$"))
+
+
+def conditioned(r):
+    """Whether the rule has conditions only the parse can check."""
+    return bool(r["tags"] or r["not_tags"] or r["chunks"] or r["not_chunks"])
 
 
 def validate(r):
@@ -615,7 +631,7 @@ def validate(r):
     # here and still pass: the conditions are checked with the parse
     # (crates/emdysi-check/examples/lt_validate.rs).
     for text in r["acceptable"]:
-        if spans(text) and not (r["tags"] or r["not_tags"]):
+        if spans(text) and not conditioned(r):
             raise Skip("flags a correct example")
     # The suggestions must expand (a group they name must exist).
     for text, _ in r["examples"]:
@@ -692,7 +708,7 @@ def build(candidates=False):
             if r["id"] in EXCLUDED:
                 skipped["excluded"] = skipped.get("excluded", 0) + 1
                 continue
-            tagged = bool(r["tags"] or r["not_tags"])
+            tagged = conditioned(r)
             if candidates and not tagged:
                 continue
             if tagged and not candidates and r["id"] not in validated:
@@ -727,6 +743,10 @@ def build(candidates=False):
             out.append("tags = [" + ", ".join(toml_str(c) for c in r["tags"]) + "]")
         if r["not_tags"]:
             out.append("not_tags = [" + ", ".join(toml_str(c) for c in r["not_tags"]) + "]")
+        if r["chunks"]:
+            out.append("chunks = [" + ", ".join(toml_str(c) for c in r["chunks"]) + "]")
+        if r["not_chunks"]:
+            out.append("not_chunks = [" + ", ".join(toml_str(c) for c in r["not_chunks"]) + "]")
         if r["unless"]:
             out.append(f"unless = {toml_str(r['unless'])}")
         if "${" in r["message"] or "{{" in r["message"]:
