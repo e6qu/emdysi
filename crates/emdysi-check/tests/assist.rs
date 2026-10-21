@@ -397,6 +397,25 @@ fn a_determiner_is_not_swapped_in_a_sentence_the_grammar_accepts() {
 }
 
 #[test]
+fn a_compound_preposition_is_not_replaced_in_a_sentence_the_grammar_accepts() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let text = "This will let us consolidate the logic around handling errors into main.\n";
+    let a = analyze(&erg, text, Format::Markdown, &opts());
+    assert!(a.sentences[0].strict());
+    let mut model = Surprised {
+        word: "into",
+        surprise: 6.0,
+        want: "errors from main",
+    };
+    let d: Vec<Diagnostic> = core()
+        .check_with(&erg, &a, Some(&mut model))
+        .into_iter()
+        .filter(|d| d.rule == "core.grammar-fix")
+        .collect();
+    assert!(d.is_empty(), "{d:?}");
+}
+
+#[test]
 fn a_preposition_is_not_cut_to_a_part_of_itself_in_a_sentence_the_grammar_accepts() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     let text = "Open space was provided for residents within an area that was being built up.\n";
