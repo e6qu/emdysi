@@ -412,6 +412,27 @@ fn no_acronym_form_number_disagreement_or_edit_in_code() {
 }
 
 #[test]
+fn a_preposition_its_head_selects_is_not_swapped() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    // |talk of|: the grammar's |of| is one |talk| selects, so a model that
+    // prefers the modern |talking about| is not given it.
+    let text = "Lady Catherine called out to know what they were talking of.\n";
+    let a = analyze(&erg, text, Format::Markdown, &opts());
+    assert!(a.sentences[0].strict());
+    let mut model = Surprised {
+        word: "of",
+        surprise: 6.0,
+        want: "talking about",
+    };
+    let d: Vec<Diagnostic> = core()
+        .check_with(&erg, &a, Some(&mut model))
+        .into_iter()
+        .filter(|d| d.rule == "core.grammar-fix")
+        .collect();
+    assert!(d.is_empty(), "{d:?}");
+}
+
+#[test]
 fn a_determiner_is_not_swapped_in_a_sentence_the_grammar_accepts() {
     let erg = Erg::load(&default_grammar_dir()).unwrap();
     let text = "The purpose of these hearings is to field responses from the public.\n";

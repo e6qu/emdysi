@@ -1103,14 +1103,29 @@ pub fn grammar(
                     && !r.is_empty()
                     && r != w
             };
-            // Nor is a word changed inside a fixed expression the best
-            // reading takes as one item (|coatings to date| to |to data|).
+            // Nor is a word changed inside a fixed expression any reading
+            // takes as one item (|coatings to date| to |to data|).
             let fixed = fixed_expressions(s);
+            // Nor a preposition the best reading takes as one its head
+            // selects (|talking of| with |talk_of_v1| and |of_prtcl|): the
+            // head chose it. One that only modifies (|interested on chess|)
+            // still may be wrong.
+            let selected: Vec<(usize, usize)> = s
+                .best()
+                .map(|b| {
+                    b.words
+                        .iter()
+                        .filter(|w| w.entry.ends_with("_prtcl"))
+                        .map(|w| (w.from, w.to))
+                        .collect()
+                })
+                .unwrap_or_default();
             cands.retain(|(e, _)| {
                 (!e.replacement.trim().is_empty() || doubled(s, e))
                     && !(determiner(&e.text) && determiner(&e.replacement))
                     && !compound_preposition(&e.text, &e.replacement)
                     && !fixed.iter().any(|&(f, t)| f <= e.from && e.to <= t)
+                    && !(selected.contains(&(e.from, e.to)) && !e.replacement.trim().is_empty())
             });
         }
         if cands.is_empty() {
