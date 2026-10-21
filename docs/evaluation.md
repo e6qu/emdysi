@@ -2314,6 +2314,15 @@ references; without a model, the blog posts of the three sets (where
 the references are) give 0 flags in 244 sentences, 43 in 4,147 and 4 in
 1,241, none of them about a reference.
 
+Where the model loses the rest of the 34 (that run's question log):
+whenever the writer's version was among the versions shown, E2B chose
+it (12 of 12). Of the 22 missed, 17 were screened in and asked about
+without the writer's version among the five shown, and 5 got no version
+that parses. The loss is in which versions reach the model, not in its
+choice. Showing fifteen instead of five (`PREFILTER`, measured and
+rejected, 2026-10-21) did not help: 7 of 34, none of them from the
+model, and the writer's version was shown for only one pair.
+
 ## Doubled words and 'allows to', without a model
 
 Looking at what the model gained turned up errors no model is needed
