@@ -148,8 +148,9 @@ unless stated:
    inflect, change case and rewrite matched words. The rest need
    exceptions or filters the converter does not take, or fail their
    examples with the parse. With the pack two more real grammar errors
-   are caught (223 of 374), and it adds about 3 findings per 1,000
-   sentences of the first development set, mostly style.
+   are caught (223 of 374); on the first development set it gives 13
+   findings per 1,000 sentences, mostly style, 3 of them from the rules
+   the tagged antipatterns brought in.
 
 7. **Parse ranking.** The shipped averaged perceptron is 81.7% exact
    match held out and right for 57 of 97 judged machine-written
