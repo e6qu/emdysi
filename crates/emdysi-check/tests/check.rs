@@ -851,3 +851,25 @@ antipatterns = [{ pattern = '(?i)\b(?P<t1>run)\b', tags = ["t1=NN.*"] }]
         );
     }
 }
+
+#[test]
+fn a_mass_noun_has_languagetools_countability_tag() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let opts = Options {
+        threads: 1,
+        ..Options::default()
+    };
+    let a = analyze(&erg, "The information was useful.\n", Format::Plain, &opts);
+    let best = a.sentences[0].best().unwrap();
+    let w = best
+        .words
+        .iter()
+        .find(|w| w.surface == "information")
+        .unwrap();
+    let tags = emdysi_check::tags::penn_all(w);
+    assert!(
+        tags.contains(&"NN") && tags.contains(&"NN:U"),
+        "{tags:?} {}",
+        w.le_type
+    );
+}

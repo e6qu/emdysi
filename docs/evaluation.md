@@ -2631,6 +2631,16 @@ grammar errors a LanguageTool rule catches here (*the worse case
 startup time*, *able analyze*); 2 corrected texts flagged (1), the new
 one a style suggestion (*in a similar manner*).
 
+LanguageTool's subdivided pronoun tags (`PRP_S3SM` for *he*, `PRP_O3P`
+for *them*) and its possessive tag (`POS`) are word lists like the other
+closed classes, `SENT_END` asks for the sentence's last token, and the
+countability tags `NN:U` (uncountable) and `NN:UN` (either) come from
+the ERG's mass and mass-or-count noun types. Then 1,885 rules have
+conditions, 1,376 pass, and the pack has 3,421 rules (no rule group has
+fewer than before). First development set: 37 findings (33), the new
+ones style suggestions (*outside of*, twice; *some one*) and one false
+(*hard to read*); real errors: 223 caught, as before.
+
 ### A lower time limit: 5 seconds instead of 10
 
 `timing` with `TIMEOUT=5` against the default 10 seconds, on the same

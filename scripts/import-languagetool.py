@@ -95,6 +95,22 @@ CLOSED = {
     "PRP": "i me you he him she her it we us they them myself yourself himself herself itself "
     "ourselves yourselves themselves",
     "PRP$": "my your his her its our their",
+    # LanguageTool's pronouns by case, person and number.
+    "PRP_S1S": "i",
+    "PRP_S1P": "we",
+    "PRP_S2": "you",
+    "PRP_S3SM": "he",
+    "PRP_S3SF": "she",
+    "PRP_S3SN": "it",
+    "PRP_S3P": "they",
+    "PRP_O1S": "me",
+    "PRP_O1P": "us",
+    "PRP_O2": "you",
+    "PRP_O3SM": "him",
+    "PRP_O3SF": "her",
+    "PRP_O3SN": "it",
+    "PRP_O3P": "them",
+    "POS": "'s ’s ' ’",
     "MD": "can could may might must shall should will would ought 'll 'd",
     "CC": "and or but nor yet plus",
     "TO": "to",
@@ -111,7 +127,7 @@ CLOSED = {
 }
 OPEN = (
     "NN NNS NNP NNPS NN:U NN:UN JJ JJR JJS RB RBR RBS RP VB VBD VBG VBN VBP VBZ UH FW LS SYM "
-    "POS PCT CD SENT_END UNKNOWN"
+    "PCT CD SENT_END UNKNOWN"
 ).split()
 
 
@@ -211,7 +227,7 @@ def is_punct(s):
 # The tags emdysi derives from the parse (crates/emdysi-check/src/tags.rs).
 PARSE_TAGS = (
     "CD EX WP PRP NNP NNPS NN NNS MD VBP VBZ VBD VBN VBG VB JJR JJS JJ RBR RBS WRB RB "
-    "TO IN PRP$ WDT DT CC"
+    "TO IN PRP$ WDT DT CC NN:U NN:UN"
 ).split()
 
 
@@ -245,6 +261,10 @@ def token_regex(tok, conds=None):
     tag = tok.get("postag")
     if tag == "SENT_START" and not text and not list(tok):
         return "^", True
+    # The sentence's last token (usually its final punctuation).
+    sent_end = tag == "SENT_END" and tok.get("postag_regexp") != "yes"
+    if sent_end:
+        tag = None
     if tok.get("inflected") == "yes" and text:
         body = inflections(text, tok.get("regexp") == "yes")
     elif tok.get("regexp") == "yes":
@@ -304,6 +324,8 @@ def token_regex(tok, conds=None):
     else:
         out = f"{start}{neg}(?:{body}){end}"
     out += "".join(rf"(?!\s*(?:{e})(?!\w))" for e in after)
+    if sent_end:
+        out += r"(?=\s*$)"
     return out, punct
 
 

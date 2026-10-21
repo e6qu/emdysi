@@ -481,11 +481,11 @@ need LanguageTool's chunks (base noun phrases, verb groups: `B-NP-plural`,
 from the parse's parts of speech (`emdysi_check::tags::chunks`), both
 checked against the parse; an antipattern that needs parts of speech or
 chunks becomes one of the rule's `antipatterns`, with its own conditions.
-1,764 such rules convert, and the 1,312 whose examples hold with emdysi's
+1,885 such rules convert, and the 1,376 whose examples hold with emdysi's
 parse are kept (`scripts/languagetool-tagged.txt`, written by
 `crates/emdysi-check/examples/lt_validate.rs`; the test suite cannot
 parse every example of every rule, so this check runs when the pack is
-generated), 3,315 rules in all. Suggestions may change a matched word's
+generated), 3,421 rules in all. Suggestions may change a matched word's
 case, apply a regex replacement to it, or inflect it for a tag (from
 UniMorph): the regex kind's `transforms`. A rule is kept only if it finds the marked span of each of its
 incorrect examples and nothing in its correct ones; the examples come along

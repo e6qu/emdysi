@@ -61,9 +61,18 @@ pub fn penn(w: &Word) -> Option<&'static str> {
 /// Every tag `w` may have: the ERG gives the base form and the present
 /// tense other than third person singular one rule (|stay| in *will stay*
 /// and *they stay*), so such a word is both VB and VBP.
+///
+/// A singular common noun also has LanguageTool's countability tag: `NN:U`
+/// for a mass noun, `NN:UN` for one that is mass or count, after the ERG's
+/// lexical type (`n_-_m_le`, `n_-_mc_le`: the third part of its name).
 pub fn penn_all(w: &Word) -> Vec<&'static str> {
     match penn(w) {
         Some("VBP") if w.rules.iter().any(|r| r.starts_with("v_n3s-bse")) => vec!["VBP", "VB"],
+        Some("NN") => match w.le_type.split('_').nth(2) {
+            Some(c) if c.starts_with("mc") => vec!["NN", "NN:UN"],
+            Some(c) if c.starts_with('m') => vec!["NN", "NN:U"],
+            _ => vec!["NN"],
+        },
         Some(t) => vec![t],
         None => Vec::new(),
     }
