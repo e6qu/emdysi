@@ -820,12 +820,27 @@ impl Checker {
         let mut timed = ask.map(timing::TimedAsk);
         let mut ask = timed.as_mut();
         let glossary = self.glossary();
+        // Quoted text (an example mentioned, a title, someone else's
+        // words) is not the writer's style: only packs that say so
+        // (`quoted = true`, as `core`) check it.
+        let quoted = emdysi_text::blocks::quoted_spans(&a.source, a.format == Format::Markdown);
+        let inside_quotes = |d: &Diagnostic| {
+            d.range.start < d.range.end
+                && quoted
+                    .iter()
+                    .any(|q| q.start <= d.range.start && d.range.end <= q.end)
+        };
         for pack in &self.packs {
             for rule in &pack.rules {
                 if self.enabled(&rule.id) {
                     let ask = ask.as_mut().map(|x| &mut **x as &mut dyn decisions::Ask);
                     let t = std::time::Instant::now();
+                    let before = out.len();
                     rule.run_with(erg, a, &glossary, ask, &mut out);
+                    if !pack.quoted {
+                        let new: Vec<Diagnostic> = out.drain(before..).collect();
+                        out.extend(new.into_iter().filter(|d| !inside_quotes(d)));
+                    }
                     let d = t.elapsed();
                     timing::RULES
                         .fetch_add(d.as_nanos() as u64, std::sync::atomic::Ordering::Relaxed);
@@ -836,6 +851,34 @@ impl Checker {
                         .or_default() += d;
                 }
             }
+        }
+        // A finding yields to another rule's finding over the same words
+        // (`yields_to`).
+        let yields: std::collections::HashMap<&str, &[String]> = self
+            .packs
+            .iter()
+            .flat_map(|p| &p.rules)
+            .filter(|r| !r.yields_to.is_empty())
+            .map(|r| (r.id.as_str(), r.yields_to.as_slice()))
+            .collect();
+        if !yields.is_empty() {
+            let redundant: Vec<bool> = out
+                .iter()
+                .map(|d| {
+                    yields.get(d.rule.as_str()).is_some_and(|to| {
+                        out.iter().any(|e| {
+                            to.contains(&e.rule)
+                                && e.range.start < d.range.end
+                                && d.range.start < e.range.end
+                        })
+                    })
+                })
+                .collect();
+            let mut i = 0;
+            out.retain(|_| {
+                i += 1;
+                !redundant[i - 1]
+            });
         }
         // Rules over the other rules' findings.
         let mut over = Vec::new();

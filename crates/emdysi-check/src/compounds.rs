@@ -200,6 +200,11 @@ pub fn run_ly_hyphen(a: &Analysis) -> Vec<Hit> {
 pub fn run_noun_stacks(a: &Analysis, min: usize, max: usize, g: &Glossary) -> Vec<Hit> {
     let mut out = Vec::new();
     for (si, s) in a.sentences.iter().enumerate() {
+        // Without a full analysis, a compound is often a verb read as a
+        // noun (|Rust code can|, |the node controller asks|).
+        if !s.strict() {
+            continue;
+        }
         let Some(r) = s.best() else { continue };
         let cpd = |name: &str| name.starts_with("n-hdn_cpd");
         let spans: Vec<(usize, usize)> = r
@@ -217,13 +222,68 @@ pub fn run_noun_stacks(a: &Analysis, min: usize, max: usize, g: &Glossary) -> Ve
             {
                 continue;
             }
+            // Coordinations inside the compound (the largest ones): a
+            // list of nouns is one unit, not a stack ("its robustness,
+            // standards compliance, and advanced feature set").
+            let crds: Vec<(usize, usize)> = r
+                .nodes
+                .iter()
+                .filter(|n| !n.leaf && n.name.contains("_crd") && from <= n.from && n.to <= to)
+                .map(|n| (n.from, n.to))
+                .collect();
+            let crds: Vec<(usize, usize)> = crds
+                .iter()
+                .copied()
+                .filter(|&(f, t)| {
+                    !crds
+                        .iter()
+                        .any(|&(f2, t2)| f2 <= f && t <= t2 && (f2, t2) != (f, t))
+                })
+                .collect();
+            let in_crd = |w: &Word| crds.iter().any(|&(f, t)| f <= w.from && w.to <= t);
+            // Words of letters or digits only: a hyphen is a word of its
+            // own in the analysis ("command - line").
             let nouns: Vec<&Word> = r
                 .words
                 .iter()
                 .filter(|w| {
-                    w.from >= from && w.to <= to && is_noun(w) && !w.le_type.starts_with("n_-_pn")
+                    w.from >= from
+                        && w.to <= to
+                        && is_noun(w)
+                        && !w.le_type.starts_with("n_-_pn")
+                        && w.surface.chars().any(char::is_alphanumeric)
+                        && !in_crd(w)
                 })
                 .collect();
+            // A stack is nouns and their adjectives: any other word (a
+            // verb, a preposition, an adverb) in the span means the
+            // compound is a wrong analysis (|the node controller asks|,
+            // |Rust code can|), not a noun stack.
+            let pure = r
+                .words
+                .iter()
+                .filter(|w| {
+                    from <= w.from && w.to <= to && w.surface.chars().any(char::is_alphanumeric)
+                })
+                .all(|w| {
+                    // (Not the |for| of |label value for node roles|, an
+                    // entry of the grammar's "N for N" and "N to N"; a
+                    // coordination's conjunction is fine.)
+                    (is_noun(w) && !w.entry.starts_with("x_"))
+                        || w.le_type.starts_with("aj_")
+                        || (in_crd(w) && w.le_type.starts_with("c_"))
+                });
+            if !pure {
+                continue;
+            }
+            let crd_units = crds
+                .iter()
+                .filter(|&&(f, t)| {
+                    r.words
+                        .iter()
+                        .any(|w| f <= w.from && w.to <= t && is_noun(w))
+                })
+                .count();
             let generic = nouns.iter().filter(|w| w.generic).count();
             // A run of capitalized nouns is a name: one unit.
             let first_word = r.words.iter().map(|w| w.from).min().unwrap_or(0);
@@ -238,8 +298,17 @@ pub fn run_noun_stacks(a: &Analysis, min: usize, max: usize, g: &Glossary) -> Ve
             }
             // Words unknown to the grammar get a default noun analysis
             // ("meticulous"), so they do not count.
-            let mut n = nouns.len().saturating_sub(generic).saturating_sub(names);
-            for &(tf, tt) in &terms {
+            let mut n = (nouns.len() + crd_units)
+                .saturating_sub(generic)
+                .saturating_sub(names);
+            // A glossary term or a hyphenated word ("command-line") is one
+            // unit.
+            let hyphens = hyphenated(s);
+            let units = terms
+                .iter()
+                .copied()
+                .chain(hyphens.iter().map(|h| (h.0, h.1)));
+            for (tf, tt) in units {
                 if tf >= from && tt <= to {
                     let inside = nouns.iter().filter(|w| w.from >= tf && w.to <= tt).count();
                     n = n.saturating_sub(inside.saturating_sub(1));

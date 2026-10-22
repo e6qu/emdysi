@@ -120,13 +120,10 @@ fn tools() -> Value {
 
 impl Server {
     fn handle(&mut self, msg: &Value) -> Option<Value> {
-        let method = msg.get("method").and_then(Value::as_str);
         // Notifications (no id) get no answer; nor do answers to requests
-        // this server never sends.
+        // this server never sends (no method).
         let id = msg.get("id")?.clone();
-        let Some(method) = method else {
-            return None;
-        };
+        let method = msg.get("method").and_then(Value::as_str)?;
         let params = msg.get("params").cloned().unwrap_or(json!({}));
         let result = match method {
             "initialize" => {
