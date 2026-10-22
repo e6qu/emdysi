@@ -13,18 +13,40 @@ measurements behind every number below are in
 The pipeline is built end to end: tokenization, morphology, chart parsing,
 parse ranking, semantics (MRS), named grammar errors, spelling, 28 rule
 kinds in 13 packs, Markdown input, the CLI (`check`, `fix`, `parse`,
-`rewrite`, `decide`, `glossary`, `packs`) and the model interface (GGUF
+`rewrite`, `decide`, `glossary`, `packs`), servers for editors (`lsp`)
+and agents (`mcp`), JSON and SARIF reports, and the model interface (GGUF
 in-process, OpenAI-compatible servers). Headline numbers, without a model
 unless stated:
 
 | Measure | Now | Notes |
 |---|---|---|
 | Real errors caught (374, from documentation histories) | 221 (59%): spelling 167 of 177, grammar 54 of 197 | 208 before nine patterns for typos and edits' leftovers the grammar accepts (*Memory Manger*, *executes following actions:*, *will be have*; 2026-10-20, shaped on these errors), 202 before rare words codespell lists as misspellings (*homogenous*, six times), 192 before doubled words were reported whatever the analysis and `core.allow-to` (2026-10-20); 167 before the spelling work of 2026-10-17, 183 before codespell's list; 377 pairs until three that were all front matter left (2026-10-17) |
-| ... with a perfect model choosing among verified corrections | 337 of 377 (89%): grammar 165 of 199 | the upper bound for any model, measured before the corpus repair; no real model measured yet |
+| ... with a perfect model choosing among verified corrections | 337 of 377 (89%): grammar 165 of 199 | the upper bound for any model, measured before the corpus repair |
+| ... with Gemma 4 E2B | 12 of the 34 errors of a quarter of the corpus where a perfect chooser gains, against 7 without a model | priority 1; locating errors is what is missing |
 | False flags on edited text, per 1,000 sentences | 1.6 (first development set, 4 flags), 4.8 (second, 64), 3.7 (held out, 31 in 8,371 sentences) | most of the second set's flags point at real errors or real spelling mixes in the source (`docs/evaluation.md`) |
+| Style findings on edited text (six default packs) | 23.4 per 1,000 words, 1.7 of them warnings | 32.5 and 3.4 before quoted text, duplicate passives, noun stacks and known acronyms were dealt with (2026-10-22); the rest are suggestions the rules exist for (passives, long sentences) |
 | Gold analyses (ERG test suites) | MRS identical for all 2,966 reproduced; ranker 81.7% exact match held out | |
-| Speed | about 1.3 s of parsing per sentence of edited text (held-out set, cold parse cache, 2026-10-18), plus 0.25 s for the grammar-error variant | 1.7 s of CPU per sentence before giving up after an exhausted search, 2.1 s before the grammar-error variant was gated (2026-10-17); parsing is most of the time |
+| Speed | about 1.3 s of parsing per sentence of edited text (held-out set, cold parse cache, 2026-10-18), plus 0.25 s for the grammar-error variant; a recheck parses only the sentences that changed (the README: 71 s, then 2.8 s) | 1.7 s of CPU per sentence before giving up after an exhausted search, 2.1 s before the grammar-error variant was gated (2026-10-17); parsing is most of the time |
 | Rule data | 3,418 LanguageTool rules (1,375 of them checked against the parse's parts of speech or chunks), 98 slop rules, 26 GitLab rules (opt-in packs); codespell, CMUdict, UniMorph, Open English WordNet, UD English EWT vendored | emdysi is AGPL-3.0-or-later since 2026-10-17 (decision D15), so share-alike and GPL data can be used |
+
+## Practical use
+
+Since 2026-10-22 `en` is self-contained (the grammar is built into the
+binary; a release workflow builds it for Linux and macOS and checks that it
+runs without the repository), reuses the parses of sentences it has seen,
+reports as JSON and SARIF, and serves editors (`en lsp`: diagnostics as
+you write, fixes as quick fixes) and agents (`en mcp`: `check`, `fix`
+and `parse` tools; after the first call, a recheck takes milliseconds).
+The default style packs were measured on edited prose for the first time
+and lost their wrong claims (evaluation.md). What still stands in the way:
+
+- **The first check of a long document** takes minutes (about 1.3 s a
+  sentence; priority 3) and about 2 GB of memory.
+- **No tagged release yet**, no Windows build, and no packaged editor
+  extension (any generic language-server client works).
+- **Style suggestions are many** by design (23 per 1,000 words of edited
+  prose, mostly passives and long sentences); `--min-severity warning`
+  leaves 1.7.
 
 ## Priorities
 

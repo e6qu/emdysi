@@ -220,20 +220,18 @@ checking it again after an edit parses only the sentences that changed
 ## Roadmap
 
 The plan, with where the work stands, its priorities and how to pick it
-up, is in [docs/plan.md](docs/plan.md). In order:
+up, is in [docs/plan.md](docs/plan.md). In short:
 
-1. **A real model with the grammar (must have, M20).** A model of about
-   2 GB (Gemma 4 E2B, 4-bit GGUF, or similar) chooses in context among the
-   corrections the grammar has verified. The machinery is done and tested
-   with stand-ins; with a perfect model the share of real errors caught
-   rose from 49% to 89% (337 of 377, measured before three pairs that were
-   all front matter left the corpus; 51% without a model now, 192 of 374). What a real model gets, and whether
-   it beats a much larger model alone, is the open question:
-   `scripts/model-eval/run.sh` measures it once the model can be
-   downloaded.
-2. **Grammar errors without a model:** 25 of 197 real grammar errors are
-   caught today.
-3. **Speed:** about 2.4 s of CPU per sentence of edited text.
+1. **Speed of a first check.** Parsing takes about 1.3 s a sentence, so
+   a long document takes minutes the first time (rechecks parse only what
+   changed). What is left is a faster parser core.
+2. **Grammar errors without a model.** 54 of 197 real grammar errors from
+   documentation histories are caught (spelling: 167 of 177); most of the
+   rest parse as correct English.
+3. **A small model with the grammar (M20).** Measured with Gemma 4 E2B: it
+   chooses well among the corrections the grammar verifies, but neither it
+   nor models up to 12B locate errors well enough to add much (12 of the
+   34 errors where a perfect chooser gains, against 7 without a model).
 4. **Coverage of edited text (M19)** and **machine-written prose from
    current models (M21).**
 
