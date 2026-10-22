@@ -85,3 +85,35 @@ fn rule_examples() {
     assert!(checked > 40, "only {checked} examples");
     assert!(failures.is_empty(), "\n{}", failures.join("\n"));
 }
+
+/// Every pattern of the shipped packs compiles, including those compiled
+/// only when first needed (with `needs`, and antipatterns).
+#[test]
+fn every_pattern_compiles() {
+    let dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../packs");
+    let mut bad = Vec::new();
+    for f in std::fs::read_dir(&dir).unwrap() {
+        let path = f.unwrap().path();
+        if path.extension().is_none_or(|e| e != "toml") {
+            continue;
+        }
+        let pack = Pack::parse(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        for rule in &pack.rules {
+            if let emdysi_check::rules::Kind::Regex {
+                re,
+                unless,
+                antipatterns,
+                ..
+            } = &rule.kind
+            {
+                let all = std::iter::once(re)
+                    .chain(unless.as_deref())
+                    .chain(antipatterns.iter().map(|(p, _)| p));
+                if all.into_iter().any(|p| p.get().is_none()) {
+                    bad.push(rule.id.clone());
+                }
+            }
+        }
+    }
+    assert!(bad.is_empty(), "patterns that do not compile: {bad:?}");
+}

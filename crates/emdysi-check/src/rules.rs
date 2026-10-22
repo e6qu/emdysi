@@ -574,10 +574,10 @@ impl Rule {
                             .ok_or_else(|| err("an antipattern is not a table"))?;
                         let pat = get_str(a, "pattern")
                             .ok_or_else(|| err("an antipattern needs `pattern`"))?;
-                        Ok((
-                            lazy(pat, "antipattern")?,
-                            conditions(a).map_err(|e| err(&e))?,
-                        ))
+                        // Compiled when first needed, like a pattern with
+                        // `needs`: hundreds of them would slow loading
+                        // (tests/examples.rs compiles every one).
+                        Ok((LazyRegex::new(pat), conditions(a).map_err(|e| err(&e))?))
                     })
                     .collect::<Result<_, PackError>>()?;
                 Kind::Regex {
