@@ -8,7 +8,11 @@ input shown.
 
 ## Install
 
-emdysi needs a Rust toolchain (stable). From a clone of the repository:
+Each [release](https://github.com/e6qu/emdysi/releases) has `en` for
+Linux, macOS and Windows: unpack the archive and put `en` on your `PATH`
+(the [VS Code guide](../editors/vscode/README.md#install-en) has the
+steps for each system). To build it instead, you need a Rust toolchain
+(stable). From a clone of the repository:
 
 ```sh
 cargo build --release
@@ -22,8 +26,10 @@ cargo install --path crates/emdysi
 
 The first run compiles the English Resource Grammar, which takes a few
 seconds, and caches the result outside the repository (in
-`$EMDYSI_CACHE_DIR`, `$XDG_CACHE_HOME/emdysi` or `~/.cache/emdysi`). Later
-runs load it in about a second.
+`$EMDYSI_CACHE_DIR`, `$XDG_CACHE_HOME/emdysi` or `~/.cache/emdysi`;
+`%LOCALAPPDATA%\emdysi` on Windows). Later runs load it in about a
+second. Parses are cached there too, so checking a document again after
+an edit parses only the sentences that changed.
 
 ## Check a draft
 
@@ -454,6 +460,23 @@ Studio).
 
 See [models.md](models.md) for the setup, the backends and how the
 answers are calibrated.
+
+## In an editor, in CI, for an agent
+
+The same checks run wherever you write:
+
+- **VS Code**: the emdysi extension shows findings as you type and offers
+  fixes as quick fixes. The [VS Code guide](../editors/vscode/README.md)
+  covers installing it and `en`, using it, settings and troubleshooting.
+- **Other editors**: `en lsp` is a language server; the
+  [README](../README.md#in-an-editor) has the setup for Neovim and Helix.
+- **CI and code review**: `en check --format sarif` writes a SARIF log
+  that GitHub code scanning and other tools show on pull requests;
+  `--fail-on warning` makes the check fail when a warning is found.
+- **Programs and agents**: `en check --format json` gives every finding
+  with its position and fix; `en mcp` serves `check`, `fix` and `parse` to
+  agents over the Model Context Protocol
+  ([README](../README.md#for-agents)).
 
 ## Where next
 

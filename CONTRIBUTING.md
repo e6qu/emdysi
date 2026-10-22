@@ -26,7 +26,15 @@ a `.tdl` file recompiles it. Set `EMDYSI_NO_CACHE=1` to bypass it.
 
 The optional local-model backend (`--features llama`) builds llama.cpp from
 source and needs a C++ toolchain and `libclang`. You only need it to work
-on `emdysi-lm` or `emdysi-rewrite`; see [models.md](docs/models.md).
+on `emdysi-lm` or `emdysi-rewrite`; see [models.md](docs/models.md). A
+build without the feature replaces the binaries built with it: `cargo
+test` relinks the examples, so build again with `cargo build --release
+--features llama --examples --bins` before a measurement with a GGUF
+model, or it stops with "a GGUF model needs a build with the `llama`
+feature".
+
+The VS Code extension (`editors/vscode`) needs Node.js 20 or later, only
+to work on it.
 
 ## Checks
 
@@ -38,6 +46,15 @@ cargo clippy --all-targets -- -D warnings
 cargo test --release --all
 python3 scripts/check-vendored.py
 python3 scripts/import-rules.py --check
+python3 scripts/import-languagetool.py --check
+```
+
+If you changed `en lsp` or the extension, also run the extension's test
+in a real VS Code (it uses `target/release/en`; on Linux without a
+display, through `xvfb-run -a`):
+
+```sh
+cd editors/vscode && npm ci && npm test
 ```
 
 `cargo deny check licenses bans sources` also runs in CI, if you have
@@ -45,8 +62,9 @@ python3 scripts/import-rules.py --check
 non-code material and that the generated
 [`docs/vendored.md`](docs/vendored.md) and
 [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) are current.
-`import-rules.py --check` verifies that the packs generated from other
-linters' data are current.
+`import-rules.py --check` and `import-languagetool.py --check` verify that
+the packs generated from other linters' data and from LanguageTool's rules
+are current.
 
 ## Layout
 
@@ -63,9 +81,11 @@ linters' data are current.
 | `emdysi` | The command-line tool, `en` |
 
 Data lives outside the crates: the grammar in `grammar/` (the vendored ERG
-in `grammar/erg`, emdysi's extensions in `grammar/emdysi`), rule packs in
-`packs/`, word lists and rule data in `data/`, and test corpora in
-`corpora/`.
+in `grammar/erg`, emdysi's extensions in `grammar/emdysi`; built into
+`en` by `emdysi-parse`'s build script), rule packs in `packs/`, word lists
+and rule data in `data/`, and test corpora in `corpora/`. The VS Code
+extension is in `editors/vscode` ([its guide](editors/vscode/README.md)),
+and the release workflow in `.github/workflows/release.yml`.
 
 ## Ground rules
 
@@ -216,7 +236,9 @@ keep its parses: the hash is in the build script's output,
 `target/release/build/emdysi-parse-*/output`, of a build of that version.
 Get this wrong and the measurements are of the old parser. The cache of
 both development sets takes a few gigabytes; delete the directory to
-reclaim it, or set `EMDYSI_NO_CACHE=1` to parse without it.
+reclaim it, or set `EMDYSI_NO_CACHE=1` to parse without it. (`en` keeps a
+cache of its own, `en-parses`, pruned to `EMDYSI_CACHE_MB` megabytes, so
+using the tool never touches the measurements' cache.)
 
 The held-out set (`corpora/edited/heldout-*`) is for final measurements
 only: do not tune against it. Record results that change what the
