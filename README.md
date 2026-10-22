@@ -111,6 +111,30 @@ SARIF for programs (`--format`):
 found (grammar errors the grammar can prove are warnings). `en --help`
 lists every option.
 
+### For agents
+
+`en mcp` serves `check`, `fix` and `parse` as tools over the [Model
+Context Protocol](https://modelcontextprotocol.io) (stdio), with the same
+JSON as `--format json`. The grammar is loaded once, on the first call
+(about 5 s), and parses are cached, so checking a draft again after an
+edit takes milliseconds for the unchanged sentences. With Claude Code:
+
+```sh
+claude mcp add emdysi -- en mcp
+```
+
+or in any client's configuration:
+
+```json
+{"mcpServers": {"emdysi": {"command": "en", "args": ["mcp"]}}}
+```
+
+Options after `mcp` (`--pack`, `--glossary`, `--disable`, `--model`, ...)
+set the defaults for every call; a call can name its own `packs`,
+`disable` and `min_severity`. Without MCP, `en check --format json
+--min-severity warning` gives an agent the findings that are worth acting
+on.
+
 The default rule packs are:
 
 - `core`: spelling (with safe automatic fixes), grammatical errors named

@@ -9,6 +9,8 @@ use emdysi_check::report::{OutputFormat, ParseDetails, count, render, render_par
 use emdysi_check::{Checker, Format, Options, Pack, Severity, analyze, apply_fixes};
 use emdysi_parse::{Erg, grammar_dir};
 
+mod mcp;
+
 const BUILTIN_PACKS: &[(&str, &str)] = &[
     ("core", include_str!("../../../packs/core.toml")),
     ("ai-tells", include_str!("../../../packs/ai-tells.toml")),
@@ -75,6 +77,9 @@ USAGE:
     en glossary [--to toml|tbx] FILE...
                                    convert glossaries (TOML, TBX, Vale
                                    vocabularies) and print them
+    en mcp [OPTIONS]               serve the check, fix and parse tools to agents
+                                   (Model Context Protocol over stdio); the
+                                   options set the defaults
     en packs                       list rule packs and rules (default packs, or
                                    those given with --pack)
 
@@ -131,8 +136,11 @@ OPTIONS:
                            ERG built into en)
     --fail-on error|warning|suggestion  exit with status 1 if a diagnostic this
                            severe or worse is found (default: error)
+    --min-severity error|warning|suggestion  report and fix only diagnostics
+                           this severe or worse (default: suggestion, all)
 ";
 
+#[derive(Clone)]
 struct Args {
     command: String,
     files: Vec<PathBuf>,
@@ -162,6 +170,7 @@ struct Args {
     samples: usize,
     grammar: Option<PathBuf>,
     fail_on: Severity,
+    min_severity: Severity,
     cache: bool,
 }
 
@@ -200,6 +209,7 @@ fn parse_args() -> Result<Args, String> {
         samples: 3,
         grammar: None,
         fail_on: Severity::Error,
+        min_severity: Severity::Suggestion,
         cache: true,
     };
     let need = |it: &mut std::iter::Skip<std::env::Args>, flag: &str| {
@@ -278,6 +288,10 @@ fn parse_args() -> Result<Args, String> {
             "--fail-on" => {
                 a.fail_on = Severity::parse(&need(&mut it, &arg)?)
                     .ok_or("--fail-on needs error, warning or suggestion")?
+            }
+            "--min-severity" => {
+                a.min_severity = Severity::parse(&need(&mut it, &arg)?)
+                    .ok_or("--min-severity needs error, warning or suggestion")?
             }
             "-h" | "--help" => return Err(USAGE.to_string()),
             f if f.starts_with("--") => return Err(format!("unknown option {f}\n\n{USAGE}")),
@@ -397,6 +411,9 @@ fn run() -> Result<bool, String> {
     if args.command == "decide" {
         return decide(&args);
     }
+    if args.command == "mcp" {
+        return mcp::serve(args);
+    }
     if !matches!(args.command.as_str(), "check" | "fix" | "parse" | "rewrite") {
         return Err(format!("unknown command {:?}\n\n{USAGE}", args.command));
     }
@@ -505,13 +522,19 @@ fn run() -> Result<bool, String> {
         print!("{}", sarif.render());
     }
     if let Some(dir) = &cache {
-        let mb = std::env::var("EMDYSI_CACHE_MB")
-            .ok()
-            .and_then(|m| m.parse::<u64>().ok())
-            .unwrap_or(256);
-        emdysi_parse::prune_parse_cache(dir, mb << 20);
+        emdysi_parse::prune_parse_cache(dir, cache_bytes());
     }
     Ok(ok)
+}
+
+/// The most the parse cache may take: `EMDYSI_CACHE_MB` megabytes, 256
+/// by default.
+fn cache_bytes() -> u64 {
+    std::env::var("EMDYSI_CACHE_MB")
+        .ok()
+        .and_then(|m| m.parse::<u64>().ok())
+        .unwrap_or(256)
+        << 20
 }
 
 fn load_model(args: &Args) -> Result<Option<Box<dyn emdysi_lm::LanguageModel>>, String> {
@@ -598,13 +621,15 @@ fn check(
     model: Option<&mut Box<dyn emdysi_lm::LanguageModel>>,
     args: &Args,
 ) -> Vec<emdysi_check::Diagnostic> {
-    match model {
+    let mut diags = match model {
         Some(m) => {
             let mut ask = ModelAsk::new(&mut **m, args);
             checker.check_with(erg, a, Some(&mut ask))
         }
         None => checker.check(erg, a),
-    }
+    };
+    diags.retain(|d| d.severity <= args.min_severity);
+    diags
 }
 
 /// `en decide`: one question, or an evaluation file.
