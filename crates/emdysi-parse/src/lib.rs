@@ -476,7 +476,6 @@ impl Erg {
                 .map(|f| config_dir.join(f.trim_matches('"')))
         };
         let top = setting_path("grammar-top").unwrap_or_else(|| dir.join("english.tdl"));
-        let mut loaded = emdysi_tdl::load(&top, emdysi_tdl::Env::Type).map_err(err)?;
         // emdysi's extensions of the grammar (grammar/emdysi/*.tdl, e.g.
         // comparative correlatives), loaded after the ERG's own files.
         let ext_dir = dir.join("../emdysi");
@@ -488,21 +487,46 @@ impl Erg {
             })
             .unwrap_or_default();
         exts.sort();
-        for p in exts {
-            let ext = emdysi_tdl::load(&p, emdysi_tdl::Env::Type).map_err(err)?;
-            loaded.entries.extend(ext.entries);
-            loaded.letter_sets.extend(ext.letter_sets);
-            loaded.files.extend(ext.files);
-        }
-        // The compiled type system is cached outside the source tree
+        // The compiled grammar is cached outside the source tree
         // (EMDYSI_CACHE_DIR, XDG_CACHE_HOME or ~/.cache); EMDYSI_NO_CACHE
-        // turns the cache off.
+        // turns the cache off. When no file has changed since the last
+        // run, the grammar is read from it without reading the TDL at all
+        // (half of the time loading took); the files are listed under a
+        // name for this grammar, configuration and set of extensions.
         let cache_dir = if std::env::var_os("EMDYSI_NO_CACHE").is_some() {
             None
         } else {
             emdysi_hpsg::cache::default_dir()
         };
-        let grammar = Grammar::compile_cached(&loaded, cache_dir.as_deref()).map_err(err)?;
+        let manifest = {
+            let mut h = parse_cache::Hasher::new();
+            h.feed(top.as_os_str().as_encoded_bytes());
+            h.feed(config.as_bytes());
+            for p in &exts {
+                h.feed(p.as_os_str().as_encoded_bytes());
+            }
+            h.hex()
+        };
+        let cached = cache_dir
+            .as_deref()
+            .and_then(|d| Grammar::from_cache(d, &manifest));
+        let grammar = match cached {
+            Some(g) => g,
+            None => {
+                let mut loaded = emdysi_tdl::load(&top, emdysi_tdl::Env::Type).map_err(err)?;
+                for p in exts {
+                    let ext = emdysi_tdl::load(&p, emdysi_tdl::Env::Type).map_err(err)?;
+                    loaded.entries.extend(ext.entries);
+                    loaded.letter_sets.extend(ext.letter_sets);
+                    loaded.files.extend(ext.files);
+                }
+                let g = Grammar::compile_cached(&loaded, cache_dir.as_deref()).map_err(err)?;
+                if let Some(d) = &cache_dir {
+                    Grammar::record_sources(d, &manifest, &loaded.files);
+                }
+                g
+            }
+        };
         let repp = match setting_path("preprocessor") {
             Some(main) => {
                 let modules: Vec<String> = ace_setting(&config_src, "preprocessor-modules")

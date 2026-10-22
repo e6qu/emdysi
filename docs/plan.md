@@ -39,8 +39,9 @@ and serves editors (`en lsp`: the findings that need no parse at once,
 the rest when the parse is done, fixes as quick fixes) and agents (`en
 mcp`: `check`, `fix` and `parse` tools; after the first call, a recheck
 takes milliseconds). It parses as many sentences at once as memory
-allows. The default style packs were measured on edited prose and lost
-their wrong claims (evaluation.md). What still stands in the way:
+allows, and starts in under a second (the grammar's TDL is read only when
+it changed). The default style packs were measured on edited prose and
+lost their wrong claims (evaluation.md). What still stands in the way:
 
 - **The first full check of a long document** takes minutes (about 1.3 s
   a sentence; priority 3), and each sentence parsed at once can take a

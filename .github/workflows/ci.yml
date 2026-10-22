@@ -66,3 +66,19 @@ jobs:
         working-directory: editors/vscode
       - run: npm run package
         working-directory: editors/vscode
+  platforms:
+    # Release builds ship for macOS and Windows too: the tests of what
+    # differs by platform there (paths, cache directories, the servers'
+    # stdio framing, line endings).
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+      # (Separate commands: a --test filter applies to every package named.)
+      - run: cargo test --release -p emdysi
+      - run: cargo test --release -p emdysi-parse --test parse_cache
+      - run: cargo test --release -p emdysi-hpsg --lib --test cache
