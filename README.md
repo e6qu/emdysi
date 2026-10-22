@@ -66,6 +66,23 @@ edited text in five genres the checker claims about 2 errors per 1,000
 sentences of the development set
 ([evaluation](docs/evaluation.md#false-flags-on-edited-text)).
 
+## Install
+
+Each tagged [release](https://github.com/e6qu/emdysi/releases) attaches
+`en` for Linux (x86-64) and macOS (Apple silicon). Or build it with Rust
+1.85 or later:
+
+```sh
+cargo install --git https://github.com/e6qu/emdysi emdysi
+```
+
+The binary is self-contained: the grammar, rule packs and word lists are
+built into it. On first use it writes the grammar to its cache directory
+(below) and compiles it, which takes a few seconds; `--grammar DIR` or
+`EMDYSI_GRAMMAR` uses another copy. It needs about 2 GB of memory while
+parsing. Local models are optional (`cargo install` with `--features
+llama` for GGUF files; any OpenAI-compatible server works without it).
+
 ## Usage
 
 ```sh
@@ -77,8 +94,74 @@ en packs
 ```
 
 Input is plain text or Markdown (chosen from the file extension, or with
-`--input`); reports are plain text or Markdown (`--format`). `en --help`
+`--input`). Reports are plain text or Markdown for people, and JSON or
+SARIF for programs (`--format`):
+
+- `--format json` prints one object per file: each diagnostic with its
+  rule, severity, message, byte offsets, lines and columns (from 1,
+  columns in characters, the end exclusive), the text found, and the
+  replacement `en fix` applies (`fix`) or other candidates
+  (`suggestions`). `en parse --format json` gives each sentence's
+  analysis: whether it parsed with a full grammatical reading, its tree,
+  and how it is ambiguous.
+- `--format sarif` prints one SARIF 2.1.0 log for all files, with fixes,
+  for code review and CI tools (GitHub code scanning, for one).
+
+`--fail-on warning` makes the exit status 1 when a warning or error is
+found (grammar errors the grammar can prove are warnings). `en --help`
 lists every option.
+
+### In an editor
+
+`en lsp` is a language server: diagnostics appear as you write (after a
+pause in typing, and on open and save), and each fix or suggestion is a
+quick fix. The grammar is loaded once and parses are cached, so only the
+sentences you change are parsed again. Options after `lsp` (`--pack`,
+`--glossary`, `--min-severity warning`, ...) apply to every document. In
+Neovim (0.11):
+
+```lua
+vim.lsp.config('emdysi', { cmd = { 'en', 'lsp' }, filetypes = { 'markdown', 'text' } })
+vim.lsp.enable('emdysi')
+```
+
+In Helix (`languages.toml`):
+
+```toml
+[language-server.emdysi]
+command = "en"
+args = ["lsp"]
+
+[[language]]
+name = "markdown"
+language-servers = ["marksman", "emdysi"]
+```
+
+Any editor with a generic language-server client works the same way.
+
+### For agents
+
+`en mcp` serves `check`, `fix` and `parse` as tools over the [Model
+Context Protocol](https://modelcontextprotocol.io) (stdio), with the same
+JSON as `--format json`. The grammar is loaded once, on the first call
+(about 5 s), and parses are cached, so checking a draft again after an
+edit takes milliseconds for the unchanged sentences. With Claude Code:
+
+```sh
+claude mcp add emdysi -- en mcp
+```
+
+or in any client's configuration:
+
+```json
+{"mcpServers": {"emdysi": {"command": "en", "args": ["mcp"]}}}
+```
+
+Options after `mcp` (`--pack`, `--glossary`, `--disable`, `--model`, ...)
+set the defaults for every call; a call can name its own `packs`,
+`disable` and `min_severity`. Without MCP, `en check --format json
+--min-severity warning` gives an agent the findings that are worth acting
+on.
 
 The default rule packs are:
 
@@ -127,25 +210,28 @@ answers. They work with a GGUF file through llama.cpp (a build with
 The first run compiles the grammar (a few seconds) and caches it in
 `$EMDYSI_CACHE_DIR`, `$XDG_CACHE_HOME/emdysi` or `~/.cache/emdysi`, never
 in the repository; later runs load it in about a second. Parsing takes
-from tens of milliseconds to a few seconds per sentence.
+from tens of milliseconds to a few seconds per sentence, so a long
+document takes minutes the first time; parses are cached (`en-parses` in
+the same directory, at most `EMDYSI_CACHE_MB` megabytes, default 256), so
+checking it again after an edit parses only the sentences that changed
+(this README: 71 s, then 2.8 s unchanged). `--no-cache` or
+`EMDYSI_NO_CACHE` turns the cache off.
 
 ## Roadmap
 
 The plan, with where the work stands, its priorities and how to pick it
-up, is in [docs/plan.md](docs/plan.md). In order:
+up, is in [docs/plan.md](docs/plan.md). In short:
 
-1. **A real model with the grammar (must have, M20).** A model of about
-   2 GB (Gemma 4 E2B, 4-bit GGUF, or similar) chooses in context among the
-   corrections the grammar has verified. The machinery is done and tested
-   with stand-ins; with a perfect model the share of real errors caught
-   rose from 49% to 89% (337 of 377, measured before three pairs that were
-   all front matter left the corpus; 51% without a model now, 192 of 374). What a real model gets, and whether
-   it beats a much larger model alone, is the open question:
-   `scripts/model-eval/run.sh` measures it once the model can be
-   downloaded.
-2. **Grammar errors without a model:** 25 of 197 real grammar errors are
-   caught today.
-3. **Speed:** about 2.4 s of CPU per sentence of edited text.
+1. **Speed of a first check.** Parsing takes about 1.3 s a sentence, so
+   a long document takes minutes the first time (rechecks parse only what
+   changed). What is left is a faster parser core.
+2. **Grammar errors without a model.** 54 of 197 real grammar errors from
+   documentation histories are caught (spelling: 167 of 177); most of the
+   rest parse as correct English.
+3. **A small model with the grammar (M20).** Measured with Gemma 4 E2B: it
+   chooses well among the corrections the grammar verifies, but neither it
+   nor models up to 12B locate errors well enough to add much (12 of the
+   34 errors where a perfect chooser gains, against 7 without a model).
 4. **Coverage of edited text (M19)** and **machine-written prose from
    current models (M21).**
 

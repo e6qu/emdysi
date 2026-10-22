@@ -34,7 +34,17 @@ Optional fields shared by every kind:
   rule's behaviour is pinned down by its own test cases;
 - `source` and `license`: where a rule or its word list comes from (a style
   guide, another linter) and under which license, for rules adapted from
-  elsewhere. `en packs` shows the source.
+  elsewhere. `en packs` shows the source;
+- `yields_to`: rule ids whose findings make this rule's finding over the
+  same words redundant: `plain-style.passive` yields to
+  `substance.agentless-passive`, so a passive without its actor is
+  reported once.
+
+Text in quotation marks (“…” or "…") and, in Markdown, in emphasis (`*…*`,
+`_…_`) is usually a phrase mentioned as an example, a title or someone
+else's words, not the writer's style, so rules leave it alone unless their
+pack says `quoted = true` under `[pack]`, as `core` and `languagetool` do:
+an error is an error in a quotation too.
 
 Only the subset of TOML that packs need is supported: tables, arrays of
 tables, strings (basic, literal, multi-line), numbers, booleans, arrays and
@@ -431,8 +441,10 @@ and adjectives (*family-owned*, *early-stage*). `{fix}`.
 
 Noun-noun compounds of `min` (default 3) to `max` nouns (*customer data
 platform integration strategy*), from the grammar's compound rules. Proper
-names, runs of capitalized nouns and multiword glossary terms count as one
-noun; words the grammar does not know are not counted. `{count}`.
+names, runs of capitalized nouns, hyphenated words (*command-line*),
+coordinations (*error messages and warnings*) and multiword glossary
+terms count as one noun; words the grammar does not know are not counted.
+`{count}`.
 
 ### `existence`
 

@@ -7,7 +7,10 @@ use std::time::Duration;
 
 use emdysi_check::report::{OutputFormat, ParseDetails, count, render, render_parses};
 use emdysi_check::{Checker, Format, Options, Pack, Severity, analyze, apply_fixes};
-use emdysi_parse::{Erg, default_grammar_dir};
+use emdysi_parse::{Erg, grammar_dir};
+
+mod lsp;
+mod mcp;
 
 const BUILTIN_PACKS: &[(&str, &str)] = &[
     ("core", include_str!("../../../packs/core.toml")),
@@ -75,6 +78,11 @@ USAGE:
     en glossary [--to toml|tbx] FILE...
                                    convert glossaries (TOML, TBX, Vale
                                    vocabularies) and print them
+    en mcp [OPTIONS]               serve the check, fix and parse tools to agents
+                                   (Model Context Protocol over stdio); the
+                                   options set the defaults
+    en lsp [OPTIONS]               a language server for editors (stdio):
+                                   diagnostics as you write, fixes as quick fixes
     en packs                       list rule packs and rules (default packs, or
                                    those given with --pack)
 
@@ -88,10 +96,16 @@ OPTIONS:
                            (a directory with accept.txt and reject.txt)
     --disable RULE         skip a rule id, or a prefix ending in '*' (repeatable)
     --input plain|markdown input format (default: from the file extension; stdin is plain)
-    --format plain|markdown  output format (default: plain)
+    --format FORMAT        output format: plain (default), markdown, json (one
+                           object per file; byte offsets, lines and columns,
+                           fixes) or sarif (with `check`: one SARIF 2.1.0 log
+                           for code review and CI tools)
     --no-parse             tokenize only; skip grammar-based checks
     --max-tokens N         do not parse sentences longer than N tokens (default 100)
     --timeout SECS         time limit per sentence (default 10)
+    --no-cache             parse every sentence afresh (by default the parses
+                           of sentences seen before are reused from the cache,
+                           at most EMDYSI_CACHE_MB megabytes, default 256)
     --derivations          with `parse`, also print derivation trees
     --mrs                  with `parse`, also print the semantics (MRS)
     --model FILE.gguf      a local language model (needs a build with the
@@ -121,11 +135,15 @@ OPTIONS:
                            a GGUF model)
     --temperature T        with `decide`, calibration temperature (default 1)
     --samples N            with `rewrite`, model rewrites per sentence (default 3)
-    --grammar DIR          grammar directory (default: the bundled ERG)
+    --grammar DIR          grammar directory (default: EMDYSI_GRAMMAR, else the
+                           ERG built into en)
     --fail-on error|warning|suggestion  exit with status 1 if a diagnostic this
                            severe or worse is found (default: error)
+    --min-severity error|warning|suggestion  report and fix only diagnostics
+                           this severe or worse (default: suggestion, all)
 ";
 
+#[derive(Clone)]
 struct Args {
     command: String,
     files: Vec<PathBuf>,
@@ -153,8 +171,10 @@ struct Args {
     decide_readings: bool,
     context_readings: bool,
     samples: usize,
-    grammar: PathBuf,
+    grammar: Option<PathBuf>,
     fail_on: Severity,
+    min_severity: Severity,
+    cache: bool,
 }
 
 fn parse_args() -> Result<Args, String> {
@@ -190,8 +210,10 @@ fn parse_args() -> Result<Args, String> {
         decide_readings: false,
         context_readings: true,
         samples: 3,
-        grammar: default_grammar_dir(),
+        grammar: None,
         fail_on: Severity::Error,
+        min_severity: Severity::Suggestion,
+        cache: true,
     };
     let need = |it: &mut std::iter::Skip<std::env::Args>, flag: &str| {
         it.next().ok_or_else(|| format!("{flag} needs a value"))
@@ -212,10 +234,13 @@ fn parse_args() -> Result<Args, String> {
                 a.output = match need(&mut it, &arg)?.as_str() {
                     "plain" | "text" => OutputFormat::Plain,
                     "markdown" | "md" => OutputFormat::Markdown,
+                    "json" => OutputFormat::Json,
+                    "sarif" => OutputFormat::Sarif,
                     v => return Err(format!("unknown output format {v:?}")),
                 }
             }
             "--no-parse" => a.opts.parse = false,
+            "--no-cache" => a.cache = false,
             "--max-tokens" => {
                 a.opts.max_tokens = need(&mut it, &arg)?
                     .parse()
@@ -262,10 +287,14 @@ fn parse_args() -> Result<Args, String> {
                     .parse()
                     .map_err(|_| "--samples needs a number")?
             }
-            "--grammar" => a.grammar = PathBuf::from(need(&mut it, &arg)?),
+            "--grammar" => a.grammar = Some(PathBuf::from(need(&mut it, &arg)?)),
             "--fail-on" => {
                 a.fail_on = Severity::parse(&need(&mut it, &arg)?)
                     .ok_or("--fail-on needs error, warning or suggestion")?
+            }
+            "--min-severity" => {
+                a.min_severity = Severity::parse(&need(&mut it, &arg)?)
+                    .ok_or("--min-severity needs error, warning or suggestion")?
             }
             "-h" | "--help" => return Err(USAGE.to_string()),
             f if f.starts_with("--") => return Err(format!("unknown option {f}\n\n{USAGE}")),
@@ -385,6 +414,12 @@ fn run() -> Result<bool, String> {
     if args.command == "decide" {
         return decide(&args);
     }
+    if args.command == "mcp" {
+        return mcp::serve(args);
+    }
+    if args.command == "lsp" {
+        return lsp::serve(args);
+    }
     if !matches!(args.command.as_str(), "check" | "fix" | "parse" | "rewrite") {
         return Err(format!("unknown command {:?}\n\n{USAGE}", args.command));
     }
@@ -397,12 +432,27 @@ fn run() -> Result<bool, String> {
     if args.command == "rewrite" || args.command == "parse" {
         args.opts.meaning = true;
     }
+    if args.output == OutputFormat::Sarif && args.command != "check" {
+        return Err("--format sarif is for `check`".into());
+    }
     let docs = inputs(&args.files, args.input)?;
-    let erg = Erg::load(&args.grammar).map_err(|e| format!("loading grammar: {e}"))?;
+    let dir = match &args.grammar {
+        Some(d) => d.clone(),
+        None => grammar_dir().map_err(|e| format!("finding the grammar: {e}"))?,
+    };
+    let mut erg = Erg::load(&dir).map_err(|e| format!("loading grammar: {e}"))?;
+    // Parses of sentences seen before are reused: rechecking an edited
+    // document parses only the sentences that changed.
+    let cache = args.cache.then(emdysi_parse::checker_cache_dir).flatten();
+    if let Some(dir) = &cache {
+        erg.cache_parses(dir);
+    }
+    let erg = erg;
     let mut checker = Checker::new(packs);
     checker.disabled = args.disabled.clone();
     let mut model = load_model(&args)?;
     let mut ok = true;
+    let mut sarif = emdysi_check::report::Sarif::default();
     if args.decide_readings && model.is_none() {
         return Err("--decide-readings needs a model (--model, --server or --lm)".into());
     }
@@ -466,11 +516,31 @@ fn run() -> Result<bool, String> {
                 if diags.iter().any(|d| d.severity <= args.fail_on) {
                     ok = false;
                 }
-                print!("{}", render(&a, &diags, &name, args.output));
+                if args.output == OutputFormat::Sarif {
+                    sarif.add(&a, &diags, &name);
+                } else {
+                    print!("{}", render(&a, &diags, &name, args.output));
+                }
             }
         }
     }
+    if args.output == OutputFormat::Sarif {
+        print!("{}", sarif.render());
+    }
+    if let Some(dir) = &cache {
+        emdysi_parse::prune_parse_cache(dir, cache_bytes());
+    }
     Ok(ok)
+}
+
+/// The most the parse cache may take: `EMDYSI_CACHE_MB` megabytes, 256
+/// by default.
+fn cache_bytes() -> u64 {
+    std::env::var("EMDYSI_CACHE_MB")
+        .ok()
+        .and_then(|m| m.parse::<u64>().ok())
+        .unwrap_or(256)
+        << 20
 }
 
 fn load_model(args: &Args) -> Result<Option<Box<dyn emdysi_lm::LanguageModel>>, String> {
@@ -557,13 +627,15 @@ fn check(
     model: Option<&mut Box<dyn emdysi_lm::LanguageModel>>,
     args: &Args,
 ) -> Vec<emdysi_check::Diagnostic> {
-    match model {
+    let mut diags = match model {
         Some(m) => {
             let mut ask = ModelAsk::new(&mut **m, args);
             checker.check_with(erg, a, Some(&mut ask))
         }
         None => checker.check(erg, a),
-    }
+    };
+    diags.retain(|d| d.severity <= args.min_severity);
+    diags
 }
 
 /// `en decide`: one question, or an evaluation file.

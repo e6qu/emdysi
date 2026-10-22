@@ -52,6 +52,12 @@ pub struct Pack {
     pub rules: Vec<Rule>,
     /// Glossary concepts (`[[concept]]`), shared by all rules.
     pub concepts: Vec<Concept>,
+    /// Whether the rules also check quoted text (`quoted = true` in
+    /// `[pack]`): text in quotation marks or Markdown emphasis is an
+    /// example mentioned, a title or someone else's words, so style packs
+    /// leave it alone, and packs about correctness (`core`,
+    /// `languagetool`) say they check it.
+    pub quoted: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -71,6 +77,10 @@ pub struct Rule {
     /// for rules adapted from other tools or style guides.
     pub source: Option<String>,
     pub license: Option<String>,
+    /// Rules (ids) whose findings make this rule's finding over the same
+    /// words redundant (`yields_to`): `plain-style.passive` says nothing
+    /// that `substance.agentless-passive` has not said of the same verb.
+    pub yields_to: Vec<String>,
 }
 
 /// The part of a document a rule looks at.
@@ -448,6 +458,7 @@ impl Pack {
             description: String::new(),
             rules: Vec::new(),
             concepts,
+            quoted: false,
         }
     }
 
@@ -464,6 +475,7 @@ impl Pack {
             description: String::new(),
             rules: Vec::new(),
             concepts: crate::terms::parse_concepts(&t).map_err(PackError)?,
+            quoted: false,
         })
     }
 
@@ -496,6 +508,7 @@ impl Pack {
             description: get_str(&meta, "description").unwrap_or_default(),
             rules,
             concepts,
+            quoted: meta.get("quoted").and_then(Value::as_bool).unwrap_or(false),
         })
     }
 }
@@ -943,6 +956,7 @@ impl Rule {
             acceptable: get_list(t, "acceptable"),
             source: get_str(t, "source"),
             license: get_str(t, "license"),
+            yields_to: get_list(t, "yields_to"),
         })
     }
 

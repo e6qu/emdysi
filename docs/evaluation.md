@@ -465,6 +465,54 @@ of the word, an added or removed article, another case of a pronoun, a/an,
 fewer/less, ...) gives a sentence the grammar accepts. The verified
 correction is offered as the suggestion.
 
+## The default style packs on edited text
+
+The style packs (`ai-tells`, `plain-style`, `substance`, `structure`,
+`terms`) make suggestions, not error claims, but a finding whose own claim
+is wrong (a list called a noun stack, an example phrase called a setup) is
+noise all the same, and agents act on every finding. Measured on the first
+development set's fiction, government, Kubernetes and Rust documents
+(32,562 words; `rule_rates`, 2026-10-22), every finding of the six default
+packs:
+
+| | Findings | Per 1,000 words | Warnings and errors | Per 1,000 words |
+|---|---|---|---|---|
+| Before | 1,058 | 32.5 | 110 | 3.38 |
+| After the changes below | 762 | 23.4 | 55 | 1.69 |
+
+- **Quoted text.** A phrase in quotation marks or Markdown emphasis is
+  mostly mentioned, not used (*setups such as *here's the thing**), or
+  someone else's words (dialogue in fiction). Style packs no longer check
+  it; `core` and `languagetool` do (`quoted = true` under `[pack]`).
+  Intensifiers 75 to 42, expletive *there* 49 to 36, the passive and
+  tense shifts fewer, mostly in dialogue.
+- **One finding per passive.** `plain-style.passive` and
+  `substance.agentless-passive` both flagged every passive without an
+  actor; the first now yields to the second (`yields_to`): 228 to 109.
+- **Noun stacks** (`terms.noun-stack`, four or more nouns, a warning; and
+  `terms.noun-string`, three, a suggestion) counted the parts of a
+  hyphenated word (*command-line tool* was four nouns: the hyphen is a word
+  of the analysis), each noun of a coordination (*its robustness,
+  standards compliance, and advanced feature set*), the *for* of the
+  grammar's *N for N* (*label value for node roles*), and verbs the best
+  reading of a sentence without a full analysis took for nouns (*Rust code
+  can*). A hyphenated word and a coordination are now one unit, a stack
+  holds only nouns, adjectives and the conjunctions of its coordinations,
+  and only sentences with a full analysis are looked at: noun stacks 32 to
+  0 (every one looked at was wrong), noun strings 67 to 30 (*usability
+  test session*, *container image creation*; three left are verbs read as
+  nouns in a full analysis, *capital gain means*).
+- **Acronyms a technical reader knows.** `terms.undefined-acronym` at its
+  technical tier asked for DNS, UI, IPv4, CI, JSON, CLI and VM to be
+  spelled out, as the word list ranks them rarer than API or URL; 32 such
+  acronyms are now listed as known: 30 to 14 (left: CIDR, RHEL, USCIS,
+  OMB, IDL, ...).
+
+What is left is mostly what the rules are for: 109 passives, 110 passives
+without an actor, 102 long sentences, 49 three-part lists and 42
+intensifiers, all suggestions. `--min-severity warning` leaves 1.7
+findings per 1,000 words.
+
 ## Recall on real errors
 
 Precision alone is easy to get by flagging nothing.

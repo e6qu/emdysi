@@ -449,3 +449,84 @@ fn bold_label_line(src: &str, at: usize) -> bool {
             && !line[m.len()..line.len() - m.len()].contains(m)
     })
 }
+
+/// Source byte ranges of quoted text, without the marks: inside double
+/// quotation marks (“…”, or "…" opening after a space or at the start and
+/// closing before anything but a letter), paired within a paragraph and
+/// left out when unclosed; and, in Markdown, inside emphasis (`*…*`,
+/// `_…_`), the usual way to mention a word or a phrase. Style checks leave
+/// such text alone: it is an example, a title or someone else's words.
+pub fn quoted_spans(src: &str, markdown: bool) -> Vec<Range<usize>> {
+    let mut out = Vec::new();
+    let mut pos = 0;
+    for para in src.split_inclusive("\n\n") {
+        let mut open: Option<(char, usize)> = None;
+        let mut prev: Option<char> = None;
+        let mut it = para.char_indices().peekable();
+        while let Some((i, c)) = it.next() {
+            let next = it.peek().map(|&(_, n)| n);
+            match (c, open) {
+                ('“', None) => open = Some(('“', pos + i + c.len_utf8())),
+                ('”', Some(('“', from))) => {
+                    out.push(from..pos + i);
+                    open = None;
+                }
+                ('"', None)
+                    if prev.is_none_or(|p| p.is_whitespace() || "([{".contains(p))
+                        && next.is_some_and(|n| !n.is_whitespace()) =>
+                {
+                    open = Some(('"', pos + i + 1));
+                }
+                ('"', Some(('"', from))) if !next.is_some_and(char::is_alphanumeric) => {
+                    out.push(from..pos + i);
+                    open = None;
+                }
+                _ => {}
+            }
+            prev = Some(c);
+        }
+        pos += para.len();
+    }
+    if markdown {
+        for (ev, range) in Parser::new_ext(src, Options::empty()).into_offset_iter() {
+            if let Event::Start(Tag::Emphasis) = ev {
+                if range.end >= range.start + 2 {
+                    out.push(range.start + 1..range.end - 1);
+                }
+            }
+        }
+    }
+    out.sort_by_key(|r| (r.start, r.end));
+    out
+}
+
+#[cfg(test)]
+mod quoted_tests {
+    use super::quoted_spans;
+
+    fn texts(src: &str, md: bool) -> Vec<&str> {
+        quoted_spans(src, md).into_iter().map(|r| &src[r]).collect()
+    }
+
+    #[test]
+    fn quotation_marks_and_emphasis() {
+        assert_eq!(
+            texts("He said “the truth is” and \"here's the thing\".", false),
+            ["the truth is", "here's the thing"]
+        );
+        // Inches, and a quotation left open at the end of a paragraph.
+        assert_eq!(
+            texts("A 5'10\" man.\n\n“Unclosed.\n\nNext.", false),
+            Vec::<&str>::new()
+        );
+        assert_eq!(
+            texts(
+                "Setups such as *here's the thing* and _studies show_; **bold** is not.",
+                true
+            ),
+            ["here's the thing", "studies show"]
+        );
+        // Emphasis is Markdown only.
+        assert_eq!(texts("a *b* c", false), Vec::<&str>::new());
+    }
+}

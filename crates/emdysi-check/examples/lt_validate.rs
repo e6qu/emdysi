@@ -53,6 +53,7 @@ fn main() {
                         description: String::new(),
                         rules: vec![rule.clone()],
                         concepts: Vec::new(),
+                        quoted: pack.quoted,
                     }]);
                     let holds = rule
                         .examples

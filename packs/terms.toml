@@ -31,6 +31,13 @@ id = "terms.undefined-acronym"
 kind = "acronyms"
 check = "undefined"
 known_tier = 50
+# Acronyms a technical reader knows that the word list ranks rarer.
+known = [
+  "CI", "CD", "CLI", "CPU", "CSS", "CSV", "DNS", "GPU", "GUI", "HTTP",
+  "HTTPS", "IDE", "IP", "IPv4", "IPv6", "JSON", "OS", "PDF", "POSIX",
+  "RAM", "SDK", "SQL", "SSH", "TCP", "TLS", "UDP", "UI", "URI", "UX", "VM",
+  "XML", "YAML",
+]
 severity = "warning"
 message = "'{match}' is not defined; spell it out at first use, followed by the acronym in parentheses."
 description = "An acronym or initialism used without a definition anywhere in the document, unless it is common enough (see `known_tier`) or in the glossary."
@@ -43,6 +50,13 @@ id = "terms.acronym-defined-after-use"
 kind = "acronyms"
 check = "defined-after-use"
 known_tier = 50
+# Acronyms a technical reader knows that the word list ranks rarer.
+known = [
+  "CI", "CD", "CLI", "CPU", "CSS", "CSV", "DNS", "GPU", "GUI", "HTTP",
+  "HTTPS", "IDE", "IP", "IPv4", "IPv6", "JSON", "OS", "PDF", "POSIX",
+  "RAM", "SDK", "SQL", "SSH", "TCP", "TLS", "UDP", "UI", "URI", "UX", "VM",
+  "XML", "YAML",
+]
 severity = "warning"
 message = "'{match}' is used before it is defined (line {line}); define it at first use."
 description = "An acronym whose definition comes after its first use."
@@ -76,6 +90,13 @@ id = "terms.acronym-in-heading"
 kind = "acronyms"
 check = "first-use-in-heading"
 known_tier = 50
+# Acronyms a technical reader knows that the word list ranks rarer.
+known = [
+  "CI", "CD", "CLI", "CPU", "CSS", "CSV", "DNS", "GPU", "GUI", "HTTP",
+  "HTTPS", "IDE", "IP", "IPv4", "IPv6", "JSON", "OS", "PDF", "POSIX",
+  "RAM", "SDK", "SQL", "SSH", "TCP", "TLS", "UDP", "UI", "URI", "UX", "VM",
+  "XML", "YAML",
+]
 severity = "suggestion"
 message = "'{match}' first appears in a heading; spell it out in the heading or define it in the text first."
 description = "An acronym whose first use is in a heading, where it cannot be defined."
@@ -189,7 +210,12 @@ description = "A noun-noun compound of four or more nouns, from the grammar's co
 scope = "body"
 source = "plainlanguage.gov, Avoid noun strings; Microsoft Writing Style Guide (avoid modifier stacks)"
 examples = ["Our customer data platform integration strategy failed.\n"]
-acceptable = ["Our strategy for integrating the customer data platform failed.\n"]
+acceptable = [
+  "Our strategy for integrating the customer data platform failed.\n",
+  "Its command-line tool reads the file.\n",
+  "PostgreSQL is known for its robustness, standards compliance, and advanced feature set.\n",
+  "Kubernetes ignores the label value for node roles.\n",
+]
 
 [[rule]]
 id = "terms.noun-string"
@@ -202,4 +228,7 @@ description = "A noun-noun compound of exactly three nouns."
 scope = "body"
 source = "plainlanguage.gov, Avoid noun strings"
 examples = ["The data platform team approved it.\n"]
-acceptable = ["The platform team approved it.\n"]
+acceptable = [
+  "The platform team approved it.\n",
+  "The node controller asks the API server first.\n",
+]

@@ -49,6 +49,7 @@ fn rule_examples() {
                     description: String::new(),
                     rules: vec![rule.clone()],
                     concepts: pack.concepts.clone(),
+                    quoted: pack.quoted,
                 }])
             };
             // A pattern over the text needs no parse.

@@ -145,6 +145,7 @@ examples = [
 ]
 acceptable = [
   "Here is the configuration file.\n",
+  "Setups such as *here's the thing* announce a point instead of making it.\n",
 ]
 
 [[rule]]

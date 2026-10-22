@@ -12,6 +12,8 @@ emdysi-check = { path = "../emdysi-check", version = "0.1.0" }
 emdysi-parse = { path = "../emdysi-parse", version = "0.1.0" }
 emdysi-lm = { path = "../emdysi-lm", version = "0.1.0" }
 emdysi-rewrite = { path = "../emdysi-rewrite", version = "0.1.0" }
+# `en mcp`: JSON-RPC messages.
+serde_json = "1"
 
 [features]
 # `en rewrite --model FILE.gguf`: a local language model through llama.cpp.

@@ -790,6 +790,7 @@ def build(candidates=False):
         "[pack]",
         'name = "languagetool"',
         'description = "LanguageTool\'s English rules: those that need only words, and those whose parts of speech the parse gives (opt-in)."',
+        "quoted = true",
         "",
     ]
     for r in kept:

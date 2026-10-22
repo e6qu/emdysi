@@ -8,6 +8,9 @@ kind = "construction"
 severity = "suggestion"
 message = "Passive voice ('{match}'); consider naming who acts."
 rules = ["v_pas*_odlr"]
+# A passive without its actor is reported once, by
+# substance.agentless-passive.
+yields_to = ["substance.agentless-passive"]
 # A form of "be" or "get" shortly before: excludes adjectival uses such as
 # "fast-paced" or "the written report".
 preceded_by = ["am", "is", "are", "was", "were", "be", "been", "being", "'re", "’re", "get", "gets", "got", "gotten", "getting"]
