@@ -92,6 +92,9 @@ OPTIONS:
     --no-parse             tokenize only; skip grammar-based checks
     --max-tokens N         do not parse sentences longer than N tokens (default 100)
     --timeout SECS         time limit per sentence (default 10)
+    --no-cache             parse every sentence afresh (by default the parses
+                           of sentences seen before are reused from the cache,
+                           at most EMDYSI_CACHE_MB megabytes, default 256)
     --derivations          with `parse`, also print derivation trees
     --mrs                  with `parse`, also print the semantics (MRS)
     --model FILE.gguf      a local language model (needs a build with the
@@ -155,6 +158,7 @@ struct Args {
     samples: usize,
     grammar: PathBuf,
     fail_on: Severity,
+    cache: bool,
 }
 
 fn parse_args() -> Result<Args, String> {
@@ -192,6 +196,7 @@ fn parse_args() -> Result<Args, String> {
         samples: 3,
         grammar: default_grammar_dir(),
         fail_on: Severity::Error,
+        cache: true,
     };
     let need = |it: &mut std::iter::Skip<std::env::Args>, flag: &str| {
         it.next().ok_or_else(|| format!("{flag} needs a value"))
@@ -216,6 +221,7 @@ fn parse_args() -> Result<Args, String> {
                 }
             }
             "--no-parse" => a.opts.parse = false,
+            "--no-cache" => a.cache = false,
             "--max-tokens" => {
                 a.opts.max_tokens = need(&mut it, &arg)?
                     .parse()
@@ -398,7 +404,14 @@ fn run() -> Result<bool, String> {
         args.opts.meaning = true;
     }
     let docs = inputs(&args.files, args.input)?;
-    let erg = Erg::load(&args.grammar).map_err(|e| format!("loading grammar: {e}"))?;
+    let mut erg = Erg::load(&args.grammar).map_err(|e| format!("loading grammar: {e}"))?;
+    // Parses of sentences seen before are reused: rechecking an edited
+    // document parses only the sentences that changed.
+    let cache = args.cache.then(emdysi_parse::checker_cache_dir).flatten();
+    if let Some(dir) = &cache {
+        erg.cache_parses(dir);
+    }
+    let erg = erg;
     let mut checker = Checker::new(packs);
     checker.disabled = args.disabled.clone();
     let mut model = load_model(&args)?;
@@ -469,6 +482,13 @@ fn run() -> Result<bool, String> {
                 print!("{}", render(&a, &diags, &name, args.output));
             }
         }
+    }
+    if let Some(dir) = &cache {
+        let mb = std::env::var("EMDYSI_CACHE_MB")
+            .ok()
+            .and_then(|m| m.parse::<u64>().ok())
+            .unwrap_or(256);
+        emdysi_parse::prune_parse_cache(dir, mb << 20);
     }
     Ok(ok)
 }

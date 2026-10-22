@@ -127,7 +127,12 @@ answers. They work with a GGUF file through llama.cpp (a build with
 The first run compiles the grammar (a few seconds) and caches it in
 `$EMDYSI_CACHE_DIR`, `$XDG_CACHE_HOME/emdysi` or `~/.cache/emdysi`, never
 in the repository; later runs load it in about a second. Parsing takes
-from tens of milliseconds to a few seconds per sentence.
+from tens of milliseconds to a few seconds per sentence, so a long
+document takes minutes the first time; parses are cached (`en-parses` in
+the same directory, at most `EMDYSI_CACHE_MB` megabytes, default 256), so
+checking it again after an edit parses only the sentences that changed
+(this README: 71 s, then 2.8 s unchanged). `--no-cache` or
+`EMDYSI_NO_CACHE` turns the cache off.
 
 ## Roadmap
 

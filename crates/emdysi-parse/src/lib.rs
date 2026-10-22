@@ -53,6 +53,23 @@ pub fn parse_cache_dir() -> Option<PathBuf> {
     emdysi_hpsg::cache::default_dir().map(|d| d.join("parses"))
 }
 
+/// Where `en` caches parses: `en-parses` in the grammar cache directory.
+/// Kept apart from the measurement tools' cache ([`parse_cache_dir`],
+/// never pruned), as `en` keeps its own to a size
+/// ([`prune_parse_cache`]). `None` when `EMDYSI_NO_CACHE` is set.
+pub fn checker_cache_dir() -> Option<PathBuf> {
+    if std::env::var_os("EMDYSI_NO_CACHE").is_some() {
+        return None;
+    }
+    emdysi_hpsg::cache::default_dir().map(|d| d.join("en-parses"))
+}
+
+/// Delete the least recently used parses cached in `dir` (see
+/// [`Erg::cache_parses`]) until they take at most `max_bytes`.
+pub fn prune_parse_cache(dir: &Path, max_bytes: u64) {
+    parse_cache::prune(dir, max_bytes);
+}
+
 /// Location of the vendored ERG inside this repository.
 pub fn default_grammar_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../grammar/erg")

@@ -58,3 +58,38 @@ fn cached_parses_round_trip() {
     assert_eq!(bins(&dir), 4);
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+#[test]
+fn pruning_keeps_the_most_recently_used() {
+    use std::time::{Duration, SystemTime};
+    let dir = std::env::temp_dir().join(format!("emdysi-parse-prune-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    // Ten parses of 1,000 bytes, each used a minute after the one before,
+    // in two versions; and a file that is not a parse.
+    let now = SystemTime::now();
+    let mut files = Vec::new();
+    for i in 0..10u64 {
+        let sub = dir.join(if i % 2 == 0 { "v1/ab" } else { "v2/cd" });
+        std::fs::create_dir_all(&sub).unwrap();
+        let f = sub.join(format!("{i}.bin"));
+        std::fs::write(&f, [0u8; 1000]).unwrap();
+        let t = now - Duration::from_secs(60 * (10 - i));
+        std::fs::File::options()
+            .append(true)
+            .open(&f)
+            .unwrap()
+            .set_modified(t)
+            .unwrap();
+        files.push(f);
+    }
+    std::fs::write(dir.join("v1/used"), b"").unwrap();
+    // Under the limit: nothing goes.
+    emdysi_parse::prune_parse_cache(&dir, 10_000);
+    assert!(files.iter().all(|f| f.exists()));
+    // Over it: the least recently used go, down to four fifths of it.
+    emdysi_parse::prune_parse_cache(&dir, 5_000);
+    let kept: Vec<bool> = files.iter().map(|f| f.exists()).collect();
+    assert_eq!(kept, [vec![false; 6], vec![true; 4]].concat());
+    assert!(dir.join("v1/used").exists());
+    let _ = std::fs::remove_dir_all(&dir);
+}

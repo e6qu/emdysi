@@ -84,6 +84,42 @@ pub(crate) fn open(root: &Path, dirs: &[PathBuf], config: &str) -> PathBuf {
 /// The file whose time records when a version's parses were last used.
 const USED: &str = "used";
 
+/// Delete the least recently used parses under `root` (every version)
+/// until they take at most `max_bytes`; when over the limit, down to
+/// four fifths of it, so that pruning is rare.
+pub(crate) fn prune(root: &Path, max_bytes: u64) {
+    fn walk(dir: &Path, out: &mut Vec<(std::time::SystemTime, u64, PathBuf)>) {
+        let Ok(entries) = std::fs::read_dir(dir) else {
+            return;
+        };
+        for e in entries.flatten() {
+            let p = e.path();
+            let Ok(m) = e.metadata() else { continue };
+            if m.is_dir() {
+                walk(&p, out);
+            } else if p.extension().is_some_and(|x| x == "bin") {
+                let t = m.modified().unwrap_or(std::time::UNIX_EPOCH);
+                out.push((t, m.len(), p));
+            }
+        }
+    }
+    let mut files = Vec::new();
+    walk(root, &mut files);
+    let mut total: u64 = files.iter().map(|f| f.1).sum();
+    if total <= max_bytes {
+        return;
+    }
+    files.sort();
+    for (_, len, p) in files {
+        if total <= max_bytes / 5 * 4 {
+            break;
+        }
+        if std::fs::remove_file(&p).is_ok() {
+            total -= len;
+        }
+    }
+}
+
 fn version(dirs: &[PathBuf], config: &str) -> String {
     fn walk(dir: &Path, out: &mut Vec<PathBuf>) {
         let Ok(entries) = std::fs::read_dir(dir) else {
@@ -166,7 +202,12 @@ fn path(dir: &Path, key: &str) -> PathBuf {
 }
 
 pub(crate) fn load(dir: &Path, key: &str) -> Option<Parse> {
-    let bytes = std::fs::read(path(dir, key)).ok()?;
+    let file = path(dir, key);
+    let bytes = std::fs::read(&file).ok()?;
+    // Mark the entry as used, for [`prune`].
+    if let Ok(f) = std::fs::File::options().append(true).open(&file) {
+        let _ = f.set_modified(std::time::SystemTime::now());
+    }
     let mut r = R {
         b: &bytes,
         i: 0,
