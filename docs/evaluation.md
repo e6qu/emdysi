@@ -529,6 +529,16 @@ sentences that changed and publish the full findings directly (two
 publications there would take back, for a moment, every finding that
 needs the parse).
 
+**Starting.** Every `en` run loads the grammar: in about 1.2 s before
+2026-10-22, half of it reading the ERG's TDL source again (callgrind,
+3.5 of 17.5 billion instructions of a six-sentence check went to loading,
+1.8 to the TDL) although its compilation was cached. The cache now also
+keeps the lexical entries and rules as read, and lists the files the
+grammar came from; while they hash as they did, the TDL is not read at
+all: 0.73 to 0.82 s for a one-sentence check instead of about 1.2 s, with
+the same findings and parses. Old compilations no longer pile up (80 to
+90 MB each): the four most recently used are kept.
+
 **Memory while parsing.** Checking this README from scratch (`--no-cache`,
 2026-10-22):
 

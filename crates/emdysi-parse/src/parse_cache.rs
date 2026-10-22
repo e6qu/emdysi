@@ -30,13 +30,13 @@ const VERSION: u32 = 3;
 const MAGIC: &[u8; 8] = b"EMDYSIPC";
 
 /// Two-lane FNV-1a hash, as a hex string.
-struct Hasher(u64, u64);
+pub(crate) struct Hasher(u64, u64);
 
 impl Hasher {
-    fn new() -> Hasher {
+    pub(crate) fn new() -> Hasher {
         Hasher(0xcbf2_9ce4_8422_2325, 0x6c62_272e_07bb_0142)
     }
-    fn feed(&mut self, bytes: &[u8]) {
+    pub(crate) fn feed(&mut self, bytes: &[u8]) {
         for &x in bytes {
             self.0 = (self.0 ^ x as u64).wrapping_mul(0x0000_0100_0000_01b3);
             self.1 = (self.1 ^ x as u64)
@@ -46,7 +46,7 @@ impl Hasher {
         // A separator, so that ("ab", "c") and ("a", "bc") differ.
         self.0 = self.0.wrapping_mul(31).wrapping_add(bytes.len() as u64);
     }
-    fn hex(&self) -> String {
+    pub(crate) fn hex(&self) -> String {
         format!("{:016x}{:016x}", self.0, self.1)
     }
 }

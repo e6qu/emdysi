@@ -82,7 +82,7 @@ echo "The new version are faster." | en check
 
 should report the agreement error. The first run writes the grammar to
 the cache directory and compiles it, which takes a few seconds; later runs
-start in about a second.
+start in under a second.
 
 ## Install the extension
 

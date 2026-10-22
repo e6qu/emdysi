@@ -1,5 +1,7 @@
-//! A cache of the expensive part of grammar compilation: the closed type
-//! hierarchy and the expanded type constraints.
+//! A cache of grammar compilation: the closed type hierarchy, the expanded
+//! type constraints, and the instances (lexical entries, rules) and letter
+//! sets as read, so that a grammar unchanged since the last run is loaded
+//! without reading its TDL at all (see [`Grammar::from_cache`]).
 //!
 //! The cache lives outside the source tree (by default in the user's cache
 //! directory, see [`default_dir`]) and is keyed by a hash of every TDL file
@@ -13,12 +15,13 @@ use std::sync::{Arc, RwLock};
 use crate::bitset::BitSet;
 use crate::dag::{Dag, Node};
 use crate::desc::ListConfig;
-use crate::grammar::{Grammar, GrammarError};
+use crate::grammar::{Grammar, GrammarError, Instance};
 use crate::types::Hierarchy;
 use crate::typesys::{Features, LiteralKind, Literals, TypeSystem};
+use emdysi_tdl::{Affix, Conj, FeatVal, LetterSet, PatElem, Term};
 
 /// Bump when the serialized layout or the compilation algorithm changes.
-const VERSION: u32 = 2;
+const VERSION: u32 = 3;
 const MAGIC: &[u8; 8] = b"EMDYSIGC";
 
 /// `$EMDYSI_CACHE_DIR`, else `$XDG_CACHE_HOME/emdysi`, else
@@ -69,9 +72,8 @@ impl Grammar {
             .map(|(d, k)| d.join(format!("grammar-{k}.bin")));
         if let Some(p) = &path {
             if let Ok(bytes) = std::fs::read(p) {
-                if let Some(mut g) = read(&bytes) {
-                    g.letter_sets = loaded.letter_sets.clone();
-                    g.add_instances(loaded);
+                if let Some(g) = read(&bytes) {
+                    touch(p);
                     return Ok(g);
                 }
             }
@@ -89,8 +91,77 @@ impl Grammar {
             if std::fs::write(&tmp, bytes).is_err() || std::fs::rename(&tmp, p).is_err() {
                 let _ = std::fs::remove_file(&tmp);
             }
+            if let Some(d) = dir {
+                prune(d);
+            }
         }
         Ok(g)
+    }
+
+    /// The grammar compiled before from the same sources, read back
+    /// without reading its TDL: the files it was read from are listed
+    /// under `manifest` (a name for one grammar and configuration, see
+    /// [`Grammar::record_sources`]) in `dir`, and when every one hashes as
+    /// it did, the cached compilation is complete. `None` when anything
+    /// differs or is missing, and the sources must be read.
+    pub fn from_cache(dir: &Path, manifest: &str) -> Option<Grammar> {
+        let list = std::fs::read_to_string(dir.join(format!("sources-{manifest}.txt"))).ok()?;
+        let files: Vec<PathBuf> = list.lines().map(PathBuf::from).collect();
+        let key = source_key(&files)?;
+        let path = dir.join(format!("grammar-{key}.bin"));
+        let g = read(&std::fs::read(&path).ok()?)?;
+        touch(&path);
+        Some(g)
+    }
+
+    /// Record under `manifest` in `dir` the files a grammar was read from,
+    /// for [`Grammar::from_cache`].
+    pub fn record_sources(dir: &Path, manifest: &str, files: &[PathBuf]) {
+        let list: String = files
+            .iter()
+            .filter_map(|f| Some(format!("{}\n", f.to_str()?)))
+            .collect();
+        let path = dir.join(format!("sources-{manifest}.txt"));
+        if std::fs::read_to_string(&path).ok().as_deref() == Some(&list) {
+            return;
+        }
+        let tmp = path.with_extension(format!("tmp{}", std::process::id()));
+        if std::fs::write(&tmp, list).is_err() || std::fs::rename(&tmp, &path).is_err() {
+            let _ = std::fs::remove_file(&tmp);
+        }
+    }
+}
+
+/// Compiled grammars kept: a grammar and its grammar-error variant, and
+/// the two before them. Each takes 80 to 90 MB, and a new one is written
+/// whenever the grammar or this format changes.
+const KEEP: usize = 4;
+
+/// Mark a compiled grammar as used, for [`prune`].
+fn touch(path: &Path) {
+    if let Ok(f) = std::fs::File::options().append(true).open(path) {
+        let _ = f.set_modified(std::time::SystemTime::now());
+    }
+}
+
+/// Delete all but the [`KEEP`] most recently used compiled grammars in `dir`.
+fn prune(dir: &Path) {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
+    let mut bins: Vec<(std::time::SystemTime, PathBuf)> = entries
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| {
+            p.file_name()
+                .and_then(|n| n.to_str())
+                .is_some_and(|n| n.starts_with("grammar-") && n.ends_with(".bin"))
+        })
+        .filter_map(|p| Some((std::fs::metadata(&p).ok()?.modified().ok()?, p)))
+        .collect();
+    bins.sort_by(|a, b| b.0.cmp(&a.0));
+    for (_, p) in bins.into_iter().skip(KEEP) {
+        let _ = std::fs::remove_file(p);
     }
 }
 
@@ -111,6 +182,98 @@ impl W {
         self.u32(v.len() as u32);
         for &x in v {
             self.u32(x);
+        }
+    }
+    fn opt_str(&mut self, s: &Option<String>) {
+        match s {
+            None => self.u32(0),
+            Some(s) => {
+                self.u32(1);
+                self.str(s);
+            }
+        }
+    }
+    fn strs(&mut self, v: &[String]) {
+        self.u32(v.len() as u32);
+        for s in v {
+            self.str(s);
+        }
+    }
+    fn chars(&mut self, v: &[char]) {
+        self.u32(v.len() as u32);
+        for &c in v {
+            self.u32(c as u32);
+        }
+    }
+    fn conj(&mut self, c: &Conj) {
+        self.u32(c.0.len() as u32);
+        for t in &c.0 {
+            self.term(t);
+        }
+    }
+    fn term(&mut self, t: &Term) {
+        match t {
+            Term::Type(s) => {
+                self.u32(0);
+                self.str(s);
+            }
+            Term::Str(s) => {
+                self.u32(1);
+                self.str(s);
+            }
+            Term::Regex(s) => {
+                self.u32(2);
+                self.str(s);
+            }
+            Term::Coref(s) => {
+                self.u32(3);
+                self.str(s);
+            }
+            Term::Avm(fvs) => {
+                self.u32(4);
+                self.u32(fvs.len() as u32);
+                for fv in fvs {
+                    self.strs(&fv.path);
+                    self.conj(&fv.value);
+                }
+            }
+            Term::List { items, open, tail } => {
+                self.u32(5);
+                self.u32(items.len() as u32);
+                for c in items {
+                    self.conj(c);
+                }
+                self.u32(*open as u32);
+                match tail {
+                    None => self.u32(0),
+                    Some(c) => {
+                        self.u32(1);
+                        self.conj(c);
+                    }
+                }
+            }
+            Term::DiffList(items) => {
+                self.u32(6);
+                self.u32(items.len() as u32);
+                for c in items {
+                    self.conj(c);
+                }
+            }
+        }
+    }
+    fn pattern(&mut self, p: &[PatElem]) {
+        self.u32(p.len() as u32);
+        for e in p {
+            match e {
+                PatElem::Char(c) => {
+                    self.u32(0);
+                    self.u32(*c as u32);
+                }
+                PatElem::Var(c) => {
+                    self.u32(1);
+                    self.u32(*c as u32);
+                }
+            }
         }
     }
     fn bits(&mut self, b: &BitSet) {
@@ -163,6 +326,74 @@ impl R<'_> {
     fn u32s(&mut self) -> Option<Vec<u32>> {
         let n = self.len()?;
         (0..n).map(|_| self.u32()).collect()
+    }
+    fn opt_str(&mut self) -> Option<Option<String>> {
+        match self.u32()? {
+            0 => Some(None),
+            1 => Some(Some(self.str()?)),
+            _ => None,
+        }
+    }
+    fn strs(&mut self) -> Option<Vec<String>> {
+        let n = self.len()?;
+        (0..n).map(|_| self.str()).collect()
+    }
+    fn char(&mut self) -> Option<char> {
+        char::from_u32(self.u32()?)
+    }
+    fn chars(&mut self) -> Option<Vec<char>> {
+        let n = self.len()?;
+        (0..n).map(|_| self.char()).collect()
+    }
+    fn conj(&mut self) -> Option<Conj> {
+        let n = self.len()?;
+        Some(Conj((0..n).map(|_| self.term()).collect::<Option<_>>()?))
+    }
+    fn conjs(&mut self) -> Option<Vec<Conj>> {
+        let n = self.len()?;
+        (0..n).map(|_| self.conj()).collect()
+    }
+    fn term(&mut self) -> Option<Term> {
+        Some(match self.u32()? {
+            0 => Term::Type(self.str()?),
+            1 => Term::Str(self.str()?),
+            2 => Term::Regex(self.str()?),
+            3 => Term::Coref(self.str()?),
+            4 => {
+                let n = self.len()?;
+                Term::Avm(
+                    (0..n)
+                        .map(|_| {
+                            Some(FeatVal {
+                                path: self.strs()?,
+                                value: self.conj()?,
+                            })
+                        })
+                        .collect::<Option<_>>()?,
+                )
+            }
+            5 => Term::List {
+                items: self.conjs()?,
+                open: self.u32()? != 0,
+                tail: match self.u32()? {
+                    0 => None,
+                    1 => Some(Box::new(self.conj()?)),
+                    _ => return None,
+                },
+            },
+            6 => Term::DiffList(self.conjs()?),
+            _ => return None,
+        })
+    }
+    fn pattern(&mut self) -> Option<Vec<PatElem>> {
+        let n = self.len()?;
+        (0..n)
+            .map(|_| match self.u32()? {
+                0 => Some(PatElem::Char(self.char()?)),
+                1 => Some(PatElem::Var(self.char()?)),
+                _ => None,
+            })
+            .collect()
     }
     fn bits(&mut self) -> Option<BitSet> {
         let n = self.len()?;
@@ -246,6 +477,31 @@ fn write(g: &Grammar) -> Vec<u8> {
     for e in &g.errors {
         w.str(&e.what);
         w.str(&e.msg);
+    }
+    w.u32(g.instances.len() as u32);
+    for i in &g.instances {
+        w.str(&i.name);
+        w.opt_str(&i.status);
+        w.conj(&i.body);
+        match &i.affix {
+            None => w.u32(0),
+            Some(a) => {
+                w.u32(1);
+                w.u32(a.prefix as u32);
+                w.u32(a.pairs.len() as u32);
+                for (input, output) in &a.pairs {
+                    w.pattern(input);
+                    w.pattern(output);
+                }
+            }
+        }
+        w.strs(&i.docstrings);
+    }
+    w.u32(g.letter_sets.len() as u32);
+    for l in &g.letter_sets {
+        w.u32(l.var as u32);
+        w.chars(&l.chars);
+        w.u32(l.wild as u32);
     }
     w.0
 }
@@ -338,9 +594,48 @@ fn read(bytes: &[u8]) -> Option<Grammar> {
             })
         })
         .collect::<Option<Vec<_>>>()?;
+    let ni = r.len()?;
+    let instances = (0..ni)
+        .map(|_| {
+            Some(Instance {
+                name: r.str()?,
+                status: r.opt_str()?,
+                body: r.conj()?,
+                affix: match r.u32()? {
+                    0 => None,
+                    1 => Some(Affix {
+                        prefix: r.u32()? != 0,
+                        pairs: {
+                            let n = r.len()?;
+                            (0..n)
+                                .map(|_| Some((r.pattern()?, r.pattern()?)))
+                                .collect::<Option<_>>()?
+                        },
+                    }),
+                    _ => return None,
+                },
+                docstrings: r.strs()?,
+            })
+        })
+        .collect::<Option<Vec<_>>>()?;
+    let nl = r.len()?;
+    let letter_sets = (0..nl)
+        .map(|_| {
+            Some(LetterSet {
+                var: r.char()?,
+                chars: r.chars()?,
+                wild: r.u32()? != 0,
+            })
+        })
+        .collect::<Option<Vec<_>>>()?;
     if r.i != bytes.len() {
         return None;
     }
+    let instance_index = instances
+        .iter()
+        .enumerate()
+        .map(|(i, inst): (usize, &Instance)| (inst.name.clone(), i))
+        .collect();
     Some(Grammar {
         ts,
         feats,
@@ -348,9 +643,54 @@ fn read(bytes: &[u8]) -> Option<Grammar> {
         intro,
         constraints,
         atomic,
-        instances: Vec::new(),
-        instance_index: HashMap::new(),
-        letter_sets: Vec::new(),
+        instances,
+        instance_index,
+        letter_sets,
         errors,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::{Duration, SystemTime};
+
+    #[test]
+    fn pruning_keeps_the_most_recently_used_grammars() {
+        let dir = std::env::temp_dir().join(format!("emdysi-prune-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let now = SystemTime::now();
+        for i in 0..6u64 {
+            let p = dir.join(format!("grammar-{i}.bin"));
+            std::fs::write(&p, b"x").unwrap();
+            std::fs::File::options()
+                .append(true)
+                .open(&p)
+                .unwrap()
+                .set_modified(now - Duration::from_secs(60 * (6 - i)))
+                .unwrap();
+        }
+        // The oldest, used again, is kept; other files are left alone.
+        touch(&dir.join("grammar-0.bin"));
+        std::fs::write(dir.join("sources-x.txt"), b"").unwrap();
+        prune(&dir);
+        let mut left: Vec<String> = std::fs::read_dir(&dir)
+            .unwrap()
+            .flatten()
+            .map(|e| e.file_name().to_string_lossy().into_owned())
+            .collect();
+        left.sort();
+        assert_eq!(
+            left,
+            [
+                "grammar-0.bin",
+                "grammar-3.bin",
+                "grammar-4.bin",
+                "grammar-5.bin",
+                "sources-x.txt"
+            ]
+        );
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
 }

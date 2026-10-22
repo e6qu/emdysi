@@ -27,9 +27,9 @@ cargo install --path crates/emdysi
 The first run compiles the English Resource Grammar, which takes a few
 seconds, and caches the result outside the repository (in
 `$EMDYSI_CACHE_DIR`, `$XDG_CACHE_HOME/emdysi` or `~/.cache/emdysi`;
-`%LOCALAPPDATA%\emdysi` on Windows). Later runs load it in about a
-second. Parses are cached there too, so checking a document again after
-an edit parses only the sentences that changed.
+`%LOCALAPPDATA%\emdysi` on Windows). Later runs load it in under a
+second. Parses are cached there too, so checking a document again after an
+edit parses only the sentences that changed.
 
 ## Check a draft
 
