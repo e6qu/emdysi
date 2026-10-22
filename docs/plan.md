@@ -77,7 +77,9 @@ unless stated:
      (10.0 per 1,000), of which 5 false (two in Austen, a preposition, a
      real-word swap the word list cannot rank, an unknown term), one
      a wrong fix of a real problem, and one answered since
-     (evaluation.md). With the first four guards the model adds 5 to the
+     (evaluation.md). On the first development set's sample with every
+     guard: 2 flags in 683 sentences, British usage and a real error,
+     none false. With the first four guards the model adds 5 to the
      grammar alone on the 34 pairs (12 of 34 caught), no flag on the
      corrected text.
 

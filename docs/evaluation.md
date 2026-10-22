@@ -2305,6 +2305,11 @@ real problem (the verb disagrees) with a wrong fix. Left false: the two
 in Austen (*contrive*, *the thoughtless*), *from 2024H2*, *Larded* and
 the unknown *sret*, 5 in 1,095 sentences, against 14 before.
 
+The first development set's sample again with every guard (2026-10-22,
+683 sentences, 3,878 s): 2 flags, the British *government … have
+argued* and the real error *all same ease*. No false flag is left there
+(4 before the guards, and *within an area* after the first three).
+
 On the 34 pairs, with the first four of these guards (2026-10-21; the
 last three came after): 12 of 34 caught, 0 flags on the corrected text,
 285 questions. The model adds 5 to the grammar alone: the 4 above and
