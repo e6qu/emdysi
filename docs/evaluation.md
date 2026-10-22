@@ -2791,6 +2791,70 @@ the 3,418 ids changed once. Two pairs of rules had shared an id (rule 2
 of `it-is` and rule 1 of `it-is-2`), and three of them, kept only
 through the shared id, fail their own examples; they are left out.
 
+### LanguageTool: more of the rule language, and a pack a quarter the size in memory
+
+Of the rules the converter left out (2026-10-22), 485 missed their own
+incorrect example. Most of those came from how emdysi's patterns split
+text into LanguageTool's tokens, not from features missing:
+
+- LanguageTool splits *didn't* into *did* and *n't*, and gives *n't*
+  the lemma *not*. A token may now start at *n't*, any-word tokens stop
+  before it, and *not* has the form *n't* (*I don't git a new one*).
+- A token that ends in punctuation may be followed by a letter (*dosn*
+  + *'* + *t*).
+- A tag alternation with `SENT_START` (`SENT_START|CC|PCT`) also
+  matches the start of the sentence (*Whet is wrong with you?*).
+- A token's text may follow its exceptions
+  (`<token><exception .../>hell</token>`). Until those exceptions were
+  converted, such tokens were skipped. Converted, the word was dropped
+  and the token matched any word: `HELL` flagged *We'll*, and 14 of the
+  real-error corpus's corrected paragraphs were flagged until this was
+  found.
+- A token of any one character (`.` in `.|…`) may be punctuation: `E_G`
+  flagged a correct *e.g.*
+
+Three features are now converted:
+- exceptions on the previous token (`scope="previous"`, lookbehinds);
+- exceptions that require a tag (`negate_pos`);
+- repeated tokens (`min`, `max`).
+
+A repeated token's conditions hold for every word it covers, written
+`"t3*=RB"` (docs/rules.md).
+
+With these the pack has 3,768 rules (3,418). 1,594 of them have
+part-of-speech conditions that pass their examples with the parse
+(`lt_validate`; 1,375). 18 rules that passed before now fail their
+examples. Their optional tokens now match more text, and the regex takes
+a path through them that the tag conditions, checked afterwards, reject
+(*I'll mange it* with *'* as a token and *ll* not an adverb).
+
+**Memory.** Compiled in full, the pack took 2.7 GB on main: each
+lookaround of a fancy-regex pattern is compiled as a regex of its own,
+and each carried Unicode's `\w`, a large automaton (12 MB for one rule,
+`I_AM_VB`). The converter now writes a class of Latin letters (with
+Latin-1 and Latin Extended-A and -B), digits and underscore instead of
+`\w`, and `[0-9]` for `\d`. The larger pack compiles to 0.72 GB, and
+the 11 rules over 30,000 characters of pattern are left out. A check
+with the pack on a twentieth of the first development set, one thread,
+peaked at 1.76 GB (2.61 GB with main's pack) and took 11 s instead of
+13. Words in
+other scripts are no longer word characters for these rules (a Greek or
+Cyrillic word is read as punctuation), which matters little in English
+prose.
+
+On the real-error corpus with the pack: 229 of 374 caught, as before;
+the rules added target other errors than these. On the first
+development set: 38 findings (37), the new one `PRP_PAST_PART` on *can
+run*. There the parse reads *run* as a past participle, and the rule's
+exception (*not if it is also a present-tense verb*) is checked against
+the parse's one reading, where LanguageTool checks every reading of the
+word.
+
+Converting found a crash in `en` itself, fixed. A word rule that
+matched just after a no-break space sliced a string inside that
+two-byte character (`in_url_or_path`) and panicked
+(test `urls_and_paths_after_a_no_break_space`).
+
 ### A lower time limit: 5 seconds instead of 10
 
 `timing` with `TIMEOUT=5` against the default 10 seconds, on the same
@@ -2961,6 +3025,13 @@ them bloomed a long ... relationship* (unknown *amicable*, and a
 construction the grammar lacks) and Austen's *Bingley is come*. Keeping
 it for capitalized unknown words only would still leave two of the six.
 Not adopted.
+
+Tried again on 2026-10-22, for the errors that are verified only: one
+more real error (227 → 228, *provides scoping*), and no new flag on the
+first development set or on 73 documents (7,125 sentences) of the second.
+The six false flags above were on the held-out set and other documents of
+the second, which that run did not reach; for one real error the
+condition stays.
 
 It showed a bug, fixed: the correction of *been* in *cannot been moved*
 was *beened*. A wrong form is corrected by its inflections, and a regular

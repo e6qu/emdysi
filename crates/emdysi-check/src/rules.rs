@@ -1909,7 +1909,7 @@ impl Rule {
                     let chars: Vec<char> = s.original.chars().collect();
                     let span =
                         |from: usize, to: usize| -> String { chars[from..to].iter().collect() };
-                    for e in grammar_errors_to_verify(s) {
+                    for e in grammar_errors(s) {
                         // Reported only with a correction the grammar
                         // accepts: see `verified_fix`.
                         let Some((from, to, fix)) = verified_fix(erg, s, &e, &names) else {
@@ -2303,15 +2303,7 @@ fn is_error_item(name: &str) -> bool {
 const MAX_ERRORS: usize = 2;
 
 pub fn grammar_errors(s: &crate::Sentence) -> Vec<GrammarError> {
-    named_errors(s, false, false)
-}
-
-/// As [`grammar_errors`], also on a sentence with words the lexicon does
-/// not know outside the errors: for errors that are then verified (see
-/// `verified_fix`), whose corrected sentence must parse strictly with
-/// those words as they are.
-fn grammar_errors_to_verify(s: &crate::Sentence) -> Vec<GrammarError> {
-    named_errors(s, false, true)
+    named_errors(s, false)
 }
 
 /// The errors of the best analyses of the grammar-error variant when they
@@ -2321,7 +2313,7 @@ fn grammar_errors_to_verify(s: &crate::Sentence) -> Vec<GrammarError> {
 /// writer meant is not. Empty when `grammar_errors` reports, or when the
 /// analyses do not each name exactly one error.
 pub fn grammar_error_alternatives(s: &crate::Sentence) -> Vec<GrammarError> {
-    named_errors(s, true, false)
+    named_errors(s, true)
 }
 
 /// Most analyses that disagree on the error that are worth reporting.
@@ -2331,7 +2323,7 @@ const MAX_ALTERNATIVES: usize = 5;
 /// alternative correction is offered.
 const MIN_SHARE: f64 = 0.05;
 
-fn named_errors(s: &crate::Sentence, alternatives: bool, unknown_ok: bool) -> Vec<GrammarError> {
+fn named_errors(s: &crate::Sentence, alternatives: bool) -> Vec<GrammarError> {
     let Some(p) = &s.mal_parse else {
         return Vec::new();
     };
@@ -2569,11 +2561,7 @@ fn named_errors(s: &crate::Sentence, alternatives: bool, unknown_ok: bool) -> Ve
         .collect();
     let placeholder = |f: usize, t: usize| crate::masked_code(&masked, f, t);
     let acronym = |f: usize, t: usize| crate::acronym(&original, f, t);
-    // (Unless every error is to be verified: then a correction must turn
-    // the sentence into one the grammar analyses strictly with the unknown
-    // words as they are, which rules out a failure that is theirs.)
     if !s.strict()
-        && !unknown_ok
         && generic_spans
             .iter()
             .filter(|&&(f, t)| !acronym(f, t) && !placeholder(f, t))

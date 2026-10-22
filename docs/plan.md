@@ -27,7 +27,7 @@ unless stated:
 | Style findings on edited text (six default packs) | 23.4 per 1,000 words, 1.7 of them warnings | 32.5 and 3.4 before quoted text, duplicate passives, noun stacks and known acronyms were dealt with (2026-10-22); the rest are suggestions the rules exist for (passives, long sentences) |
 | Gold analyses (ERG test suites) | MRS identical for all 2,966 reproduced; ranker 81.7% exact match held out | |
 | Speed | about 1.3 s of parsing per sentence of edited text (held-out set, cold parse cache, 2026-10-18), plus 0.25 s for the grammar-error variant; a recheck parses only the sentences that changed (the README: 71 s, then 2.8 s) | 1.7 s of CPU per sentence before giving up after an exhausted search, 2.1 s before the grammar-error variant was gated (2026-10-17); parsing is most of the time |
-| Rule data | 3,418 LanguageTool rules (1,375 of them checked against the parse's parts of speech or chunks), 98 slop rules, 26 GitLab rules (opt-in packs); codespell, CMUdict, UniMorph, Open English WordNet, UD English EWT vendored | emdysi is AGPL-3.0-or-later since 2026-10-17 (decision D15), so share-alike and GPL data can be used |
+| Rule data | 3,768 LanguageTool rules (1,594 of them checked against the parse's parts of speech or chunks; 0.7 GB compiled in full, 2.7 before 2026-10-22), 98 slop rules, 26 GitLab rules (opt-in packs); codespell, CMUdict, UniMorph, Open English WordNet, UD English EWT vendored | emdysi is AGPL-3.0-or-later since 2026-10-17 (decision D15), so share-alike and GPL data can be used |
 
 ## Practical use
 
@@ -181,15 +181,19 @@ two hours and was stopped on 2026-10-22; it needs a machine to itself).
    headings, reader hooks), and the `slop` pack adds bheijden/slop's
    tested patterns. The judgements no pattern can make (explaining the
    obvious, fake specificity) wait on the model.
-6. **More LanguageTool rules.** 1,375 rules now check parts of speech
-   or chunks against the parse, in their patterns or their antipatterns
-   (chunks and tagged antipatterns since 2026-10-21), and suggestions
-   inflect, change case and rewrite matched words. The rest need
-   exceptions or filters the converter does not take, or fail their
-   examples with the parse. With the pack two more real grammar errors
-   are caught (223 of 374); on the first development set it gives 15
-   findings per 1,000 sentences, mostly style, 4 of them from the rules
-   added on 2026-10-21.
+6. **More LanguageTool rules.** 1,594 rules now check parts of speech
+   or chunks against the parse, in their patterns or their antipatterns,
+   and suggestions inflect, change case and rewrite matched words. Since
+   2026-10-22 the converter takes LanguageTool's *n't* tokens,
+   `SENT_START` in alternations, previous-token and `negate_pos`
+   exceptions and repeated tokens (3,768 rules, from 3,418). It also
+   writes a narrower word class than Unicode's `\w`, so the pack
+   compiles to 0.7 GB instead of 2.7 (evaluation.md). Left out: rules
+   that fail their examples with the parse (666), tags the parse does not
+   give (242), `<and>`/`<or>` and match attributes, filters, and the rules
+   LanguageTool itself turns off. With the pack two more real errors are
+   caught (229 of 374); on the first development set it gives 15
+   findings per 1,000 sentences, mostly style.
 
 7. **Parse ranking.** The shipped averaged perceptron is 81.7% exact
    match held out and right for 57 of 97 judged machine-written
