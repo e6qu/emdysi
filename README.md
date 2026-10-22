@@ -77,7 +77,21 @@ en packs
 ```
 
 Input is plain text or Markdown (chosen from the file extension, or with
-`--input`); reports are plain text or Markdown (`--format`). `en --help`
+`--input`). Reports are plain text or Markdown for people, and JSON or
+SARIF for programs (`--format`):
+
+- `--format json` prints one object per file: each diagnostic with its
+  rule, severity, message, byte offsets, lines and columns (from 1,
+  columns in characters, the end exclusive), the text found, and the
+  replacement `en fix` applies (`fix`) or other candidates
+  (`suggestions`). `en parse --format json` gives each sentence's
+  analysis: whether it parsed with a full grammatical reading, its tree,
+  and how it is ambiguous.
+- `--format sarif` prints one SARIF 2.1.0 log for all files, with fixes,
+  for code review and CI tools (GitHub code scanning, for one).
+
+`--fail-on warning` makes the exit status 1 when a warning or error is
+found (grammar errors the grammar can prove are warnings). `en --help`
 lists every option.
 
 The default rule packs are:

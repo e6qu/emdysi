@@ -873,3 +873,52 @@ fn a_mass_noun_has_languagetools_countability_tag() {
         w.le_type
     );
 }
+
+#[test]
+fn json_and_sarif_reports() {
+    use emdysi_check::report::{OutputFormat, Sarif, json_str, render};
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let checker = Checker::new(packs());
+    let opts = Options {
+        parse: false,
+        threads: 1,
+        ..Options::default()
+    };
+    // Columns count characters; quotes and newlines are escaped.
+    let src = "Caf\u{e9} \u{201c}tab\u{201d}.\nWe recieved \"it\".\n";
+    let a = analyze(&erg, src, Format::Plain, &opts);
+    let d = checker.check(&erg, &a);
+    let json = render(&a, &d, "a \"b\".txt", OutputFormat::Json);
+    assert_eq!(json.lines().count(), 1, "{json}");
+    assert!(
+        json.starts_with("{\"file\":\"a \\\"b\\\".txt\",\"counts\":{"),
+        "{json}"
+    );
+    assert!(
+        json.contains(
+            "\"rule\":\"core.spelling\",\"severity\":\"warning\",\"message\":\"Unknown word 'recieved'. Did you mean 'received'?\",\"start\":20,\"end\":28,\"line\":2,\"column\":4,\"end_line\":2,\"end_column\":12,\"text\":\"recieved\",\"fix\":\"received\""
+        ),
+        "{json}"
+    );
+    assert_eq!(json_str("a\tb\u{1}\\"), "\"a\\tb\\u0001\\\\\"");
+
+    let mut sarif = Sarif::default();
+    sarif.add(&a, &d, "notes.txt");
+    let log = sarif.render();
+    assert!(log.starts_with("{\"version\":\"2.1.0\""), "{log}");
+    assert!(
+        log.contains("\"columnKind\":\"unicodeCodePoints\""),
+        "{log}"
+    );
+    assert!(
+        log.contains(
+            "\"region\":{\"startLine\":2,\"startColumn\":4,\"endLine\":2,\"endColumn\":12}"
+        ),
+        "{log}"
+    );
+    assert!(
+        log.contains("\"insertedContent\":{\"text\":\"received\"}"),
+        "{log}"
+    );
+    assert!(log.contains("{\"id\":\"core.spelling\"}"), "{log}");
+}

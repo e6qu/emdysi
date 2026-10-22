@@ -88,7 +88,10 @@ OPTIONS:
                            (a directory with accept.txt and reject.txt)
     --disable RULE         skip a rule id, or a prefix ending in '*' (repeatable)
     --input plain|markdown input format (default: from the file extension; stdin is plain)
-    --format plain|markdown  output format (default: plain)
+    --format FORMAT        output format: plain (default), markdown, json (one
+                           object per file; byte offsets, lines and columns,
+                           fixes) or sarif (with `check`: one SARIF 2.1.0 log
+                           for code review and CI tools)
     --no-parse             tokenize only; skip grammar-based checks
     --max-tokens N         do not parse sentences longer than N tokens (default 100)
     --timeout SECS         time limit per sentence (default 10)
@@ -217,6 +220,8 @@ fn parse_args() -> Result<Args, String> {
                 a.output = match need(&mut it, &arg)?.as_str() {
                     "plain" | "text" => OutputFormat::Plain,
                     "markdown" | "md" => OutputFormat::Markdown,
+                    "json" => OutputFormat::Json,
+                    "sarif" => OutputFormat::Sarif,
                     v => return Err(format!("unknown output format {v:?}")),
                 }
             }
@@ -403,6 +408,9 @@ fn run() -> Result<bool, String> {
     if args.command == "rewrite" || args.command == "parse" {
         args.opts.meaning = true;
     }
+    if args.output == OutputFormat::Sarif && args.command != "check" {
+        return Err("--format sarif is for `check`".into());
+    }
     let docs = inputs(&args.files, args.input)?;
     let mut erg = Erg::load(&args.grammar).map_err(|e| format!("loading grammar: {e}"))?;
     // Parses of sentences seen before are reused: rechecking an edited
@@ -416,6 +424,7 @@ fn run() -> Result<bool, String> {
     checker.disabled = args.disabled.clone();
     let mut model = load_model(&args)?;
     let mut ok = true;
+    let mut sarif = emdysi_check::report::Sarif::default();
     if args.decide_readings && model.is_none() {
         return Err("--decide-readings needs a model (--model, --server or --lm)".into());
     }
@@ -479,9 +488,16 @@ fn run() -> Result<bool, String> {
                 if diags.iter().any(|d| d.severity <= args.fail_on) {
                     ok = false;
                 }
-                print!("{}", render(&a, &diags, &name, args.output));
+                if args.output == OutputFormat::Sarif {
+                    sarif.add(&a, &diags, &name);
+                } else {
+                    print!("{}", render(&a, &diags, &name, args.output));
+                }
             }
         }
+    }
+    if args.output == OutputFormat::Sarif {
+        print!("{}", sarif.render());
     }
     if let Some(dir) = &cache {
         let mb = std::env::var("EMDYSI_CACHE_MB")
