@@ -2872,7 +2872,12 @@ lexical rather than structural: *more CPU than they need* and *than
 they requested* parse, *than they want* and *than they request* do not,
 and *took longer than* fails with any complement (*It took longer.*
 parses); the corpora have one such sentence (*take longer than
-running*). Both are left for now.
+running*). Both are left for now. So is *short for* with an adjective: an
+entry like the ERG's *short of brilliant* (`short_a2`) with an empty
+*for* that takes an adjective parses *The dyn keyword is short for
+dynamic*, but that *for* would stand before any adjective (*for good*,
+*for free*), and one sentence of the corpora does not pay for the
+validation a grammar change needs (every parse cache cold, hours).
 
 Measured with the parse cache cold: false flags 4 on the first
 development set and 31 on the held-out set, the same flags as before;
