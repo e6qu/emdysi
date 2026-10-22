@@ -235,6 +235,9 @@ pub struct TagCheck {
     /// chose (`forms`, `not_forms`: see [`crate::dict::word_tags`]); needs
     /// no parse.
     lexical: bool,
+    /// Every word the group covers must meet the condition, not just one
+    /// (`"t3*=RB"`: a repeated token, such as a run of adverbs).
+    every: bool,
 }
 
 /// A pattern compiled when first used.
@@ -3375,8 +3378,13 @@ fn conditions(t: &Table) -> Result<Vec<TagCheck>, String> {
         let (group, tag) = c
             .split_once('=')
             .ok_or_else(|| format!("bad tag condition {c:?}"))?;
+        let (group, every) = match group.strip_suffix('*') {
+            Some(g) => (g, true),
+            None => (group, false),
+        };
         Ok(TagCheck {
             group: group.to_string(),
+            every,
             tag: Regex::new(&format!("^(?:{tag})$"))
                 .map_err(|e| format!("bad tag pattern: {e}"))?,
             negate,
@@ -3404,19 +3412,33 @@ fn tag_holds(s: &crate::Sentence, m: &fancy_regex::Captures<'_, str>, c: &TagChe
     let to = from + g.as_str().chars().count();
     let found = s.best().is_some_and(|r| {
         let covered = |w: &&emdysi_parse::Word| w.from < to && from < w.to;
-        if c.chunk {
+        // The tags of each covered word.
+        let tags: Vec<Vec<String>> = if c.chunk {
             r.words
                 .iter()
                 .zip(crate::tags::chunks(&r.words))
                 .filter(|(w, _)| covered(w))
-                .flat_map(|(_, cs)| cs)
-                .any(|t| c.tag.is_match(&t).unwrap_or(false))
+                .map(|(_, cs)| cs)
+                .collect()
         } else {
             r.words
                 .iter()
                 .filter(covered)
-                .flat_map(crate::tags::penn_all)
-                .any(|t| c.tag.is_match(t).unwrap_or(false))
+                .map(|w| {
+                    crate::tags::penn_all(w)
+                        .into_iter()
+                        .map(str::to_string)
+                        .collect()
+                })
+                .collect()
+        };
+        let has = |ts: &Vec<String>| ts.iter().any(|t| c.tag.is_match(t).unwrap_or(false));
+        // With `every` (and not negated), each word must have the tag;
+        // negated, none may.
+        if c.every && !c.negate {
+            !tags.is_empty() && tags.iter().all(has)
+        } else {
+            tags.iter().any(has)
         }
     });
     found != c.negate
@@ -3428,7 +3450,11 @@ fn tag_holds(s: &crate::Sentence, m: &fancy_regex::Captures<'_, str>, c: &TagChe
 /// or more letters, the first lower case (|github.io|, |main.rs|, not
 /// |a.m.|, |e.g.| or |B.Sc|).
 fn in_url_or_path(text: &str, from: usize, to: usize) -> bool {
-    let start = text[..from].rfind(char::is_whitespace).map_or(0, |i| i + 1);
+    // After the space (which may be more than a byte: a no-break space).
+    let start = text[..from]
+        .char_indices()
+        .rfind(|(_, c)| c.is_whitespace())
+        .map_or(0, |(i, c)| i + c.len_utf8());
     let end = text[to..]
         .find(char::is_whitespace)
         .map_or(text.len(), |i| to + i);
@@ -3491,5 +3517,15 @@ mod tests {
         assert_eq!(super::irregular_number("was"), ["were"]);
         assert_eq!(super::irregular_number("are"), ["is", "am"]);
         assert!(super::irregular_number("went").is_empty());
+    }
+
+    #[test]
+    fn urls_and_paths_after_a_no_break_space() {
+        // A no-break space is two bytes: the word after it starts there.
+        let t = "see\u{a0}main.rs now";
+        let from = t.find("main").unwrap();
+        assert!(super::in_url_or_path(t, from, from + 4));
+        let t = "a\u{a0}cat";
+        assert!(!super::in_url_or_path(t, 3, 6));
     }
 }
