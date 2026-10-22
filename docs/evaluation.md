@@ -2343,6 +2343,15 @@ under `screen_surprise`, 3 nats), 7 were screened in without the
 writer's edit among the versions shown, and 4 a perfect chooser misses
 too. Screening is the largest loss.
 
+Screening at 2 nats instead of 3 (measured and rejected, 2026-10-22)
+catches 13 of the 34 instead of 12 (*controls* to *control*), asking
+350 questions instead of 285. On the first development set's sample it
+flags 4 of 683 sentences instead of 2: the same two (British usage, *all
+same ease*), *Perhaps my favorite feature* (*Is perhaps*, false) and
+*newly stable to the 2018 edition* (*in*, arguable), and it takes about
+15,000 s instead of 3,878. One error more is not worth a false flag and
+four times the time.
+
 ## Doubled words and 'allows to', without a model
 
 Looking at what the model gained turned up errors no model is needed

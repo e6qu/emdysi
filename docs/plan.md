@@ -79,8 +79,10 @@ unless stated:
      a wrong fix of a real problem, and one answered since
      (evaluation.md). On the first development set's sample with every
      guard: 2 flags in 683 sentences, British usage and a real error,
-     none false. With the first four guards the model adds 5 to the
-     grammar alone on the 34 pairs (12 of 34 caught), no flag on the
+     none false. Screening at 2 nats instead of 3 adds 1 of the 34
+     pairs, a false flag and four times the time: rejected. With the
+     first four guards the model adds 5 to the grammar alone on the 34
+     pairs (12 of 34 caught), no flag on the
      corrected text.
 
    - Gemma 3 12B (2026-10-21, fits in 16 GB with `EMDYSI_LM_MMAP=0`)
