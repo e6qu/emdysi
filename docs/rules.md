@@ -72,7 +72,7 @@ expanded the same way. `needs` lists words (lowercase) one of which a
 sentence must contain for the pattern to be tried (as a whole word if it
 is all letters and digits, else anywhere); the pattern is then compiled
 when a sentence first contains one, and matches inside a URL or file path
-are skipped. The `languagetool` pack, two and a half thousand such rules, loads in a
+are skipped. The `languagetool` pack, three and a half thousand such rules, loads in a
 fraction of a second this way.
 
 `tags` and `not_tags` put part-of-speech conditions on named groups, as
@@ -81,8 +81,25 @@ sentence's best reading whose Penn Treebank tag matches the pattern, or,
 for `not_tags`, none whose tag does. The tags come from the parse: the
 lexical type and inflectional rules of each word (`n_pl_olr` makes NNS,
 `aj_*-cmp_le` JJR; *stay* in *will stay* is both VB and VBP, since the
-grammar gives both one rule). A rule with conditions needs a parse, and
-does nothing on a sentence without one.
+grammar gives both one rule). A singular common noun also has
+LanguageTool's countability tag, `NN:U` (a mass noun) or `NN:UN` (mass
+or count), after the ERG's noun type. A rule with conditions needs a
+parse, and does nothing on a sentence without one.
+
+`chunks` and `not_chunks` do the same with chunk tags, as LanguageTool's
+chunker gives them (`"t3=E-NP.*"`): base noun phrases are `B-NP-…`,
+`I-NP-…` and `E-NP-…` (first, inner and last word, a one-word phrase both
+`B-` and `E-`), singular or plural after the head (`B-NP-plural`); verb
+groups `B-VP`, `I-VP`; prepositions `B-PP`; adverbs outside a verb group
+`B-ADVP`; predicative adjectives `B-ADJP`; subordinating conjunctions
+`B-SBAR`; anything else `O`. They are derived from the parse's tags
+(`emdysi_check::tags::chunks`).
+
+`antipatterns` is a list of patterns with conditions of their own, each
+an inline table with `pattern` and any of the four condition lists
+(`antipatterns = [{ pattern = '(?i)\b(?P<t1>run)\b', tags =
+["t1=NN.*"] }]`): a sentence where one matches with its conditions met is
+skipped, as for `unless`.
 
 ### `construction`
 
