@@ -7,7 +7,7 @@ use std::time::Duration;
 
 use emdysi_check::report::{OutputFormat, ParseDetails, count, render, render_parses};
 use emdysi_check::{Checker, Format, Options, Pack, Severity, analyze, apply_fixes};
-use emdysi_parse::{Erg, default_grammar_dir};
+use emdysi_parse::{Erg, grammar_dir};
 
 const BUILTIN_PACKS: &[(&str, &str)] = &[
     ("core", include_str!("../../../packs/core.toml")),
@@ -127,7 +127,8 @@ OPTIONS:
                            a GGUF model)
     --temperature T        with `decide`, calibration temperature (default 1)
     --samples N            with `rewrite`, model rewrites per sentence (default 3)
-    --grammar DIR          grammar directory (default: the bundled ERG)
+    --grammar DIR          grammar directory (default: EMDYSI_GRAMMAR, else the
+                           ERG built into en)
     --fail-on error|warning|suggestion  exit with status 1 if a diagnostic this
                            severe or worse is found (default: error)
 ";
@@ -159,7 +160,7 @@ struct Args {
     decide_readings: bool,
     context_readings: bool,
     samples: usize,
-    grammar: PathBuf,
+    grammar: Option<PathBuf>,
     fail_on: Severity,
     cache: bool,
 }
@@ -197,7 +198,7 @@ fn parse_args() -> Result<Args, String> {
         decide_readings: false,
         context_readings: true,
         samples: 3,
-        grammar: default_grammar_dir(),
+        grammar: None,
         fail_on: Severity::Error,
         cache: true,
     };
@@ -273,7 +274,7 @@ fn parse_args() -> Result<Args, String> {
                     .parse()
                     .map_err(|_| "--samples needs a number")?
             }
-            "--grammar" => a.grammar = PathBuf::from(need(&mut it, &arg)?),
+            "--grammar" => a.grammar = Some(PathBuf::from(need(&mut it, &arg)?)),
             "--fail-on" => {
                 a.fail_on = Severity::parse(&need(&mut it, &arg)?)
                     .ok_or("--fail-on needs error, warning or suggestion")?
@@ -412,7 +413,11 @@ fn run() -> Result<bool, String> {
         return Err("--format sarif is for `check`".into());
     }
     let docs = inputs(&args.files, args.input)?;
-    let mut erg = Erg::load(&args.grammar).map_err(|e| format!("loading grammar: {e}"))?;
+    let dir = match &args.grammar {
+        Some(d) => d.clone(),
+        None => grammar_dir().map_err(|e| format!("finding the grammar: {e}"))?,
+    };
+    let mut erg = Erg::load(&dir).map_err(|e| format!("loading grammar: {e}"))?;
     // Parses of sentences seen before are reused: rechecking an edited
     // document parses only the sentences that changed.
     let cache = args.cache.then(emdysi_parse::checker_cache_dir).flatten();

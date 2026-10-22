@@ -75,6 +75,73 @@ pub fn default_grammar_dir() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../grammar/erg")
 }
 
+mod embedded {
+    include!(concat!(env!("OUT_DIR"), "/grammar_files.rs"));
+}
+
+/// The grammar to use when none is given: `$EMDYSI_GRAMMAR`; else the
+/// repository's (see [`default_grammar_dir`]) while it is there, so that
+/// edits to it apply; else the copy embedded in the binary, written once
+/// to the cache directory (`grammar-HASH` in
+/// [`emdysi_hpsg::cache::default_dir`], or the temporary directory).
+pub fn grammar_dir() -> Result<PathBuf, Error> {
+    if let Some(d) = std::env::var_os("EMDYSI_GRAMMAR") {
+        return Ok(PathBuf::from(d));
+    }
+    let repo = default_grammar_dir();
+    if repo.join("english.tdl").exists() {
+        return Ok(repo);
+    }
+    embedded_grammar_dir()
+}
+
+/// The grammar embedded in the binary, written to the cache directory on
+/// first use (see [`grammar_dir`]).
+pub fn embedded_grammar_dir() -> Result<PathBuf, Error> {
+    embedded_grammar_in(&emdysi_hpsg::cache::default_dir().unwrap_or_else(std::env::temp_dir))
+}
+
+/// The grammar embedded in the binary, written to `grammar-HASH` in
+/// `cache` unless it is there already.
+pub fn embedded_grammar_in(cache: &Path) -> Result<PathBuf, Error> {
+    let root = cache.join(format!("grammar-{}", embedded::GRAMMAR_HASH));
+    let done = root.join(".complete");
+    if !done.exists() {
+        // Written under another name and renamed, so that a run started
+        // meanwhile never reads half a grammar.
+        let tmp = root.with_extension(format!("tmp{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&tmp);
+        let written = embedded::GRAMMAR_FILES
+            .iter()
+            .chain([&(".complete", &b""[..])])
+            .try_for_each(|(rel, bytes)| {
+                let f = tmp.join(rel);
+                if let Some(d) = f.parent() {
+                    std::fs::create_dir_all(d)?;
+                }
+                std::fs::write(&f, bytes)
+            });
+        if let Err(e) = written {
+            let _ = std::fs::remove_dir_all(&tmp);
+            return Err(Error(format!(
+                "writing the grammar to {}: {e}",
+                tmp.display()
+            )));
+        }
+        if std::fs::rename(&tmp, &root).is_err() {
+            // Another run wrote it first.
+            let _ = std::fs::remove_dir_all(&tmp);
+            if !done.exists() {
+                return Err(Error(format!(
+                    "could not write the grammar to {}",
+                    root.display()
+                )));
+            }
+        }
+    }
+    Ok(root.join("erg"))
+}
+
 pub struct Erg {
     pub grammar: Grammar,
     pub repp: Repp,

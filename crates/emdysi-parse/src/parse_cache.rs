@@ -256,8 +256,9 @@ pub(crate) fn store(dir: &Path, key: &str, p: &Parse) {
         std::process::id(),
         std::thread::current().id()
     ));
-    if std::fs::write(&tmp, &out).is_ok() {
-        let _ = std::fs::rename(&tmp, &file);
+    // A failed write (a full disk) leaves no partial file behind.
+    if std::fs::write(&tmp, &out).is_err() || std::fs::rename(&tmp, &file).is_err() {
+        let _ = std::fs::remove_file(&tmp);
     }
 }
 

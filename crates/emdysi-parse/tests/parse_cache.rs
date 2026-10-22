@@ -93,3 +93,24 @@ fn pruning_keeps_the_most_recently_used() {
     assert!(dir.join("v1/used").exists());
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+#[test]
+fn the_embedded_grammar_is_the_repositorys() {
+    let cache = std::env::temp_dir().join(format!("emdysi-embedded-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&cache);
+    let dir = emdysi_parse::embedded_grammar_in(&cache).unwrap();
+    assert!(dir.starts_with(&cache));
+    let repo = default_grammar_dir();
+    for rel in ["english.tdl", "ace/config.tdl", "../emdysi/settings.cfg"] {
+        assert_eq!(
+            std::fs::read(dir.join(rel)).unwrap(),
+            std::fs::read(repo.join(rel)).unwrap(),
+            "{rel}"
+        );
+    }
+    // Written once: a second call finds it.
+    assert_eq!(emdysi_parse::embedded_grammar_in(&cache).unwrap(), dir);
+    let erg = Erg::load(&dir).unwrap();
+    assert!(!erg.parse("The cat sleeps.").unwrap().readings.is_empty());
+    let _ = std::fs::remove_dir_all(&cache);
+}

@@ -66,6 +66,23 @@ edited text in five genres the checker claims about 2 errors per 1,000
 sentences of the development set
 ([evaluation](docs/evaluation.md#false-flags-on-edited-text)).
 
+## Install
+
+Each tagged [release](https://github.com/e6qu/emdysi/releases) attaches
+`en` for Linux (x86-64) and macOS (Apple silicon). Or build it with Rust
+1.85 or later:
+
+```sh
+cargo install --git https://github.com/e6qu/emdysi emdysi
+```
+
+The binary is self-contained: the grammar, rule packs and word lists are
+built into it. On first use it writes the grammar to its cache directory
+(below) and compiles it, which takes a few seconds; `--grammar DIR` or
+`EMDYSI_GRAMMAR` uses another copy. It needs about 2 GB of memory while
+parsing. Local models are optional (`cargo install` with `--features
+llama` for GGUF files; any OpenAI-compatible server works without it).
+
 ## Usage
 
 ```sh

@@ -83,8 +83,9 @@ impl Grammar {
             // Write to a temporary name and rename, so concurrent readers
             // never see a partial file.
             let tmp = p.with_extension(format!("tmp{}", std::process::id()));
-            if std::fs::write(&tmp, bytes).is_ok() {
-                let _ = std::fs::rename(&tmp, p);
+            // A failed write (a full disk) leaves no partial file behind.
+            if std::fs::write(&tmp, bytes).is_err() || std::fs::rename(&tmp, p).is_err() {
+                let _ = std::fs::remove_file(&tmp);
             }
         }
         Ok(g)
