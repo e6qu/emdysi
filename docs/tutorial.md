@@ -251,6 +251,13 @@ core: Spelling and grammaticality, from the English Resource Grammar's lexicon a
   core.be-have (warning)
   core.his-this (warning)
   core.is-verb (warning)
+  core.modal-verb-s (warning)
+  core.to-verb-s (warning)
+  core.pronoun-verb-s (warning)
+  core.let-verb-s (warning)
+  core.every-plural (warning)
+  core.each-plural (warning)
+  core.this-noun-verb (warning)
   core.double-article (warning)
 ai-tells: Vocabulary and constructions that are over-represented in machine-written prose.
   ai-tells.vocabulary (warning)

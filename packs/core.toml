@@ -206,6 +206,136 @@ acceptable = [
 ]
 
 [[rule]]
+id = "core.modal-verb-s"
+kind = "regex"
+severity = "warning"
+message = "'{match}' after a modal verb: the verb takes its base form ('{{0}}')."
+pattern = '(?<![\w-])(?<!the )(?<!\ba )(?<!an )(?<!this )(?<!that )(?<!your )(?<!its )(?<!free )\b(?:[Cc]an|[Cc]ould|[Ww]ill|[Ww]ould|[Ss]hould|[Ss]hall|[Mm]ay|[Mm]ight|[Mm]ust)\s+(?:(?:also|either|not|only|still|then|now|just|always|never|first|automatically|easily|simply|optionally|directly|already|even|usually|often|again|really|actually)\s+)?(?!(?:is|has|was|does|this|its|us|as|thus|less|yes|news|series|means|amends|always|perhaps|whereas|unless|towards|afterwards|besides|sometimes|nevertheless)\b)(?<m>[a-z]+s)\b'
+forms = ["m=VBZ"]
+transforms = ["m\u0009\u0009\u0009\u0009VB"]
+replace = "{{0}}"
+expand = true
+description = "After 'can', 'will', 'must' and the other modals, with at most an adverb between, a word that can be a verb's -s form is one: the verb takes its base form ('can either limits' to 'limit'). The grammar alone reads 'A quota can either limits' as a compound 'quota can' and a plural noun. Not after a determiner ('the can opens', 'free will helps'). In none of the 41,364 sentences of the development and held-out sets."
+examples = ["A ResourceQuota can either limits the quantity of objects.\n"]
+acceptable = [
+  "A ResourceQuota can either limit the quantity of objects.\n",
+  "The can opens easily.\n",
+  "Free will helps nobody.\n",
+  "You must always check the limits.\n",
+]
+
+[[rule]]
+id = "core.to-verb-s"
+kind = "regex"
+severity = "warning"
+message = "'{match}' after 'to': the verb takes its base form ('{{0}}')."
+pattern = '\b(?:need|needs|needed|want|wants|wanted|have|has|had|able|try|tries|tried|order|how|likely|unable)\s+to\s+(?:(?:also|either|not|only|still|then|now|just|always|never|first|automatically|easily|simply|optionally|directly|already|even|usually|often|again|really|actually)\s+)?(?!(?:is|has|was|does|this|its|us|as|thus|less|yes|news|series|means|amends|always|perhaps|whereas|unless|towards|afterwards|besides|sometimes|nevertheless)\b)(?<m>[a-z]+s)\b'
+forms = ["m=VBZ"]
+transforms = ["m\u0009\u0009\u0009\u0009VB"]
+replace = "{{0}}"
+expand = true
+description = "After 'needs to', 'able to', 'how to' and other words that take an infinitive, a word that can be a verb's -s form is one: the verb takes its base form ('needs to knows' to 'know'). Not after words 'to' can also follow as a preposition ('used to things', 'going to parties'). In none of the 41,364 sentences of the development and held-out sets."
+examples = ["It only needs to knows that there is some scope.\n"]
+acceptable = [
+  "It only needs to know that there is some scope.\n",
+  "She is used to crowds.\n",
+  "They are going to parties.\n",
+]
+
+[[rule]]
+id = "core.pronoun-verb-s"
+kind = "regex"
+severity = "warning"
+message = "'{match}' after 'I', 'you', 'we' or 'they': the verb takes its base form ('{{0}}')."
+pattern = '(?:^|[.;:!?,]\s+|\b(?:and|but|if|when|that|so|because|as|once|unless|while|before|after|until|where|then)\s+)(?:I|you|You|we|We|they|They)\s+(?:(?:also|either|not|only|still|then|now|just|always|never|first|automatically|easily|simply|optionally|directly|already|even|usually|often|again|really|actually)\s+)?(?!(?:is|has|was|does|this|its|us|as|thus|less|yes|news|series|means|amends|always|perhaps|whereas|unless|towards|afterwards|besides|sometimes|nevertheless)\b)(?<m>[a-z]+s)\s+(?:to|the|a|an|that|it|its|this|these|those|their|your|our|his|her|them|us|you|me|him|how|what|whether|if|which|who|all|any|some|each|every|no|more|on|in|for|with|from|of|up|out|down)\b'
+forms = ["m=VBZ"]
+transforms = ["m\u0009\u0009\u0009\u0009VB"]
+replace = "{{0}}"
+expand = true
+description = "A clause that opens with 'I', 'you', 'we' or 'they' and a word that can be a verb's -s form, followed by what a verb takes ('to', 'the', 'it'...): the verb does not agree ('you wants to receive'). The grammar alone reads 'you wants' as 'you' and a plural noun. In none of the 41,364 sentences of the development and held-out sets."
+examples = ["If there are many pods and you wants to receive chunks of them, ask for them.\n"]
+acceptable = [
+  "If there are many pods and you want to receive chunks of them, ask for them.\n",
+  "You students in the back can sit down.\n",
+]
+
+[[rule]]
+id = "core.let-verb-s"
+kind = "regex"
+severity = "warning"
+message = "'{match}' after 'let', 'make' or 'help' and its object: the verb takes its base form ('{{0}}')."
+pattern = '\b(?:let|lets|make|makes|made|help|helps|helped)\s+(?:you|us|them|me|him|her)\s+(?!(?:is|has|was|does|this|its|us|as|thus|less|yes|news|series|means|amends|always|perhaps|whereas|unless|towards|afterwards|besides|sometimes|nevertheless)\b)(?<m>[a-z]+s)\s+(?:to|the|a|an|that|it|its|this|these|those|their|your|our|his|her|them|us|you|me|him|how|what|whether|if|which|who|all|any|some|each|every|no|more|on|in|for|with|from|of|up|out|down)\b'
+forms = ["m=VBZ"]
+transforms = ["m\u0009\u0009\u0009\u0009VB"]
+replace = "{{0}}"
+expand = true
+description = "After 'let', 'make' or 'help' and an object pronoun, the next verb takes its base form ('let you controls the rate' to 'control'). Not 'make him amends'. In none of the 41,364 sentences of the development and held-out sets."
+examples = ["Scaling policies also let you controls the rate of change.\n"]
+acceptable = [
+  "Scaling policies also let you control the rate of change.\n",
+  "I do not know how you will ever make him amends for his kindness.\n",
+]
+
+[[rule]]
+id = "core.every-plural"
+kind = "regex"
+severity = "warning"
+message = "'{match}' after 'every' or 'another': the noun is singular ('{{0}}')."
+pattern = '\b(?:every|Every|another|Another)\s+(?!(?:is|has|was|does|this|its|us|as|thus|less|yes|news|series|means|amends|always|perhaps|whereas|unless|towards|afterwards|besides|sometimes|nevertheless)\b)(?<m>[A-Za-z]+s)\b(?=\s*(?:[.,;:)]|$|\s(?:as|in|of|on|at|to|for|with|is|has|was|that|which|and|or|by|from)\b))'
+forms = ["m=NNS"]
+not_forms = ["m=NN"]
+transforms = ["m\u0009\u0009\u0009\u0009NN"]
+replace = "{{0}}"
+expand = true
+description = "'Every' and 'another' take a singular noun ('every operations' to 'operation'). Only a word that is a plural noun and never a singular one ('series' and 'means' are both), before punctuation or a word a noun phrase ends before. Twice in the held-out set, both real errors ('for every operations on every endpoints')."
+examples = ["All resources consumed and produced for every operations on every endpoints.\n"]
+acceptable = [
+  "All resources consumed and produced for every operation on every endpoint.\n",
+  "Every means was tried.\n",
+  "Every few days, we check.\n",
+  "Every three months, it runs.\n",
+]
+
+[[rule]]
+id = "core.each-plural"
+kind = "regex"
+severity = "warning"
+message = "'{match}' after 'each': the noun is singular ('{{0}}')."
+pattern = '\b(?:each|Each)\s+(?!(?:is|has|was|does|this|its|us|as|thus|less|yes|news|series|means|amends|always|perhaps|whereas|unless|towards|afterwards|besides|sometimes|nevertheless)\b)(?<m>[A-Z][a-z]+s)\b(?=\s*(?:[.,;:)]|$|\s(?:as|in|of|on|at|to|for|with|is|has|was|that|which|and|or|by|from)\b))'
+forms = ["m=NNS"]
+not_forms = ["m=NN"]
+transforms = ["m\u0009\u0009\u0009\u0009NN"]
+replace = "{{0}}"
+expand = true
+description = "'Each' takes a singular noun ('to each Pods as' to 'Pod'). Only a capitalized plural, the name of a kind of object in technical writing: after 'each' as a pronoun a verb can follow ('each runs in its own thread'). In none of the 41,364 sentences of the development and held-out sets."
+examples = ["Kubernetes assigns a QoS class to each Pods as a consequence of the constraints.\n"]
+acceptable = [
+  "Kubernetes assigns a QoS class to each Pod as a consequence of the constraints.\n",
+  "Two threads start, and each runs in its own process.\n",
+  "It is the same for each Windows node.\n",
+]
+
+[[rule]]
+id = "core.this-noun-verb"
+kind = "regex"
+severity = "warning"
+message = "'{match}' after 'this', 'each' or 'every' and a singular noun: the verb agrees in the third person ('{{0}}')."
+pattern = '\b(?:This|this|Each|each|Every|every)\s+(?!(?:will|would|can|could|may|might|must|shall|should|did|does)\b)(?<n>[a-z]+)\s+(?<m>show|make|give|provide|require|allow|enable|help|contain|describe|explain|create|define|return|take|need|let)\s+(?:you|us|them|how|the|a|an|it|that|this)\b'
+forms = ["n=NN"]
+not_forms = ["n=NNS", "n=VBD", "n=VBN"]
+transforms = ["m\u0009\u0009\u0009\u0009VBZ"]
+replace = "{{0}}"
+expand = true
+description = "A subject of 'this', 'each' or 'every' and a singular noun takes a verb in the third person ('This tutorial show you' to 'shows'). Only a dozen verbs common in documentation, before an object, and a noun that is never plural nor a verb's past form. In none of the 41,364 sentences of the development and held-out sets."
+examples = ["This tutorial show you how to install the drivers.\n"]
+acceptable = [
+  "This tutorial shows you how to install the drivers.\n",
+  "This will make a full copy of the data.\n",
+  "Each time, show us the result.\n",
+  "These tutorials show you how.\n",
+]
+
+[[rule]]
 id = "core.double-article"
 kind = "repeated-word"
 articles = true

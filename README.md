@@ -237,7 +237,7 @@ up, is in [docs/plan.md](docs/plan.md). In short:
 1. **Speed of a first check.** Parsing takes about 1.3 s a sentence, so
    a long document takes minutes the first time (rechecks parse only what
    changed). What is left is a faster parser core.
-2. **Grammar errors without a model.** 54 of 197 real grammar errors from
+2. **Grammar errors without a model.** 60 of 197 real grammar errors from
    documentation histories are caught (spelling: 167 of 177); most of the
    rest parse as correct English.
 3. **A small model with the grammar (M20).** Measured with Gemma 4 E2B: it

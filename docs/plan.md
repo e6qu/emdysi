@@ -20,7 +20,7 @@ unless stated:
 
 | Measure | Now | Notes |
 |---|---|---|
-| Real errors caught (374, from documentation histories) | 221 (59%): spelling 167 of 177, grammar 54 of 197 | 208 before nine patterns for typos and edits' leftovers the grammar accepts (*Memory Manger*, *executes following actions:*, *will be have*; 2026-10-20, shaped on these errors), 202 before rare words codespell lists as misspellings (*homogenous*, six times), 192 before doubled words were reported whatever the analysis and `core.allow-to` (2026-10-20); 167 before the spelling work of 2026-10-17, 183 before codespell's list; 377 pairs until three that were all front matter left (2026-10-17) |
+| Real errors caught (374, from documentation histories) | 227 (61%): spelling 167 of 177, grammar 60 of 197 | 221 before seven rules for wrong verb and noun forms the grammar reads as English, from what the lexicon allows a word to be (*can either limits*, *you wants to*, *each Pods*; 2026-10-22); 208 before nine patterns for typos and edits' leftovers the grammar accepts (*Memory Manger*, *executes following actions:*, *will be have*; 2026-10-20, shaped on these errors), 202 before rare words codespell lists as misspellings (*homogenous*, six times), 192 before doubled words were reported whatever the analysis and `core.allow-to` (2026-10-20); 167 before the spelling work of 2026-10-17, 183 before codespell's list; 377 pairs until three that were all front matter left (2026-10-17) |
 | ... with a perfect model choosing among verified corrections | 337 of 377 (89%): grammar 165 of 199 | the upper bound for any model, measured before the corpus repair |
 | ... with Gemma 4 E2B | 12 of the 34 errors of a quarter of the corpus where a perfect chooser gains, against 7 without a model | priority 1; locating errors is what is missing |
 | False flags on edited text, per 1,000 sentences | 1.6 (first development set, 4 flags), 4.8 (second, 64), 3.7 (held out, 31 in 8,371 sentences) | most of the second set's flags point at real errors or real spelling mixes in the source (`docs/evaluation.md`) |
@@ -132,10 +132,11 @@ two hours and was stopped on 2026-10-22; it needs a machine to itself).
    (`LOG.versions.tsv`, `examples/versions`), but 12B gave no sign that
    size alone pays. Priority 2 is where recall can be gained.
 
-2. **Grammar errors without a model.** 54 of 197 is the weakest number in
+2. **Grammar errors without a model.** 60 of 197 is the weakest number in
    the table (25 before 2026-10-20: doubled words in sentences the grammar
    accepts, `core.allow-to`, rare words codespell lists, nine patterns for
-   typos and edits' leftovers). The mal-rule variant names errors only when a complete
+   typos and edits' leftovers; 54 before seven rules on what the lexicon
+   allows a word to be, 2026-10-22). The mal-rule variant names errors only when a complete
    search finds fragments only. Of the 172 real grammar errors missed
    (2026-10-18), 126 leave a strict reading (a wrong word that is still
    English, or a legal but unlikely analysis: *you wants* as *you* plus a
@@ -204,7 +205,7 @@ two hours and was stopped on 2026-10-22; it needs a machine to itself).
 Status on 2026-10-20: the model path with E2B is measured end to end
 (choices by likelihood, a one-pass prefilter, guards against the false
 flags a sample showed), and the patterns the missed real errors suggest
-without a model are in (54 of 197 grammar errors). What is left of the
+without a model are in (60 of 197 grammar errors since 2026-10-22). What is left of the
 grammar errors mostly parses as correct English, so it waits on a way
 to locate errors that E2B, E4B and Gemma 3 12B all lack (surprise AUC
 0.57–0.60; evaluation.md). The other items are multi-day
@@ -261,7 +262,10 @@ default in LanguageTool too).
    used: `ggml-org/gemma-4-E2B-it-GGUF` and `ggml-org/gemma-4-E4B-it-GGUF`,
    `*-Q4_0.gguf` (2.8 and 4.6 GB). Build with `cargo build --release
    --features llama --examples --bins` (`--examples` alone leaves out
-   `en`). A model run takes hours, so measure on a sample and watch it:
+   `en`), and again after any `cargo test`, which relinks the examples
+   without the feature (the run then stops at once: "a GGUF model needs
+   a build with the `llama` feature"). A model run takes hours, so
+   measure on a sample and watch it:
    - `real_errors` with `SHARD=0/4` (94 pairs), `THREADS=2
      EMDYSI_LM_THREADS=2` (two pairs at once, each model on two cores)
      and `LOG=FILE`; it journals each pair, so an interrupted run
