@@ -433,10 +433,7 @@ fn run() -> Result<bool, String> {
     if !matches!(args.command.as_str(), "check" | "fix" | "parse" | "rewrite") {
         return Err(format!("unknown command {:?}\n\n{USAGE}", args.command));
     }
-    let mut packs = load_packs(&args.packs)?;
-    for g in &args.glossaries {
-        packs.push(load_glossary(g)?);
-    }
+    let checker = make_checker(&args, &args.packs)?;
     // Rewriting needs the meaning of sentences without a strict analysis,
     // and parse output shows it.
     if args.command == "rewrite" || args.command == "parse" {
@@ -446,20 +443,7 @@ fn run() -> Result<bool, String> {
         return Err("--format sarif is for `check`".into());
     }
     let docs = inputs(&args.files, args.input)?;
-    let dir = match &args.grammar {
-        Some(d) => d.clone(),
-        None => grammar_dir().map_err(|e| format!("finding the grammar: {e}"))?,
-    };
-    let mut erg = Erg::load(&dir).map_err(|e| format!("loading grammar: {e}"))?;
-    // Parses of sentences seen before are reused: rechecking an edited
-    // document parses only the sentences that changed.
-    let cache = args.cache.then(emdysi_parse::checker_cache_dir).flatten();
-    if let Some(dir) = &cache {
-        erg.cache_parses(dir);
-    }
-    let erg = erg;
-    let mut checker = Checker::new(packs);
-    checker.disabled = args.disabled.clone();
+    let (erg, cache) = load_grammar(&args)?;
     let mut model = load_model(&args)?;
     let mut ok = true;
     let mut sarif = emdysi_check::report::Sarif::default();
@@ -541,6 +525,35 @@ fn run() -> Result<bool, String> {
         emdysi_parse::prune_parse_cache(dir, cache_bytes());
     }
     Ok(ok)
+}
+
+/// The grammar (`--grammar`, else see [`grammar_dir`]), with the parses
+/// of sentences seen before reused unless `--no-cache`: rechecking an
+/// edited document parses only the sentences that changed. Also the
+/// cache's directory, to prune it when done.
+fn load_grammar(args: &Args) -> Result<(Erg, Option<PathBuf>), String> {
+    let dir = match &args.grammar {
+        Some(d) => d.clone(),
+        None => grammar_dir().map_err(|e| format!("finding the grammar: {e}"))?,
+    };
+    let mut erg = Erg::load(&dir).map_err(|e| format!("loading grammar: {e}"))?;
+    let cache = args.cache.then(emdysi_parse::checker_cache_dir).flatten();
+    if let Some(c) = &cache {
+        erg.cache_parses(c);
+    }
+    Ok((erg, cache))
+}
+
+/// A checker with the packs named, the glossaries given and the rules
+/// disabled.
+fn make_checker(args: &Args, packs: &[String]) -> Result<Checker, String> {
+    let mut packs = load_packs(packs)?;
+    for g in &args.glossaries {
+        packs.push(load_glossary(g)?);
+    }
+    let mut checker = Checker::new(packs);
+    checker.disabled = args.disabled.clone();
+    Ok(checker)
 }
 
 /// The most the parse cache may take: `EMDYSI_CACHE_MB` megabytes, 256

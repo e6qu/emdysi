@@ -11,11 +11,11 @@
 use std::io::{BufRead, Write};
 
 use emdysi_check::report::{OutputFormat, ParseDetails, render, render_parses};
-use emdysi_check::{Checker, Format, Severity, analyze, apply_fixes};
+use emdysi_check::{Format, Severity, analyze, apply_fixes};
 use emdysi_parse::Erg;
 use serde_json::{Value, json};
 
-use crate::{Args, READING_MARGIN, check, load_glossary, load_model, load_packs};
+use crate::{Args, READING_MARGIN, check, load_grammar, load_model, make_checker};
 
 /// The protocol version answered when the client asks for one this server
 /// does not know.
@@ -31,19 +31,17 @@ parsed again, so re-checking a draft after an edit is fast.";
 
 struct Server {
     args: Args,
-    erg: Option<Erg>,
+    /// The grammar, once loaded, and the parse cache's directory.
+    erg: Option<(Erg, Option<std::path::PathBuf>)>,
     model: Option<Box<dyn emdysi_lm::LanguageModel>>,
-    cache: Option<std::path::PathBuf>,
 }
 
 pub fn serve(args: Args) -> Result<bool, String> {
     let model = load_model(&args)?;
-    let cache = args.cache.then(emdysi_parse::checker_cache_dir).flatten();
     let mut server = Server {
         args,
         erg: None,
         model,
-        cache,
     };
     let stdin = std::io::stdin();
     let mut stdout = std::io::stdout();
@@ -193,19 +191,9 @@ impl Server {
             format = if md { Format::Markdown } else { Format::Plain };
         }
         if self.erg.is_none() {
-            let dir = match &self.args.grammar {
-                Some(d) => d.clone(),
-                None => {
-                    emdysi_parse::grammar_dir().map_err(|e| format!("finding the grammar: {e}"))?
-                }
-            };
-            let mut erg = Erg::load(&dir).map_err(|e| format!("loading grammar: {e}"))?;
-            if let Some(c) = &self.cache {
-                erg.cache_parses(c);
-            }
-            self.erg = Some(erg);
+            self.erg = Some(load_grammar(&self.args)?);
         }
-        let erg = self.erg.as_ref().unwrap();
+        let (erg, cache) = self.erg.as_ref().unwrap();
         let mut opts = self.args.opts.clone();
         if name == "parse" {
             opts.meaning = true;
@@ -223,16 +211,12 @@ impl Server {
                 .map_err(|e| e.to_string())?
         } else {
             let packs = str_list("packs");
-            let mut packs = load_packs(if packs.is_empty() {
+            let packs = if packs.is_empty() {
                 &self.args.packs
             } else {
                 &packs
-            })?;
-            for g in &self.args.glossaries {
-                packs.push(load_glossary(g)?);
-            }
-            let mut checker = Checker::new(packs);
-            checker.disabled = self.args.disabled.clone();
+            };
+            let mut checker = make_checker(&self.args, packs)?;
             checker.disabled.extend(str_list("disable"));
             let mut args = self.args.clone();
             if let Some(s) = arguments.get("min_severity").and_then(Value::as_str) {
@@ -248,7 +232,7 @@ impl Server {
                     .map_err(|e| e.to_string())?
             }
         };
-        if let Some(c) = &self.cache {
+        if let Some(c) = cache {
             emdysi_parse::prune_parse_cache(c, crate::cache_bytes());
         }
         Ok(out)
