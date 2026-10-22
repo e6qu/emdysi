@@ -47,9 +47,10 @@ their wrong claims (evaluation.md). What still stands in the way:
   gigabyte. A shorter time limit is no shortcut (5 seconds instead of 10
   saved 19% and cost 2% of sentences their strict reading; evaluation.md,
   "A lower time limit"); what is left is a faster parser core.
-- **No tagged release yet** (the workflow is ready: a `v*` tag publishes
-  the three builds) and no packaged editor extension (any generic
-  language-server client works).
+- **No tagged release yet**: the workflow is ready (a `v*` tag publishes
+  the three builds and the VS Code extension, `emdysi.vsix`, tested in a
+  real VS Code in CI), but the extension is not on the Marketplace, which
+  takes a publisher account.
 - **Style suggestions are many** by design (23 per 1,000 words of edited
   prose, mostly passives and long sentences); `--min-severity warning`
   leaves 1.7.

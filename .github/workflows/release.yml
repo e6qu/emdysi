@@ -63,3 +63,21 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: ${{ env.ARCHIVE }}
+  vscode:
+    # The editor extension, as a .vsix to install from the release.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci && npm run package
+        working-directory: editors/vscode
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emdysi.vsix
+          path: editors/vscode/emdysi.vsix
+      - if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: editors/vscode/emdysi.vsix

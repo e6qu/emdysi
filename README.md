@@ -121,8 +121,11 @@ quick fix. When a document is first opened, the findings that need no
 parse (spelling, words and phrases) appear at once and the rest when its
 sentences are parsed. The grammar is loaded once and parses are cached, so only the
 sentences you change are parsed again. Options after `lsp` (`--pack`,
-`--glossary`, `--min-severity warning`, ...) apply to every document. In
-Neovim (0.11):
+`--glossary`, `--min-severity warning`, ...) apply to every document.
+
+In VS Code, install `emdysi.vsix` from a release (*Extensions: Install from
+VSIX...*; it needs `en` on the PATH, or its path in the `emdysi.path`
+setting): see [editors/vscode](editors/vscode/README.md). In Neovim (0.11):
 
 ```lua
 vim.lsp.config('emdysi', { cmd = { 'en', 'lsp' }, filetypes = { 'markdown', 'text' } })
