@@ -48,6 +48,21 @@ and lost their wrong claims (evaluation.md). What still stands in the way:
   prose, mostly passives and long sentences); `--min-severity warning`
   leaves 1.7.
 
+Next, in this order (work in progress on 2026-10-22):
+
+1. **Release builds for Linux, macOS and Windows**, the workflow proven by a
+   manual run before the first tag.
+2. **Feedback in an editor before the full parse:** the findings that need
+   no parse (spelling, word and phrase rules) first, if they never
+   contradict the full check's.
+3. **The first check's time:** what a shorter time limit per sentence costs
+   in recall and saves in time, for interactive use.
+4. **Memory:** where the 2 GB go, and what is cheap to cut.
+
+Left open: false flags of the model path on a quarter of the second
+development set (a run of E2B on shared cores finished 79 sentences in
+two hours and was stopped on 2026-10-22; it needs a machine to itself).
+
 ## Priorities
 
 1. **A real model (M20, must have).** Measured since 2026-10-19 with

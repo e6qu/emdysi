@@ -22,7 +22,7 @@ const VERSION: u32 = 2;
 const MAGIC: &[u8; 8] = b"EMDYSIGC";
 
 /// `$EMDYSI_CACHE_DIR`, else `$XDG_CACHE_HOME/emdysi`, else
-/// `~/.cache/emdysi`.
+/// `~/.cache/emdysi`, else (on Windows) `%LOCALAPPDATA%\emdysi`.
 pub fn default_dir() -> Option<PathBuf> {
     if let Some(d) = std::env::var_os("EMDYSI_CACHE_DIR") {
         return Some(PathBuf::from(d));
@@ -30,7 +30,9 @@ pub fn default_dir() -> Option<PathBuf> {
     if let Some(d) = std::env::var_os("XDG_CACHE_HOME") {
         return Some(PathBuf::from(d).join("emdysi"));
     }
-    std::env::var_os("HOME").map(|h| PathBuf::from(h).join(".cache/emdysi"))
+    std::env::var_os("HOME")
+        .map(|h| PathBuf::from(h).join(".cache/emdysi"))
+        .or_else(|| std::env::var_os("LOCALAPPDATA").map(|d| PathBuf::from(d).join("emdysi")))
 }
 
 /// 128-bit FNV-1a style hash of the grammar sources (two independent 64-bit
