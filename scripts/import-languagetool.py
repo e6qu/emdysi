@@ -231,7 +231,7 @@ def literal(text):
 # Any one token: a word (with its hyphens) or a punctuation mark.
 # Any token: a word (up to an |n't| that ends it, LanguageTool's own token:
 # |did| + |n't|), an |n't|, or a punctuation mark.
-WORD = r"(?:(?<!\w)\w[\w-]*?(?=n['’]t(?!\w))|(?<!\w)\w[\w-]*(?!\w)|(?<=\w)n['’]t(?!\w)|[^\w\s])"
+WORD = r"(?:(?<!\w)\w[\w-]*?(?:(?=n['’]t(?!\w))|(?![\w-]))|(?<=\w)n['’]t(?!\w)|[^\w\s])"
 
 
 def text_of(el):
@@ -352,14 +352,17 @@ def token_regex(tok, conds=None, before=None):
     # A token may start with an apostrophe (*'s*), and a word may end in
     # *n't*, a token of its own (*do* + *n't*). A token that ends in
     # punctuation may be followed by a letter (*dosn* + *'* + *t*).
-    start, end = (
-        ("", "")
-        if punct
-        else (
-            r"(?:(?=\w)(?<!\w)(?<!\w-)|(?!\w)|(?<=\w)(?=n['’]t(?!\w)))",
-            r"(?:(?<!\w)|(?!(?!n['’]t)\w|-\w))",
-        )
-    )
+    # Those extra boundaries only where the token can match such a piece
+    # (any word, a class, an apostrophe or another punctuation mark): the
+    # patterns stay small.
+    loose = WORD in body or bool(regex.search(r"\[|\\[^w]|[^\w\s\\|()?:*+{},^$.-]", body))
+    if punct:
+        start, end = "", ""
+    elif loose:
+        start = r"(?:(?=\w)(?<!\w)(?<!\w-)|(?!\w)|(?<=\w)(?=n['’]t(?!\w)))"
+        end = r"(?:(?<!\w)|(?!(?!n['’]t)\w|-\w))"
+    else:
+        start, end = r"(?:(?=\w)(?<!\w)(?<!\w-)|(?!\w))", r"(?!(?!n['’]t)\w|-\w)"
     neg = "".join(f"(?!(?:{e}){end})" for e in own)
     neg += "".join(f"(?=(?:{e}){end})" for e in required)
     if tok.get("negate") == "yes":
@@ -714,9 +717,67 @@ def conditioned(r):
     return bool(r["tags"] or r["not_tags"] or r["chunks"] or r["not_chunks"] or r["antipatterns"])
 
 
+# Word characters for the patterns: Latin letters (with Latin-1 and
+# Latin Extended-A and -B), digits and underscore. Unicode's `\w`, compiled
+# into each of a pattern's many lookarounds, made the pack take 3.4 GB of
+# memory compiled in full; this class, 0.8 GB.
+WORD_CHARS = "0-9A-Za-z_\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u024F"
+
+
+def narrow_pattern(p):
+    r"""`p` with `\w`, `\W` and `\d` as the narrower classes above."""
+    out, i, in_class = [], 0, False
+    while i < len(p):
+        c = p[i]
+        if c == "\\" and i + 1 < len(p):
+            e = p[i + 1]
+            if e == "w":
+                out.append(WORD_CHARS if in_class else f"[{WORD_CHARS}]")
+            elif e == "W" and not in_class:
+                out.append(f"[^{WORD_CHARS}]")
+            elif e == "d":
+                out.append("0-9" if in_class else "[0-9]")
+            else:
+                out.append(p[i : i + 2])
+            i += 2
+            continue
+        if in_class:
+            in_class = c != "]"
+        elif c == "[":
+            in_class = True
+            # `[]...]` and `[^]...]` start with a literal `]`.
+            j = i + 1 + (p[i + 1 : i + 2] == "^")
+            if p[j : j + 1] == "]":
+                out.append(p[i : j + 1])
+                i = j + 1
+                continue
+        out.append(c)
+        i += 1
+    return "".join(out)
+
+
+def narrow(r):
+    """The rule's patterns with narrower classes (see `WORD_CHARS`)."""
+    r["pattern"] = narrow_pattern(r["pattern"])
+    if r["unless"]:
+        r["unless"] = narrow_pattern(r["unless"])
+    for a in r["antipatterns"]:
+        a["pattern"] = narrow_pattern(a["pattern"])
+
+
+# The most characters of pattern a rule may have (see `validate`).
+MAX_PATTERN = 30_000
+
+
 def validate(r):
     """Whether the converted rule finds every incorrect example's marked
     span and nothing in the correct examples."""
+    # A rule this large (long word lists repeated in several tokens) costs
+    # more memory compiled than it is worth.
+    size = len(r["pattern"]) + len(r["unless"] or "")
+    size += sum(len(a["pattern"]) for a in r["antipatterns"])
+    if size > MAX_PATTERN:
+        raise Skip("patterns too large")
     try:
         pat = regex.compile(r["pattern"], regex.V0)
         unless = regex.compile(r["unless"]) if r["unless"] else None
@@ -833,6 +894,7 @@ def build(candidates=False):
         for rule, group, cat, position in rules_of(file):
             try:
                 r = convert(rule, group, cat, file)
+                narrow(r)
                 validate(r)
             except Skip as e:
                 reason = str(e).split(":")[0]
