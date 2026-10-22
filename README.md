@@ -69,8 +69,8 @@ sentences of the development set
 ## Install
 
 Each tagged [release](https://github.com/e6qu/emdysi/releases) attaches
-`en` for Linux (x86-64) and macOS (Apple silicon). Or build it with Rust
-1.85 or later:
+`en` for Linux (x86-64), macOS (Apple silicon) and Windows (x86-64). Or
+build it with Rust 1.85 or later:
 
 ```sh
 cargo install --git https://github.com/e6qu/emdysi emdysi
@@ -117,7 +117,9 @@ lists every option.
 
 `en lsp` is a language server: diagnostics appear as you write (after a
 pause in typing, and on open and save), and each fix or suggestion is a
-quick fix. The grammar is loaded once and parses are cached, so only the
+quick fix. When a document is first opened, the findings that need no
+parse (spelling, words and phrases) appear at once and the rest when its
+sentences are parsed. The grammar is loaded once and parses are cached, so only the
 sentences you change are parsed again. Options after `lsp` (`--pack`,
 `--glossary`, `--min-severity warning`, ...) apply to every document. In
 Neovim (0.11):

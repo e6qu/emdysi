@@ -32,32 +32,27 @@ unless stated:
 ## Practical use
 
 Since 2026-10-22 `en` is self-contained (the grammar is built into the
-binary; a release workflow builds it for Linux and macOS and checks that it
-runs without the repository), reuses the parses of sentences it has seen,
-reports as JSON and SARIF, and serves editors (`en lsp`: diagnostics as
-you write, fixes as quick fixes) and agents (`en mcp`: `check`, `fix`
-and `parse` tools; after the first call, a recheck takes milliseconds).
-The default style packs were measured on edited prose for the first time
-and lost their wrong claims (evaluation.md). What still stands in the way:
+binary; a release workflow builds it for Linux, macOS and Windows and
+checks that each runs without the repository, proven by a manual run),
+reuses the parses of sentences it has seen, reports as JSON and SARIF,
+and serves editors (`en lsp`: the findings that need no parse at once,
+the rest when the parse is done, fixes as quick fixes) and agents (`en
+mcp`: `check`, `fix` and `parse` tools; after the first call, a recheck
+takes milliseconds). It parses as many sentences at once as memory
+allows. The default style packs were measured on edited prose and lost
+their wrong claims (evaluation.md). What still stands in the way:
 
-- **The first check of a long document** takes minutes (about 1.3 s a
-  sentence; priority 3) and about 2 GB of memory.
-- **No tagged release yet**, no Windows build, and no packaged editor
-  extension (any generic language-server client works).
+- **The first full check of a long document** takes minutes (about 1.3 s
+  a sentence; priority 3), and each sentence parsed at once can take a
+  gigabyte. A shorter time limit is no shortcut (5 seconds instead of 10
+  saved 19% and cost 2% of sentences their strict reading; evaluation.md,
+  "A lower time limit"); what is left is a faster parser core.
+- **No tagged release yet** (the workflow is ready: a `v*` tag publishes
+  the three builds) and no packaged editor extension (any generic
+  language-server client works).
 - **Style suggestions are many** by design (23 per 1,000 words of edited
   prose, mostly passives and long sentences); `--min-severity warning`
   leaves 1.7.
-
-Next, in this order (work in progress on 2026-10-22):
-
-1. **Release builds for Linux, macOS and Windows**, the workflow proven by a
-   manual run before the first tag.
-2. **Feedback in an editor before the full parse:** the findings that need
-   no parse (spelling, word and phrase rules) first, if they never
-   contradict the full check's.
-3. **The first check's time:** what a shorter time limit per sentence costs
-   in recall and saves in time, for interactive use.
-4. **Memory:** where the 2 GB go, and what is cheap to cut.
 
 Left open: false flags of the model path on a quarter of the second
 development set (a run of E2B on shared cores finished 79 sentences in
