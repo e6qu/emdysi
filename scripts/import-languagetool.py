@@ -188,7 +188,10 @@ class Skip(Exception):
 def word_dots(pattern):
     """A token pattern for use in a pattern over text: `.` matches a word
     character (LanguageTool matches a pattern against one token, which has
-    no spaces and no punctuation but hyphens), and anchors go."""
+    no spaces and no punctuation but hyphens), and anchors go. A token of
+    any one character (`.` alone, as in `.|…`) may be punctuation."""
+    if not regex.search(r"[\\(\[]", pattern) and "." in pattern.split("|"):
+        return "|".join(r"[^\s]" if a == "." else word_dots(a) for a in pattern.split("|"))
     out, i, in_class = [], 0, False
     while i < len(pattern):
         c = pattern[i]
@@ -232,7 +235,9 @@ WORD = r"(?:(?<!\w)\w[\w-]*?(?=n['’]t(?!\w))|(?<!\w)\w[\w-]*(?!\w)|(?<=\w)n['�
 
 
 def text_of(el):
-    return (el.text or "").strip()
+    """The element's own text, which may follow its exceptions
+    (|<token><exception .../>hell</token>|)."""
+    return "".join([el.text or ""] + [ch.tail or "" for ch in el]).strip()
 
 
 def is_punct(s):
