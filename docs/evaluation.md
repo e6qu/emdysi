@@ -2641,6 +2641,13 @@ fewer than before). First development set: 37 findings (33), the new
 ones style suggestions (*outside of*, twice; *some one*) and one false
 (*hard to read*); real errors: 223 caught, as before.
 
+Rule ids then moved from a count of the rules converted so far to the
+rule's position in its LanguageTool group, assigned over every rule so
+that they no longer change when other rules start converting; 765 of
+the 3,418 ids changed once. Two pairs of rules had shared an id (rule 2
+of `it-is` and rule 1 of `it-is-2`), and three of them, kept only
+through the shared id, fail their own examples; they are left out.
+
 ### A lower time limit: 5 seconds instead of 10
 
 `timing` with `TIMEOUT=5` against the default 10 seconds, on the same
