@@ -695,10 +695,10 @@ def rules_of(file):
             continue
         for el in cat:
             if el.tag == "rule":
-                yield el, None, cid
+                yield el, None, cid, 1
             elif el.tag == "rulegroup":
-                for r in el.findall("rule"):
-                    yield r, el, cid
+                for i, r in enumerate(el.findall("rule"), 1):
+                    yield r, el, cid, i
 
 
 def toml_str(s):
@@ -706,6 +706,31 @@ def toml_str(s):
         return f"'{s}'"
     out = s.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
     return '"' + "".join(c if ord(c) >= 32 else f"\\u{ord(c):04x}" for c in out) + '"'
+
+
+def rule_ids():
+    """Every rule's id, by (file, LanguageTool id, position in its group):
+    the group's slug, then the position after a hyphen from the second
+    rule on. Assigned over all the rules, converted or not, so that an id
+    does not change with which rules convert; where two would be the same
+    (rule 2 of `your-you` and rule 1 of `your-you-2`), the later one gets
+    a letter."""
+    global RULE_IDS
+    if RULE_IDS is None:
+        RULE_IDS, seen = {}, set()
+        for file in ("grammar.xml", "style.xml"):
+            for rule, group, _, position in rules_of(file):
+                lt_id = (group.get("id") if group is not None else rule.get("id")) or ""
+                base = "languagetool." + slug(lt_id)
+                rid = base if position == 1 else f"{base}-{position}"
+                if rid in seen:
+                    rid = next(f"{rid}{c}" for c in "bcdefghij" if f"{rid}{c}" not in seen)
+                seen.add(rid)
+                RULE_IDS[(file, lt_id, position)] = rid
+    return RULE_IDS
+
+
+RULE_IDS = None
 
 
 def slug(s):
@@ -731,14 +756,13 @@ def build(candidates=False):
     out. With `candidates`, the pack holds every rule with part-of-speech
     conditions instead, for lt_validate."""
     kept, skipped = [], {}
-    ids = {}
     validated = {
         line.strip()
         for line in (VALIDATED.read_text().splitlines() if VALIDATED.exists() else [])
         if line.strip() and not line.startswith("#")
     }
     for file in ("grammar.xml", "style.xml"):
-        for rule, group, cat in rules_of(file):
+        for rule, group, cat, position in rules_of(file):
             try:
                 r = convert(rule, group, cat, file)
                 validate(r)
@@ -746,9 +770,7 @@ def build(candidates=False):
                 reason = str(e).split(":")[0]
                 skipped[reason] = skipped.get(reason, 0) + 1
                 continue
-            base = "languagetool." + slug(r["lt_id"])
-            ids[base] = ids.get(base, 0) + 1
-            r["id"] = base if ids[base] == 1 else f"{base}-{ids[base]}"
+            r["id"] = rule_ids()[(file, r["lt_id"], position)]
             if r["id"] in EXCLUDED:
                 skipped["excluded"] = skipped.get("excluded", 0) + 1
                 continue
