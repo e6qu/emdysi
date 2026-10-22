@@ -437,9 +437,20 @@ pub fn inflect(word: &str, tag: &str) -> Option<String> {
         _ => return None,
     };
     let noun = tag.starts_with('N');
+    // A regular -s form the tables leave out (they list only |want| of
+    // |wants|) is a form of its stem.
+    let regular: Vec<String> = if lemmas.contains_key(&w) {
+        Vec::new()
+    } else {
+        s_stems(&w)
+            .into_iter()
+            .filter(|l| forms.contains_key(l))
+            .collect()
+    };
     let candidates: Vec<&String> = std::iter::once(&w)
         .filter(|l| forms.contains_key(*l))
         .chain(lemmas.get(&w).into_iter().flatten())
+        .chain(regular.iter())
         .collect();
     for l in candidates {
         let fs = &forms[l];
@@ -460,6 +471,86 @@ pub fn inflect(word: &str, tag: &str) -> Option<String> {
     None
 }
 
+/// The regular -s form of `lemma` (|wants|, |pushes|, |tries|).
+fn s_form(lemma: &str) -> String {
+    let b = lemma.as_bytes();
+    let consonant_y = lemma.len() > 1
+        && lemma.ends_with('y')
+        && !b"aeiou".contains(&b[lemma.len() - 2]);
+    if ["s", "x", "z", "ch", "sh", "o"].iter().any(|e| lemma.ends_with(e)) {
+        format!("{lemma}es")
+    } else if consonant_y {
+        format!("{}ies", &lemma[..lemma.len() - 1])
+    } else {
+        format!("{lemma}s")
+    }
+}
+
+/// The words whose regular -s form is `word`.
+fn s_stems(word: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    for (strip, add) in [("s", ""), ("es", ""), ("ies", "y")] {
+        if let Some(stem) = word.strip_suffix(strip).filter(|s| !s.is_empty()) {
+            let lemma = format!("{stem}{add}");
+            if s_form(&lemma) == word && !out.contains(&lemma) {
+                out.push(lemma);
+            }
+        }
+    }
+    out
+}
+
+/// Every Penn Treebank tag `word` can have, from UniMorph's English tables
+/// whatever a parse chose (|limits|: NNS and VBZ): VB, VBZ, VBD, VBN, VBG,
+/// NN, NNS, JJ. The tables list only some forms of some lemmas (|want|
+/// without |wants|); the regular -s form of a verb or a noun whose own is
+/// not listed counts as VBZ or NNS. Case is ignored.
+pub fn word_tags(word: &str) -> Vec<&'static str> {
+    static MAP: OnceLock<HashMap<String, Vec<&'static str>>> = OnceLock::new();
+    let map = MAP.get_or_init(|| {
+        let mut tags: HashMap<String, Vec<&'static str>> = HashMap::new();
+        let mut of_lemma: HashMap<String, Vec<&'static str>> = HashMap::new();
+        for line in UNIMORPH.lines() {
+            let mut it = line.split('\t');
+            let (Some(l), Some(f), Some(feats)) = (it.next(), it.next(), it.next()) else {
+                continue;
+            };
+            if l.contains(' ') || f.contains(' ') {
+                continue;
+            }
+            let tag = match feats {
+                "V;NFIN;IMP+SBJV" => "VB",
+                "V;PRS;3;SG" => "VBZ",
+                "V;PST" => "VBD",
+                "V;V.PTCP;PST" => "VBN",
+                "V;V.PTCP;PRS" => "VBG",
+                "N;SG" => "NN",
+                "N;PL" => "NNS",
+                "ADJ" => "JJ",
+                _ => continue,
+            };
+            for (m, k) in [(&mut tags, f), (&mut of_lemma, l)] {
+                let ts = m.entry(k.to_lowercase()).or_default();
+                if !ts.contains(&tag) {
+                    ts.push(tag);
+                }
+            }
+        }
+        for (lemma, ts) in &of_lemma {
+            for (base, form) in [("VB", "VBZ"), ("NN", "NNS")] {
+                if ts.contains(&base) && !ts.contains(&form) {
+                    let t = tags.entry(s_form(lemma)).or_default();
+                    if !t.contains(&form) {
+                        t.push(form);
+                    }
+                }
+            }
+        }
+        tags
+    });
+    map.get(&word.to_lowercase()).cloned().unwrap_or_default()
+}
+
 #[cfg(test)]
 mod inflect_tests {
     use super::inflect;
@@ -471,5 +562,17 @@ mod inflect_tests {
         assert_eq!(inflect("mice", "NN").as_deref(), Some("mouse"));
         assert_eq!(inflect("mouse", "NNS").as_deref(), Some("mice"));
         assert_eq!(inflect("writes", "VB").as_deref(), Some("write"));
+        // A regular form the tables leave out.
+        assert_eq!(inflect("wants", "VB").as_deref(), Some("want"));
+    }
+
+    #[test]
+    fn tags_whatever_the_parse() {
+        let has = |w: &str, t: &str| super::word_tags(w).contains(&t);
+        assert!(has("limits", "NNS") && has("limits", "VBZ"));
+        assert!(has("wants", "VBZ"));
+        assert!(has("Operations", "NNS") && !has("operations", "VBZ"));
+        assert!(has("tutorial", "NN") && !has("tutorial", "NNS"));
+        assert!(super::word_tags("qwzx").is_empty());
     }
 }

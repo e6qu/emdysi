@@ -105,8 +105,16 @@ groups `B-VP`, `I-VP`; prepositions `B-PP`; adverbs outside a verb group
 `B-SBAR`; anything else `O`. They are derived from the parse's tags
 (`emdysi_check::tags::chunks`).
 
+`forms` and `not_forms` ask instead what a group's word can be at all,
+whatever the parse made of it (`"m=VBZ"`): the tags of every form the
+word is in UniMorph's English tables (VB, VBZ, VBD, VBN, VBG, NN, NNS,
+JJ), with the regular -s form of a verb or noun whose own the tables do
+not list. *limits* is both NNS and VBZ, so `core.modal-verb-s` can catch
+*A quota can either limits ...*, which the grammar reads as a compound
+*quota can* and a plural noun. These need no parse.
+
 `antipatterns` is a list of patterns with conditions of their own, each
-an inline table with `pattern` and any of the four condition lists
+an inline table with `pattern` and any of the six condition lists
 (`antipatterns = [{ pattern = '(?i)\b(?P<t1>run)\b', tags =
 ["t1=NN.*"] }]`): a sentence where one matches with its conditions met is
 skipped, as for `unless`.

@@ -231,6 +231,10 @@ pub struct TagCheck {
     /// A chunk tag (`chunks`, `not_chunks`: see [`crate::tags::chunks`])
     /// rather than a part of speech.
     chunk: bool,
+    /// A tag the group's word can have in the lexicon, whatever the parse
+    /// chose (`forms`, `not_forms`: see [`crate::dict::word_tags`]); needs
+    /// no parse.
+    lexical: bool,
 }
 
 /// A pattern compiled when first used.
@@ -302,7 +306,10 @@ pub enum Kind {
         /// Part-of-speech conditions on named groups (`tags`, `not_tags`:
         /// `"t2=NN.*"`): the group must cover a word of the best reading
         /// whose Penn Treebank tag (see [`crate::tags`]) matches, or (with
-        /// `negate`) none that does. A rule with conditions needs a parse.
+        /// `negate`) none that does. A rule with conditions needs a parse,
+        /// except for `forms` and `not_forms`, which ask what tags the
+        /// group's word can have at all (`"m=VBZ"`: |limits| can be a verb
+        /// whatever the parse made of it).
         tags: Vec<TagCheck>,
         /// Changes to a matched group for suggestions and messages,
         /// written `{{0}}`, `{{1}}`... in templates (see [`Transform`]).
@@ -1269,7 +1276,11 @@ impl Rule {
                 transforms,
             } => {
                 for (si, s) in a.sentences.iter().enumerate() {
-                    if !(tags.is_empty() && antipatterns.is_empty()) && s.best().is_none() {
+                    let parsed = tags.iter().any(|c| !c.lexical)
+                        || antipatterns
+                            .iter()
+                            .any(|(_, cs)| cs.iter().any(|c| !c.lexical));
+                    if parsed && s.best().is_none() {
                         continue;
                     }
                     if !needs.is_empty() && !needs.iter().any(|w| s.mentions(w)) {
@@ -3343,22 +3354,24 @@ fn split_contraction(w: &str) -> Vec<String> {
 }
 
 /// The part-of-speech and chunk conditions of a rule or antipattern:
-/// `tags`, `not_tags`, `chunks`, `not_chunks`, each a list of
-/// `group=pattern`.
+/// `tags`, `not_tags`, `chunks`, `not_chunks`, `forms`, `not_forms`, each
+/// a list of `group=pattern`.
 fn conditions(t: &Table) -> Result<Vec<TagCheck>, String> {
     [
-        ("tags", false, false),
-        ("not_tags", true, false),
-        ("chunks", false, true),
-        ("not_chunks", true, true),
+        ("tags", false, false, false),
+        ("not_tags", true, false, false),
+        ("chunks", false, true, false),
+        ("not_chunks", true, true, false),
+        ("forms", false, false, true),
+        ("not_forms", true, false, true),
     ]
     .iter()
-    .flat_map(|&(key, negate, chunk)| {
+    .flat_map(|&(key, negate, chunk, lexical)| {
         get_list(t, key)
             .into_iter()
-            .map(move |c| (c, negate, chunk))
+            .map(move |c| (c, negate, chunk, lexical))
     })
-    .map(|(c, negate, chunk)| {
+    .map(|(c, negate, chunk, lexical)| {
         let (group, tag) = c
             .split_once('=')
             .ok_or_else(|| format!("bad tag condition {c:?}"))?;
@@ -3368,6 +3381,7 @@ fn conditions(t: &Table) -> Result<Vec<TagCheck>, String> {
                 .map_err(|e| format!("bad tag pattern: {e}"))?,
             negate,
             chunk,
+            lexical,
         })
     })
     .collect()
@@ -3380,6 +3394,12 @@ fn tag_holds(s: &crate::Sentence, m: &fancy_regex::Captures<'_, str>, c: &TagChe
         // An optional group that did not take part.
         return true;
     };
+    if c.lexical {
+        let found = crate::dict::word_tags(g.as_str())
+            .iter()
+            .any(|t| c.tag.is_match(t).unwrap_or(false));
+        return found != c.negate;
+    }
     let from = s.original[..g.start()].chars().count();
     let to = from + g.as_str().chars().count();
     let found = s.best().is_some_and(|r| {
