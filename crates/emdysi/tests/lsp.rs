@@ -14,16 +14,23 @@ fn frame(v: &Value) -> Vec<u8> {
     format!("Content-Length: {}\r\n\r\n{body}", body.len()).into_bytes()
 }
 
-#[test]
-fn lsp_session() {
+/// `en lsp` with `args`: its stdin, the messages it sends, and the process.
+fn start(
+    args: &[&str],
+) -> (
+    std::process::ChildStdin,
+    mpsc::Receiver<Value>,
+    std::process::Child,
+) {
     let mut child = Command::new(env!("CARGO_BIN_EXE_en"))
-        .args(["lsp", "--no-parse"])
+        .arg("lsp")
+        .args(args)
         .env("EMDYSI_NO_CACHE", "1")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .spawn()
         .unwrap();
-    let mut stdin = child.stdin.take().unwrap();
+    let stdin = child.stdin.take().unwrap();
     let stdout = child.stdout.take().unwrap();
     let (tx, rx) = mpsc::channel::<Value>();
     std::thread::spawn(move || {
@@ -49,6 +56,12 @@ fn lsp_session() {
             }
         }
     });
+    (stdin, rx, child)
+}
+
+#[test]
+fn lsp_session() {
+    let (mut stdin, rx, mut child) = start(&["--no-parse"]);
     let mut send = |v: Value| stdin.write_all(&frame(&v)).unwrap();
     let next = |pred: &dyn Fn(&Value) -> bool| -> Value {
         loop {
@@ -117,6 +130,64 @@ fn lsp_session() {
 
     send(json!({"jsonrpc": "2.0", "id": 3, "method": "shutdown"}));
     next(&|m| m["id"] == 3);
+    send(json!({"jsonrpc": "2.0", "method": "exit"}));
+    assert!(child.wait().unwrap().success());
+}
+
+#[test]
+fn quick_findings_first_then_the_full_ones() {
+    let (mut stdin, rx, mut child) = start(&[]);
+    let mut send = |v: Value| stdin.write_all(&frame(&v)).unwrap();
+    let next = || -> Value {
+        loop {
+            let m = rx
+                .recv_timeout(Duration::from_secs(120))
+                .expect("no message");
+            if m["method"] == "textDocument/publishDiagnostics" {
+                return m;
+            }
+        }
+    };
+    send(
+        json!({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"capabilities": {}}}),
+    );
+    send(
+        json!({"jsonrpc": "2.0", "method": "textDocument/didOpen", "params": {"textDocument":
+        {"uri": "file:///a.txt", "languageId": "plaintext", "version": 1,
+         "text": "The new version are faster. We recieved it.\n"}}}),
+    );
+    let rules = |m: &Value| -> Vec<String> {
+        m["params"]["diagnostics"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|d| d["code"].as_str().unwrap().to_string())
+            .collect()
+    };
+    // Spelling needs no parse; the agreement error does.
+    let quick = rules(&next());
+    assert!(quick.contains(&"core.spelling".to_string()), "{quick:?}");
+    assert!(
+        !quick.contains(&"core.grammar-errors".to_string()),
+        "{quick:?}"
+    );
+    let full = rules(&next());
+    assert!(
+        full.contains(&"core.grammar-errors".to_string()),
+        "{full:?}"
+    );
+    assert!(quick.iter().all(|r| full.contains(r)), "{quick:?} {full:?}");
+    // An edit goes straight to the full findings.
+    send(
+        json!({"jsonrpc": "2.0", "method": "textDocument/didSave", "params": {
+        "textDocument": {"uri": "file:///a.txt"}}}),
+    );
+    let again = rules(&next());
+    assert!(
+        again.contains(&"core.grammar-errors".to_string()),
+        "{again:?}"
+    );
+    send(json!({"jsonrpc": "2.0", "id": 2, "method": "shutdown"}));
     send(json!({"jsonrpc": "2.0", "method": "exit"}));
     assert!(child.wait().unwrap().success());
 }

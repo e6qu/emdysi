@@ -922,3 +922,10 @@ fn json_and_sarif_reports() {
     );
     assert!(log.contains("{\"id\":\"core.spelling\"}"), "{log}");
 }
+
+#[test]
+fn parsing_threads_are_bounded_by_cores_and_memory() {
+    let t = emdysi_check::default_threads();
+    let cores = std::thread::available_parallelism().map_or(2, |n| n.get());
+    assert!((1..=cores).contains(&t), "{t} threads on {cores} cores");
+}

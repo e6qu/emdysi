@@ -1,8 +1,8 @@
 name: Release
-# Builds `en` for Linux and macOS when a version tag is pushed, checks that
-# the binary runs on its own (the grammar is built into it), and attaches
-# the archives to the GitHub release. Run by hand to try the build without
-# a release.
+# Builds `en` for Linux, macOS and Windows when a version tag is pushed,
+# checks that the binary runs on its own (the grammar is built into it), and
+# attaches the archives to the GitHub release. Run by hand to try the build
+# without a release.
 on:
   push:
     tags: ["v*"]
@@ -12,13 +12,22 @@ permissions:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
+            exe: ""
           - os: macos-14
             target: aarch64-apple-darwin
+            exe: ""
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            exe: ".exe"
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
     env:
       # No debug information in the released binary.
       CARGO_PROFILE_RELEASE_DEBUG: "0"
@@ -29,17 +38,20 @@ jobs:
       - run: cargo build --release -p emdysi
       - name: Package
         run: |
-          name="en-${GITHUB_REF_NAME}-${{ matrix.target }}"
+          # A tag (v0.2.0), or a branch name without its slashes.
+          version="${GITHUB_REF_NAME//\//-}"
+          name="en-$version-${{ matrix.target }}"
           mkdir "$name"
-          cp target/release/en LICENSE THIRD_PARTY_NOTICES.md README.md "$name/"
+          cp "target/release/en${{ matrix.exe }}" LICENSE THIRD_PARTY_NOTICES.md README.md "$name/"
           tar czf "$name.tar.gz" "$name"
+          ls -l "$name/en${{ matrix.exe }}"
           echo "ARCHIVE=$name.tar.gz" >> "$GITHUB_ENV"
           echo "DIR=$name" >> "$GITHUB_ENV"
       - name: Runs without the repository
         run: |
           mv grammar grammar.moved
           export EMDYSI_CACHE_DIR="$RUNNER_TEMP/cache"
-          out=$(echo "The new version are faster." | "$DIR/en" check --format json)
+          out=$(echo "The new version are faster." | "$DIR/en${{ matrix.exe }}" check --format json)
           echo "$out"
           echo "$out" | grep -q '"rule":"core.grammar-errors"'
           mv grammar.moved grammar
@@ -51,3 +63,21 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: ${{ env.ARCHIVE }}
+  vscode:
+    # The editor extension, as a .vsix to install from the release.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci && npm run package
+        working-directory: editors/vscode
+      - uses: actions/upload-artifact@v4
+        with:
+          name: emdysi.vsix
+          path: editors/vscode/emdysi.vsix
+      - if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: editors/vscode/emdysi.vsix

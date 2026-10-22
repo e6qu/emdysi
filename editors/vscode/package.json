@@ -1,0 +1,76 @@
+{
+  "name": "emdysi",
+  "displayName": "emdysi",
+  "description": "English grammar, spelling, style and AI-writing checks with a full grammar of English, as you write",
+  "version": "0.1.0",
+  "publisher": "e6qu",
+  "license": "AGPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/e6qu/emdysi"
+  },
+  "engines": {
+    "vscode": "^1.82.0"
+  },
+  "categories": [
+    "Linters"
+  ],
+  "keywords": [
+    "grammar",
+    "spelling",
+    "style",
+    "prose",
+    "markdown"
+  ],
+  "activationEvents": [
+    "onLanguage:markdown",
+    "onLanguage:plaintext"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "emdysi",
+      "properties": {
+        "emdysi.path": {
+          "type": "string",
+          "default": "en",
+          "description": "The `en` executable: a name on the PATH or a full path."
+        },
+        "emdysi.args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Options for `en lsp`, e.g. [\"--pack\", \"google\", \"--glossary\", \"terms.toml\"]."
+        },
+        "emdysi.minSeverity": {
+          "type": "string",
+          "enum": [
+            "error",
+            "warning",
+            "suggestion"
+          ],
+          "default": "suggestion",
+          "description": "Show only findings this severe or worse."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "package": "vsce package --out emdysi.vsix",
+    "test": "node test/run.js"
+  },
+  "dependencies": {
+    "vscode-languageclient": "9.0.1"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "3.9.2",
+    "@vscode/test-electron": "3.1.0"
+  },
+  "overrides": {
+    "vscode-languageclient": {
+      "minimatch": "5.1.8"
+    }
+  }
+}

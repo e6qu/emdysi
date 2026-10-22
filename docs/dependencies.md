@@ -138,3 +138,27 @@ installed by whoever runs it: JAX, Optax, safetensors and Hugging Face
 permissive licenses), and MLX and `mlx-lm` (MIT) to serve it (licenses
 from the packages' metadata, 2026-10-03). None of them is part of a build of emdysi, and nothing
 the script writes is committed.
+
+## The VS Code extension (npm)
+
+`editors/vscode` is a separate package, bundled into `emdysi.vsix` with its
+runtime dependencies (`package-lock.json` pins them; the build tools,
+`@vscode/vsce` and `@vscode/test-electron`, are not shipped). The same
+policy applies: the `license` field of each package **and** its license
+file.
+
+| Package | Version | License | Verified from | Date |
+|---|---|---|---|---|
+| vscode-languageclient | 9.0.1 | MIT | `package.json` + `License.txt` (Microsoft) | 2026-10-22 |
+| vscode-languageserver-protocol | 3.17.5 | MIT | `package.json` + `License.txt` (Microsoft) | 2026-10-22 |
+| vscode-languageserver-types | 3.17.5 | MIT | `package.json` + `License.txt` (Microsoft) | 2026-10-22 |
+| vscode-jsonrpc | 8.2.0 | MIT | `package.json` + `License.txt` (Microsoft) | 2026-10-22 |
+| semver | 7.8.5 | ISC | `package.json` + `LICENSE` | 2026-10-22 |
+| minimatch | 5.1.8 | ISC | `package.json` + `LICENSE` | 2026-10-22 |
+| brace-expansion | 2.1.7 | MIT | `package.json` + `LICENSE` | 2026-10-22 |
+| balanced-match | 1.0.2 | MIT | `package.json` + `LICENSE.md` | 2026-10-22 |
+
+`vscode-languageclient` 10 was not taken: it needs minimatch 10, under the
+Blue Oak Model License, which is not on the allowlist. minimatch is pinned
+to 5.1.8 (`overrides` in `package.json`): 5.1.9 declares ISC but ships the
+Blue Oak license file.

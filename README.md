@@ -69,8 +69,8 @@ sentences of the development set
 ## Install
 
 Each tagged [release](https://github.com/e6qu/emdysi/releases) attaches
-`en` for Linux (x86-64) and macOS (Apple silicon). Or build it with Rust
-1.85 or later:
+`en` for Linux (x86-64), macOS (Apple silicon) and Windows (x86-64). Or
+build it with Rust 1.85 or later:
 
 ```sh
 cargo install --git https://github.com/e6qu/emdysi emdysi
@@ -79,8 +79,10 @@ cargo install --git https://github.com/e6qu/emdysi emdysi
 The binary is self-contained: the grammar, rule packs and word lists are
 built into it. On first use it writes the grammar to its cache directory
 (below) and compiles it, which takes a few seconds; `--grammar DIR` or
-`EMDYSI_GRAMMAR` uses another copy. It needs about 2 GB of memory while
-parsing. Local models are optional (`cargo install` with `--features
+`EMDYSI_GRAMMAR` uses another copy. It needs about 0.6 GB of memory, and
+up to about 1.2 GB more for each sentence parsed at once: by default one
+per core, as far as the memory available allows (`--threads N` to
+choose). Local models are optional (`cargo install` with `--features
 llama` for GGUF files; any OpenAI-compatible server works without it).
 
 ## Usage
@@ -115,10 +117,15 @@ lists every option.
 
 `en lsp` is a language server: diagnostics appear as you write (after a
 pause in typing, and on open and save), and each fix or suggestion is a
-quick fix. The grammar is loaded once and parses are cached, so only the
+quick fix. When a document is first opened, the findings that need no
+parse (spelling, words and phrases) appear at once and the rest when its
+sentences are parsed. The grammar is loaded once and parses are cached, so only the
 sentences you change are parsed again. Options after `lsp` (`--pack`,
-`--glossary`, `--min-severity warning`, ...) apply to every document. In
-Neovim (0.11):
+`--glossary`, `--min-severity warning`, ...) apply to every document.
+
+In VS Code, install `emdysi.vsix` from a release (*Extensions: Install from
+VSIX...*; it needs `en` on the PATH, or its path in the `emdysi.path`
+setting): see [editors/vscode](editors/vscode/README.md). In Neovim (0.11):
 
 ```lua
 vim.lsp.config('emdysi', { cmd = { 'en', 'lsp' }, filetypes = { 'markdown', 'text' } })

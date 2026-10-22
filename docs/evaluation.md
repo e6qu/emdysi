@@ -513,6 +513,43 @@ without an actor, 102 long sentences, 49 three-part lists and 42
 intensifiers, all suggestions. `--min-severity warning` leaves 1.7
 findings per 1,000 words.
 
+## Quick findings, and memory, for interactive use
+
+**Findings before the parse.** The first check of a document parses every
+sentence. On the first development set's 30 documents of fiction,
+government guidance, Kubernetes and Rust (33,040 words; 2026-10-22, four
+threads, an otherwise busy machine) `en check` took 1,123 s, 37 s a
+document; with `--no-parse`, 60 s, 2 s a document, most of it loading the
+grammar. Of the 855 findings of the full check, 300 need no parse, and
+every one of the 300 findings of the quick check is among the 855: the
+quick check only leaves things out. So `en lsp` publishes the quick
+findings at once on a document's first check and the full ones when the
+parse is done; nothing shown is taken back. Later checks parse only the
+sentences that changed and publish the full findings directly (two
+publications there would take back, for a moment, every finding that
+needs the parse).
+
+**Memory while parsing.** Checking this README from scratch (`--no-cache`,
+2026-10-22):
+
+| Sentences parsed at once | Peak memory | Time |
+|---|---|---|
+| 1 | 1.8 GB | 224 s |
+| 2 | 3.0 GB | 114 s |
+| 4 | 5.0 GB | 60 s |
+
+The grammar and the document's analyses take about 0.6 GB (0.9 GB with
+every parse cached: 0.37 GB for the grammar alone), and a long sentence
+up to 1.2 GB while it is parsed; the peak depends on which long sentences
+happen to be parsed together (3.8 GB in another four-thread run). The
+default was one thread per core whatever the memory, which on a machine
+with many cores and little memory would not fit. It is now one per core
+as far as the available memory allows (1 GB for the rest, 1.25 GB a
+thread; a container's cgroup limit counts), and `--threads` chooses.
+Ranking features, hundreds of strings a reading that only the ranker's
+training reads, are no longer kept: 20 MB less on this README with every
+parse cached, not the lever.
+
 ## Recall on real errors
 
 Precision alone is easy to get by flagging nothing.

@@ -103,6 +103,9 @@ OPTIONS:
     --no-parse             tokenize only; skip grammar-based checks
     --max-tokens N         do not parse sentences longer than N tokens (default 100)
     --timeout SECS         time limit per sentence (default 10)
+    --threads N            sentences parsed at once (default: one per core,
+                           as far as memory allows: a long sentence can take
+                           over a gigabyte while it is parsed)
     --no-cache             parse every sentence afresh (by default the parses
                            of sentences seen before are reused from the cache,
                            at most EMDYSI_CACHE_MB megabytes, default 256)
@@ -241,6 +244,13 @@ fn parse_args() -> Result<Args, String> {
             }
             "--no-parse" => a.opts.parse = false,
             "--no-cache" => a.cache = false,
+            "--threads" => {
+                a.opts.threads = need(&mut it, &arg)?
+                    .parse::<usize>()
+                    .ok()
+                    .filter(|&n| n > 0)
+                    .ok_or("--threads needs a number above 0")?
+            }
             "--max-tokens" => {
                 a.opts.max_tokens = need(&mut it, &arg)?
                     .parse()
