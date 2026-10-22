@@ -159,6 +159,11 @@ pub struct Erg {
     pub trees_for: usize,
     /// Keep each reading's feature structure ([`Reading::dag`]).
     pub keep_dags: bool,
+    /// Keep each reading's ranking features ([`Reading::features`]), for
+    /// training a ranker; otherwise they are dropped once the readings
+    /// are ranked (hundreds of strings a reading, which nothing else
+    /// reads).
+    pub keep_features: bool,
     /// Lexical type of each instance, by instance index.
     pub le_types: Vec<String>,
     /// Chart-pruning beam for a first, faster pass (see `parse`).
@@ -806,6 +811,7 @@ impl Erg {
             model: rank::Model::parse(DEFAULT_MODEL),
             trees_for: 3,
             keep_dags: false,
+            keep_features: false,
             labeler,
             grammar,
             repp,
@@ -931,11 +937,20 @@ impl Erg {
     }
 
     fn parse_with(&self, text: &str, config: &ParserConfig) -> Result<Parse, Error> {
-        let Some((_, dir)) = self.parse_cache.as_ref().filter(|_| !self.keep_dags) else {
+        // (The cache keeps neither structures nor ranking features.)
+        let Some((_, dir)) = self
+            .parse_cache
+            .as_ref()
+            .filter(|_| !self.keep_dags && !self.keep_features)
+        else {
             return self.parse_uncached(text, config);
         };
         let key = parse_cache::key(config, self.first_beam, self.trees_for, text);
-        if let Some(p) = parse_cache::load(dir, &key) {
+        if let Some(mut p) = parse_cache::load(dir, &key) {
+            // (Entries written before features were dropped hold them.)
+            for r in &mut p.readings {
+                r.features = Vec::new();
+            }
             return Ok(p);
         }
         let p = self.parse_uncached(text, config)?;
@@ -1278,7 +1293,11 @@ impl Erg {
                             .collapse()
                     }),
                     score,
-                    features,
+                    features: if self.keep_features {
+                        features
+                    } else {
+                        Vec::new()
+                    },
                 }
             })
             .collect();

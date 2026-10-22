@@ -79,8 +79,10 @@ cargo install --git https://github.com/e6qu/emdysi emdysi
 The binary is self-contained: the grammar, rule packs and word lists are
 built into it. On first use it writes the grammar to its cache directory
 (below) and compiles it, which takes a few seconds; `--grammar DIR` or
-`EMDYSI_GRAMMAR` uses another copy. It needs about 2 GB of memory while
-parsing. Local models are optional (`cargo install` with `--features
+`EMDYSI_GRAMMAR` uses another copy. It needs about 0.6 GB of memory, and
+up to about 1.2 GB more for each sentence parsed at once: by default one
+per core, as far as the memory available allows (`--threads N` to
+choose). Local models are optional (`cargo install` with `--features
 llama` for GGUF files; any OpenAI-compatible server works without it).
 
 ## Usage

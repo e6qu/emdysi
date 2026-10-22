@@ -248,11 +248,46 @@ pub struct Options {
     pub meaning: bool,
 }
 
+/// How many sentences to parse at once by default: one per core, but no
+/// more than memory allows, as a long sentence can take over a gigabyte
+/// while it is parsed (1.2 GB a thread at worst on this README, above 0.6
+/// GB for the grammar and the document). On Linux the memory available
+/// is read from `/proc/meminfo` and, in a container, its cgroup's limit:
+/// a gigabyte for the rest, then 1.25 GB a thread. Elsewhere, at most
+/// four.
+pub fn default_threads() -> usize {
+    let cores = std::thread::available_parallelism().map_or(2, |n| n.get());
+    let read_bytes =
+        |path: &str| -> Option<f64> { std::fs::read_to_string(path).ok()?.trim().parse().ok() };
+    let meminfo = std::fs::read_to_string("/proc/meminfo").ok().and_then(|m| {
+        let kb: f64 = m
+            .lines()
+            .find(|l| l.starts_with("MemAvailable:"))?
+            .split_whitespace()
+            .nth(1)?
+            .parse()
+            .ok()?;
+        Some(kb * 1024.0)
+    });
+    // (A cgroup without a limit says "max", which does not parse.)
+    let cgroup = read_bytes("/sys/fs/cgroup/memory.max")
+        .map(|max| max - read_bytes("/sys/fs/cgroup/memory.current").unwrap_or(0.0));
+    let available = match (meminfo, cgroup) {
+        (Some(a), Some(b)) => Some(a.min(b)),
+        (a, b) => a.or(b),
+    };
+    let by_memory = available.map_or(4, |bytes| {
+        let gb = bytes / (1024.0 * 1024.0 * 1024.0);
+        ((gb - 1.0) / 1.25).floor().max(1.0) as usize
+    });
+    cores.min(by_memory).max(1)
+}
+
 impl Default for Options {
     fn default() -> Self {
         Options {
             parse: true,
-            threads: std::thread::available_parallelism().map_or(2, |n| n.get()),
+            threads: default_threads(),
             max_tokens: 100,
             timeout: Duration::from_secs(10),
             max_readings: 100,

@@ -107,6 +107,8 @@ fn main() {
     // are parsed, so an interrupted run can be resumed.
     if std::env::var("NO_PARSE").is_err() {
         let mut erg = Erg::load(&default_grammar_dir()).unwrap();
+        // The ranker learns from the readings' features.
+        erg.keep_features = true;
         erg.config.timeout = Duration::from_secs(20);
         erg.config.max_readings = 500;
         erg.config.max_nodes = 30_000_000;
