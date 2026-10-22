@@ -135,58 +135,77 @@ fn lsp_session() {
 }
 
 #[test]
-fn quick_findings_first_then_the_full_ones() {
+fn quick_findings_first_then_the_full_ones_with_progress() {
     let (mut stdin, rx, mut child) = start(&[]);
     let mut send = |v: Value| stdin.write_all(&frame(&v)).unwrap();
     let next = || -> Value {
-        loop {
-            let m = rx
-                .recv_timeout(Duration::from_secs(120))
-                .expect("no message");
-            if m["method"] == "textDocument/publishDiagnostics" {
-                return m;
-            }
-        }
+        rx.recv_timeout(Duration::from_secs(120))
+            .expect("no message")
     };
-    send(
-        json!({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"capabilities": {}}}),
-    );
+    // An editor that shows progress.
+    send(json!({"jsonrpc": "2.0", "id": 1, "method": "initialize",
+                "params": {"capabilities": {"window": {"workDoneProgress": true}}}}));
+    assert_eq!(next()["id"], 1);
     send(
         json!({"jsonrpc": "2.0", "method": "textDocument/didOpen", "params": {"textDocument":
         {"uri": "file:///a.txt", "languageId": "plaintext", "version": 1,
          "text": "The new version are faster. We recieved it.\n"}}}),
     );
-    let rules = |m: &Value| -> Vec<String> {
-        m["params"]["diagnostics"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .map(|d| d["code"].as_str().unwrap().to_string())
-            .collect()
-    };
+    // The server asks for a progress token; the answer is not answered.
+    let create = next();
+    assert_eq!(
+        create["method"], "window/workDoneProgress/create",
+        "{create}"
+    );
+    send(json!({"jsonrpc": "2.0", "id": create["id"], "result": null}));
+    let token = create["params"]["token"].clone();
+    // Then: progress begins, the quick findings, the full ones, progress ends.
+    let mut seen = Vec::new();
+    loop {
+        let m = next();
+        assert!(m.get("error").is_none(), "{m}");
+        if m["method"] == "$/progress" {
+            assert_eq!(m["params"]["token"], token);
+            let kind = m["params"]["value"]["kind"].as_str().unwrap().to_string();
+            seen.push((kind.clone(), Vec::new()));
+            if kind == "end" {
+                break;
+            }
+        } else if m["method"] == "textDocument/publishDiagnostics" {
+            let rules: Vec<String> = m["params"]["diagnostics"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|d| d["code"].as_str().unwrap().to_string())
+                .collect();
+            seen.push(("publish".to_string(), rules));
+        }
+    }
+    let kinds: Vec<&str> = seen.iter().map(|(k, _)| k.as_str()).collect();
+    assert_eq!(kinds, ["begin", "publish", "publish", "end"]);
     // Spelling needs no parse; the agreement error does.
-    let quick = rules(&next());
+    let (quick, full) = (&seen[1].1, &seen[2].1);
     assert!(quick.contains(&"core.spelling".to_string()), "{quick:?}");
     assert!(
         !quick.contains(&"core.grammar-errors".to_string()),
         "{quick:?}"
     );
-    let full = rules(&next());
     assert!(
         full.contains(&"core.grammar-errors".to_string()),
         "{full:?}"
     );
     assert!(quick.iter().all(|r| full.contains(r)), "{quick:?} {full:?}");
-    // An edit goes straight to the full findings.
+    // A later check goes straight to the full findings, without progress.
     send(
         json!({"jsonrpc": "2.0", "method": "textDocument/didSave", "params": {
         "textDocument": {"uri": "file:///a.txt"}}}),
     );
-    let again = rules(&next());
-    assert!(
-        again.contains(&"core.grammar-errors".to_string()),
-        "{again:?}"
+    let again = next();
+    assert_eq!(
+        again["method"], "textDocument/publishDiagnostics",
+        "{again}"
     );
+    assert!(again.to_string().contains("core.grammar-errors"), "{again}");
     send(json!({"jsonrpc": "2.0", "id": 2, "method": "shutdown"}));
     send(json!({"jsonrpc": "2.0", "method": "exit"}));
     assert!(child.wait().unwrap().success());

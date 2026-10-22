@@ -2,7 +2,7 @@
   "name": "emdysi",
   "displayName": "emdysi",
   "description": "English grammar, spelling, style and AI-writing checks with a full grammar of English, as you write",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "e6qu",
   "license": "AGPL-3.0-or-later",
   "repository": {
@@ -24,7 +24,9 @@
   ],
   "activationEvents": [
     "onLanguage:markdown",
-    "onLanguage:plaintext"
+    "onLanguage:plaintext",
+    "onCommand:emdysi.restart",
+    "onCommand:emdysi.showOutput"
   ],
   "main": "./extension.js",
   "contributes": {
@@ -34,7 +36,7 @@
         "emdysi.path": {
           "type": "string",
           "default": "en",
-          "description": "The `en` executable: a name on the PATH or a full path."
+          "description": "The `en` executable: a name on the PATH, or a full path (`C:\\\\Tools\\\\en\\\\en.exe` on Windows). In a workspace you have not trusted, only your user setting counts."
         },
         "emdysi.args": {
           "type": "array",
@@ -42,7 +44,7 @@
             "type": "string"
           },
           "default": [],
-          "description": "Options for `en lsp`, e.g. [\"--pack\", \"google\", \"--glossary\", \"terms.toml\"]."
+          "description": "Options for `en lsp`, e.g. [\"--pack\", \"google\", \"--glossary\", \"docs/terms.toml\", \"--disable\", \"plain-style.passive\"]. Relative paths are read from the workspace folder. In a workspace you have not trusted, only your user setting counts."
         },
         "emdysi.minSeverity": {
           "type": "string",
@@ -55,7 +57,19 @@
           "description": "Show only findings this severe or worse."
         }
       }
-    }
+    },
+    "commands": [
+      {
+        "command": "emdysi.restart",
+        "title": "Restart Server",
+        "category": "emdysi"
+      },
+      {
+        "command": "emdysi.showOutput",
+        "title": "Show Output",
+        "category": "emdysi"
+      }
+    ]
   },
   "scripts": {
     "package": "vsce package --out emdysi.vsix",
@@ -71,6 +85,16 @@
   "overrides": {
     "vscode-languageclient": {
       "minimatch": "5.1.8"
+    }
+  },
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "In a workspace you have not trusted, emdysi ignores the workspace's emdysi.path and emdysi.args (a cloned repository could otherwise name a program of its own to run) and uses your user settings.",
+      "restrictedConfigurations": [
+        "emdysi.path",
+        "emdysi.args"
+      ]
     }
   }
 }

@@ -1,4 +1,11 @@
+# Build and test tools, not shipped.
 node_modules/@vscode/**
-*.vsix
 test/**
 .vscode-test/**
+*.vsix
+# The libraries' type declarations, source maps and documentation (their
+# license files stay).
+node_modules/**/*.d.ts
+node_modules/**/*.map
+node_modules/**/README.md
+node_modules/**/CHANGELOG.md

@@ -92,6 +92,9 @@ en check draft.md
 en check --format markdown notes.txt
 en fix draft.md > fixed.md
 en parse --derivations --mrs essay.md
+en check --format json draft.md      # or sarif, for CI
+en lsp                               # a language server, for editors
+en mcp                               # tools for agents (Model Context Protocol)
 en packs
 ```
 
@@ -123,9 +126,11 @@ sentences are parsed. The grammar is loaded once and parses are cached, so only 
 sentences you change are parsed again. Options after `lsp` (`--pack`,
 `--glossary`, `--min-severity warning`, ...) apply to every document.
 
-In VS Code, install `emdysi.vsix` from a release (*Extensions: Install from
-VSIX...*; it needs `en` on the PATH, or its path in the `emdysi.path`
-setting): see [editors/vscode](editors/vscode/README.md). In Neovim (0.11):
+In VS Code, install the emdysi extension (`emdysi.vsix`, attached to each
+release) and `en`: the [VS Code guide](editors/vscode/README.md) covers
+installing both on each system, what you see and how to fix it, settings
+(packs, glossaries, rules to disable, the least severity shown),
+Workspace Trust and troubleshooting. In Neovim (0.11):
 
 ```lua
 vim.lsp.config('emdysi', { cmd = { 'en', 'lsp' }, filetypes = { 'markdown', 'text' } })
@@ -275,6 +280,7 @@ up, is in [docs/plan.md](docs/plan.md). In short:
 | `packs/` | Built-in rule packs |
 | `data/` | Word lists (SCOWL, cspell), ERG error texts, rule data from other linters |
 | `corpora/` | Test and evaluation corpora, each with its license |
+| `editors/vscode` | The VS Code extension ([guide](editors/vscode/README.md)) |
 | `scripts/` | The vendoring check, the rule importer, the tiny test model |
 
 ## License

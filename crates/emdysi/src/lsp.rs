@@ -15,11 +15,10 @@ use std::sync::mpsc::{self, RecvTimeoutError};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-use emdysi_check::{Checker, Diagnostic, Format, Options, Severity, analyze};
-use emdysi_parse::Erg;
+use emdysi_check::{Diagnostic, Format, Options, Severity, analyze};
 use serde_json::{Value, json};
 
-use crate::{Args, READING_MARGIN, check, load_glossary, load_packs};
+use crate::{Args, READING_MARGIN, check, load_grammar, make_checker};
 
 /// How long typing must pause before a changed document is checked.
 const PAUSE: Duration = Duration::from_millis(800);
@@ -134,26 +133,82 @@ enum Job {
 
 /// Checks the documents sent to it, newest version of each, and publishes
 /// the diagnostics.
-fn checker(args: Args, jobs: mpsc::Receiver<Job>, out: Out, found: Found, utf8: bool) {
-    let cache = args.cache.then(emdysi_parse::checker_cache_dir).flatten();
-    let loaded = (|| -> Result<(Erg, Checker), String> {
-        let dir = match &args.grammar {
-            Some(d) => d.clone(),
-            None => emdysi_parse::grammar_dir().map_err(|e| format!("finding the grammar: {e}"))?,
-        };
-        let mut erg = Erg::load(&dir).map_err(|e| format!("loading grammar: {e}"))?;
-        if let Some(c) = &cache {
-            erg.cache_parses(c);
+/// What the editor said it can do (`initialize`).
+#[derive(Clone, Copy)]
+struct Client {
+    /// Positions in UTF-8 bytes rather than UTF-16 units.
+    utf8: bool,
+    /// Progress shown for work the server starts (`window.workDoneProgress`).
+    progress: bool,
+}
+
+/// The editor's answers to the server's own requests (creating a progress
+/// token), from the main thread.
+type Responses = mpsc::Receiver<Value>;
+
+/// Shows "emdysi: Checking NAME" in the editor until [`Progress::end`],
+/// if the editor shows progress and agrees to the token within a second.
+struct Progress<'a> {
+    out: &'a Out,
+    token: Option<String>,
+}
+
+impl<'a> Progress<'a> {
+    fn begin(out: &'a Out, client: Client, responses: &Responses, n: usize, uri: &str) -> Self {
+        let mut p = Progress { out, token: None };
+        if !client.progress {
+            return p;
         }
-        let mut packs = load_packs(&args.packs)?;
-        for g in &args.glossaries {
-            packs.push(load_glossary(g)?);
+        let token = format!("emdysi-{n}");
+        send(
+            out,
+            &json!({"jsonrpc": "2.0", "id": token, "method": "window/workDoneProgress/create",
+                    "params": {"token": token}}),
+        );
+        let deadline = Instant::now() + Duration::from_secs(1);
+        while let Ok(r) = responses.recv_timeout(deadline.saturating_duration_since(Instant::now()))
+        {
+            if r["id"] == token.as_str() {
+                if r.get("error").is_none() {
+                    let name = uri.rsplit('/').next().unwrap_or(uri);
+                    send(
+                        out,
+                        &json!({"jsonrpc": "2.0", "method": "$/progress", "params": {"token": token,
+                                "value": {"kind": "begin", "title": "emdysi",
+                                          "message": format!("Checking {name}")}}}),
+                    );
+                    p.token = Some(token);
+                }
+                break;
+            }
         }
-        let mut checker = Checker::new(packs);
-        checker.disabled = args.disabled.clone();
-        Ok((erg, checker))
-    })();
-    let (erg, checker) = match loaded {
+        p
+    }
+
+    fn end(self) {
+        if let Some(token) = self.token {
+            send(
+                self.out,
+                &json!({"jsonrpc": "2.0", "method": "$/progress",
+                        "params": {"token": token, "value": {"kind": "end"}}}),
+            );
+        }
+    }
+}
+
+fn checker(
+    args: Args,
+    jobs: mpsc::Receiver<Job>,
+    responses: Responses,
+    out: Out,
+    found: Found,
+    client: Client,
+) {
+    let utf8 = client.utf8;
+    let mut started = 0;
+    let loaded = load_grammar(&args)
+        .and_then(|(erg, cache)| Ok((erg, cache, make_checker(&args, &args.packs)?)));
+    let (erg, cache, checker) = match loaded {
         Ok(x) => x,
         Err(e) => {
             send(
@@ -220,7 +275,16 @@ fn checker(args: Args, jobs: mpsc::Receiver<Job>, out: Out, found: Found, utf8: 
             // among the full check's findings (evaluation.md), so nothing
             // shown is taken back. Later checks parse only what changed,
             // and go straight to the full findings.
-            if args.opts.parse && checked.insert(uri.clone()) {
+            let first = checked.insert(uri.clone());
+            // A first check parses every sentence: minutes for a long
+            // document, so the editor shows that it is under way.
+            let progress = if first {
+                started += 1;
+                Some(Progress::begin(&out, client, &responses, started, &uri))
+            } else {
+                None
+            };
+            if args.opts.parse && first {
                 let quick = Options {
                     parse: false,
                     ..args.opts.clone()
@@ -239,6 +303,9 @@ fn checker(args: Args, jobs: mpsc::Receiver<Job>, out: Out, found: Found, utf8: 
             }
             let diags = check(&checker, &erg, &a, model.as_mut(), &args);
             publish(&diags);
+            if let Some(p) = progress {
+                p.end();
+            }
             found.lock().unwrap().insert(uri, (doc.text, diags));
         }
         if let Some(c) = &cache {
@@ -292,6 +359,8 @@ pub fn serve(args: Args) -> Result<bool, String> {
         }
     });
     let found: Found = Arc::default();
+    let (responses_tx, responses) = mpsc::channel::<Value>();
+    let mut responses = Some(responses);
     let mut jobs: Option<mpsc::Sender<Job>> = None;
     let mut utf8 = false;
     let mut docs: HashMap<String, Doc> = HashMap::new();
@@ -321,7 +390,12 @@ pub fn serve(args: Args) -> Result<bool, String> {
         };
         // (The time the message came, not the time the wait began.)
         let now = Instant::now();
-        let method = msg.get("method").and_then(Value::as_str).unwrap_or("");
+        // An answer to one of the server's own requests (it has an id and
+        // no method) goes to the checker; it is never answered.
+        let Some(method) = msg.get("method").and_then(Value::as_str) else {
+            let _ = responses_tx.send(msg);
+            continue;
+        };
         let id = msg.get("id").cloned();
         let params = msg.get("params").cloned().unwrap_or(json!({}));
         let reply = |result: Value| {
@@ -339,12 +413,19 @@ pub fn serve(args: Args) -> Result<bool, String> {
                     .pointer("/capabilities/general/positionEncodings")
                     .and_then(Value::as_array)
                     .is_some_and(|a| a.iter().any(|e| e == "utf-8"));
+                let client = Client {
+                    utf8,
+                    progress: params.pointer("/capabilities/window/workDoneProgress")
+                        == Some(&Value::Bool(true)),
+                };
                 // The checker starts now, so that the grammar loads while
                 // the editor opens its documents.
-                let (tx, rx) = mpsc::channel();
-                let (args, out, found) = (args.clone(), out.clone(), found.clone());
-                std::thread::spawn(move || checker(args, rx, out, found, utf8));
-                jobs = Some(tx);
+                if let Some(responses) = responses.take() {
+                    let (tx, rx) = mpsc::channel();
+                    let (args, out, found) = (args.clone(), out.clone(), found.clone());
+                    std::thread::spawn(move || checker(args, rx, responses, out, found, client));
+                    jobs = Some(tx);
+                }
                 reply(json!({
                     "capabilities": {
                         "positionEncoding": if utf8 { "utf-8" } else { "utf-16" },
