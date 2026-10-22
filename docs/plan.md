@@ -261,7 +261,10 @@ default in LanguageTool too).
    used: `ggml-org/gemma-4-E2B-it-GGUF` and `ggml-org/gemma-4-E4B-it-GGUF`,
    `*-Q4_0.gguf` (2.8 and 4.6 GB). Build with `cargo build --release
    --features llama --examples --bins` (`--examples` alone leaves out
-   `en`). A model run takes hours, so measure on a sample and watch it:
+   `en`), and again after any `cargo test`, which relinks the examples
+   without the feature (the run then stops at once: "a GGUF model needs
+   a build with the `llama` feature"). A model run takes hours, so
+   measure on a sample and watch it:
    - `real_errors` with `SHARD=0/4` (94 pairs), `THREADS=2
      EMDYSI_LM_THREADS=2` (two pairs at once, each model on two cores)
      and `LOG=FILE`; it journals each pair, so an interrupted run
