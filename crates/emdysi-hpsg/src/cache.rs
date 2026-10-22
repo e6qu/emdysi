@@ -159,7 +159,7 @@ fn prune(dir: &Path) {
         })
         .filter_map(|p| Some((std::fs::metadata(&p).ok()?.modified().ok()?, p)))
         .collect();
-    bins.sort_by(|a, b| b.0.cmp(&a.0));
+    bins.sort_by_key(|b| std::cmp::Reverse(b.0));
     for (_, p) in bins.into_iter().skip(KEEP) {
         let _ = std::fs::remove_file(p);
     }
