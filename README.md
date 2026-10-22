@@ -111,6 +111,34 @@ SARIF for programs (`--format`):
 found (grammar errors the grammar can prove are warnings). `en --help`
 lists every option.
 
+### In an editor
+
+`en lsp` is a language server: diagnostics appear as you write (after a
+pause in typing, and on open and save), and each fix or suggestion is a
+quick fix. The grammar is loaded once and parses are cached, so only the
+sentences you change are parsed again. Options after `lsp` (`--pack`,
+`--glossary`, `--min-severity warning`, ...) apply to every document. In
+Neovim (0.11):
+
+```lua
+vim.lsp.config('emdysi', { cmd = { 'en', 'lsp' }, filetypes = { 'markdown', 'text' } })
+vim.lsp.enable('emdysi')
+```
+
+In Helix (`languages.toml`):
+
+```toml
+[language-server.emdysi]
+command = "en"
+args = ["lsp"]
+
+[[language]]
+name = "markdown"
+language-servers = ["marksman", "emdysi"]
+```
+
+Any editor with a generic language-server client works the same way.
+
 ### For agents
 
 `en mcp` serves `check`, `fix` and `parse` as tools over the [Model

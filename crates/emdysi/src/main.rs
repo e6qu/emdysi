@@ -9,6 +9,7 @@ use emdysi_check::report::{OutputFormat, ParseDetails, count, render, render_par
 use emdysi_check::{Checker, Format, Options, Pack, Severity, analyze, apply_fixes};
 use emdysi_parse::{Erg, grammar_dir};
 
+mod lsp;
 mod mcp;
 
 const BUILTIN_PACKS: &[(&str, &str)] = &[
@@ -80,6 +81,8 @@ USAGE:
     en mcp [OPTIONS]               serve the check, fix and parse tools to agents
                                    (Model Context Protocol over stdio); the
                                    options set the defaults
+    en lsp [OPTIONS]               a language server for editors (stdio):
+                                   diagnostics as you write, fixes as quick fixes
     en packs                       list rule packs and rules (default packs, or
                                    those given with --pack)
 
@@ -413,6 +416,9 @@ fn run() -> Result<bool, String> {
     }
     if args.command == "mcp" {
         return mcp::serve(args);
+    }
+    if args.command == "lsp" {
+        return lsp::serve(args);
     }
     if !matches!(args.command.as_str(), "check" | "fix" | "parse" | "rewrite") {
         return Err(format!("unknown command {:?}\n\n{USAGE}", args.command));
