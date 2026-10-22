@@ -474,10 +474,12 @@ pub fn inflect(word: &str, tag: &str) -> Option<String> {
 /// The regular -s form of `lemma` (|wants|, |pushes|, |tries|).
 fn s_form(lemma: &str) -> String {
     let b = lemma.as_bytes();
-    let consonant_y = lemma.len() > 1
-        && lemma.ends_with('y')
-        && !b"aeiou".contains(&b[lemma.len() - 2]);
-    if ["s", "x", "z", "ch", "sh", "o"].iter().any(|e| lemma.ends_with(e)) {
+    let consonant_y =
+        lemma.len() > 1 && lemma.ends_with('y') && !b"aeiou".contains(&b[lemma.len() - 2]);
+    if ["s", "x", "z", "ch", "sh", "o"]
+        .iter()
+        .any(|e| lemma.ends_with(e))
+    {
         format!("{lemma}es")
     } else if consonant_y {
         format!("{}ies", &lemma[..lemma.len() - 1])

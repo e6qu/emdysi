@@ -2513,6 +2513,40 @@ run). Codespell's rare list without the title-case gate
 would flag real words in the development sets (*wit*, *revered*,
 *implementors*), so it is used only there.
 
+### Wrong verb and noun forms the grammar reads as English
+
+Six of the missed inflection errors are a verb or noun in the wrong form
+that the grammar reads as some other correct English: *A ResourceQuota
+can either limits* with *ResourceQuota can* a compound and *limits* a
+plural noun, *you wants to* with *wants* a noun, *each Pods* with *Pods*
+a name. The parse cannot rule these out, but the lexicon can: *limits*
+can be a verb's -s form, and after *can either* nothing else fits. So
+regex rules now take `forms` and `not_forms` conditions, the tags a word
+can have in UniMorph's tables whatever the parse chose (with the regular
+-s forms the tables leave out: they list *want* without *wants*), and
+seven rules use them (2026-10-22):
+
+| Rule | Error | Caught |
+|---|---|---|
+| `core.modal-verb-s` | *can either limits the quantity*; not after a determiner (*the can opens*) | 1 |
+| `core.to-verb-s` | *needs to knows*, after words that take an infinitive (not *used to*, *going to*) | 1 |
+| `core.pronoun-verb-s` | *and you wants to receive*, before what a verb takes | 1 |
+| `core.let-verb-s` | *let you controls the rate* | 1 |
+| `core.every-plural` | *every operations* (none in the corpus; twice in the held-out set) | 0 |
+| `core.each-plural` | *to each Pods as*, a capitalized plural only: *each runs in its own thread* is right | 1 |
+| `core.this-noun-verb` | *This tutorial show you* (a dozen verbs; not *This will make*) | 1 |
+
+Real errors caught without a model: 227 of 374 (221 before), grammar 60
+of 197, with no flag on the corrected text. As with the patterns above,
+these were shaped on the errors they catch; over all 654 documents of
+the development and held-out sets (41,364 sentences, `en check
+--no-parse`, which runs them, since they need no parse) they find two
+things, *for every operations on every endpoints* in the held-out set,
+both real errors. Tried and dropped: a possessive before a verb's -s
+form (*the rules its understands*: 33 matches in the development sets,
+*their hopes*, *your notes*, plurals the tables do not list), and a lone
+lower-case *i* (code).
+
 Measured and left as is: reporting two-edit typos without a model. Of
 the spelling findings left to a model (tokenization only, every edited
 sample and both sides of the real-error pairs), the two-edit ones in
