@@ -766,3 +766,110 @@ fn grammar_error_corrections_are_words() {
         );
     }
 }
+
+#[test]
+fn chunks_from_the_parse() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let opts = Options {
+        threads: 1,
+        ..Options::default()
+    };
+    for (text, want) in [
+        (
+            "The quick brown fox jumps over the lazy dogs.\n",
+            vec![
+                ("The", "B-NP-singular"),
+                ("brown", "I-NP-singular"),
+                ("fox", "E-NP-singular"),
+                ("jumps", "B-VP"),
+                ("over", "B-PP"),
+                ("the", "B-NP-plural"),
+                ("dogs", "E-NP-plural"),
+            ],
+        ),
+        (
+            "They have not been seen since.\n",
+            vec![
+                ("They", "B-NP-plural"),
+                ("They", "E-NP-plural"),
+                ("have", "B-VP"),
+                ("not", "I-VP"),
+                ("been", "I-VP"),
+                ("seen", "I-VP"),
+            ],
+        ),
+    ] {
+        let a = analyze(&erg, text, Format::Plain, &opts);
+        let best = a.sentences[0].best().unwrap();
+        let chunks = emdysi_check::tags::chunks(&best.words);
+        for (word, tag) in want {
+            let i = best
+                .words
+                .iter()
+                .position(|w| w.surface.trim_end_matches('.') == word)
+                .unwrap_or_else(|| panic!("{word} in {text}"));
+            assert!(
+                chunks[i].iter().any(|c| c == tag),
+                "{word}: {:?} in {text}",
+                chunks[i]
+            );
+        }
+    }
+}
+
+#[test]
+fn an_antipattern_with_a_tag_condition() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let opts = Options {
+        threads: 1,
+        ..Options::default()
+    };
+    // Flags |run| except where the parse makes it a noun.
+    let pack = Pack::parse(
+        r#"
+[pack]
+name = "t"
+
+[[rule]]
+id = "t.run"
+kind = "regex"
+severity = "warning"
+message = "run"
+pattern = '(?i)\brun\b'
+antipatterns = [{ pattern = '(?i)\b(?P<t1>run)\b', tags = ["t1=NN.*"] }]
+"#,
+    )
+    .unwrap();
+    let checker = Checker::new(vec![pack]);
+    for (text, flagged) in [("I run every day.\n", true), ("The run was long.\n", false)] {
+        let a = analyze(&erg, text, Format::Plain, &opts);
+        let d = checker.check(&erg, &a);
+        assert_eq!(
+            d.iter().any(|x| x.rule == "t.run"),
+            flagged,
+            "{text}: {d:?}"
+        );
+    }
+}
+
+#[test]
+fn a_mass_noun_has_languagetools_countability_tag() {
+    let erg = Erg::load(&default_grammar_dir()).unwrap();
+    let opts = Options {
+        threads: 1,
+        ..Options::default()
+    };
+    let a = analyze(&erg, "The information was useful.\n", Format::Plain, &opts);
+    let best = a.sentences[0].best().unwrap();
+    let w = best
+        .words
+        .iter()
+        .find(|w| w.surface == "information")
+        .unwrap();
+    let tags = emdysi_check::tags::penn_all(w);
+    assert!(
+        tags.contains(&"NN") && tags.contains(&"NN:U"),
+        "{tags:?} {}",
+        w.le_type
+    );
+}

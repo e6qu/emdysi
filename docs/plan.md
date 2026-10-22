@@ -24,7 +24,7 @@ unless stated:
 | False flags on edited text, per 1,000 sentences | 1.6 (first development set, 4 flags), 4.8 (second, 64), 3.7 (held out, 31 in 8,371 sentences) | most of the second set's flags point at real errors or real spelling mixes in the source (`docs/evaluation.md`) |
 | Gold analyses (ERG test suites) | MRS identical for all 2,966 reproduced; ranker 81.7% exact match held out | |
 | Speed | about 1.3 s of parsing per sentence of edited text (held-out set, cold parse cache, 2026-10-18), plus 0.25 s for the grammar-error variant | 1.7 s of CPU per sentence before giving up after an exhausted search, 2.1 s before the grammar-error variant was gated (2026-10-17); parsing is most of the time |
-| Rule data | 2,580 LanguageTool rules (579 of them checked against the parse's parts of speech), 98 slop rules, 26 GitLab rules (opt-in packs); codespell, CMUdict, UniMorph, Open English WordNet, UD English EWT vendored | emdysi is AGPL-3.0-or-later since 2026-10-17 (decision D15), so share-alike and GPL data can be used |
+| Rule data | 3,418 LanguageTool rules (1,375 of them checked against the parse's parts of speech or chunks), 98 slop rules, 26 GitLab rules (opt-in packs); codespell, CMUdict, UniMorph, Open English WordNet, UD English EWT vendored | emdysi is AGPL-3.0-or-later since 2026-10-17 (decision D15), so share-alike and GPL data can be used |
 
 ## Priorities
 
@@ -77,8 +77,12 @@ unless stated:
      (10.0 per 1,000), of which 5 false (two in Austen, a preposition, a
      real-word swap the word list cannot rank, an unknown term), one
      a wrong fix of a real problem, and one answered since
-     (evaluation.md). With the first four guards the model adds 5 to the
-     grammar alone on the 34 pairs (12 of 34 caught), no flag on the
+     (evaluation.md). On the first development set's sample with every
+     guard: 2 flags in 683 sentences, British usage and a real error,
+     none false. Screening at 2 nats instead of 3 adds 1 of the 34
+     pairs, a false flag and four times the time: rejected. With the
+     first four guards the model adds 5 to the grammar alone on the 34
+     pairs (12 of 34 caught), no flag on the
      corrected text.
 
    - Gemma 3 12B (2026-10-21, fits in 16 GB with `EMDYSI_LM_MMAP=0`)
@@ -142,11 +146,15 @@ unless stated:
    headings, reader hooks), and the `slop` pack adds bheijden/slop's
    tested patterns. The judgements no pattern can make (explaining the
    obvious, fake specificity) wait on the model.
-6. **More LanguageTool rules.** 579 rules now check parts of speech
-   against the parse, and suggestions inflect, change case and rewrite
-   matched words; about 600 more need LanguageTool's chunker. None of
-   the converted rules catches the real grammar errors (24 of 199 with
-   the pack or without, when measured): those need the grammar.
+6. **More LanguageTool rules.** 1,375 rules now check parts of speech
+   or chunks against the parse, in their patterns or their antipatterns
+   (chunks and tagged antipatterns since 2026-10-21), and suggestions
+   inflect, change case and rewrite matched words. The rest need
+   exceptions or filters the converter does not take, or fail their
+   examples with the parse. With the pack two more real grammar errors
+   are caught (223 of 374); on the first development set it gives 15
+   findings per 1,000 sentences, mostly style, 4 of them from the rules
+   added on 2026-10-21.
 
 7. **Parse ranking.** The shipped averaged perceptron is 81.7% exact
    match held out and right for 57 of 97 judged machine-written

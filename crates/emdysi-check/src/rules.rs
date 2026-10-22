@@ -218,6 +218,9 @@ pub struct TagCheck {
     group: String,
     tag: Regex,
     negate: bool,
+    /// A chunk tag (`chunks`, `not_chunks`: see [`crate::tags::chunks`])
+    /// rather than a part of speech.
+    chunk: bool,
 }
 
 /// A pattern compiled when first used.
@@ -278,7 +281,12 @@ pub enum Kind {
         re: LazyRegex,
         needs: Vec<String>,
         replace: Option<String>,
-        unless: Option<LazyRegex>,
+        unless: Option<Box<LazyRegex>>,
+        /// Antipatterns with conditions only the parse can check: a
+        /// sentence where one matches with its conditions met is skipped,
+        /// as for `unless` (`antipatterns = [{ pattern = "…", tags =
+        /// ["t1=NN.*"] }]`).
+        antipatterns: Vec<(LazyRegex, Vec<TagCheck>)>,
         suggest: Vec<String>,
         expand: bool,
         /// Part-of-speech conditions on named groups (`tags`, `not_tags`:
@@ -553,8 +561,25 @@ impl Rule {
                 };
                 let re = lazy(pat, "pattern")?;
                 let unless = get_str(t, "unless")
-                    .map(|u| lazy(u, "`unless` pattern"))
+                    .map(|u| lazy(u, "`unless` pattern").map(Box::new))
                     .transpose()?;
+                let antipatterns: Vec<(LazyRegex, Vec<TagCheck>)> = t
+                    .get("antipatterns")
+                    .and_then(Value::as_array)
+                    .unwrap_or(&[])
+                    .iter()
+                    .map(|a| {
+                        let a = a
+                            .as_table()
+                            .ok_or_else(|| err("an antipattern is not a table"))?;
+                        let pat = get_str(a, "pattern")
+                            .ok_or_else(|| err("an antipattern needs `pattern`"))?;
+                        // Compiled when first needed, like a pattern with
+                        // `needs`: hundreds of them would slow loading
+                        // (tests/examples.rs compiles every one).
+                        Ok((LazyRegex::new(pat), conditions(a).map_err(|e| err(&e))?))
+                    })
+                    .collect::<Result<_, PackError>>()?;
                 Kind::Regex {
                     re,
                     needs,
@@ -562,23 +587,8 @@ impl Rule {
                     unless,
                     suggest: get_list(t, "suggest"),
                     expand: t.get("expand").and_then(Value::as_bool).unwrap_or(false),
-                    tags: [("tags", false), ("not_tags", true)]
-                        .iter()
-                        .flat_map(|&(key, negate)| {
-                            get_list(t, key).into_iter().map(move |c| (c, negate))
-                        })
-                        .map(|(c, negate)| {
-                            let (group, tag) = c
-                                .split_once('=')
-                                .ok_or_else(|| err(&format!("bad tag condition {c:?}")))?;
-                            Ok(TagCheck {
-                                group: group.to_string(),
-                                tag: Regex::new(&format!("^(?:{tag})$"))
-                                    .map_err(|e| err(&format!("bad tag pattern: {e}")))?,
-                                negate,
-                            })
-                        })
-                        .collect::<Result<_, PackError>>()?,
+                    tags: conditions(t).map_err(|e| err(&e))?,
+                    antipatterns,
                     transforms: get_list(t, "transforms")
                         .iter()
                         .map(|x| Transform::parse(x).map_err(|e| err(&e)))
@@ -1237,6 +1247,7 @@ impl Rule {
                 re,
                 replace,
                 unless,
+                antipatterns,
                 suggest,
                 expand,
                 needs,
@@ -1244,7 +1255,7 @@ impl Rule {
                 transforms,
             } => {
                 for (si, s) in a.sentences.iter().enumerate() {
-                    if !tags.is_empty() && s.best().is_none() {
+                    if !(tags.is_empty() && antipatterns.is_empty()) && s.best().is_none() {
                         continue;
                     }
                     if !needs.is_empty() && !needs.iter().any(|w| s.mentions(w)) {
@@ -1252,10 +1263,19 @@ impl Rule {
                     }
                     let Some(re) = re.get() else { continue };
                     if unless
-                        .as_ref()
+                        .as_deref()
                         .and_then(LazyRegex::get)
                         .is_some_and(|u| u.is_match(&s.original).unwrap_or(false))
                     {
+                        continue;
+                    }
+                    if antipatterns.iter().any(|(p, conds)| {
+                        p.get().is_some_and(|p| {
+                            p.captures_iter(s.original.as_str())
+                                .flatten()
+                                .any(|m| conds.iter().all(|c| tag_holds(s, &m, c)))
+                        })
+                    }) {
                         continue;
                     }
                     for m in re.captures_iter(s.original.as_str()).flatten() {
@@ -3308,6 +3328,37 @@ fn split_contraction(w: &str) -> Vec<String> {
     vec![w]
 }
 
+/// The part-of-speech and chunk conditions of a rule or antipattern:
+/// `tags`, `not_tags`, `chunks`, `not_chunks`, each a list of
+/// `group=pattern`.
+fn conditions(t: &Table) -> Result<Vec<TagCheck>, String> {
+    [
+        ("tags", false, false),
+        ("not_tags", true, false),
+        ("chunks", false, true),
+        ("not_chunks", true, true),
+    ]
+    .iter()
+    .flat_map(|&(key, negate, chunk)| {
+        get_list(t, key)
+            .into_iter()
+            .map(move |c| (c, negate, chunk))
+    })
+    .map(|(c, negate, chunk)| {
+        let (group, tag) = c
+            .split_once('=')
+            .ok_or_else(|| format!("bad tag condition {c:?}"))?;
+        Ok(TagCheck {
+            group: group.to_string(),
+            tag: Regex::new(&format!("^(?:{tag})$"))
+                .map_err(|e| format!("bad tag pattern: {e}"))?,
+            negate,
+            chunk,
+        })
+    })
+    .collect()
+}
+
 /// Whether a match meets a part-of-speech condition: the words of the
 /// sentence's best reading that the group covers.
 fn tag_holds(s: &crate::Sentence, m: &fancy_regex::Captures<'_, str>, c: &TagCheck) -> bool {
@@ -3318,11 +3369,21 @@ fn tag_holds(s: &crate::Sentence, m: &fancy_regex::Captures<'_, str>, c: &TagChe
     let from = s.original[..g.start()].chars().count();
     let to = from + g.as_str().chars().count();
     let found = s.best().is_some_and(|r| {
-        r.words
-            .iter()
-            .filter(|w| w.from < to && from < w.to)
-            .flat_map(crate::tags::penn_all)
-            .any(|t| c.tag.is_match(t).unwrap_or(false))
+        let covered = |w: &&emdysi_parse::Word| w.from < to && from < w.to;
+        if c.chunk {
+            r.words
+                .iter()
+                .zip(crate::tags::chunks(&r.words))
+                .filter(|(w, _)| covered(w))
+                .flat_map(|(_, cs)| cs)
+                .any(|t| c.tag.is_match(&t).unwrap_or(false))
+        } else {
+            r.words
+                .iter()
+                .filter(covered)
+                .flat_map(crate::tags::penn_all)
+                .any(|t| c.tag.is_match(t).unwrap_or(false))
+        }
     });
     found != c.negate
 }

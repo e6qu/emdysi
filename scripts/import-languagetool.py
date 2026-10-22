@@ -77,6 +77,8 @@ TOKEN_ATTRS = {
     "inflected",
     "postag",
     "postag_regexp",
+    "chunk",
+    "chunk_re",
 }
 
 # The closed-class part-of-speech tags of LanguageTool's tagger (the Penn
@@ -93,6 +95,22 @@ CLOSED = {
     "PRP": "i me you he him she her it we us they them myself yourself himself herself itself "
     "ourselves yourselves themselves",
     "PRP$": "my your his her its our their",
+    # LanguageTool's pronouns by case, person and number.
+    "PRP_S1S": "i",
+    "PRP_S1P": "we",
+    "PRP_S2": "you",
+    "PRP_S3SM": "he",
+    "PRP_S3SF": "she",
+    "PRP_S3SN": "it",
+    "PRP_S3P": "they",
+    "PRP_O1S": "me",
+    "PRP_O1P": "us",
+    "PRP_O2": "you",
+    "PRP_O3SM": "him",
+    "PRP_O3SF": "her",
+    "PRP_O3SN": "it",
+    "PRP_O3P": "them",
+    "POS": "'s ’s ' ’",
     "MD": "can could may might must shall should will would ought 'll 'd",
     "CC": "and or but nor yet plus",
     "TO": "to",
@@ -109,7 +127,7 @@ CLOSED = {
 }
 OPEN = (
     "NN NNS NNP NNPS NN:U NN:UN JJ JJR JJS RB RBR RBS RP VB VBD VBG VBN VBP VBZ UH FW LS SYM "
-    "POS PCT CD SENT_END UNKNOWN"
+    "PCT CD SENT_END UNKNOWN"
 ).split()
 
 
@@ -209,7 +227,7 @@ def is_punct(s):
 # The tags emdysi derives from the parse (crates/emdysi-check/src/tags.rs).
 PARSE_TAGS = (
     "CD EX WP PRP NNP NNPS NN NNS MD VBP VBZ VBD VBN VBG VB JJR JJS JJ RBR RBS WRB RB "
-    "TO IN PRP$ WDT DT CC"
+    "TO IN PRP$ WDT DT CC NN:U NN:UN"
 ).split()
 
 
@@ -230,8 +248,10 @@ def tag_pattern(el):
 def token_regex(tok, conds=None):
     """A token's pattern, with its exceptions as negative lookaheads: the
     token's own, then (`scope="next"`) the next token's. With `conds`, an
-    open-class part of speech becomes a condition on the token's group
-    (pattern, negated), checked against the parse; without, Skip."""
+    open-class part of speech or a chunk (LanguageTool's chunker's tag:
+    |B-NP-singular|, |E-NP-plural|, |B-VP|) becomes a condition on the
+    token's group (kind, pattern, negated), checked against the parse;
+    without, Skip."""
     extra = set(tok.attrib) - TOKEN_ATTRS
     if extra:
         raise Skip(f"token attributes {extra}")
@@ -241,6 +261,10 @@ def token_regex(tok, conds=None):
     tag = tok.get("postag")
     if tag == "SENT_START" and not text and not list(tok):
         return "^", True
+    # The sentence's last token (usually its final punctuation).
+    sent_end = tag == "SENT_END" and tok.get("postag_regexp") != "yes"
+    if sent_end:
+        tag = None
     if tok.get("inflected") == "yes" and text:
         body = inflections(text, tok.get("regexp") == "yes")
     elif tok.get("regexp") == "yes":
@@ -254,7 +278,12 @@ def token_regex(tok, conds=None):
         except Skip:
             if conds is None or tok.get("negate") == "yes":
                 raise
-            conds.append((tag_pattern(tok), False))
+            conds.append(("tag", tag_pattern(tok), False))
+    chunk, chunk_re = tok.get("chunk"), tok.get("chunk_re")
+    if chunk is not None or chunk_re is not None:
+        if conds is None or tok.get("negate") == "yes":
+            raise Skip("chunk")
+        conds.append(("chunk", chunk_re if chunk_re is not None else regex.escape(chunk), False))
     own, after = [], []
     for ch in tok:
         if ch.tag != "exception":
@@ -269,7 +298,7 @@ def token_regex(tok, conds=None):
             except Skip:
                 if conds is None or scope != "current" or ch.get("negate_pos"):
                     raise
-                conds.append((tag_pattern(ch), True))
+                conds.append(("tag", tag_pattern(ch), True))
                 continue
         elif ch.get("inflected") == "yes":
             e = inflections(e, ch.get("regexp") == "yes")
@@ -295,6 +324,8 @@ def token_regex(tok, conds=None):
     else:
         out = f"{start}{neg}(?:{body}){end}"
     out += "".join(rf"(?!\s*(?:{e})(?!\w))" for e in after)
+    if sent_end:
+        out += r"(?=\s*$)"
     return out, punct
 
 
@@ -371,8 +402,8 @@ def sequence(tokens, groups=True, conds=None):
     for i, (tok, marked) in enumerate(tokens, 1):
         local = [] if groups and conds is not None else None
         body, _ = token_regex(tok, local)
-        for pat, negate in local or []:
-            conds.append((f"t{i}={pat}", negate))
+        for kind, pat, negate in local or []:
+            conds.append((kind, f"t{i}={pat}", negate))
         sep = "" if i == 1 or tok.get("spacebefore") == "no" else r"\s*"
         if tok.get("spacebefore") == "yes" and i > 1:
             sep = r"\s+"
@@ -537,10 +568,31 @@ def convert(rule, group, category, file):
         raise Skip("no pattern")
     pat = ("" if case else "(?i)") + body
     unless = []
+    # Antipatterns that need parts of speech or chunks: patterns of their
+    # own with conditions, checked with the parse.
+    tagged_unless = []
     for anti in rule.findall("antipattern") + (group.findall("antipattern") if group is not None else []):
         if set(anti.attrib) - {"case_sensitive"}:
             raise Skip("antipattern attributes")
-        u = sequence([(t, True) for t, _ in flatten(anti)], groups=False)
+        toks = [(t, True) for t, _ in flatten(anti)]
+        try:
+            u = sequence(toks, groups=False)
+        except Skip as e:
+            if not str(e).startswith(("open-class tag", "chunk")):
+                raise
+            c = []
+            u = sequence(toks, conds=c)
+            u = f"(?-i:{u})" if anti.get("case_sensitive") == "yes" else u
+            tagged_unless.append(
+                {
+                    "pattern": ("" if case else "(?i)") + u,
+                    "tags": [x for k, x, neg in c if k == "tag" and not neg],
+                    "not_tags": [x for k, x, neg in c if k == "tag" and neg],
+                    "chunks": [x for k, x, neg in c if k == "chunk" and not neg],
+                    "not_chunks": [x for k, x, neg in c if k == "chunk" and neg],
+                }
+            )
+            continue
         unless.append(f"(?-i:{u})" if anti.get("case_sensitive") == "yes" else u)
     msg_el = rule.find("message")
     if msg_el is None and group is not None:
@@ -572,9 +624,12 @@ def convert(rule, group, category, file):
         "pattern": pat,
         "needs": needs,
         "transforms": list(TRANSFORMS),
-        "tags": [c for c, neg in conds if not neg],
-        "not_tags": [c for c, neg in conds if neg],
+        "tags": [c for k, c, neg in conds if k == "tag" and not neg],
+        "not_tags": [c for k, c, neg in conds if k == "tag" and neg],
+        "chunks": [c for k, c, neg in conds if k == "chunk" and not neg],
+        "not_chunks": [c for k, c, neg in conds if k == "chunk" and neg],
         "unless": ("" if case else "(?i)") + "|".join(f"(?:{u})" for u in unless) if unless else None,
+        "antipatterns": tagged_unless,
         "suggest": suggestions,
         "examples": examples,
         "acceptable": acceptable,
@@ -584,6 +639,11 @@ def convert(rule, group, category, file):
 
 def expand(template, m):
     return m.expand(re.sub(r"\$\{(\w+)\}", r"\\g<\1>", template).replace("$$", "$"))
+
+
+def conditioned(r):
+    """Whether the rule has conditions only the parse can check."""
+    return bool(r["tags"] or r["not_tags"] or r["chunks"] or r["not_chunks"] or r["antipatterns"])
 
 
 def validate(r):
@@ -615,7 +675,7 @@ def validate(r):
     # here and still pass: the conditions are checked with the parse
     # (crates/emdysi-check/examples/lt_validate.rs).
     for text in r["acceptable"]:
-        if spans(text) and not (r["tags"] or r["not_tags"]):
+        if spans(text) and not conditioned(r):
             raise Skip("flags a correct example")
     # The suggestions must expand (a group they name must exist).
     for text, _ in r["examples"]:
@@ -635,10 +695,10 @@ def rules_of(file):
             continue
         for el in cat:
             if el.tag == "rule":
-                yield el, None, cid
+                yield el, None, cid, 1
             elif el.tag == "rulegroup":
-                for r in el.findall("rule"):
-                    yield r, el, cid
+                for i, r in enumerate(el.findall("rule"), 1):
+                    yield r, el, cid, i
 
 
 def toml_str(s):
@@ -646,6 +706,31 @@ def toml_str(s):
         return f"'{s}'"
     out = s.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
     return '"' + "".join(c if ord(c) >= 32 else f"\\u{ord(c):04x}" for c in out) + '"'
+
+
+def rule_ids():
+    """Every rule's id, by (file, LanguageTool id, position in its group):
+    the group's slug, then the position after a hyphen from the second
+    rule on. Assigned over all the rules, converted or not, so that an id
+    does not change with which rules convert; where two would be the same
+    (rule 2 of `your-you` and rule 1 of `your-you-2`), the later one gets
+    a letter."""
+    global RULE_IDS
+    if RULE_IDS is None:
+        RULE_IDS, seen = {}, set()
+        for file in ("grammar.xml", "style.xml"):
+            for rule, group, _, position in rules_of(file):
+                lt_id = (group.get("id") if group is not None else rule.get("id")) or ""
+                base = "languagetool." + slug(lt_id)
+                rid = base if position == 1 else f"{base}-{position}"
+                if rid in seen:
+                    rid = next(f"{rid}{c}" for c in "bcdefghij" if f"{rid}{c}" not in seen)
+                seen.add(rid)
+                RULE_IDS[(file, lt_id, position)] = rid
+    return RULE_IDS
+
+
+RULE_IDS = None
 
 
 def slug(s):
@@ -671,14 +756,13 @@ def build(candidates=False):
     out. With `candidates`, the pack holds every rule with part-of-speech
     conditions instead, for lt_validate."""
     kept, skipped = [], {}
-    ids = {}
     validated = {
         line.strip()
         for line in (VALIDATED.read_text().splitlines() if VALIDATED.exists() else [])
         if line.strip() and not line.startswith("#")
     }
     for file in ("grammar.xml", "style.xml"):
-        for rule, group, cat in rules_of(file):
+        for rule, group, cat, position in rules_of(file):
             try:
                 r = convert(rule, group, cat, file)
                 validate(r)
@@ -686,13 +770,11 @@ def build(candidates=False):
                 reason = str(e).split(":")[0]
                 skipped[reason] = skipped.get(reason, 0) + 1
                 continue
-            base = "languagetool." + slug(r["lt_id"])
-            ids[base] = ids.get(base, 0) + 1
-            r["id"] = base if ids[base] == 1 else f"{base}-{ids[base]}"
+            r["id"] = rule_ids()[(file, r["lt_id"], position)]
             if r["id"] in EXCLUDED:
                 skipped["excluded"] = skipped.get("excluded", 0) + 1
                 continue
-            tagged = bool(r["tags"] or r["not_tags"])
+            tagged = conditioned(r)
             if candidates and not tagged:
                 continue
             if tagged and not candidates and r["id"] not in validated:
@@ -727,8 +809,21 @@ def build(candidates=False):
             out.append("tags = [" + ", ".join(toml_str(c) for c in r["tags"]) + "]")
         if r["not_tags"]:
             out.append("not_tags = [" + ", ".join(toml_str(c) for c in r["not_tags"]) + "]")
+        if r["chunks"]:
+            out.append("chunks = [" + ", ".join(toml_str(c) for c in r["chunks"]) + "]")
+        if r["not_chunks"]:
+            out.append("not_chunks = [" + ", ".join(toml_str(c) for c in r["not_chunks"]) + "]")
         if r["unless"]:
             out.append(f"unless = {toml_str(r['unless'])}")
+        if r["antipatterns"]:
+            items = []
+            for a in r["antipatterns"]:
+                fields = [f"pattern = {toml_str(a['pattern'])}"]
+                for key in ("tags", "not_tags", "chunks", "not_chunks"):
+                    if a[key]:
+                        fields.append(f"{key} = [" + ", ".join(toml_str(c) for c in a[key]) + "]")
+                items.append("{ " + ", ".join(fields) + " }")
+            out.append("antipatterns = [" + ", ".join(items) + "]")
         if "${" in r["message"] or "{{" in r["message"]:
             out.append("expand = true")
         if r["transforms"]:

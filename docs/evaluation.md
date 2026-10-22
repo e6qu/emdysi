@@ -2305,6 +2305,11 @@ real problem (the verb disagrees) with a wrong fix. Left false: the two
 in Austen (*contrive*, *the thoughtless*), *from 2024H2*, *Larded* and
 the unknown *sret*, 5 in 1,095 sentences, against 14 before.
 
+The first development set's sample again with every guard (2026-10-22,
+683 sentences, 3,878 s): 2 flags, the British *government … have
+argued* and the real error *all same ease*. No false flag is left there
+(4 before the guards, and *within an area* after the first three).
+
 On the 34 pairs, with the first four of these guards (2026-10-21; the
 last three came after): 12 of 34 caught, 0 flags on the corrected text,
 285 questions. The model adds 5 to the grammar alone: the 4 above and
@@ -2326,9 +2331,26 @@ model, and the writer's version was shown for only one pair.
 With every list of versions the one-pass estimate ranks logged
 (`LOG.estimates.tsv`, 2026-10-21; `examples/prefilter` reads it): of 73
 lists on these 34 pairs, 8 hold the writer's version at all, and 6 of
-those 8 rank among the first five. The prefilter costs at most 2 pairs;
-the rest of the loss is that the writer's edit is not among the
-candidates verified in time, the locating problem again.
+those 8 rank among the first five. The prefilter costs at most 2 pairs.
+
+Nor is it the candidate budget: with 400 candidates and 120 s per
+sentence instead of 120 and 30 s (measured and left, 2026-10-21) the run
+asked the same 285 questions and caught the same 12. With the current
+code a perfect chooser (`ORACLE=1`) catches 29 of the 34 (the guards
+since the 34 were chosen cost the rest). Of E2B's 22 misses: 11 wrong
+sentences were never screened in (their most surprising word stays
+under `screen_surprise`, 3 nats), 7 were screened in without the
+writer's edit among the versions shown, and 4 a perfect chooser misses
+too. Screening is the largest loss.
+
+Screening at 2 nats instead of 3 (measured and rejected, 2026-10-22)
+catches 13 of the 34 instead of 12 (*controls* to *control*), asking
+350 questions instead of 285. On the first development set's sample it
+flags 4 of 683 sentences instead of 2: the same two (British usage, *all
+same ease*), *Perhaps my favorite feature* (*Is perhaps*, false) and
+*newly stable to the 2018 edition* (*in*, arguable), and it takes about
+15,000 s instead of 3,878. One error more is not worth a false flag and
+four times the time.
 
 ## Doubled words and 'allows to', without a model
 
@@ -2587,6 +2609,59 @@ caught stay at 24 of 199, and one corrected sentence is flagged. The
 converted rules target other errors than the ones in this corpus
 (missing function words, wrong forms), which need the grammar.
 
+### LanguageTool rules on chunks
+
+LanguageTool's English chunker marks base noun phrases (`B-NP-singular`,
+`I-NP-…`, `E-NP-plural` for the last word, singular or plural after the
+head), verb groups (`B-VP`, `I-VP`), prepositions (`B-PP`) and a few
+more, and about 830 of its rules ask for them. emdysi derives the same
+tags from the parse's parts of speech (`tags::chunks`, 2026-10-21), and
+the regex kind takes `chunks` and `not_chunks` conditions as it takes
+`tags`. With chunk tokens converted, 977 rules have conditions only the
+parse can check; `lt_validate` keeps the 743 whose examples hold (579
+before), and the pack has 2,744 rules (2,580). No rule kept before was
+lost; 24 ids within rule groups moved up a number.
+
+With parsing, on the first development set (`PACK=`, the whole pack):
+26 findings in 2,508 sentences, 2 of them from rules with chunk
+conditions, both false (*you need to set the node's capacity*, where the
+rule wants *set* to be a past form, and one in Austen). On the real-error
+corpus with the pack added: 221 of 374 caught, as without it; one
+corrected text is flagged, by a rule that needs only words
+(*parenthesis?*).
+
+Most of the rules still left out (1,082) were left out only because an
+antipattern asks for an open-class part of speech. The regex kind now
+takes `antipatterns`, each a pattern with its own tag and chunk
+conditions; a sentence where one matches with its conditions met draws
+no finding, as with `unless`. With them, 1,764 rules have conditions
+only the parse can check, `lt_validate` keeps 1,312, and the pack has
+3,315 rules. On the first development set: 33 findings (26), the 7 from
+the new rules 2 defensible (*brand new syntax*) and 5 false (*both his
+and your*, *need to run*, *Let's see now*, *In Linux and macOS*, *He
+also pointed out*), mostly from a part of speech the best reading gets
+wrong. On the real-error corpus: 223 of 374 caught (221), the first real
+grammar errors a LanguageTool rule catches here (*the worse case
+startup time*, *able analyze*); 2 corrected texts flagged (1), the new
+one a style suggestion (*in a similar manner*).
+
+LanguageTool's subdivided pronoun tags (`PRP_S3SM` for *he*, `PRP_O3P`
+for *them*) and its possessive tag (`POS`) are word lists like the other
+closed classes, `SENT_END` asks for the sentence's last token, and the
+countability tags `NN:U` (uncountable) and `NN:UN` (either) come from
+the ERG's mass and mass-or-count noun types. Then 1,885 rules have
+conditions, 1,376 pass, and the pack has 3,421 rules (no rule group has
+fewer than before). First development set: 37 findings (33), the new
+ones style suggestions (*outside of*, twice; *some one*) and one false
+(*hard to read*); real errors: 223 caught, as before.
+
+Rule ids then moved from a count of the rules converted so far to the
+rule's position in its LanguageTool group, assigned over every rule so
+that they no longer change when other rules start converting; 765 of
+the 3,418 ids changed once. Two pairs of rules had shared an id (rule 2
+of `it-is` and rule 1 of `it-is-2`), and three of them, kept only
+through the shared id, fail their own examples; they are left out.
+
 ### A lower time limit: 5 seconds instead of 10
 
 `timing` with `TIMEOUT=5` against the default 10 seconds, on the same
@@ -2795,6 +2870,23 @@ it parses, though by a reading with *short* a noun, which the ranker
 prefers to an entry for *short for*, so none was added), and documentation
 shorthand without a subject or determiner (*Specifies the duration that
 ...*, *at node, pod and container level*).
+
+Looked at again (2026-10-21): *X, Y, or both* parses where the
+conjuncts are noun phrases (*images, containers, or both*) and not where
+they are verbs or participles (*can be requested, limited, or both*):
+*both* would have to stand for a verb phrase in every form the
+conjuncts take (a passive participle there), which no ERG type does;
+the development sets have four such sentences. The *than* clauses are
+lexical rather than structural: *more CPU than they need* and *than
+they requested* parse, *than they want* and *than they request* do not,
+and *took longer than* fails with any complement (*It took longer.*
+parses); the corpora have one such sentence (*take longer than
+running*). Both are left for now. So is *short for* with an adjective: an
+entry like the ERG's *short of brilliant* (`short_a2`) with an empty
+*for* that takes an adjective parses *The dyn keyword is short for
+dynamic*, but that *for* would stand before any adjective (*for good*,
+*for free*), and one sentence of the corpora does not pay for the
+validation a grammar change needs (every parse cache cold, hours).
 
 Measured with the parse cache cold: false flags 4 on the first
 development set and 31 on the held-out set, the same flags as before;

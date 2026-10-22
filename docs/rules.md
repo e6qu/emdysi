@@ -72,7 +72,7 @@ expanded the same way. `needs` lists words (lowercase) one of which a
 sentence must contain for the pattern to be tried (as a whole word if it
 is all letters and digits, else anywhere); the pattern is then compiled
 when a sentence first contains one, and matches inside a URL or file path
-are skipped. The `languagetool` pack, two and a half thousand such rules, loads in a
+are skipped. The `languagetool` pack, three and a half thousand such rules, loads in a
 fraction of a second this way.
 
 `tags` and `not_tags` put part-of-speech conditions on named groups, as
@@ -81,8 +81,25 @@ sentence's best reading whose Penn Treebank tag matches the pattern, or,
 for `not_tags`, none whose tag does. The tags come from the parse: the
 lexical type and inflectional rules of each word (`n_pl_olr` makes NNS,
 `aj_*-cmp_le` JJR; *stay* in *will stay* is both VB and VBP, since the
-grammar gives both one rule). A rule with conditions needs a parse, and
-does nothing on a sentence without one.
+grammar gives both one rule). A singular common noun also has
+LanguageTool's countability tag, `NN:U` (a mass noun) or `NN:UN` (mass
+or count), after the ERG's noun type. A rule with conditions needs a
+parse, and does nothing on a sentence without one.
+
+`chunks` and `not_chunks` do the same with chunk tags, as LanguageTool's
+chunker gives them (`"t3=E-NP.*"`): base noun phrases are `B-NP-…`,
+`I-NP-…` and `E-NP-…` (first, inner and last word, a one-word phrase both
+`B-` and `E-`), singular or plural after the head (`B-NP-plural`); verb
+groups `B-VP`, `I-VP`; prepositions `B-PP`; adverbs outside a verb group
+`B-ADVP`; predicative adjectives `B-ADJP`; subordinating conjunctions
+`B-SBAR`; anything else `O`. They are derived from the parse's tags
+(`emdysi_check::tags::chunks`).
+
+`antipatterns` is a list of patterns with conditions of their own, each
+an inline table with `pattern` and any of the four condition lists
+(`antipatterns = [{ pattern = '(?i)\b(?P<t1>run)\b', tags =
+["t1=NN.*"] }]`): a sentence where one matches with its conditions met is
+skipped, as for `unless`.
 
 ### `construction`
 
@@ -475,17 +492,25 @@ patterns, inflections of a word (expanded from UniMorph) or closed-class
 tags (determiners, pronouns, modals, prepositions: word lists) are
 converted, 1,645 of them, each to a `regex` rule whose tokens are named
 groups. Rules that also need open-class parts of speech (nouns, verbs,
-adjectives, adverbs) become rules with tag conditions, checked against
-the parse: 755 such rules convert, and the 579 whose examples hold with
-emdysi's parse are kept (`scripts/languagetool-tagged.txt`, written by
+adjectives, adverbs) become rules with tag conditions, and those that
+need LanguageTool's chunks (base noun phrases, verb groups: `B-NP-plural`,
+`E-NP-singular`, `B-VP`) rules with chunk conditions, the chunks derived
+from the parse's parts of speech (`emdysi_check::tags::chunks`), both
+checked against the parse; an antipattern that needs parts of speech or
+chunks becomes one of the rule's `antipatterns`, with its own conditions.
+1,885 such rules convert, and the 1,375 whose examples hold with emdysi's
+parse are kept (`scripts/languagetool-tagged.txt`, written by
 `crates/emdysi-check/examples/lt_validate.rs`; the test suite cannot
 parse every example of every rule, so this check runs when the pack is
-generated), 2,580 rules in all. Suggestions may change a matched word's
+generated), 3,418 rules in all. A rule's id is its LanguageTool rule
+group's name with its position in the group (`languagetool.it-is-2-33`),
+so ids do not change when other rules start or stop converting. Suggestions may change a matched word's
 case, apply a regex replacement to it, or inflect it for a tag (from
 UniMorph): the regex kind's `transforms`. A rule is kept only if it finds the marked span of each of its
 incorrect examples and nothing in its correct ones; the examples come along
 as the rule's `examples` and `acceptable`, so the test suite checks them
-again. Rules that need parts of speech of open classes, chunks or filters,
+again. Rules that need filters, or open-class parts of speech or chunks
+whose examples fail with the parse,
 rules off by default or marked picky, typography rules and the ellipsis
 rule are left out, and so are LanguageTool's wordiness and redundancy
 lists, which LanguageTool also turns off by default (on edited text they
