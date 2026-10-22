@@ -5,6 +5,18 @@ const vscode = require("vscode");
 const { LanguageClient } = require("vscode-languageclient/node");
 
 let client;
+// One output channel for every server started, so restarts do not add
+// more: the server's messages and errors go there.
+let output;
+
+// Stops the running server, if any (one that failed to start cannot be
+// stopped, and need not be).
+async function stop() {
+  if (client) {
+    await client.stop().catch(() => {});
+    client = undefined;
+  }
+}
 
 function start() {
   const config = vscode.workspace.getConfiguration("emdysi");
@@ -19,6 +31,7 @@ function start() {
     "emdysi",
     { command, args },
     {
+      outputChannel: output,
       documentSelector: [
         { scheme: "file", language: "markdown" },
         { scheme: "file", language: "plaintext" },
@@ -36,10 +49,17 @@ function start() {
 }
 
 function activate(context) {
+  output = vscode.window.createOutputChannel("emdysi");
+  context.subscriptions.push(output);
   context.subscriptions.push(
+    vscode.commands.registerCommand("emdysi.restart", async () => {
+      await stop();
+      await start();
+    }),
+    vscode.commands.registerCommand("emdysi.showOutput", () => output.show(true)),
     vscode.workspace.onDidChangeConfiguration(async (e) => {
-      if (e.affectsConfiguration("emdysi") && client) {
-        await client.stop();
+      if (e.affectsConfiguration("emdysi")) {
+        await stop();
         await start();
       }
     }),
@@ -48,7 +68,7 @@ function activate(context) {
 }
 
 function deactivate() {
-  return client ? client.stop() : undefined;
+  return stop();
 }
 
 module.exports = { activate, deactivate };

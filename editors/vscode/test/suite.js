@@ -1,6 +1,7 @@
 // Opens a Markdown document and waits for emdysi's findings: the spelling
 // mistake at once, then the agreement error once the sentence is parsed;
-// then a quick fix replaces the misspelled word.
+// then a quick fix replaces the misspelled word, and a restart of the
+// server brings the remaining finding back.
 
 const assert = require("assert");
 const path = require("path");
@@ -45,6 +46,15 @@ async function run() {
   assert.ok(fix, actions.map((a) => a.title).join(", "));
   await vscode.workspace.applyEdit(fix.edit);
   assert.ok(doc.getText().includes("We received the files."), doc.getText());
+  // Restarting the server brings the findings back (the spelling one is
+  // fixed by now).
+  await vscode.commands.executeCommand("emdysi.restart");
+  await waitFor(
+    () => codes().includes("core.grammar-errors") && !codes().includes("core.spelling"),
+    120000,
+  );
+  const commands = await vscode.commands.getCommands(true);
+  assert.ok(commands.includes("emdysi.showOutput"));
   console.log(`emdysi: passed (${codes().join(", ")})`);
 }
 
