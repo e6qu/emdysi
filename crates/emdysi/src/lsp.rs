@@ -15,7 +15,7 @@ use std::sync::mpsc::{self, RecvTimeoutError};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-use emdysi_check::{Checker, Diagnostic, Format, Severity, analyze};
+use emdysi_check::{Checker, Diagnostic, Format, Options, Severity, analyze};
 use emdysi_parse::Erg;
 use serde_json::{Value, json};
 
@@ -165,6 +165,8 @@ fn checker(args: Args, jobs: mpsc::Receiver<Job>, out: Out, found: Found, utf8: 
         }
     };
     let mut model = crate::load_model(&args).ok().flatten();
+    // Documents checked in full at least once.
+    let mut checked: std::collections::HashSet<String> = Default::default();
     while let Ok(first) = jobs.recv() {
         // Of the jobs waiting, only the newest for each document counts.
         let mut todo: Vec<Job> = vec![first];
@@ -181,6 +183,7 @@ fn checker(args: Args, jobs: mpsc::Receiver<Job>, out: Out, found: Found, utf8: 
         for (uri, doc) in latest {
             let Some(doc) = doc else {
                 found.lock().unwrap().remove(&uri);
+                checked.remove(&uri);
                 continue;
             };
             let format = if doc.markdown {
@@ -188,32 +191,54 @@ fn checker(args: Args, jobs: mpsc::Receiver<Job>, out: Out, found: Found, utf8: 
             } else {
                 Format::Plain
             };
+            let publish = |diags: &[Diagnostic]| {
+                let items: Vec<Value> = diags
+                    .iter()
+                    .map(|d| {
+                        json!({
+                            "range": lsp_range(&doc.text, &d.range, utf8),
+                            "severity": match d.severity {
+                                Severity::Error => 1,
+                                Severity::Warning => 2,
+                                Severity::Suggestion => 3,
+                            },
+                            "code": d.rule,
+                            "source": "emdysi",
+                            "message": d.message,
+                        })
+                    })
+                    .collect();
+                send(
+                    &out,
+                    &json!({"jsonrpc": "2.0", "method": "textDocument/publishDiagnostics",
+                            "params": {"uri": uri, "version": doc.version, "diagnostics": items}}),
+                );
+            };
+            // The first check of a document parses every sentence, which
+            // takes minutes for a long one: the findings that need no parse
+            // (spelling, words and phrases) go out first. They are always
+            // among the full check's findings (evaluation.md), so nothing
+            // shown is taken back. Later checks parse only what changed,
+            // and go straight to the full findings.
+            if args.opts.parse && checked.insert(uri.clone()) {
+                let quick = Options {
+                    parse: false,
+                    ..args.opts.clone()
+                };
+                let a = analyze(&erg, &doc.text, format, &quick);
+                let diags = check(&checker, &erg, &a, None, &args);
+                publish(&diags);
+                found
+                    .lock()
+                    .unwrap()
+                    .insert(uri.clone(), (doc.text.clone(), diags));
+            }
             let mut a = analyze(&erg, &doc.text, format, &args.opts);
             if args.context_readings {
                 emdysi_check::decisions::prefer_document_phrases(&mut a, READING_MARGIN);
             }
             let diags = check(&checker, &erg, &a, model.as_mut(), &args);
-            let items: Vec<Value> = diags
-                .iter()
-                .map(|d| {
-                    json!({
-                        "range": lsp_range(&doc.text, &d.range, utf8),
-                        "severity": match d.severity {
-                            Severity::Error => 1,
-                            Severity::Warning => 2,
-                            Severity::Suggestion => 3,
-                        },
-                        "code": d.rule,
-                        "source": "emdysi",
-                        "message": d.message,
-                    })
-                })
-                .collect();
-            send(
-                &out,
-                &json!({"jsonrpc": "2.0", "method": "textDocument/publishDiagnostics",
-                        "params": {"uri": uri, "version": doc.version, "diagnostics": items}}),
-            );
+            publish(&diags);
             found.lock().unwrap().insert(uri, (doc.text, diags));
         }
         if let Some(c) = &cache {
