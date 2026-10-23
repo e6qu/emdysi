@@ -26,6 +26,7 @@ Needs the `regex` module (pip install regex). The pack is registered in
 VENDORED.toml; do not edit it by hand.
 """
 
+import copy
 import re
 import sys
 import xml.etree.ElementTree as ET
@@ -140,12 +141,24 @@ def closed_words(tag, is_regexp):
         raise Skip("open-class tag")
     words = sorted({w for t in tags for w in CLOSED[t].split()}, key=lambda w: (-len(w), w))
     return "|".join(literal(w) for w in words)
-EXCEPTION_ATTRS = {"regexp", "case_sensitive", "scope", "inflected", "postag", "postag_regexp"}
+EXCEPTION_ATTRS = {
+    "regexp",
+    "case_sensitive",
+    "scope",
+    "inflected",
+    "postag",
+    "postag_regexp",
+    "negate_pos",
+}
 
 # Inflected forms by lemma, for LanguageTool's `inflected="yes"` tokens
 # (which match any form of a lemma), from UniMorph (data/unimorph/eng).
 # UniMorph lacks *be*.
-FORMS = {"be": {"be", "am", "is", "are", "was", "were", "been", "being", "'s", "'re", "'m"}}
+FORMS = {
+    "be": {"be", "am", "is", "are", "was", "were", "been", "being", "'s", "'re", "'m"},
+    # |n't| is LanguageTool's form of |not|.
+    "not": {"not", "n't", "n’t"},
+}
 for line in (ROOT / "data/unimorph/eng").read_text().splitlines():
     lemma, form, _ = line.split("\t")
     if " " not in lemma and " " not in form:
@@ -175,7 +188,10 @@ class Skip(Exception):
 def word_dots(pattern):
     """A token pattern for use in a pattern over text: `.` matches a word
     character (LanguageTool matches a pattern against one token, which has
-    no spaces and no punctuation but hyphens), and anchors go."""
+    no spaces and no punctuation but hyphens), and anchors go. A token of
+    any one character (`.` alone, as in `.|…`) may be punctuation."""
+    if not regex.search(r"[\\(\[]", pattern) and "." in pattern.split("|"):
+        return "|".join(r"[^\s]" if a == "." else word_dots(a) for a in pattern.split("|"))
     out, i, in_class = [], 0, False
     while i < len(pattern):
         c = pattern[i]
@@ -213,11 +229,15 @@ def literal(text):
 
 
 # Any one token: a word (with its hyphens) or a punctuation mark.
-WORD = r"(?:(?<!\w)\w[\w-]*(?!\w)|[^\w\s])"
+# Any token: a word (up to an |n't| that ends it, LanguageTool's own token:
+# |did| + |n't|), an |n't|, or a punctuation mark.
+WORD = r"(?:(?<!\w)\w[\w-]*?(?:(?=n['’]t(?!\w))|(?![\w-]))|(?<=\w)n['’]t(?!\w)|[^\w\s])"
 
 
 def text_of(el):
-    return (el.text or "").strip()
+    """The element's own text, which may follow its exceptions
+    (|<token><exception .../>hell</token>|)."""
+    return "".join([el.text or ""] + [ch.tail or "" for ch in el]).strip()
 
 
 def is_punct(s):
@@ -245,9 +265,11 @@ def tag_pattern(el):
     return pat
 
 
-def token_regex(tok, conds=None):
+def token_regex(tok, conds=None, before=None):
     """A token's pattern, with its exceptions as negative lookaheads: the
-    token's own, then (`scope="next"`) the next token's. With `conds`, an
+    token's own, then (`scope="next"`) the next token's. The previous
+    token's (`scope="previous"`) go to `before`, as patterns for a
+    lookbehind (without `before`, Skip). With `conds`, an
     open-class part of speech or a chunk (LanguageTool's chunker's tag:
     |B-NP-singular|, |E-NP-plural|, |B-VP|) becomes a condition on the
     token's group (kind, pattern, negated), checked against the parse;
@@ -255,8 +277,6 @@ def token_regex(tok, conds=None):
     extra = set(tok.attrib) - TOKEN_ATTRS
     if extra:
         raise Skip(f"token attributes {extra}")
-    if tok.get("min", "1") not in ("0", "1") or tok.get("max", "1") != "1":
-        raise Skip("repeated token")
     text = text_of(tok)
     tag = tok.get("postag")
     if tag == "SENT_START" and not text and not list(tok):
@@ -284,14 +304,29 @@ def token_regex(tok, conds=None):
         if conds is None or tok.get("negate") == "yes":
             raise Skip("chunk")
         conds.append(("chunk", chunk_re if chunk_re is not None else regex.escape(chunk), False))
-    own, after = [], []
+    own, after, required = [], [], []
     for ch in tok:
         if ch.tag != "exception":
             raise Skip(f"<{ch.tag}> in token")
         scope = ch.get("scope", "current")
-        if set(ch.attrib) - EXCEPTION_ATTRS or scope not in ("current", "next"):
+        if set(ch.attrib) - EXCEPTION_ATTRS or scope not in ("current", "next", "previous"):
+            raise Skip("exception attributes")
+        if scope == "previous" and before is None:
             raise Skip("exception attributes")
         e = text_of(ch)
+        if ch.get("negate_pos") == "yes":
+            # An exception for words without the tag: the token must have
+            # it.
+            if e or not ch.get("postag") or scope != "current":
+                raise Skip("exception attributes")
+            try:
+                words = closed_words(ch.get("postag"), ch.get("postag_regexp") == "yes")
+                required.append(words)
+            except Skip:
+                if conds is None:
+                    raise
+                conds.append(("tag", tag_pattern(ch), False))
+            continue
         if ch.get("postag") is not None and not e:
             try:
                 e = closed_words(ch.get("postag"), ch.get("postag_regexp") == "yes")
@@ -306,7 +341,7 @@ def token_regex(tok, conds=None):
             e = word_dots(e) if ch.get("regexp") == "yes" else literal(e)
         if ch.get("case_sensitive") == "yes":
             e = f"(?-i:{e})"
-        (own if scope == "current" else after).append(e)
+        {"current": own, "next": after, "previous": before}[scope].append(e)
     if after and tok.get("skip"):
         raise Skip("exception over skipped tokens")
     if tok.get("case_sensitive") == "yes":
@@ -315,9 +350,21 @@ def token_regex(tok, conds=None):
     # A token is a whole word: it starts and ends where a word does (a
     # hyphen joins words into one token).
     # A token may start with an apostrophe (*'s*), and a word may end in
-    # *n't*, a token of its own.
-    start, end = ("", "") if punct else (r"(?:(?=\w)(?<!\w)(?<!\w-)|(?!\w))", r"(?!(?!n['’]t)\w|-\w)")
+    # *n't*, a token of its own (*do* + *n't*). A token that ends in
+    # punctuation may be followed by a letter (*dosn* + *'* + *t*).
+    # Those extra boundaries only where the token can match such a piece
+    # (any word, a class, an apostrophe or another punctuation mark): the
+    # patterns stay small.
+    loose = WORD in body or bool(regex.search(r"\[|\\[^w]|[^\w\s\\|()?:*+{},^$.-]", body))
+    if punct:
+        start, end = "", ""
+    elif loose:
+        start = r"(?:(?=\w)(?<!\w)(?<!\w-)|(?!\w)|(?<=\w)(?=n['’]t(?!\w)))"
+        end = r"(?:(?<!\w)|(?!(?!n['’]t)\w|-\w))"
+    else:
+        start, end = r"(?:(?=\w)(?<!\w)(?<!\w-)|(?!\w))", r"(?!(?!n['’]t)\w|-\w)"
     neg = "".join(f"(?!(?:{e}){end})" for e in own)
+    neg += "".join(f"(?=(?:{e}){end})" for e in required)
     if tok.get("negate") == "yes":
         # A negated token also matches the start of the sentence.
         out = rf"(?:^|(?!(?:{body}){end}){neg}{WORD})"
@@ -401,13 +448,35 @@ def sequence(tokens, groups=True, conds=None):
     in_m = False
     for i, (tok, marked) in enumerate(tokens, 1):
         local = [] if groups and conds is not None else None
-        body, _ = token_regex(tok, local)
+        # A tag alternation with SENT_START (|SENT_START|CC|PCT|) also
+        # matches the start of the sentence, where the token's group takes
+        # no part (so its conditions hold).
+        at_start = False
+        tags = (tok.get("postag") or "").split("|")
+        if tok.get("postag_regexp") == "yes" and "SENT_START" in tags and len(tags) > 1:
+            if marked or i > 1 or "(" in tok.get("postag"):
+                raise Skip("SENT_START in an alternation")
+            tok = copy.deepcopy(tok)
+            tok.set("postag", "|".join(t for t in tags if t != "SENT_START"))
+            at_start = True
+        before = []
+        body, _ = token_regex(tok, local, before)
+        lo, hi = int(tok.get("min", "1")), int(tok.get("max", "1"))
+        repeated = (lo, hi) not in ((0, 1), (1, 1))
+        if repeated:
+            # A repeated token (|min|, |max|; -1 for any number): the
+            # group covers every repetition, and its conditions hold for
+            # every word in it (`t3*=RB`).
+            more = f"{{{max(lo, 1) - 1},{'' if hi < 0 else hi - 1}}}"
+            body = rf"(?:{body})(?:\s*(?:{body})){more}"
+        # An exception on the previous token: not after it.
+        look = "".join(rf"(?<!(?<![\w'’-])(?:{e})\s*)" for e in before)
         for kind, pat, negate in local or []:
-            conds.append((kind, f"t{i}={pat}", negate))
+            conds.append((kind, f"t{i}{'*' if repeated else ''}={pat}", negate))
         sep = "" if i == 1 or tok.get("spacebefore") == "no" else r"\s*"
         if tok.get("spacebefore") == "yes" and i > 1:
             sep = r"\s+"
-        piece = f"(?P<t{i}>{body})" if groups else f"(?:{body})"
+        piece = look + (f"(?P<t{i}>{body})" if groups else f"(?:{body})")
         if marked and not in_m:
             parts.append(sep + ("(?P<m>" if groups else "(?:"))
             sep = ""
@@ -416,7 +485,9 @@ def sequence(tokens, groups=True, conds=None):
             parts.append(")")
             in_m = False
         piece = sep + piece
-        if tok.get("min") == "0":
+        if at_start:
+            piece = f"(?:^|{piece})"
+        if lo == 0:
             piece = f"(?:{piece})?"
         parts.append(piece)
         skip = int(tok.get("skip", "0"))
@@ -646,9 +717,67 @@ def conditioned(r):
     return bool(r["tags"] or r["not_tags"] or r["chunks"] or r["not_chunks"] or r["antipatterns"])
 
 
+# Word characters for the patterns: Latin letters (with Latin-1 and
+# Latin Extended-A and -B), digits and underscore. Unicode's `\w`, compiled
+# into each of a pattern's many lookarounds, made the pack take 3.4 GB of
+# memory compiled in full; this class, 0.8 GB.
+WORD_CHARS = "0-9A-Za-z_\u00C0-\u00D6\u00D8-\u00F6\u00F8-\u024F"
+
+
+def narrow_pattern(p):
+    r"""`p` with `\w`, `\W` and `\d` as the narrower classes above."""
+    out, i, in_class = [], 0, False
+    while i < len(p):
+        c = p[i]
+        if c == "\\" and i + 1 < len(p):
+            e = p[i + 1]
+            if e == "w":
+                out.append(WORD_CHARS if in_class else f"[{WORD_CHARS}]")
+            elif e == "W" and not in_class:
+                out.append(f"[^{WORD_CHARS}]")
+            elif e == "d":
+                out.append("0-9" if in_class else "[0-9]")
+            else:
+                out.append(p[i : i + 2])
+            i += 2
+            continue
+        if in_class:
+            in_class = c != "]"
+        elif c == "[":
+            in_class = True
+            # `[]...]` and `[^]...]` start with a literal `]`.
+            j = i + 1 + (p[i + 1 : i + 2] == "^")
+            if p[j : j + 1] == "]":
+                out.append(p[i : j + 1])
+                i = j + 1
+                continue
+        out.append(c)
+        i += 1
+    return "".join(out)
+
+
+def narrow(r):
+    """The rule's patterns with narrower classes (see `WORD_CHARS`)."""
+    r["pattern"] = narrow_pattern(r["pattern"])
+    if r["unless"]:
+        r["unless"] = narrow_pattern(r["unless"])
+    for a in r["antipatterns"]:
+        a["pattern"] = narrow_pattern(a["pattern"])
+
+
+# The most characters of pattern a rule may have (see `validate`).
+MAX_PATTERN = 30_000
+
+
 def validate(r):
     """Whether the converted rule finds every incorrect example's marked
     span and nothing in the correct examples."""
+    # A rule this large (long word lists repeated in several tokens) costs
+    # more memory compiled than it is worth.
+    size = len(r["pattern"]) + len(r["unless"] or "")
+    size += sum(len(a["pattern"]) for a in r["antipatterns"])
+    if size > MAX_PATTERN:
+        raise Skip("patterns too large")
     try:
         pat = regex.compile(r["pattern"], regex.V0)
         unless = regex.compile(r["unless"]) if r["unless"] else None
@@ -765,6 +894,7 @@ def build(candidates=False):
         for rule, group, cat, position in rules_of(file):
             try:
                 r = convert(rule, group, cat, file)
+                narrow(r)
                 validate(r)
             except Skip as e:
                 reason = str(e).split(":")[0]

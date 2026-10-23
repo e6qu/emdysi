@@ -94,7 +94,11 @@ lexical type and inflectional rules of each word (`n_pl_olr` makes NNS,
 grammar gives both one rule). A singular common noun also has
 LanguageTool's countability tag, `NN:U` (a mass noun) or `NN:UN` (mass
 or count), after the ERG's noun type. A rule with conditions needs a
-parse, and does nothing on a sentence without one.
+parse, and does nothing on a sentence without one. A group that can
+cover several words (a repeated token, `(?:\s*\w+){0,2}`) takes `*`
+after its name for a condition every word must meet (`"t3*=RB.*"`: a
+run of adverbs); without it, one word that meets it is enough. A group
+that takes no part in the match meets every condition.
 
 `chunks` and `not_chunks` do the same with chunk tags, as LanguageTool's
 chunker gives them (`"t3=E-NP.*"`): base noun phrases are `B-NP-…`,
